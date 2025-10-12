@@ -21,7 +21,12 @@
               >
                 📥 下载 Chrome 插件
               </a>
-              <p class="install-hint">下载后请解压，然后在浏览器中加载解压后的文件夹</p>
+              <p class="install-hint">
+                下载后请解压，然后在浏览器中加载解压后的文件夹<br/>
+                <a href="https://zhuanlan.zhihu.com/p/16585597394" target="_blank" class="tutorial-link">
+                  📖 查看详细安装教程
+                </a>
+              </p>
             </div>
             <div class="divider">或</div>
             <div class="option-section">
@@ -495,7 +500,23 @@ export default {
   color: #888;
   font-size: 12px;
   margin: 12px 0 0 0;
-  line-height: 1.5;
+  line-height: 1.8;
+}
+
+.tutorial-link {
+  color: #FF5C00;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  transition: all 0.2s ease;
+}
+
+.tutorial-link:hover {
+  color: #FF7A33;
+  text-decoration: underline;
 }
 
 .divider {
