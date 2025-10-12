@@ -275,8 +275,19 @@ export default {
     const loadingShared = ref(false)
     let hideTimer = null
     let searchTimeout = null
-    // 自动检测API地址：生产环境使用相对路径，开发环境使用完整URL
-    const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api'
+    
+    // 检测是否在 Electron 环境中
+    const isElectron = typeof window !== 'undefined' && 
+      (window.electron !== undefined || 
+       (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
+    
+    // 自动检测API地址：
+    // 1. Electron 客户端 -> 使用远程 API 地址 https://tabs.apexstone.ai/api
+    // 2. 生产环境 Web 版 -> 使用相对路径（通过代理）
+    // 3. 开发环境 -> 使用 localhost
+    const API_BASE_URL = isElectron 
+      ? 'https://tabs.apexstone.ai/api' 
+      : (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
 
     // 点击外部区域关闭下拉菜单
     const handleClickOutside = (event) => {

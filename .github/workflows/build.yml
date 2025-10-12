@@ -31,6 +31,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Extract version from tag
+        id: get_version
+        shell: bash
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$TAG" >> $GITHUB_OUTPUT
+          echo "Extracted version: $TAG"
+
+      - name: Update package.json version
+        shell: bash
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          echo "Updating package.json version to $VERSION"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            npx json -I -f package.json -e "this.version=\"$VERSION\""
+          else
+            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+            rm -f package.json.bak
+          fi
+          cat package.json | grep version
+
       - name: Build Electron app
         run: npm run electron:build
 
