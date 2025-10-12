@@ -217,33 +217,18 @@
           </svg>
           <span>Help</span>
         </a>
-        <a 
-          href="https://github.com/MaskerPRC/tab-hive/releases" 
-          target="_blank"
+        <button 
           class="btn-download"
-          title="下载桌面客户端"
+          @click="$emit('show-download-modal')"
+          title="下载桌面客户端或插件"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          <span>下载客户端</span>
-        </a>
-        <a 
-          href="https://chromewebstore.google.com/detail/allow-x-frame-options/jfjdfokifdlmbkbncmcfbcobggohdnif" 
-          target="_blank"
-          class="btn-extension"
-          title="下载Chrome扩展"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          <span>Chrome扩展</span>
-        </a>
+          <span>下载插件</span>
+        </button>
         <button class="btn-clear" @click="clearConfig" title="清除所有配置">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
@@ -257,7 +242,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 
 export default {
   name: 'ConfigPanel',
@@ -304,6 +289,10 @@ export default {
 
     // 开始隐藏倒计时
     const startHideTimer = () => {
+      // 如果正在编辑布局名称，不启动隐藏倒计时
+      if (editingLayoutId.value !== null) {
+        return
+      }
       clearHideTimer()
       hideTimer = setTimeout(() => {
         showLayoutDropdown.value = false
@@ -320,11 +309,19 @@ export default {
 
     // 处理下拉菜单区域的鼠标离开
     const handleDropdownLeave = () => {
+      // 如果正在编辑布局名称，不启动隐藏倒计时
+      if (editingLayoutId.value !== null) {
+        return
+      }
       startHideTimer()
     }
 
     // 处理顶栏鼠标离开（顶栏隐藏时关闭下拉菜单）
     const handlePanelMouseLeave = () => {
+      // 如果正在编辑布局名称，不隐藏面板
+      if (editingLayoutId.value !== null) {
+        return
+      }
       showLayoutDropdown.value = false
       clearHideTimer()
     }
@@ -374,6 +371,14 @@ export default {
       if (layout) {
         editingLayoutId.value = layoutId
         editingLayoutName.value = layout.name
+        // 下一帧自动聚焦到输入框
+        nextTick(() => {
+          const input = document.querySelector('.rename-input')
+          if (input) {
+            input.focus()
+            input.select() // 选中全部文本，方便用户直接输入
+          }
+        })
       }
     }
 
