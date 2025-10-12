@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
 
@@ -33,16 +33,51 @@ export default {
     GridView
   },
   setup() {
-    // 默认网站列表
-    const websites = ref([
+    // 从 localStorage 加载配置
+    const loadFromStorage = () => {
+      try {
+        const saved = localStorage.getItem('iframe-all-config')
+        if (saved) {
+          const config = JSON.parse(saved)
+          return {
+            websites: config.websites || [],
+            rows: config.rows || 2,
+            cols: config.cols || 2
+          }
+        }
+      } catch (e) {
+        console.error('加载配置失败:', e)
+      }
+      return null
+    }
+
+    // 保存配置到 localStorage
+    const saveToStorage = () => {
+      try {
+        const config = {
+          websites: websites.value,
+          rows: rows.value,
+          cols: cols.value
+        }
+        localStorage.setItem('iframe-all-config', JSON.stringify(config))
+      } catch (e) {
+        console.error('保存配置失败:', e)
+      }
+    }
+
+    // 加载保存的配置或使用默认值
+    const savedConfig = loadFromStorage()
+    
+    // 网站列表
+    const websites = ref(savedConfig?.websites.length > 0 ? savedConfig.websites : [
       { id: 1, url: 'https://www.baidu.com', title: '百度' },
       { id: 2, url: 'https://www.bing.com', title: 'Bing' },
       { id: 3, url: 'https://www.google.com', title: 'Google' }
     ])
 
     // Grid 配置
-    const rows = ref(2)
-    const cols = ref(2)
+    const rows = ref(savedConfig?.rows || 2)
+    const cols = ref(savedConfig?.cols || 2)
 
     // 全屏状态
     const fullscreenIndex = ref(null)
@@ -73,6 +108,11 @@ export default {
         websites.value[index].url = url
       }
     }
+
+    // 监听配置变化，自动保存
+    watch([websites, rows, cols], () => {
+      saveToStorage()
+    }, { deep: true })
 
     return {
       websites,
