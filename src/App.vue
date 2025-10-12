@@ -12,8 +12,14 @@
       :class="{ 'panel-visible': showPanel }"
       :rows="rows"
       :cols="cols"
+      :layouts="layouts"
+      :currentLayoutId="currentLayoutId"
       @update:rows="rows = $event"
       @update:cols="cols = $event"
+      @switch-layout="switchLayout"
+      @create-layout="createLayout"
+      @delete-layout="deleteLayout"
+      @rename-layout="renameLayout"
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
@@ -49,11 +55,23 @@ export default {
         const saved = localStorage.getItem('iframe-all-config')
         if (saved) {
           const config = JSON.parse(saved)
-          return {
-            websites: config.websites || [],
-            rows: config.rows || 2,
-            cols: config.cols || 2
+          
+          // 如果是旧格式（单个配置），转换为新格式（多布局）
+          if (config.websites !== undefined && !config.layouts) {
+            return {
+              layouts: [{
+                id: 1,
+                name: '默认布局',
+                rows: config.rows || 2,
+                cols: config.cols || 2,
+                websites: config.websites || []
+              }],
+              currentLayoutId: 1
+            }
           }
+          
+          // 新格式
+          return config
         }
       } catch (e) {
         console.error('加载配置失败:', e)
@@ -65,9 +83,8 @@ export default {
     const saveToStorage = () => {
       try {
         const config = {
-          websites: websites.value,
-          rows: rows.value,
-          cols: cols.value
+          layouts: layouts.value,
+          currentLayoutId: currentLayoutId.value
         }
         localStorage.setItem('iframe-all-config', JSON.stringify(config))
       } catch (e) {
@@ -78,18 +95,33 @@ export default {
     // 加载保存的配置或使用默认值
     const savedConfig = loadFromStorage()
     
-    // 网站列表
-    // 只有首次访问（没有保存过配置）时才使用默认网站
-    // 如果用户保存过配置（即使是空数组），就使用保存的配置
-    const websites = ref(savedConfig ? savedConfig.websites : [
-      { id: 1, url: 'https://www.baidu.com', title: '百度' },
-      { id: 2, url: 'https://www.bing.com', title: 'Bing' },
-      { id: 3, url: 'https://www.google.com', title: 'Google' }
+    // 布局列表
+    const layouts = ref(savedConfig ? savedConfig.layouts : [
+      {
+        id: 1,
+        name: '默认布局',
+        rows: 2,
+        cols: 2,
+        websites: [
+          { id: 1, url: 'https://www.baidu.com', title: '百度' },
+          { id: 2, url: 'https://www.bing.com', title: 'Bing' },
+          { id: 3, url: 'https://www.google.com', title: 'Google' }
+        ]
+      }
     ])
 
-    // Grid 配置
-    const rows = ref(savedConfig?.rows || 2)
-    const cols = ref(savedConfig?.cols || 2)
+    // 当前布局 ID
+    const currentLayoutId = ref(savedConfig?.currentLayoutId || 1)
+
+    // 当前布局（计算属性）
+    const currentLayout = ref(layouts.value.find(l => l.id === currentLayoutId.value) || layouts.value[0])
+    
+    // 网站列表（从当前布局中获取）
+    const websites = ref(currentLayout.value.websites)
+    
+    // Grid 配置（从当前布局中获取）
+    const rows = ref(currentLayout.value.rows)
+    const cols = ref(currentLayout.value.cols)
 
     // 全屏状态
     const fullscreenIndex = ref(null)
@@ -135,9 +167,75 @@ export default {
       }
     }
 
-    // 监听配置变化，自动保存
+    // 切换布局
+    const switchLayout = (layoutId) => {
+      const layout = layouts.value.find(l => l.id === layoutId)
+      if (layout) {
+        currentLayoutId.value = layoutId
+        currentLayout.value = layout
+        websites.value = layout.websites
+        rows.value = layout.rows
+        cols.value = layout.cols
+        saveToStorage()
+      }
+    }
+
+    // 保存当前布局（更新当前布局的数据）
+    const saveCurrentLayout = () => {
+      const layout = layouts.value.find(l => l.id === currentLayoutId.value)
+      if (layout) {
+        layout.websites = [...websites.value]
+        layout.rows = rows.value
+        layout.cols = cols.value
+        saveToStorage()
+      }
+    }
+
+    // 创建新布局
+    const createLayout = (name) => {
+      const newLayout = {
+        id: Date.now(),
+        name: name || `布局 ${layouts.value.length + 1}`,
+        rows: 2,
+        cols: 2,
+        websites: []
+      }
+      layouts.value.push(newLayout)
+      switchLayout(newLayout.id)
+    }
+
+    // 删除布局
+    const deleteLayout = (layoutId) => {
+      if (layouts.value.length <= 1) {
+        alert('至少需要保留一个布局')
+        return
+      }
+      
+      const index = layouts.value.findIndex(l => l.id === layoutId)
+      if (index !== -1) {
+        layouts.value.splice(index, 1)
+        
+        // 如果删除的是当前布局，切换到第一个布局
+        if (currentLayoutId.value === layoutId) {
+          switchLayout(layouts.value[0].id)
+        } else {
+          saveToStorage()
+        }
+      }
+    }
+
+    // 重命名布局
+    const renameLayout = (layoutId, newName) => {
+      const layout = layouts.value.find(l => l.id === layoutId)
+      if (layout) {
+        layout.name = newName
+        saveToStorage()
+      }
+    }
+
+    // 监听配置变化，自动保存到当前布局
     watch([websites, rows, cols], () => {
-      saveToStorage()
+      saveCurrentLayout()
     }, { deep: true })
 
     // 页面加载时自动显示顶栏，然后隐藏
@@ -155,6 +253,8 @@ export default {
       websites,
       rows,
       cols,
+      layouts,
+      currentLayoutId,
       fullscreenIndex,
       showPanel,
       handleFullscreen,
@@ -163,7 +263,11 @@ export default {
       handlePanelLeave,
       handleAddWebsite,
       handleRemoveWebsite,
-      handleUpdateWebsite
+      handleUpdateWebsite,
+      switchLayout,
+      createLayout,
+      deleteLayout,
+      renameLayout
     }
   }
 }
