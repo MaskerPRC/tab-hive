@@ -83,19 +83,33 @@
       @remove-website="handleRemoveWebsite"
       @update-website="handleUpdateWebsite"
     />
+
+    <!-- 全局对话框 -->
+    <Dialog
+      v-model:visible="dialogVisible"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+      :placeholder="dialogPlaceholder"
+      :defaultValue="dialogDefaultValue"
+      @confirm="handleDialogConfirm"
+      @cancel="handleDialogCancel"
+    />
   </div>
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, provide } from 'vue'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
+import Dialog from './components/Dialog.vue'
 
 export default {
   name: 'App',
   components: {
     ConfigPanel,
-    GridView
+    GridView,
+    Dialog
   },
   setup() {
     // 检测是否在 Electron 环境中
@@ -114,6 +128,71 @@ export default {
       }
     }
 
+    // 对话框状态
+    const dialogVisible = ref(false)
+    const dialogType = ref('confirm')
+    const dialogTitle = ref('提示')
+    const dialogMessage = ref('')
+    const dialogPlaceholder = ref('')
+    const dialogDefaultValue = ref('')
+    let dialogResolve = null
+    
+    // 自定义 prompt 方法
+    const showPrompt = (message, defaultValue = '') => {
+      // Electron 环境下直接返回默认值
+      if (isElectron.value) {
+        return Promise.resolve(defaultValue || '新布局')
+      }
+      
+      // 使用自定义对话框
+      return new Promise((resolve) => {
+        dialogType.value = 'prompt'
+        dialogTitle.value = '输入'
+        dialogMessage.value = message
+        dialogPlaceholder.value = defaultValue
+        dialogDefaultValue.value = defaultValue
+        dialogVisible.value = true
+        dialogResolve = resolve
+      })
+    }
+    
+    // 自定义 confirm 方法
+    const showConfirm = (message) => {
+      // Electron 环境下直接返回 true
+      if (isElectron.value) {
+        return Promise.resolve(true)
+      }
+      
+      // 使用自定义对话框
+      return new Promise((resolve) => {
+        dialogType.value = 'confirm'
+        dialogTitle.value = '确认'
+        dialogMessage.value = message
+        dialogVisible.value = true
+        dialogResolve = resolve
+      })
+    }
+    
+    // 对话框确认
+    const handleDialogConfirm = (value) => {
+      if (dialogResolve) {
+        dialogResolve(value)
+        dialogResolve = null
+      }
+    }
+    
+    // 对话框取消
+    const handleDialogCancel = () => {
+      if (dialogResolve) {
+        dialogResolve(dialogType.value === 'prompt' ? null : false)
+        dialogResolve = null
+      }
+    }
+    
+    // 提供给子组件使用
+    provide('showPrompt', showPrompt)
+    provide('showConfirm', showConfirm)
+    
     // 控制下载弹窗显示
     // 首次进入：如果不是 Electron 环境且没有看过弹窗，自动显示
     const showDownloadModal = ref(!isElectron.value && !hasSeenDownloadModal())
@@ -365,6 +444,14 @@ export default {
       showDownloadModal,
       closeDownloadModal,
       handleShowDownloadModal,
+      dialogVisible,
+      dialogType,
+      dialogTitle,
+      dialogMessage,
+      dialogPlaceholder,
+      dialogDefaultValue,
+      handleDialogConfirm,
+      handleDialogCancel,
       websites,
       rows,
       cols,

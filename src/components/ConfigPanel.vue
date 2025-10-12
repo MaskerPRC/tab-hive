@@ -242,7 +242,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, inject } from 'vue'
 
 export default {
   name: 'ConfigPanel',
@@ -275,6 +275,10 @@ export default {
     const loadingShared = ref(false)
     let hideTimer = null
     let searchTimeout = null
+    
+    // 从父组件注入对话框方法
+    const showPrompt = inject('showPrompt')
+    const showConfirm = inject('showConfirm')
     
     // 检测是否在 Electron 环境中
     const isElectron = typeof window !== 'undefined' && 
@@ -360,18 +364,18 @@ export default {
       showLayoutDropdown.value = false
     }
 
-    const handleCreateLayout = () => {
-      const name = prompt('请输入新布局名称：')
+    const handleCreateLayout = async () => {
+      const name = await showPrompt('请输入新布局名称：', '新布局')
       if (name && name.trim()) {
         emit('create-layout', name.trim())
         showLayoutDropdown.value = false
       }
     }
 
-    const handleDeleteLayout = (layoutId, event) => {
+    const handleDeleteLayout = async (layoutId, event) => {
       event.stopPropagation()
       const layout = props.layouts.find(l => l.id === layoutId)
-      if (layout && confirm(`确定要删除布局 "${layout.name}" 吗？`)) {
+      if (layout && await showConfirm(`确定要删除布局 "${layout.name}" 吗？`)) {
         emit('delete-layout', layoutId)
       }
     }
@@ -406,8 +410,8 @@ export default {
       editingLayoutName.value = ''
     }
 
-    const clearConfig = () => {
-      if (confirm('确定要清除所有配置吗？这将删除所有网站和布局设置。')) {
+    const clearConfig = async () => {
+      if (await showConfirm('确定要清除所有配置吗？这将删除所有网站和布局设置。')) {
         localStorage.removeItem('iframe-all-config')
         window.location.reload()
       }
@@ -502,7 +506,7 @@ export default {
         return
       }
       
-      if (!confirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
+      if (!await showConfirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
         return
       }
       
