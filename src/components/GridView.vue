@@ -1,5 +1,10 @@
 <template>
-  <div class="grid-view" :class="{ 'fullscreen-mode': fullscreenIndex !== null }">
+  <div 
+    class="grid-view" 
+    :class="{ 'fullscreen-mode': fullscreenIndex !== null }"
+    @dragenter.prevent="handleDragEnter"
+    @dragleave="handleViewDragLeave"
+  >
     <div 
       class="grid-container"
       :style="gridStyle"
@@ -12,11 +17,8 @@
           'fullscreen': fullscreenIndex === index,
           'hidden': isHidden(index),
           'empty-slot': !item.url,
-          'drag-over': dragOverIndex === index
+          'drag-over': dragOverIndex === index && isDragging
         }"
-        @dragover.prevent="handleDragOver(index)"
-        @dragleave="handleDragLeave"
-        @drop.prevent="handleDrop($event, index)"
       >
         <!-- 已有网站显示 -->
         <template v-if="item.url">
@@ -26,6 +28,23 @@
             class="website-iframe"
             :title="item.title"
           ></iframe>
+          <!-- 拖放捕获层 -->
+          <div 
+            v-if="isDragging"
+            class="drop-zone"
+            @dragover.prevent="handleDragOver(index)"
+            @dragleave.prevent="handleDragLeave"
+            @drop.prevent="handleDrop($event, index)"
+          ></div>
+          <!-- 拖放提示框 -->
+          <div v-if="dragOverIndex === index && isDragging" class="drop-hint">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>替换此网站</span>
+          </div>
           <div class="floating-actions">
             <button 
               v-if="fullscreenIndex !== index"
@@ -62,6 +81,14 @@
 
         <!-- 空白槽位显示添加表单 -->
         <template v-else>
+          <!-- 拖放捕获层 -->
+          <div 
+            v-if="isDragging"
+            class="drop-zone"
+            @dragover.prevent="handleDragOver(index)"
+            @dragleave.prevent="handleDragLeave"
+            @drop.prevent="handleDrop($event, index)"
+          ></div>
           <div v-if="editingSlot === index" class="add-website-form">
             <h3>添加网站</h3>
             <div class="form-group">
@@ -90,12 +117,22 @@
             </div>
           </div>
           <div v-else class="empty-placeholder" @click="startAddWebsite(index)">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="16"/>
-              <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            <p>点击添加网站</p>
+            <template v-if="dragOverIndex === index">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <p style="font-size: 18px; font-weight: 600;">拖放到此处添加</p>
+            </template>
+            <template v-else>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <p>点击添加网站</p>
+            </template>
           </div>
         </template>
       </div>
@@ -134,6 +171,7 @@ export default {
       url: ''
     })
     const dragOverIndex = ref(null)
+    const isDragging = ref(false)
     const gridStyle = computed(() => {
       if (props.fullscreenIndex !== null) {
         return {
@@ -212,15 +250,37 @@ export default {
       }
     }
 
-    const handleDragOver = (index) => {
-      dragOverIndex.value = index
+    const handleDragEnter = (event) => {
+      // 检查是否是从外部拖入链接
+      const types = event.dataTransfer.types
+      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
+        isDragging.value = true
+      }
     }
 
-    const handleDragLeave = () => {
-      dragOverIndex.value = null
+    const handleViewDragLeave = (event) => {
+      // 检查是否真的离开了grid-view
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        isDragging.value = false
+        dragOverIndex.value = null
+      }
+    }
+
+    const handleDragOver = (index) => {
+      if (isDragging.value) {
+        dragOverIndex.value = index
+      }
+    }
+
+    const handleDragLeave = (event) => {
+      // 检查是否真的离开了当前元素
+      if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) {
+        dragOverIndex.value = null
+      }
     }
 
     const handleDrop = (event, index) => {
+      isDragging.value = false
       dragOverIndex.value = null
       
       // 获取拖放的数据
@@ -280,10 +340,13 @@ export default {
       editingSlot,
       newWebsite,
       dragOverIndex,
+      isDragging,
       startAddWebsite,
       confirmAddWebsite,
       cancelAddWebsite,
       handleRemoveWebsite,
+      handleDragEnter,
+      handleViewDragLeave,
       handleDragOver,
       handleDragLeave,
       handleDrop
@@ -297,6 +360,7 @@ export default {
   flex: 1;
   padding: 15px;
   overflow: hidden;
+  position: relative;
 }
 
 .fullscreen-mode {
@@ -339,13 +403,59 @@ export default {
   border: none;
 }
 
+.drop-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  pointer-events: all;
+}
+
+.drop-hint {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 20px;
+  background: rgba(255, 92, 0, 0.15);
+  border: 2px dashed var(--primary-color);
+  border-radius: 8px;
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 101;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.drop-hint svg {
+  stroke: var(--primary-color);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
 .floating-actions {
   position: absolute;
   top: 10px;
   right: 10px;
   display: flex;
   gap: 8px;
-  z-index: 10;
+  z-index: 101;
 }
 
 .btn-action {
@@ -408,6 +518,16 @@ export default {
 
 .empty-placeholder svg {
   transition: all 0.3s;
+}
+
+.empty-slot.drag-over .empty-placeholder {
+  background: rgba(255, 92, 0, 0.15);
+  color: var(--primary-color);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.empty-slot.drag-over .empty-placeholder svg {
+  stroke: var(--primary-color);
 }
 
 .add-website-form {
