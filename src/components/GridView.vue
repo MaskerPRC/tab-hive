@@ -25,6 +25,7 @@
           <iframe 
             :src="item.url"
             frameborder="0"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
             class="website-iframe"
             :title="item.title"
           ></iframe>
@@ -456,6 +457,12 @@ export default {
   display: flex;
   gap: 8px;
   z-index: 101;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.grid-item:hover .floating-actions {
+  opacity: 1;
 }
 
 .btn-action {
