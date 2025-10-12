@@ -23,62 +23,130 @@
           </button>
           
           <div v-if="showLayoutDropdown" class="dropdown-menu" @mouseenter="clearHideTimer" @mouseleave="startHideTimer">
-            <div class="dropdown-header">
-              <span>布局列表</span>
-              <button class="btn-new-layout" @click="handleCreateLayout" title="新建布局">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="16"/>
-                  <line x1="8" y1="12" x2="16" y2="12"/>
-                </svg>
+            <!-- 标签页切换 -->
+            <div class="dropdown-tabs">
+              <button 
+                class="tab-btn"
+                :class="{ active: activeTab === 'my' }"
+                @click="activeTab = 'my'"
+              >
+                我的布局
+              </button>
+              <button 
+                class="tab-btn"
+                :class="{ active: activeTab === 'shared' }"
+                @click="switchToSharedTab"
+              >
+                共享布局
               </button>
             </div>
-            <div class="dropdown-list">
-              <div 
-                v-for="layout in layouts" 
-                :key="layout.id"
-                class="dropdown-item"
-                :class="{ active: layout.id === currentLayoutId }"
-                @click="selectLayout(layout.id)"
-              >
-                <div v-if="editingLayoutId === layout.id" class="rename-input-wrapper" @click.stop>
-                  <input 
-                    v-model="editingLayoutName"
-                    type="text"
-                    class="rename-input"
-                    @keyup.enter="confirmRename"
-                    @keyup.esc="cancelRename"
-                    @blur="confirmRename"
-                    ref="renameInput"
-                  />
-                </div>
-                <template v-else>
-                  <span class="layout-item-name">{{ layout.name }}</span>
-                  <span class="layout-info">({{ layout.rows }}×{{ layout.cols }}, {{ layout.websites.length }}个网站)</span>
-                  <div class="layout-actions">
-                    <button 
-                      class="btn-icon btn-rename"
-                      @click="startRenameLayout(layout.id, $event)"
-                      title="重命名"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                    <button 
-                      v-if="layouts.length > 1"
-                      class="btn-icon btn-delete"
-                      @click="handleDeleteLayout(layout.id, $event)"
-                      title="删除"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                      </svg>
-                    </button>
+
+            <!-- 我的布局 -->
+            <div v-if="activeTab === 'my'">
+              <div class="dropdown-header">
+                <span>布局列表</span>
+                <button class="btn-new-layout" @click="handleCreateLayout" title="新建布局">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="dropdown-list">
+                <div 
+                  v-for="layout in layouts" 
+                  :key="layout.id"
+                  class="dropdown-item"
+                  :class="{ active: layout.id === currentLayoutId }"
+                  @click="selectLayout(layout.id)"
+                >
+                  <div v-if="editingLayoutId === layout.id" class="rename-input-wrapper" @click.stop>
+                    <input 
+                      v-model="editingLayoutName"
+                      type="text"
+                      class="rename-input"
+                      @keyup.enter="confirmRename"
+                      @keyup.esc="cancelRename"
+                      @blur="confirmRename"
+                      ref="renameInput"
+                    />
                   </div>
-                </template>
+                  <template v-else>
+                    <span class="layout-item-name">{{ layout.name }}</span>
+                    <span class="layout-info">({{ layout.rows }}×{{ layout.cols }}, {{ layout.websites.length }}个网站)</span>
+                    <div class="layout-actions">
+                      <button 
+                        class="btn-icon btn-share"
+                        @click="handleShareLayout(layout, $event)"
+                        title="分享布局"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="18" cy="5" r="3"/>
+                          <circle cx="6" cy="12" r="3"/>
+                          <circle cx="18" cy="19" r="3"/>
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                      </button>
+                      <button 
+                        class="btn-icon btn-rename"
+                        @click="startRenameLayout(layout.id, $event)"
+                        title="重命名"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button 
+                        v-if="layouts.length > 1"
+                        class="btn-icon btn-delete"
+                        @click="handleDeleteLayout(layout.id, $event)"
+                        title="删除"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- 共享布局 -->
+            <div v-if="activeTab === 'shared'">
+              <div class="dropdown-header">
+                <input 
+                  v-model="searchQuery"
+                  type="text"
+                  class="search-input"
+                  placeholder="搜索共享布局..."
+                  @input="searchSharedLayouts"
+                />
+              </div>
+              <div class="dropdown-list">
+                <div v-if="loadingShared" class="loading-message">
+                  加载中...
+                </div>
+                <div v-else-if="sharedLayouts.length === 0" class="empty-message">
+                  暂无共享布局
+                </div>
+                <div 
+                  v-else
+                  v-for="layout in sharedLayouts" 
+                  :key="layout.id"
+                  class="dropdown-item shared-item"
+                  @click="loadSharedLayout(layout.id)"
+                >
+                  <span class="layout-item-name">{{ layout.layout_name }}</span>
+                  <span class="layout-info">
+                    ({{ layout.rows }}×{{ layout.cols }}, {{ layout.website_count }}个网站)
+                    <span class="views-count">👁 {{ layout.views }}</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -216,7 +284,14 @@ export default {
     const showLayoutDropdown = ref(false)
     const editingLayoutId = ref(null)
     const editingLayoutName = ref('')
+    const activeTab = ref('my')
+    const searchQuery = ref('')
+    const sharedLayouts = ref([])
+    const loadingShared = ref(false)
     let hideTimer = null
+    let searchTimeout = null
+    // 自动检测API地址：生产环境使用相对路径，开发环境使用完整URL
+    const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api'
 
     // 点击外部区域关闭下拉菜单
     const handleClickOutside = (event) => {
@@ -334,10 +409,117 @@ export default {
       }
     }
 
+    // 切换到共享标签页
+    const switchToSharedTab = () => {
+      activeTab.value = 'shared'
+      loadSharedLayouts()
+    }
+
+    // 加载共享布局列表
+    const loadSharedLayouts = async () => {
+      loadingShared.value = true
+      try {
+        const url = `${API_BASE_URL}/layouts/shared?limit=50`
+        const response = await fetch(url)
+        const data = await response.json()
+        sharedLayouts.value = data.layouts || []
+      } catch (error) {
+        console.error('加载共享布局失败:', error)
+        alert('加载共享布局失败，请确保后端服务正在运行')
+      } finally {
+        loadingShared.value = false
+      }
+    }
+
+    // 搜索共享布局（带防抖）
+    const searchSharedLayouts = () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout)
+      }
+      
+      searchTimeout = setTimeout(async () => {
+        loadingShared.value = true
+        try {
+          const url = `${API_BASE_URL}/layouts/shared?search=${encodeURIComponent(searchQuery.value)}&limit=50`
+          const response = await fetch(url)
+          const data = await response.json()
+          sharedLayouts.value = data.layouts || []
+        } catch (error) {
+          console.error('搜索失败:', error)
+        } finally {
+          loadingShared.value = false
+        }
+      }, 300)
+    }
+
+    // 加载共享布局并应用
+    const loadSharedLayout = async (layoutId) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/layouts/${layoutId}`)
+        const layout = await response.json()
+        
+        // 创建新布局并导入数据
+        const newLayout = {
+          id: Date.now(),
+          name: `${layout.name || '共享布局'} (导入)`,
+          rows: layout.rows,
+          cols: layout.cols,
+          websites: layout.websites || []
+        }
+        
+        emit('create-layout', newLayout.name)
+        showLayoutDropdown.value = false
+        
+        alert('布局导入成功！')
+      } catch (error) {
+        console.error('加载布局失败:', error)
+        alert('加载布局失败')
+      }
+    }
+
+    // 分享布局
+    const handleShareLayout = async (layout, event) => {
+      event.stopPropagation()
+      
+      if (!layout.websites || layout.websites.length === 0) {
+        alert('该布局没有网站，无法分享')
+        return
+      }
+      
+      if (!confirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
+        return
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/layouts/share`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ layout })
+        })
+        
+        const data = await response.json()
+        
+        if (response.ok) {
+          alert(`分享成功！\n今日还可分享 ${data.remaining} 次`)
+        } else {
+          alert(data.error || '分享失败')
+        }
+      } catch (error) {
+        console.error('分享失败:', error)
+        alert('分享失败，请确保后端服务正在运行')
+      }
+    }
+
     return {
       showLayoutDropdown,
       editingLayoutId,
       editingLayoutName,
+      activeTab,
+      searchQuery,
+      sharedLayouts,
+      loadingShared,
       currentLayoutName,
       toggleLayoutDropdown,
       selectLayout,
@@ -352,7 +534,11 @@ export default {
       handleDropdownLeave,
       clearHideTimer,
       startHideTimer,
-      handlePanelMouseLeave
+      handlePanelMouseLeave,
+      switchToSharedTab,
+      searchSharedLayouts,
+      loadSharedLayout,
+      handleShareLayout
     }
   }
 }
@@ -438,7 +624,7 @@ export default {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 350px;
+  min-width: 400px;
   background: white;
   border: 2px solid var(--primary-color);
   border-radius: 12px;
@@ -446,6 +632,35 @@ export default {
   z-index: 1000;
   overflow: hidden;
   animation: slideDown 0.2s ease-out;
+}
+
+.dropdown-tabs {
+  display: flex;
+  background: #f5f5f5;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  transition: all 0.3s;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.tab-btn.active {
+  background: white;
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
 }
 
 @keyframes slideDown {
@@ -568,6 +783,53 @@ export default {
 
 .btn-icon svg {
   stroke: currentColor;
+}
+
+.btn-share {
+  color: #4caf50;
+}
+
+.btn-share:hover {
+  background: rgba(76, 175, 80, 0.1) !important;
+}
+
+.dropdown-item.active .btn-share:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  border-color: var(--primary-color);
+}
+
+.loading-message, .empty-message {
+  padding: 30px 16px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.shared-item {
+  cursor: pointer;
+}
+
+.shared-item:hover {
+  background: var(--primary-light);
+}
+
+.views-count {
+  margin-left: 8px;
+  color: #4caf50;
+  font-weight: 600;
 }
 
 .rename-input-wrapper {

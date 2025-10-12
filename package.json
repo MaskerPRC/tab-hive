@@ -11,6 +11,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "server": "node server/server.js",
+    "start": "npm run build && npm run server",
+    "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
     "electron:dev": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run build && electron-builder",
     "electron:build:win": "npm run build && electron-builder --win",
@@ -18,7 +21,10 @@
     "electron:build:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
-    "vue": "^3.4.0"
+    "vue": "^3.4.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

@@ -16,6 +16,10 @@ dist-ssr
 release/
 out/
 
+# Database
+server/*.db
+server/*.db-journal
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
