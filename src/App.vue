@@ -79,7 +79,9 @@ export default {
     const savedConfig = loadFromStorage()
     
     // 网站列表
-    const websites = ref(savedConfig?.websites.length > 0 ? savedConfig.websites : [
+    // 只有首次访问（没有保存过配置）时才使用默认网站
+    // 如果用户保存过配置（即使是空数组），就使用保存的配置
+    const websites = ref(savedConfig ? savedConfig.websites : [
       { id: 1, url: 'https://www.baidu.com', title: '百度' },
       { id: 2, url: 'https://www.bing.com', title: 'Bing' },
       { id: 3, url: 'https://www.google.com', title: 'Google' }
