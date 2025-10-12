@@ -40,10 +40,11 @@ jobs:
           name: ${{ matrix.os }}-build
           path: |
             release/*.exe
+            release/*.exe.blockmap
             release/*.dmg
+            release/*.dmg.blockmap
             release/*.AppImage
-            release/*.zip
-            release/*.tar.gz
+            release/*.yml
           if-no-files-found: error
 
   publish:
