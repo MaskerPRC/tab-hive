@@ -32,6 +32,7 @@
   "build": {
     "appId": "com.maskerprc.tabhive",
     "productName": "Tab Hive",
+    "publish": null,
     "directories": {
       "output": "release"
     },
