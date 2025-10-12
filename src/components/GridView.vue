@@ -112,8 +112,8 @@
               <label>网站地址：</label>
               <input 
                 v-model="newWebsite.url"
-                type="url" 
-                placeholder="https://example.com"
+                type="text" 
+                placeholder="例如：bbc.com 或 https://bbc.com"
                 class="form-input"
                 @keyup.enter="confirmAddWebsite"
               />
@@ -270,9 +270,24 @@ export default {
 
     const confirmAddWebsite = () => {
       if (newWebsite.value.title && newWebsite.value.url) {
+        let url = newWebsite.value.url.trim()
+        
+        // 如果URL不是以 http:// 或 https:// 开头，自动添加 https://
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url
+        }
+        
+        // 验证URL格式
+        try {
+          new URL(url)
+        } catch (e) {
+          alert('请输入有效的网址格式，例如：google.com 或 https://google.com')
+          return
+        }
+        
         emit('add-website', {
           title: newWebsite.value.title,
-          url: newWebsite.value.url
+          url: url
         })
         editingSlot.value = null
         newWebsite.value = { title: '', url: '' }
