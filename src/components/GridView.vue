@@ -214,10 +214,16 @@ export default {
           gridTemplateRows: '1fr'
         }
       }
+      
+      // 如果行数超过3，使用 minmax 让每行至少有固定高度，允许滚动
+      const rowTemplate = props.rows > 3 
+        ? `repeat(${props.rows}, minmax(300px, 1fr))`
+        : `repeat(${props.rows}, 1fr)`
+      
       return {
         display: 'grid',
         gridTemplateColumns: `repeat(${props.cols}, 1fr)`,
-        gridTemplateRows: `repeat(${props.rows}, 1fr)`,
+        gridTemplateRows: rowTemplate,
         gap: '10px'
       }
     })
@@ -428,12 +434,21 @@ export default {
   width: 100%;
   height: 100%;
   padding: 15px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 和 Edge */
+}
+
+/* 隐藏滚动条 - Chrome, Safari */
+.grid-view::-webkit-scrollbar {
+  display: none;
 }
 
 .fullscreen-mode {
   padding: 0;
+  overflow: hidden;
 }
 
 .fullscreen-exit-bar {
@@ -485,7 +500,8 @@ export default {
 
 .grid-container {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
+  height: auto;
 }
 
 .grid-item {
@@ -495,7 +511,7 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   transition: all 0.3s ease;
-  min-height: 0;
+  min-height: 300px;
 }
 
 .grid-item.hidden {
