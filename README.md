@@ -1,6 +1,6 @@
-# 多网页集成工具
+# 🐝 Tab Hive
 
-一个纯前端的网页工具，支持在同一个页面中集成并查看多个网站。
+一个纯前端的网页工具，支持在同一个页面中集成并查看多个网站。像蜂巢一样组织你的网页！
 
 ## 功能特性
 
@@ -18,29 +18,62 @@
 
 ## 安装与运行
 
-### 安装依赖
+### Web 版本
+
+#### 安装依赖
 
 ```bash
 npm install
 ```
 
-### 开发模式
+#### 开发模式
 
 ```bash
 npm run dev
 ```
 
-### 构建生产版本
+#### 构建生产版本
 
 ```bash
 npm run build
 ```
 
-### 预览生产版本
+#### 预览生产版本
 
 ```bash
 npm run preview
 ```
+
+### 桌面客户端
+
+#### 下载安装包
+
+前往 [Releases](https://github.com/MaskerPRC/tab-hive/releases) 页面下载最新版本：
+- Windows: `Tab Hive Setup.exe`
+- macOS: `Tab Hive.dmg`
+- Linux: `Tab Hive.AppImage`
+
+#### 从源码构建
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式（同时运行 Web 和 Electron）
+npm run electron:dev
+
+# 构建桌面应用
+npm run electron:build
+```
+
+详细说明请查看 [ELECTRON.md](./ELECTRON.md)
+
+### 为什么要使用桌面客户端？
+
+✅ **完全无 CORS 限制** - 可以加载任何网站，包括银行、社交媒体等  
+✅ **更好的性能** - 原生桌面应用体验  
+✅ **离线可用** - 无需浏览器  
+✅ **独立窗口** - 不占用浏览器标签页
 
 ## 使用说明
 

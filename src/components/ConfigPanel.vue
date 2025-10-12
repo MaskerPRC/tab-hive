@@ -1,7 +1,7 @@
 <template>
   <div class="config-panel">
     <div class="config-header">
-      <h2>多网页集成工具</h2>
+      <h2>🐝 Tab Hive</h2>
       
       <div class="grid-config">
         <!-- 横向配置 - 单选按钮 -->
@@ -53,13 +53,42 @@
         </div>
       </div>
 
-      <button class="btn-clear" @click="clearConfig" title="清除所有配置">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-        </svg>
-        清除配置
-      </button>
+      <div class="right-actions">
+        <a 
+          href="https://github.com/MaskerPRC/tab-hive/releases" 
+          target="_blank"
+          class="btn-download"
+          title="下载桌面客户端"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>下载客户端</span>
+        </a>
+        <a 
+          href="https://chromewebstore.google.com/detail/allow-x-frame-options/jfjdfokifdlmbkbncmcfbcobggohdnif" 
+          target="_blank"
+          class="btn-extension"
+          title="下载Chrome扩展"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>Chrome扩展</span>
+        </a>
+        <button class="btn-clear" @click="clearConfig" title="清除所有配置">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          清除配置
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -249,6 +278,64 @@ export default {
   font-weight: 700;
   color: var(--primary-color);
   text-align: center;
+}
+
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-download {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.btn-download:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 92, 0, 0.3);
+}
+
+.btn-download svg {
+  stroke: currentColor;
+}
+
+.btn-extension {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.btn-extension:hover {
+  background: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(66, 133, 244, 0.3);
+}
+
+.btn-extension svg {
+  stroke: currentColor;
 }
 
 .btn-clear {
