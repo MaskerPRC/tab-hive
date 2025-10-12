@@ -1,11 +1,21 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" @mousemove="handleMouseMove">
+    <!-- 顶部检测区域 -->
+    <div 
+      v-if="fullscreenIndex === null"
+      class="top-trigger-area"
+      @mouseenter="showPanel = true"
+    ></div>
+    
     <ConfigPanel
       v-if="fullscreenIndex === null"
+      :class="{ 'panel-visible': showPanel }"
       :rows="rows"
       :cols="cols"
       @update:rows="rows = $event"
       @update:cols="cols = $event"
+      @mouseenter="showPanel = true"
+      @mouseleave="handlePanelLeave"
     />
     <GridView
       :websites="websites"
@@ -81,6 +91,9 @@ export default {
 
     // 全屏状态
     const fullscreenIndex = ref(null)
+    
+    // 顶栏显示状态
+    const showPanel = ref(false)
 
     const handleFullscreen = (index) => {
       fullscreenIndex.value = index
@@ -88,6 +101,17 @@ export default {
 
     const exitFullscreen = () => {
       fullscreenIndex.value = null
+    }
+
+    const handleMouseMove = (event) => {
+      // 鼠标在顶部 5px 区域时显示面板
+      if (event.clientY < 5) {
+        showPanel.value = true
+      }
+    }
+
+    const handlePanelLeave = () => {
+      showPanel.value = false
     }
 
     const handleAddWebsite = (websiteData) => {
@@ -119,8 +143,11 @@ export default {
       rows,
       cols,
       fullscreenIndex,
+      showPanel,
       handleFullscreen,
       exitFullscreen,
+      handleMouseMove,
+      handlePanelLeave,
       handleAddWebsite,
       handleRemoveWebsite,
       handleUpdateWebsite
@@ -135,6 +162,31 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.top-trigger-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  z-index: 1000;
+  pointer-events: all;
+}
+
+.app-container :deep(.config-panel) {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-out;
+}
+
+.app-container :deep(.config-panel.panel-visible) {
+  transform: translateY(0);
 }
 </style>
 

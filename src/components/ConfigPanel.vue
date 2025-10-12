@@ -68,7 +68,7 @@ export default {
 .config-panel {
   background: white;
   border-bottom: 2px solid var(--primary-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .config-header {
