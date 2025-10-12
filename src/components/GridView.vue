@@ -4,7 +4,24 @@
     :class="{ 'fullscreen-mode': fullscreenIndex !== null }"
     @dragenter.prevent="handleDragEnter"
     @dragleave="handleViewDragLeave"
+    @mousemove="handleGridMouseMove"
   >
+    <!-- 全屏模式下的顶部退出按钮条 -->
+    <div 
+      v-if="fullscreenIndex !== null && showFullscreenBar"
+      class="fullscreen-exit-bar"
+      @mouseleave="handleFullscreenBarLeave"
+    >
+      <button 
+        class="btn-exit-fullscreen"
+        @click="$emit('exitFullscreen')"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+        </svg>
+        <span>退出全屏</span>
+      </button>
+    </div>
     <div 
       class="grid-container"
       :style="gridStyle"
@@ -46,9 +63,9 @@
             </svg>
             <span>替换此网站</span>
           </div>
-          <div class="floating-actions">
+          <!-- 非全屏模式下的浮动按钮 -->
+          <div v-if="fullscreenIndex === null" class="floating-actions">
             <button 
-              v-if="fullscreenIndex !== index"
               class="btn-action btn-remove"
               @click="handleRemoveWebsite(index)"
               title="删除网站"
@@ -58,17 +75,6 @@
               </svg>
             </button>
             <button 
-              v-if="fullscreenIndex === index"
-              class="btn-action"
-              @click="$emit('exitFullscreen')"
-              title="退出全屏"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
-              </svg>
-            </button>
-            <button 
-              v-else
               class="btn-action"
               @click="$emit('fullscreen', index)"
               title="全屏查看"
@@ -142,7 +148,7 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 
 export default {
   name: 'GridView',
@@ -173,6 +179,33 @@ export default {
     })
     const dragOverIndex = ref(null)
     const isDragging = ref(false)
+    const showFullscreenBar = ref(false)
+    let hideTimer = null
+
+    // 监听全屏状态变化
+    watch(() => props.fullscreenIndex, (newVal, oldVal) => {
+      // 进入全屏时自动显示按钮条
+      if (newVal !== null && oldVal === null) {
+        showFullscreenBar.value = true
+        
+        // 清除之前的定时器
+        if (hideTimer) {
+          clearTimeout(hideTimer)
+        }
+        
+        // 2秒后自动隐藏
+        hideTimer = setTimeout(() => {
+          showFullscreenBar.value = false
+        }, 2000)
+      }
+      // 退出全屏时清除定时器
+      else if (newVal === null) {
+        showFullscreenBar.value = false
+        if (hideTimer) {
+          clearTimeout(hideTimer)
+        }
+      }
+    })
     const gridStyle = computed(() => {
       if (props.fullscreenIndex !== null) {
         return {
@@ -249,6 +282,29 @@ export default {
       if (confirm(`确定要删除 "${props.websites[index].title}" 吗？`)) {
         emit('remove-website', index)
       }
+    }
+
+    const handleGridMouseMove = (event) => {
+      // 全屏模式下的逻辑
+      if (props.fullscreenIndex !== null) {
+        // 鼠标在顶部5px区域时显示退出按钮
+        if (event.clientY < 5) {
+          // 清除自动隐藏定时器
+          if (hideTimer) {
+            clearTimeout(hideTimer)
+            hideTimer = null
+          }
+          showFullscreenBar.value = true
+        }
+        // 鼠标离开顶部60px区域时隐藏（给按钮条一些空间）
+        else if (event.clientY > 60) {
+          showFullscreenBar.value = false
+        }
+      }
+    }
+
+    const handleFullscreenBarLeave = () => {
+      showFullscreenBar.value = false
     }
 
     const handleDragEnter = (event) => {
@@ -334,6 +390,13 @@ export default {
       }
     }
 
+    // 组件卸载时清理定时器
+    onUnmounted(() => {
+      if (hideTimer) {
+        clearTimeout(hideTimer)
+      }
+    })
+
     return {
       gridStyle,
       allWebsites,
@@ -342,10 +405,13 @@ export default {
       newWebsite,
       dragOverIndex,
       isDragging,
+      showFullscreenBar,
       startAddWebsite,
       confirmAddWebsite,
       cancelAddWebsite,
       handleRemoveWebsite,
+      handleGridMouseMove,
+      handleFullscreenBarLeave,
       handleDragEnter,
       handleViewDragLeave,
       handleDragOver,
@@ -368,6 +434,53 @@ export default {
 
 .fullscreen-mode {
   padding: 0;
+}
+
+.fullscreen-exit-bar {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  background: rgba(255, 92, 0, 0.95);
+  padding: 0;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.btn-exit-fullscreen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.btn-exit-fullscreen:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-exit-fullscreen svg {
+  display: block;
 }
 
 .grid-container {
@@ -460,11 +573,18 @@ export default {
   gap: 8px;
   z-index: 101;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.floating-actions.show {
+  opacity: 1;
+  pointer-events: all;
 }
 
 .grid-item:hover .floating-actions {
   opacity: 1;
+  pointer-events: all;
 }
 
 .btn-action {
