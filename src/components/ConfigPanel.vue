@@ -55,6 +55,19 @@
 
       <div class="right-actions">
         <a 
+          href="./help.html" 
+          target="_blank"
+          class="btn-help"
+          title="使用帮助"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Help</span>
+        </a>
+        <a 
           href="https://github.com/MaskerPRC/tab-hive/releases" 
           target="_blank"
           class="btn-download"
@@ -284,6 +297,32 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.btn-help {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.btn-help:hover {
+  background: #fff5f0;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-help svg {
+  stroke: currentColor;
 }
 
 .btn-download {

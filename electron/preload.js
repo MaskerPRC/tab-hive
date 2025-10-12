@@ -1,4 +1,4 @@
-const { contextBridge } = require('electron')
+import { contextBridge } from 'electron'
 
 // 暴露安全的API到渲染进程
 contextBridge.exposeInMainWorld('electron', {

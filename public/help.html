@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐝 Tab Hive - 使用帮助</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #FF5C00 0%, #FF7A33 100%);
+      color: white;
+      padding: 40px 40px 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    h2 {
+      color: #FF5C00;
+      font-size: 24px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #FFF5F0;
+    }
+
+    h3 {
+      color: #333;
+      font-size: 18px;
+      margin: 20px 0 10px;
+    }
+
+    p {
+      margin: 10px 0;
+      color: #666;
+    }
+
+    ul, ol {
+      margin: 15px 0;
+      padding-left: 30px;
+    }
+
+    li {
+      margin: 8px 0;
+      color: #666;
+    }
+
+    strong {
+      color: #333;
+      font-weight: 600;
+    }
+
+    code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      color: #FF5C00;
+      font-size: 14px;
+    }
+
+    .highlight-box {
+      background: #FFF5F0;
+      border-left: 4px solid #FF5C00;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .feature-item {
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #FF5C00;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #FF7A33;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #666;
+      border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+      background: #FFF5F0;
+      color: #FF5C00;
+      border-color: #FF5C00;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .comparison-table th {
+      background: #FFF5F0;
+      color: #FF5C00;
+      font-weight: 600;
+    }
+
+    .comparison-table tr:hover {
+      background: #fafafa;
+    }
+
+    .check {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+
+    .cross {
+      color: #f44336;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 30px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      color: #999;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .header {
+        padding: 30px 20px 20px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🐝 Tab Hive</h1>
+      <p>像蜂巢一样组织你的网页</p>
+    </div>
+
+    <div class="content">
+      <!-- 快速开始 -->
+      <div class="section">
+        <h2>📱 快速开始</h2>
+        <ul>
+          <li><strong>添加网站：</strong>点击空白格子，输入网站名称和网址</li>
+          <li><strong>删除网站：</strong>鼠标悬停到网站上，点击右上角的删除按钮</li>
+          <li><strong>全屏查看：</strong>点击右上角的全屏按钮</li>
+          <li><strong>调整布局：</strong>使用顶部的横向/竖向按钮调整网格数量</li>
+          <li><strong>拖放添加：</strong>直接从浏览器书签栏拖放网址到格子中</li>
+        </ul>
+      </div>
+
+      <!-- 网页版 vs 客户端 -->
+      <div class="section">
+        <h2>🌐 网页版 vs 💻 客户端</h2>
+        
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>功能</th>
+              <th>网页版</th>
+              <th>桌面客户端</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>基本功能</td>
+              <td class="check">✅</td>
+              <td class="check">✅</td>
+            </tr>
+            <tr>
+              <td>加载普通网站</td>
+              <td class="check">✅</td>
+              <td class="check">✅</td>
+            </tr>
+            <tr>
+              <td>加载银行网站</td>
+              <td class="cross">❌</td>
+              <td class="check">✅</td>
+            </tr>
+            <tr>
+              <td>加载社交媒体</td>
+              <td class="cross">❌</td>
+              <td class="check">✅</td>
+            </tr>
+            <tr>
+              <td>加载 Google 服务</td>
+              <td class="cross">❌</td>
+              <td class="check">✅</td>
+            </tr>
+            <tr>
+              <td>需要安装</td>
+              <td class="check">✅ 无需安装</td>
+              <td class="cross">❌ 需要安装</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 为什么有些网站打不开 -->
+      <div class="section">
+        <h2>❓ 为什么有些网站打不开？</h2>
+        
+        <div class="highlight-box">
+          <p><strong>原因：</strong>部分网站设置了 <code>X-Frame-Options</code> 安全策略，禁止在 iframe 中显示。这是为了防止点击劫持攻击。</p>
+        </div>
+
+        <h3>解决方法：</h3>
+        <ol>
+          <li><strong>✅ 推荐方案：</strong>使用桌面客户端（完全无限制）</li>
+          <li><strong>⚡ 临时方案：</strong>安装 Chrome 扩展（部分解除限制）</li>
+          <li><strong>🔄 替代方案：</strong>使用其他不受限的网站</li>
+        </ol>
+
+        <div class="button-group">
+          <a href="https://github.com/MaskerPRC/tab-hive/releases" target="_blank" class="btn btn-primary">
+            ⬇️ 下载桌面客户端
+          </a>
+          <a href="https://chromewebstore.google.com/detail/allow-x-frame-options/jfjdfokifdlmbkbncmcfbcobggohdnif" target="_blank" class="btn btn-secondary">
+            🧩 安装 Chrome 扩展
+          </a>
+        </div>
+      </div>
+
+      <!-- 桌面客户端优势 -->
+      <div class="section">
+        <h2>💻 为什么选择桌面客户端？</h2>
+        
+        <div class="feature-list">
+          <div class="feature-item">
+            <strong>🔓 完全无限制</strong>
+            <p>加载任何网站</p>
+          </div>
+          <div class="feature-item">
+            <strong>⚡ 更好性能</strong>
+            <p>原生应用体验</p>
+          </div>
+          <div class="feature-item">
+            <strong>💾 离线可用</strong>
+            <p>无需浏览器</p>
+          </div>
+          <div class="feature-item">
+            <strong>🪟 独立窗口</strong>
+            <p>不占浏览器</p>
+          </div>
+        </div>
+
+        <div class="highlight-box">
+          <p><strong>注意：</strong>即使使用 Chrome 扩展，某些网站（如银行、部分社交媒体）仍然无法加载。<strong>只有桌面客户端能完全解除所有限制。</strong></p>
+        </div>
+      </div>
+
+      <!-- 使用技巧 -->
+      <div class="section">
+        <h2>💡 使用技巧</h2>
+        <ul>
+          <li>配置会自动保存到浏览器，下次打开自动恢复</li>
+          <li>竖向超过 3 行时可以滚动查看更多内容</li>
+          <li>顶部配置栏会自动隐藏，鼠标移到顶部边缘可显示</li>
+          <li>全屏模式下，移动鼠标到顶部显示退出按钮</li>
+          <li>可以从书签栏直接拖放网址到格子中快速添加</li>
+        </ul>
+      </div>
+
+      <!-- 常见问题 -->
+      <div class="section">
+        <h2>🔧 常见问题</h2>
+        
+        <h3>Q: Chrome 扩展和桌面客户端有什么区别？</h3>
+        <p>A: Chrome 扩展只能部分解除限制，某些网站仍然无法加载。桌面客户端完全关闭了所有安全限制，可以加载任何网站。</p>
+
+        <h3>Q: 配置会丢失吗？</h3>
+        <p>A: 不会。所有配置都保存在浏览器的 localStorage 中（网页版）或应用数据目录中（客户端），会自动恢复。</p>
+
+        <h3>Q: 支持哪些平台？</h3>
+        <p>A: 桌面客户端支持 Windows、macOS 和 Linux 三大平台，支持 x64 和 ARM64 架构。</p>
+
+        <h3>Q: 如何清除所有配置？</h3>
+        <p>A: 点击顶部的"清除配置"按钮，确认后会删除所有网站和布局设置。</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>🐝 Tab Hive - Made with ❤️</p>
+      <p><a href="https://github.com/MaskerPRC/tab-hive" target="_blank" style="color: #FF5C00; text-decoration: none;">GitHub</a></p>
+    </div>
+  </div>
+</body>
+</html>
+
