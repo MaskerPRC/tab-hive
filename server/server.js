@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3101;
 
 // 中间件
 app.use(cors());
@@ -81,7 +81,7 @@ function initDatabase() {
 // 检查IP今日上传次数
 function checkIPLimit(ip, callback) {
   const today = new Date().toISOString().split('T')[0];
-  
+
   db.get(
     'SELECT upload_count FROM upload_records WHERE ip_address = ? AND upload_date = ?',
     [ip, today],
@@ -98,7 +98,7 @@ function checkIPLimit(ip, callback) {
 // 更新IP上传记录
 function updateUploadRecord(ip, callback) {
   const today = new Date().toISOString().split('T')[0];
-  
+
   db.get(
     'SELECT id, upload_count FROM upload_records WHERE ip_address = ? AND upload_date = ?',
     [ip, today],
@@ -107,7 +107,7 @@ function updateUploadRecord(ip, callback) {
         callback(err);
         return;
       }
-      
+
       if (row) {
         // 更新记录
         db.run(
@@ -131,24 +131,24 @@ function updateUploadRecord(ip, callback) {
 app.post('/api/layouts/share', (req, res) => {
   const ip = getClientIP(req);
   const { layout } = req.body;
-  
+
   if (!layout || !layout.name || !layout.websites) {
     return res.status(400).json({ error: '无效的布局数据' });
   }
-  
+
   // 检查IP限制
   checkIPLimit(ip, (err, count) => {
     if (err) {
       return res.status(500).json({ error: '服务器错误' });
     }
-    
+
     if (count >= 10) {
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: '今日分享次数已达上限（10次/天）',
         remaining: 0
       });
     }
-    
+
     // 保存布局
     const layoutData = JSON.stringify(layout);
     db.run(
@@ -160,13 +160,13 @@ app.post('/api/layouts/share', (req, res) => {
           console.error('保存布局失败:', err);
           return res.status(500).json({ error: '保存失败' });
         }
-        
+
         // 更新上传记录
         updateUploadRecord(ip, (err) => {
           if (err) {
             console.error('更新上传记录失败:', err);
           }
-          
+
           res.json({
             message: '分享成功',
             id: this.lastID,
@@ -181,27 +181,27 @@ app.post('/api/layouts/share', (req, res) => {
 // API: 获取共享布局列表（支持搜索）
 app.get('/api/layouts/shared', (req, res) => {
   const { search, limit = 50, offset = 0 } = req.query;
-  
+
   let sql = `
     SELECT id, layout_name, rows, cols, website_count, created_at, views
     FROM shared_layouts
   `;
   let params = [];
-  
+
   if (search) {
     sql += ' WHERE layout_name LIKE ?';
     params.push(`%${search}%`);
   }
-  
+
   sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), parseInt(offset));
-  
+
   db.all(sql, params, (err, rows) => {
     if (err) {
       console.error('查询失败:', err);
       return res.status(500).json({ error: '查询失败' });
     }
-    
+
     res.json({ layouts: rows });
   });
 });
@@ -209,7 +209,7 @@ app.get('/api/layouts/shared', (req, res) => {
 // API: 获取布局详情
 app.get('/api/layouts/:id', (req, res) => {
   const { id } = req.params;
-  
+
   db.get(
     'SELECT * FROM shared_layouts WHERE id = ?',
     [id],
@@ -217,14 +217,14 @@ app.get('/api/layouts/:id', (req, res) => {
       if (err) {
         return res.status(500).json({ error: '查询失败' });
       }
-      
+
       if (!row) {
         return res.status(404).json({ error: '布局不存在' });
       }
-      
+
       // 增加浏览次数
       db.run('UPDATE shared_layouts SET views = views + 1 WHERE id = ?', [id]);
-      
+
       // 解析布局数据
       try {
         const layout = JSON.parse(row.layout_data);
@@ -244,12 +244,12 @@ app.get('/api/layouts/:id', (req, res) => {
 // API: 检查IP今日剩余次数
 app.get('/api/limits/check', (req, res) => {
   const ip = getClientIP(req);
-  
+
   checkIPLimit(ip, (err, count) => {
     if (err) {
       return res.status(500).json({ error: '查询失败' });
     }
-    
+
     res.json({
       used: count,
       remaining: Math.max(0, 10 - count),
@@ -264,7 +264,7 @@ app.get('/api/stats', (req, res) => {
     if (err) {
       return res.status(500).json({ error: '查询失败' });
     }
-    
+
     res.json({
       totalLayouts: row.total
     });
@@ -273,8 +273,8 @@ app.get('/api/stats', (req, res) => {
 
 // 健康检查接口
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'Tab Hive API is running',
     version: '1.0.0'
   });
@@ -286,7 +286,7 @@ app.get('*', (req, res) => {
   if (existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).json({ 
+    res.status(404).json({
       error: '前端文件未找到',
       message: '请先运行 npm run build 构建前端应用'
     });
