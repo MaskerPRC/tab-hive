@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
 
@@ -139,6 +139,17 @@ export default {
     watch([websites, rows, cols], () => {
       saveToStorage()
     }, { deep: true })
+
+    // 页面加载时自动显示顶栏，然后隐藏
+    onMounted(() => {
+      // 初始显示顶栏
+      showPanel.value = true
+      
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        showPanel.value = false
+      }, 3000)
+    })
 
     return {
       websites,
