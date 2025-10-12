@@ -1,7 +1,10 @@
 <template>
   <div class="config-panel">
     <div class="config-header">
-      <h2>🐝 Tab Hive</h2>
+      <div class="logo-title">
+        <img src="/128x128.png" alt="Tab Hive Logo" class="logo-img" />
+        <h2>Tab Hive</h2>
+      </div>
       
       <div class="grid-config">
         <!-- 横向配置 - 单选按钮 -->
@@ -164,11 +167,24 @@ export default {
   gap: 30px;
 }
 
+.logo-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
 .config-header h2 {
   color: var(--primary-color);
   font-size: 24px;
   font-weight: 600;
   white-space: nowrap;
+  margin: 0;
 }
 
 .grid-config {
