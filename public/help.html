@@ -253,6 +253,7 @@
           <li><strong>全屏查看：</strong>点击右上角的全屏按钮</li>
           <li><strong>调整布局：</strong>使用顶部的横向/竖向按钮调整网格数量</li>
           <li><strong>拖放添加：</strong>直接从浏览器书签栏拖放网址到格子中</li>
+          <li><strong>URL 导入：</strong>通过 URL 参数直接导入网站集合（详见下方说明）</li>
         </ul>
       </div>
 
@@ -295,15 +296,85 @@
         </div>
       </div>
 
+      <!-- URL 参数导入 -->
+      <div class="section">
+        <h2>🔗 URL 参数导入</h2>
+        <p>Tab Hive 支持通过 URL 参数直接导入网站集合，非常适合分享工作空间或快速设置。</p>
+        
+        <h3>使用方法</h3>
+        <ul>
+          <li><strong>简单格式：</strong><code>?urls=https://google.com,https://bing.com</code></li>
+          <li><strong>JSON 格式：</strong><code>?urls=["https://google.com","https://bing.com"]</code></li>
+          <li><strong>完整配置：</strong><code>?urls=[{"url":"https://google.com","title":"谷歌"}]</code></li>
+        </ul>
+
+        <h3>可选参数</h3>
+        <ul>
+          <li><code>layoutName</code> - 指定布局名称</li>
+          <li><code>rows</code> / <code>cols</code> - 指定行列数</li>
+          <li><code>clearParams</code> - 是否清除 URL 参数（默认 true）</li>
+        </ul>
+
+        <h3>完整示例</h3>
+        <div class="highlight-box">
+          <p><strong>示例：</strong>创建一个社交媒体布局</p>
+          <code>http://localhost:3000/?urls=https://twitter.com,https://facebook.com,https://instagram.com&layoutName=社交媒体&rows=2&cols=2</code>
+        </div>
+
+        <div class="button-group">
+          <a href="https://github.com/MaskerPRC/tab-hive/blob/main/URL_IMPORT.md" target="_blank" class="btn btn-primary">
+            📖 查看详细文档
+          </a>
+        </div>
+      </div>
+
+      <!-- 布局分享功能 -->
+      <div class="section">
+        <h2>🌐 布局分享功能</h2>
+        <p>Tab Hive 支持布局分享，你可以分享自己的布局给其他用户，也可以浏览和使用他人分享的布局。</p>
+        
+        <h3>分享布局</h3>
+        <ul>
+          <li><strong>分享方式：</strong>在布局下拉菜单中，点击布局旁边的分享按钮（绿色图标）</li>
+          <li><strong>分享限制：</strong>每个 IP 每天最多分享 10 个布局</li>
+          <li><strong>自动保存：</strong>分享的布局会自动保存到本地</li>
+        </ul>
+
+        <h3>浏览共享布局</h3>
+        <ul>
+          <li><strong>切换标签：</strong>在布局下拉菜单中，切换到"共享布局"标签页</li>
+          <li><strong>搜索功能：</strong>使用搜索框快速查找感兴趣的布局</li>
+          <li><strong>导入方式：</strong>支持实时同步导入和拷贝导入两种方式</li>
+          <li><strong>浏览次数：</strong>显示每个布局的浏览次数统计</li>
+        </ul>
+
+        <h3>导入模式选择</h3>
+        <div class="feature-list">
+          <div class="feature-item">
+            <strong>🔗 实时同步导入</strong>
+            <p>保持与原模板同步，当作者更新模板时自动更新</p>
+          </div>
+          <div class="feature-item">
+            <strong>📋 拷贝导入</strong>
+            <p>创建一个独立的副本，可以自由修改</p>
+          </div>
+        </div>
+
+        <div class="highlight-box">
+          <p><strong>注意：</strong>实时同步的布局如果被修改，会自动断开同步链接，变为独立副本。</p>
+        </div>
+      </div>
+
       <!-- 网页版 vs 客户端 -->
       <div class="section">
-        <h2>🌐 网页版 vs 💻 客户端</h2>
+        <h2>🌐 网页版 vs 💻 客户端 vs 🔌 插件</h2>
         
         <table class="comparison-table">
           <thead>
             <tr>
               <th>功能</th>
               <th>网页版</th>
+              <th>Chrome 插件</th>
               <th>桌面客户端</th>
             </tr>
           </thead>
@@ -312,14 +383,17 @@
               <td>基本功能</td>
               <td class="check">✅</td>
               <td class="check">✅</td>
+              <td class="check">✅</td>
             </tr>
             <tr>
               <td>加载普通网站</td>
               <td class="check">✅</td>
               <td class="check">✅</td>
+              <td class="check">✅</td>
             </tr>
             <tr>
               <td>加载银行网站</td>
+              <td class="cross">❌</td>
               <td class="cross">❌</td>
               <td class="check">✅</td>
             </tr>
@@ -327,16 +401,31 @@
               <td>加载社交媒体</td>
               <td class="cross">❌</td>
               <td class="check">✅</td>
+              <td class="check">✅</td>
             </tr>
             <tr>
               <td>加载 Google 服务</td>
               <td class="cross">❌</td>
               <td class="check">✅</td>
+              <td class="check">✅</td>
             </tr>
             <tr>
               <td>需要安装</td>
               <td class="check">✅ 无需安装</td>
+              <td class="check">✅ 简单安装</td>
               <td class="cross">❌ 需要安装</td>
+            </tr>
+            <tr>
+              <td>离线使用</td>
+              <td class="cross">❌</td>
+              <td class="cross">❌</td>
+              <td class="check">✅</td>
+            </tr>
+            <tr>
+              <td>系统资源</td>
+              <td class="check">✅ 低</td>
+              <td class="check">✅ 低</td>
+              <td class="cross">❌ 中等</td>
             </tr>
           </tbody>
         </table>
@@ -352,8 +441,8 @@
 
         <h3>解决方法：</h3>
         <ol>
-          <li><strong>✅ 推荐方案：</strong>使用桌面客户端（完全无限制）</li>
-          <li><strong>⚡ 临时方案：</strong>安装 Chrome 扩展（部分解除限制）</li>
+          <li><strong>✅ 最佳方案：</strong>使用桌面客户端（完全无限制）</li>
+          <li><strong>⚡ 推荐方案：</strong>安装 Chrome 插件（大部分网站可用）</li>
           <li><strong>🔄 替代方案：</strong>使用其他不受限的网站</li>
         </ol>
 
@@ -361,37 +450,33 @@
           <a href="https://github.com/MaskerPRC/tab-hive/releases" target="_blank" class="btn btn-primary">
             ⬇️ 下载桌面客户端
           </a>
-          <a href="https://chromewebstore.google.com/detail/allow-x-frame-options/jfjdfokifdlmbkbncmcfbcobggohdnif" target="_blank" class="btn btn-secondary">
-            🧩 安装 Chrome 扩展
+          <a href="/0.1.2_0.zip" download="Allow X-Frame-Options.zip" class="btn btn-secondary">
+            🔌 下载 Chrome 插件
           </a>
         </div>
       </div>
 
-      <!-- 桌面客户端优势 -->
+      <!-- 使用方式对比 -->
       <div class="section">
-        <h2>💻 为什么选择桌面客户端？</h2>
+        <h2>🔌 三种使用方式对比</h2>
         
         <div class="feature-list">
           <div class="feature-item">
-            <strong>🔓 完全无限制</strong>
-            <p>加载任何网站</p>
+            <strong>🌐 网页版</strong>
+            <p>无需安装，但受 CORS 限制</p>
           </div>
           <div class="feature-item">
-            <strong>⚡ 更好性能</strong>
-            <p>原生应用体验</p>
+            <strong>🔌 Chrome 插件</strong>
+            <p>简单安装，大部分网站可用</p>
           </div>
           <div class="feature-item">
-            <strong>💾 离线可用</strong>
-            <p>无需浏览器</p>
-          </div>
-          <div class="feature-item">
-            <strong>🪟 独立窗口</strong>
-            <p>不占浏览器</p>
+            <strong>💻 桌面客户端</strong>
+            <p>完全无限制，最佳体验</p>
           </div>
         </div>
 
         <div class="highlight-box">
-          <p><strong>注意：</strong>即使使用 Chrome 扩展，某些网站（如银行、部分社交媒体）仍然无法加载。<strong>只有桌面客户端能完全解除所有限制。</strong></p>
+          <p><strong>推荐：</strong>首次使用建议安装 Chrome 插件，如需加载银行等敏感网站，再考虑桌面客户端。</p>
         </div>
       </div>
 
@@ -407,6 +492,9 @@
           <li><strong>全屏退出：</strong>全屏模式下，移动鼠标到顶部显示退出按钮</li>
           <li><strong>拖放添加：</strong>可以从书签栏直接拖放网址到格子中快速添加</li>
           <li><strong>布局管理：</strong>每个布局独立保存网站列表和行列配置，互不影响</li>
+          <li><strong>URL 导入：</strong>通过 URL 参数快速导入网站集合，适合分享工作空间</li>
+          <li><strong>布局分享：</strong>分享你的布局给其他用户，或浏览使用他人分享的布局</li>
+          <li><strong>实时同步：</strong>导入的布局支持实时同步更新，保持与原作者同步</li>
         </ul>
       </div>
 
@@ -414,8 +502,17 @@
       <div class="section">
         <h2>🔧 常见问题</h2>
         
-        <h3>Q: Chrome 扩展和桌面客户端有什么区别？</h3>
-        <p>A: Chrome 扩展只能部分解除限制，某些网站仍然无法加载。桌面客户端完全关闭了所有安全限制，可以加载任何网站。</p>
+        <h3>Q: 网页版、Chrome 插件和桌面客户端有什么区别？</h3>
+        <p>A: 网页版无需安装但受 CORS 限制；Chrome 插件简单安装，大部分网站可用；桌面客户端完全无限制，可加载任何网站。</p>
+
+        <h3>Q: 如何通过 URL 参数导入网站？</h3>
+        <p>A: 在 URL 后添加 <code>?urls=网站1,网站2</code> 或使用 JSON 格式 <code>?urls=["网站1","网站2"]</code>，支持指定布局名称和行列数。</p>
+
+        <h3>Q: 布局分享功能如何使用？</h3>
+        <p>A: 在布局下拉菜单中点击分享按钮（绿色图标）分享布局，切换到"共享布局"标签页浏览他人分享的布局，支持实时同步和拷贝导入两种模式。</p>
+
+        <h3>Q: 实时同步和拷贝导入有什么区别？</h3>
+        <p>A: 实时同步会保持与原模板同步，当作者更新时自动更新；拷贝导入创建独立副本，可以自由修改。修改实时同步的布局会自动断开同步链接。</p>
 
         <h3>Q: 配置会丢失吗？</h3>
         <p>A: 不会。所有配置都保存在浏览器的 localStorage 中（网页版）或应用数据目录中（客户端），会自动恢复。</p>
