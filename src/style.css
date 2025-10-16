@@ -28,3 +28,18 @@ html, body {
   --primary-light: #FFF5F0;
 }
 
+/* 全局禁用 iframe 指针事件 - 拖动或调整大小时 */
+body.dragging-item iframe,
+body.resizing-item iframe,
+body.dragging-item .website-iframe,
+body.resizing-item .website-iframe {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+body.dragging-item,
+body.resizing-item {
+  cursor: move !important;
+  user-select: none !important;
+}
+

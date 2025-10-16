@@ -58,14 +58,10 @@
     <ConfigPanel
       v-if="fullscreenIndex === null"
       :class="{ 'panel-visible': showPanel }"
-      :rows="rows"
-      :cols="cols"
       :layouts="layouts"
       :currentLayoutId="currentLayoutId"
-      @update:rows="rows = $event"
-      @update:cols="cols = $event"
       @switch-layout="switchLayout"
-      @create-layout="createLayout"
+      @create-layout="(name, options) => createLayout(name, options)"
       @delete-layout="deleteLayout"
       @rename-layout="renameLayout"
       @show-download-modal="handleShowDownloadModal"
@@ -74,8 +70,8 @@
     />
     <GridView
       :websites="websites"
-      :rows="rows"
-      :cols="cols"
+      :rows="2"
+      :cols="2"
       :fullscreenIndex="fullscreenIndex"
       @fullscreen="handleFullscreen"
       @exitFullscreen="exitFullscreen"
@@ -189,10 +185,6 @@ export default {
       }
     }
     
-    // 提供给子组件使用
-    provide('showPrompt', showPrompt)
-    provide('showConfirm', showConfirm)
-    
     // 控制下载弹窗显示
     // 首次进入：如果不是 Electron 环境且没有看过弹窗，自动显示
     const showDownloadModal = ref(!isElectron.value && !hasSeenDownloadModal())
@@ -240,8 +232,6 @@ export default {
               layouts: [{
                 id: 1,
                 name: '默认布局',
-                rows: config.rows || 2,
-                cols: config.cols || 2,
                 websites: config.websites || []
               }],
               currentLayoutId: 1
@@ -278,12 +268,31 @@ export default {
       {
         id: 1,
         name: '默认布局',
-        rows: 2,
-        cols: 2,
         websites: [
-          { id: 1, url: 'https://www.baidu.com', title: '百度' },
-          { id: 2, url: 'https://www.bing.com', title: 'Bing' },
-          { id: 3, url: 'https://www.google.com', title: 'Google' }
+          { 
+            id: 1, 
+            url: 'https://www.baidu.com', 
+            title: '百度', 
+            deviceType: 'desktop',
+            position: { x: 20, y: 20 },
+            size: { width: 400, height: 300 }
+          },
+          { 
+            id: 2, 
+            url: 'https://www.bing.com', 
+            title: 'Bing', 
+            deviceType: 'desktop',
+            position: { x: 440, y: 20 },
+            size: { width: 400, height: 300 }
+          },
+          { 
+            id: 3, 
+            url: 'https://www.google.com', 
+            title: 'Google', 
+            deviceType: 'desktop',
+            position: { x: 20, y: 340 },
+            size: { width: 400, height: 300 }
+          }
         ]
       }
     ])
@@ -294,12 +303,13 @@ export default {
     // 当前布局（计算属性）
     const currentLayout = ref(layouts.value.find(l => l.id === currentLayoutId.value) || layouts.value[0])
     
-    // 网站列表（从当前布局中获取）
-    const websites = ref(currentLayout.value.websites)
-    
-    // Grid 配置（从当前布局中获取）
-    const rows = ref(currentLayout.value.rows)
-    const cols = ref(currentLayout.value.cols)
+    // 网站列表（从当前布局中获取）- 深拷贝避免引用问题
+    // 注意：不在这里设置默认position，让GridView自动计算布局
+    const websites = ref(currentLayout.value.websites.map(site => ({
+      ...site,
+      position: site.position ? { ...site.position } : undefined,
+      size: site.size ? { ...site.size } : undefined
+    })))
 
     // 全屏状态
     const fullscreenIndex = ref(null)
@@ -335,10 +345,34 @@ export default {
     }
 
     const handleAddWebsite = (websiteData) => {
+      const defaultWidth = 400
+      const defaultHeight = 300
+      const spacing = 20
+      
+      // 查找所有现有网站的最大Y坐标
+      let maxY = 20
+      if (websites.value.length > 0) {
+        websites.value.forEach(site => {
+          if (site.position && site.size) {
+            const bottomY = site.position.y + site.size.height
+            if (bottomY > maxY) {
+              maxY = bottomY
+            }
+          }
+        })
+      }
+      
+      // 新网站放在最下方
+      const newX = 20
+      const newY = websites.value.length === 0 ? 20 : maxY + spacing
+      
       websites.value.push({
         id: Date.now(),
         url: websiteData.url,
-        title: websiteData.title
+        title: websiteData.title,
+        deviceType: websiteData.deviceType || 'desktop',
+        position: websiteData.position || { x: newX, y: newY },
+        size: websiteData.size || { width: defaultWidth, height: defaultHeight }
       })
     }
 
@@ -346,10 +380,22 @@ export default {
       websites.value.splice(index, 1)
     }
 
-    const handleUpdateWebsite = ({ index, title, url }) => {
+    const handleUpdateWebsite = ({ index, title, url, deviceType, position, size }) => {
       if (websites.value[index]) {
-        websites.value[index].title = title
-        websites.value[index].url = url
+        if (title !== undefined) websites.value[index].title = title
+        if (url !== undefined) websites.value[index].url = url
+        if (deviceType !== undefined) websites.value[index].deviceType = deviceType
+        if (position !== undefined) {
+          websites.value[index].position = { ...position }
+          console.log('更新位置:', websites.value[index].title, position)
+        }
+        if (size !== undefined) {
+          websites.value[index].size = { ...size }
+          console.log('更新大小:', websites.value[index].title, size)
+        }
+        
+        // 立即触发保存
+        saveCurrentLayout()
       }
     }
 
@@ -359,9 +405,14 @@ export default {
       if (layout) {
         currentLayoutId.value = layoutId
         currentLayout.value = layout
-        websites.value = layout.websites
-        rows.value = layout.rows
-        cols.value = layout.cols
+        // 深拷贝网站数据，避免引用问题
+        // 注意：不在这里设置默认position，让GridView自动计算布局
+        websites.value = layout.websites.map(site => ({
+          ...site,
+          position: site.position ? { ...site.position } : undefined,
+          size: site.size ? { ...site.size } : undefined
+        }))
+        console.log('切换布局:', layout.name, '加载了', websites.value.length, '个网站')
         saveToStorage()
       }
     }
@@ -370,24 +421,44 @@ export default {
     const saveCurrentLayout = () => {
       const layout = layouts.value.find(l => l.id === currentLayoutId.value)
       if (layout) {
-        layout.websites = [...websites.value]
-        layout.rows = rows.value
-        layout.cols = cols.value
+        // 检查是否是实时导入的模板，如果是则标记为已修改
+        if (layout.importMode === 'realtime' && !layout.isModified) {
+          // 检查是否真的修改了
+          const hasChanged = JSON.stringify(layout.websites) !== JSON.stringify(websites.value)
+          
+          if (hasChanged) {
+            layout.isModified = true
+            console.log('检测到布局修改，已断开实时链接')
+          }
+        }
+        
+        // 深拷贝网站数据，确保位置和大小信息被正确保存
+        layout.websites = websites.value.map(site => ({
+          ...site,
+          position: site.position ? { ...site.position } : undefined,
+          size: site.size ? { ...site.size } : undefined
+        }))
+        
+        console.log('保存布局:', layout.name, '网站数量:', layout.websites.length)
         saveToStorage()
       }
     }
 
     // 创建新布局
-    const createLayout = (name) => {
+    const createLayout = (name, options = {}) => {
       const newLayout = {
         id: Date.now(),
         name: name || `布局 ${layouts.value.length + 1}`,
-        rows: 2,
-        cols: 2,
-        websites: []
+        websites: options.websites || [],
+        // 模板链接相关字段
+        linkedTemplateId: options.linkedTemplateId || null, // 链接的原始模板ID (original_id)
+        importMode: options.importMode || null, // 'realtime' 或 'copy' 或 null
+        isModified: false, // 用户是否修改过（实时导入时使用）
+        templateVersion: options.templateVersion || null // 当前模板版本
       }
       layouts.value.push(newLayout)
       switchLayout(newLayout.id)
+      return newLayout
     }
 
     // 删除布局
@@ -419,18 +490,175 @@ export default {
       }
     }
 
-    // 监听配置变化，自动保存到当前布局
-    watch([websites, rows, cols], () => {
+    // 检查模板更新
+    const checkTemplateUpdate = async (layoutId) => {
+      const layout = layouts.value.find(l => l.id === layoutId)
+      if (!layout || !layout.linkedTemplateId || layout.importMode !== 'realtime' || layout.isModified) {
+        return { hasUpdate: false }
+      }
+
+      try {
+        const API_BASE_URL = isElectron.value 
+          ? 'https://tabs.apexstone.ai/api' 
+          : (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
+        
+        const response = await fetch(
+          `${API_BASE_URL}/layouts/${layout.linkedTemplateId}/check-update?currentVersion=${layout.templateVersion || 1}`
+        )
+        return await response.json()
+      } catch (error) {
+        console.error('检查更新失败:', error)
+        return { hasUpdate: false }
+      }
+    }
+
+    // 同步模板更新
+    const syncTemplateUpdate = async (layoutId) => {
+      const layout = layouts.value.find(l => l.id === layoutId)
+      if (!layout || !layout.linkedTemplateId) {
+        return false
+      }
+
+      try {
+        const API_BASE_URL = isElectron.value 
+          ? 'https://tabs.apexstone.ai/api' 
+          : (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
+        
+        const response = await fetch(`${API_BASE_URL}/layouts/${layout.linkedTemplateId}/latest`)
+        const templateData = await response.json()
+        
+        // 更新布局数据
+        layout.websites = templateData.websites || []
+        layout.templateVersion = templateData.version
+        
+        // 如果是当前布局，也更新显示
+        if (currentLayoutId.value === layoutId) {
+          websites.value = templateData.websites || []
+        }
+        
+        saveToStorage()
+        return true
+      } catch (error) {
+        console.error('同步更新失败:', error)
+        return false
+      }
+    }
+
+    // 提供给子组件使用
+    provide('showPrompt', showPrompt)
+    provide('showConfirm', showConfirm)
+    provide('checkTemplateUpdate', checkTemplateUpdate)
+    provide('syncTemplateUpdate', syncTemplateUpdate)
+
+    // 监听网站添加/删除，自动保存到当前布局
+    // 注意：位置和大小的更新在 handleUpdateWebsite 中直接保存，避免频繁触发
+    watch(() => websites.value.length, () => {
+      console.log('网站数量变化，触发保存')
       saveCurrentLayout()
-    }, { deep: true })
+    })
+
+    // 从 URL 参数导入布局
+    const importLayoutFromUrlParams = () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search)
+        const urlsParam = urlParams.get('urls')
+        
+        if (!urlsParam) return false
+        
+        let websites = []
+        
+        // 尝试解析不同格式的 URLs 参数
+        try {
+          // 格式1: JSON 数组 - [{"url":"https://google.com","title":"Google"},...]
+          const parsed = JSON.parse(urlsParam)
+          if (Array.isArray(parsed)) {
+            websites = parsed.map((item, index) => {
+              if (typeof item === 'string') {
+                // 简单字符串数组
+                const url = item.startsWith('http') ? item : `https://${item}`
+                return {
+                  id: Date.now() + index,
+                  url: url,
+                  title: extractTitleFromUrl(url),
+                  deviceType: 'desktop'
+                }
+              } else if (typeof item === 'object' && item.url) {
+                // 对象数组
+                const url = item.url.startsWith('http') ? item.url : `https://${item.url}`
+                return {
+                  id: Date.now() + index,
+                  url: url,
+                  title: item.title || extractTitleFromUrl(url),
+                  deviceType: item.deviceType || 'desktop'
+                }
+              }
+              return null
+            }).filter(Boolean)
+          }
+        } catch (e) {
+          // 格式2: 逗号分隔的 URLs - https://google.com,https://bing.com
+          const urlList = urlsParam.split(',').map(u => u.trim()).filter(Boolean)
+          websites = urlList.map((urlStr, index) => {
+            const url = urlStr.startsWith('http') ? urlStr : `https://${urlStr}`
+            return {
+              id: Date.now() + index,
+              url: url,
+              title: extractTitleFromUrl(url),
+              deviceType: 'desktop'
+            }
+          })
+        }
+        
+        if (websites.length === 0) return false
+        
+        // 获取其他可选参数
+        const layoutName = urlParams.get('layoutName') || urlParams.get('name') || '导入的布局'
+        
+        // 创建新布局
+        createLayout(layoutName, {
+          websites: websites
+        })
+        
+        // 清除 URL 参数（可选）
+        if (urlParams.get('clearParams') !== 'false') {
+          const newUrl = window.location.pathname + window.location.hash
+          window.history.replaceState({}, document.title, newUrl)
+        }
+        
+        return true
+      } catch (error) {
+        console.error('从 URL 参数导入布局失败:', error)
+        return false
+      }
+    }
+    
+    // 从 URL 提取标题
+    const extractTitleFromUrl = (url) => {
+      try {
+        const urlObj = new URL(url)
+        return urlObj.hostname.replace('www.', '')
+      } catch (e) {
+        return '网站'
+      }
+    }
 
     // 页面加载时自动显示顶栏，然后隐藏
     onMounted(() => {
+      // 首先尝试从 URL 参数导入布局
+      const imported = importLayoutFromUrlParams()
+      
       // 如果有弹窗显示，等待弹窗关闭后再显示顶栏
       // 否则直接显示顶栏
       if (!showDownloadModal.value) {
         // 初始显示顶栏
         showPanel.value = true
+        
+        // 如果成功导入了布局，显示提示
+        if (imported) {
+          setTimeout(() => {
+            alert('已成功从 URL 参数导入布局！')
+          }, 500)
+        }
         
         // 3秒后自动隐藏
         setTimeout(() => {
@@ -453,8 +681,6 @@ export default {
       handleDialogConfirm,
       handleDialogCancel,
       websites,
-      rows,
-      cols,
       layouts,
       currentLayoutId,
       fullscreenIndex,

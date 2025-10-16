@@ -44,6 +44,11 @@ const db = new sqlite3.Database(join(__dirname, 'layouts.db'), (err) => {
   }
 });
 
+// 添加错误处理
+db.on('error', (err) => {
+  console.error('数据库错误:', err);
+});
+
 // 创建数据库表
 function initDatabase() {
   db.serialize(() => {
@@ -58,7 +63,10 @@ function initDatabase() {
         website_count INTEGER NOT NULL,
         ip_address TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        views INTEGER DEFAULT 0
+        views INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        original_id INTEGER,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -72,9 +80,49 @@ function initDatabase() {
       )
     `);
 
-    // 创建索引
-    db.run('CREATE INDEX IF NOT EXISTS idx_ip_date ON upload_records(ip_address, upload_date)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON shared_layouts(created_at DESC)');
+    // 检查并添加缺失的列
+    db.all("PRAGMA table_info(shared_layouts)", (err, columns) => {
+      if (err) {
+        console.error('获取表结构失败:', err);
+        return;
+      }
+      
+      const hasOriginalId = columns.some(col => col.name === 'original_id');
+      const hasVersion = columns.some(col => col.name === 'version');
+      const hasLastUpdated = columns.some(col => col.name === 'last_updated');
+      
+      if (!hasOriginalId) {
+        console.log('添加 original_id 列...');
+        db.run('ALTER TABLE shared_layouts ADD COLUMN original_id INTEGER');
+      }
+      
+      if (!hasVersion) {
+        console.log('添加 version 列...');
+        db.run('ALTER TABLE shared_layouts ADD COLUMN version INTEGER DEFAULT 1');
+      }
+      
+      if (!hasLastUpdated) {
+        console.log('添加 last_updated 列...');
+        db.run('ALTER TABLE shared_layouts ADD COLUMN last_updated DATETIME', (err) => {
+          if (err) {
+            console.error('添加 last_updated 列失败:', err);
+            return;
+          }
+          // 为现有记录设置默认值
+          db.run('UPDATE shared_layouts SET last_updated = created_at WHERE last_updated IS NULL');
+        });
+      }
+      
+      // 为现有记录设置 original_id 和 version
+      if (!hasOriginalId || !hasVersion) {
+        db.run('UPDATE shared_layouts SET original_id = id, version = 1 WHERE original_id IS NULL');
+      }
+      
+      // 创建索引（在列添加之后）
+      db.run('CREATE INDEX IF NOT EXISTS idx_ip_date ON upload_records(ip_address, upload_date)');
+      db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON shared_layouts(created_at DESC)');
+      db.run('CREATE INDEX IF NOT EXISTS idx_original_id ON shared_layouts(original_id)');
+    });
   });
 }
 
@@ -130,13 +178,53 @@ function updateUploadRecord(ip, callback) {
 // API: 分享布局
 app.post('/api/layouts/share', (req, res) => {
   const ip = getClientIP(req);
-  const { layout } = req.body;
+  const { layout, isUpdate, originalId } = req.body;
 
   if (!layout || !layout.name || !layout.websites) {
     return res.status(400).json({ error: '无效的布局数据' });
   }
 
-  // 检查IP限制
+  // 如果是更新操作，检查是否是原作者
+  if (isUpdate && originalId) {
+    db.get(
+      'SELECT ip_address, version FROM shared_layouts WHERE id = ? OR original_id = ? ORDER BY version DESC LIMIT 1',
+      [originalId, originalId],
+      (err, row) => {
+        if (err || !row) {
+          return res.status(404).json({ error: '原始布局不存在' });
+        }
+        
+        if (row.ip_address !== ip) {
+          return res.status(403).json({ error: '只有原作者可以更新模板' });
+        }
+
+        // 更新版本
+        const layoutData = JSON.stringify(layout);
+        const newVersion = row.version + 1;
+        
+        db.run(
+          `INSERT INTO shared_layouts (layout_data, layout_name, rows, cols, website_count, ip_address, version, original_id, last_updated)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [layoutData, layout.name, layout.rows, layout.cols, layout.websites.length, ip, newVersion, originalId],
+          function(err) {
+            if (err) {
+              console.error('更新版本失败:', err);
+              return res.status(500).json({ error: '更新失败' });
+            }
+
+            res.json({
+              message: '版本更新成功',
+              id: this.lastID,
+              version: newVersion
+            });
+          }
+        );
+      }
+    );
+    return;
+  }
+
+  // 新建分享，检查IP限制
   checkIPLimit(ip, (err, count) => {
     if (err) {
       return res.status(500).json({ error: '服务器错误' });
@@ -152,14 +240,19 @@ app.post('/api/layouts/share', (req, res) => {
     // 保存布局
     const layoutData = JSON.stringify(layout);
     db.run(
-      `INSERT INTO shared_layouts (layout_data, layout_name, rows, cols, website_count, ip_address)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO shared_layouts (layout_data, layout_name, rows, cols, website_count, ip_address, version, original_id)
+       VALUES (?, ?, ?, ?, ?, ?, 1, NULL)`,
       [layoutData, layout.name, layout.rows, layout.cols, layout.websites.length, ip],
       function(err) {
         if (err) {
           console.error('保存布局失败:', err);
           return res.status(500).json({ error: '保存失败' });
         }
+
+        const layoutId = this.lastID;
+        
+        // 设置 original_id 为自己的 id（标识这是原始版本）
+        db.run('UPDATE shared_layouts SET original_id = ? WHERE id = ?', [layoutId, layoutId]);
 
         // 更新上传记录
         updateUploadRecord(ip, (err) => {
@@ -169,7 +262,7 @@ app.post('/api/layouts/share', (req, res) => {
 
           res.json({
             message: '分享成功',
-            id: this.lastID,
+            id: layoutId,
             remaining: 9 - count
           });
         });
@@ -178,22 +271,28 @@ app.post('/api/layouts/share', (req, res) => {
   });
 });
 
-// API: 获取共享布局列表（支持搜索）
+// API: 获取共享布局列表（支持搜索，只显示最新版本）
 app.get('/api/layouts/shared', (req, res) => {
   const { search, limit = 50, offset = 0 } = req.query;
 
+  // 使用子查询获取每个模板的最新版本
   let sql = `
-    SELECT id, layout_name, rows, cols, website_count, created_at, views
-    FROM shared_layouts
+    SELECT s.id, s.layout_name, s.rows, s.cols, s.website_count, s.created_at, s.views, s.version, s.original_id
+    FROM shared_layouts s
+    INNER JOIN (
+      SELECT original_id, MAX(version) as max_version
+      FROM shared_layouts
+      GROUP BY original_id
+    ) latest ON s.original_id = latest.original_id AND s.version = latest.max_version
   `;
   let params = [];
 
   if (search) {
-    sql += ' WHERE layout_name LIKE ?';
+    sql += ' WHERE s.layout_name LIKE ?';
     params.push(`%${search}%`);
   }
 
-  sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+  sql += ' ORDER BY s.created_at DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), parseInt(offset));
 
   db.all(sql, params, (err, rows) => {
@@ -232,7 +331,79 @@ app.get('/api/layouts/:id', (req, res) => {
           ...layout,
           id: row.id,
           views: row.views,
-          created_at: row.created_at
+          created_at: row.created_at,
+          version: row.version,
+          original_id: row.original_id,
+          last_updated: row.last_updated
+        });
+      } catch (e) {
+        res.status(500).json({ error: '数据解析失败' });
+      }
+    }
+  );
+});
+
+// API: 检查模板更新
+app.get('/api/layouts/:originalId/check-update', (req, res) => {
+  const { originalId } = req.params;
+  const { currentVersion } = req.query;
+
+  // 获取最新版本
+  db.get(
+    'SELECT id, version, last_updated FROM shared_layouts WHERE original_id = ? ORDER BY version DESC LIMIT 1',
+    [originalId],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: '查询失败' });
+      }
+
+      if (!row) {
+        return res.status(404).json({ error: '模板不存在' });
+      }
+
+      const hasUpdate = row.version > parseInt(currentVersion || 0);
+      res.json({
+        hasUpdate,
+        latestVersion: row.version,
+        currentVersion: parseInt(currentVersion || 0),
+        latestId: row.id,
+        lastUpdated: row.last_updated
+      });
+    }
+  );
+});
+
+// API: 获取模板的最新版本数据
+app.get('/api/layouts/:originalId/latest', (req, res) => {
+  const { originalId } = req.params;
+
+  // 获取最新版本的完整数据
+  db.get(
+    'SELECT * FROM shared_layouts WHERE original_id = ? ORDER BY version DESC LIMIT 1',
+    [originalId],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: '查询失败' });
+      }
+
+      if (!row) {
+        return res.status(404).json({ error: '模板不存在' });
+      }
+
+      // 增加浏览次数
+      db.run('UPDATE shared_layouts SET views = views + 1 WHERE id = ?', [row.id]);
+
+      // 解析布局数据
+      try {
+        const layout = JSON.parse(row.layout_data);
+        res.json({
+          ...layout,
+          id: row.id,
+          views: row.views,
+          created_at: row.created_at,
+          version: row.version,
+          original_id: row.original_id,
+          last_updated: row.last_updated
         });
       } catch (e) {
         res.status(500).json({ error: '数据解析失败' });
