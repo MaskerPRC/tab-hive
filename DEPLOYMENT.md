@@ -48,13 +48,13 @@ npm run dev:all
 
 这会同时运行：
 - 前端开发服务器：http://localhost:5173
-- 后端 API 服务器：http://localhost:3001
+- 后端 API 服务器：http://localhost:3101
 
 ## 架构说明
 
 ### 生产模式
 ```
-浏览器 → http://localhost:3001
+浏览器 → http://localhost:3101
          ├─ /api/*  → 后端 API 接口
          └─ /*      → 前端静态文件 (dist/)
 ```
@@ -62,12 +62,12 @@ npm run dev:all
 ### 开发模式
 ```
 浏览器 → http://localhost:5173  (Vite 开发服务器)
-         └─ /api/* → http://localhost:3001 (后端 API)
+         └─ /api/* → http://localhost:3101 (后端 API)
 ```
 
 ## 端口配置
 
-默认端口：`3001`
+默认端口：`3101`
 
 修改端口：
 ```bash
@@ -80,7 +80,7 @@ PORT=8080 npm run server
 
 ## 环境变量
 
-- `PORT`: 服务器端口（默认：3001）
+- `PORT`: 服务器端口（默认：3101）
 - `NODE_ENV`: 环境模式（development/production）
 
 ## 服务器部署
@@ -140,7 +140,7 @@ RUN npm ci --only=production
 COPY . .
 RUN npm run build
 
-EXPOSE 3001
+EXPOSE 3101
 
 CMD ["node", "server/server.js"]
 ```
@@ -152,10 +152,10 @@ CMD ["node", "server/server.js"]
 docker build -t tab-hive .
 
 # 运行容器
-docker run -d -p 3001:3001 --name tab-hive tab-hive
+docker run -d -p 3101:3101 --name tab-hive tab-hive
 
 # 使用数据卷持久化数据库
-docker run -d -p 3001:3001 \
+docker run -d -p 3101:3101 \
   -v $(pwd)/data:/app/server \
   --name tab-hive tab-hive
 ```
@@ -168,7 +168,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:3101;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -295,7 +295,7 @@ npm install winston
 访问 `/api/health` 检查服务状态：
 
 ```bash
-curl http://localhost:3001/api/health
+curl http://localhost:3101/api/health
 ```
 
 ## 故障排查
@@ -313,10 +313,10 @@ npm run build
 ```bash
 # 查找占用端口的进程
 # Windows
-netstat -ano | findstr :3001
+netstat -ano | findstr :3101
 
 # Linux/macOS
-lsof -i :3001
+lsof -i :3101
 
 # 杀死进程或更换端口
 PORT=8080 npm run server

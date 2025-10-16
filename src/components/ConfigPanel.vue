@@ -5,7 +5,7 @@
       <div class="import-dialog">
         <h3>选择导入模式</h3>
         <p class="dialog-desc">你想如何导入这个布局？</p>
-        
+
         <div class="import-options">
           <div class="import-option" @click="handleImportMode('realtime')">
             <div class="option-icon">🔗</div>
@@ -15,7 +15,7 @@
               <span class="option-note">⚠️ 如果你修改了布局，将自动断开同步链接</span>
             </div>
           </div>
-          
+
           <div class="import-option" @click="handleImportMode('copy')">
             <div class="option-icon">📋</div>
             <div class="option-content">
@@ -25,7 +25,7 @@
             </div>
           </div>
         </div>
-        
+
         <button class="cancel-btn" @click="closeImportDialog">取消</button>
       </div>
     </div>
@@ -51,18 +51,18 @@
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
-          
+
           <div v-if="showLayoutDropdown" class="dropdown-menu" @mouseenter="clearHideTimer" @mouseleave="startHideTimer">
             <!-- 标签页切换 -->
             <div class="dropdown-tabs">
-              <button 
+              <button
                 class="tab-btn"
                 :class="{ active: activeTab === 'my' }"
                 @click="activeTab = 'my'"
               >
                 我的布局
               </button>
-              <button 
+              <button
                 class="tab-btn"
                 :class="{ active: activeTab === 'shared' }"
                 @click="switchToSharedTab"
@@ -84,15 +84,15 @@
                 </button>
               </div>
               <div class="dropdown-list">
-                <div 
-                  v-for="layout in layouts" 
+                <div
+                  v-for="layout in layouts"
                   :key="layout.id"
                   class="dropdown-item"
                   :class="{ active: layout.id === currentLayoutId }"
                   @click="selectLayout(layout.id)"
                 >
                   <div v-if="editingLayoutId === layout.id" class="rename-input-wrapper" @click.stop>
-                    <input 
+                    <input
                       v-model="editingLayoutName"
                       type="text"
                       class="rename-input"
@@ -113,7 +113,7 @@
                       <span class="layout-info">({{ layout.websites.length }}个网站)</span>
                     </div>
                     <div class="layout-actions">
-                      <button 
+                      <button
                         v-if="layout.importMode === 'realtime' && !layout.isModified"
                         class="btn-icon btn-sync"
                         @click="handleSyncTemplate(layout, $event)"
@@ -125,7 +125,7 @@
                           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                         </svg>
                       </button>
-                      <button 
+                      <button
                         class="btn-icon btn-share"
                         @click="handleShareLayout(layout, $event)"
                         title="分享布局"
@@ -138,7 +138,7 @@
                           <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                         </svg>
                       </button>
-                      <button 
+                      <button
                         class="btn-icon btn-rename"
                         @click="startRenameLayout(layout.id, $event)"
                         title="重命名"
@@ -148,7 +148,7 @@
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                      <button 
+                      <button
                         v-if="layouts.length > 1"
                         class="btn-icon btn-delete"
                         @click="handleDeleteLayout(layout.id, $event)"
@@ -168,7 +168,7 @@
             <!-- 共享布局 -->
             <div v-if="activeTab === 'shared'">
               <div class="dropdown-header">
-                <input 
+                <input
                   v-model="searchQuery"
                   type="text"
                   class="search-input"
@@ -183,9 +183,9 @@
                 <div v-else-if="sharedLayouts.length === 0" class="empty-message">
                   暂无共享布局
                 </div>
-                <div 
+                <div
                   v-else
-                  v-for="layout in sharedLayouts" 
+                  v-for="layout in sharedLayouts"
                   :key="layout.id"
                   class="dropdown-item shared-item"
                   @click="showImportModeDialog(layout)"
@@ -202,10 +202,10 @@
           </div>
         </div>
       </div>
-      
+
       <div class="right-actions">
-        <a 
-          href="./help.html" 
+        <a
+          href="./help.html"
           target="_blank"
           class="btn-help"
           title="使用帮助"
@@ -217,7 +217,7 @@
           </svg>
           <span>Help</span>
         </a>
-        <button 
+        <button
           class="btn-download"
           @click="$emit('show-download-modal')"
           title="下载桌面客户端或插件"
@@ -269,25 +269,25 @@ export default {
     const selectedLayoutForImport = ref(null)
     let hideTimer = null
     let searchTimeout = null
-    
+
     // 从父组件注入对话框方法
     const showPrompt = inject('showPrompt')
     const showConfirm = inject('showConfirm')
     const checkTemplateUpdate = inject('checkTemplateUpdate')
     const syncTemplateUpdate = inject('syncTemplateUpdate')
-    
+
     // 检测是否在 Electron 环境中
-    const isElectron = typeof window !== 'undefined' && 
-      (window.electron !== undefined || 
+    const isElectron = typeof window !== 'undefined' &&
+      (window.electron !== undefined ||
        (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
-    
+
     // 自动检测API地址：
     // 1. Electron 客户端 -> 使用远程 API 地址 https://tabs.apexstone.ai/api
     // 2. 生产环境 Web 版 -> 使用相对路径（通过代理）
     // 3. 开发环境 -> 使用 localhost
-    const API_BASE_URL = isElectron 
-      ? 'https://tabs.apexstone.ai/api' 
-      : (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
+    const API_BASE_URL = isElectron
+      ? 'https://tabs.apexstone.ai/api'
+      : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
 
     // 点击外部区域关闭下拉菜单
     const handleClickOutside = (event) => {
@@ -440,7 +440,7 @@ export default {
       if (searchTimeout) {
         clearTimeout(searchTimeout)
       }
-      
+
       searchTimeout = setTimeout(async () => {
         loadingShared.value = true
         try {
@@ -471,17 +471,17 @@ export default {
     // 处理导入模式选择
     const handleImportMode = async (mode) => {
       if (!selectedLayoutForImport.value) return
-      
+
       const layout = selectedLayoutForImport.value
       closeImportDialog()
-      
+
       try {
         const response = await fetch(`${API_BASE_URL}/layouts/${layout.id}`)
         const templateData = await response.json()
-        
+
         const suffix = mode === 'realtime' ? ' (实时)' : ' (副本)'
         const newLayoutName = `${templateData.name || '共享布局'}${suffix}`
-        
+
         // 创建新布局并导入数据
         emit('create-layout', newLayoutName, {
           rows: templateData.rows,
@@ -491,9 +491,9 @@ export default {
           importMode: mode,
           templateVersion: templateData.version
         })
-        
+
         showLayoutDropdown.value = false
-        
+
         const modeText = mode === 'realtime' ? '实时同步' : '拷贝'
         alert(`布局已${modeText}导入成功！`)
       } catch (error) {
@@ -507,14 +507,14 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/layouts/${layoutId}`)
         const layout = await response.json()
-        
+
         // 创建新布局并导入数据
         emit('create-layout', `${layout.name || '共享布局'} (导入)`, {
           rows: layout.rows,
           cols: layout.cols,
           websites: layout.websites || []
         })
-        
+
         showLayoutDropdown.value = false
         alert('布局导入成功！')
       } catch (error) {
@@ -526,15 +526,15 @@ export default {
     // 同步模板更新
     const handleSyncTemplate = async (layout, event) => {
       event.stopPropagation()
-      
+
       try {
         const updateInfo = await checkTemplateUpdate(layout.id)
-        
+
         if (!updateInfo.hasUpdate) {
           alert('已是最新版本！')
           return
         }
-        
+
         if (await showConfirm(`发现新版本 v${updateInfo.latestVersion}，是否立即同步更新？`)) {
           const success = await syncTemplateUpdate(layout.id)
           if (success) {
@@ -552,16 +552,16 @@ export default {
     // 分享布局
     const handleShareLayout = async (layout, event) => {
       event.stopPropagation()
-      
+
       if (!layout.websites || layout.websites.length === 0) {
         alert('该布局没有网站，无法分享')
         return
       }
-      
+
       if (!await showConfirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
         return
       }
-      
+
       try {
         const response = await fetch(`${API_BASE_URL}/layouts/share`, {
           method: 'POST',
@@ -570,9 +570,9 @@ export default {
           },
           body: JSON.stringify({ layout })
         })
-        
+
         const data = await response.json()
-        
+
         if (response.ok) {
           alert(`分享成功！\n今日还可分享 ${data.remaining} 次`)
         } else {

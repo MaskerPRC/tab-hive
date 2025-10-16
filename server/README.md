@@ -21,7 +21,7 @@ npm install
 npm run server
 ```
 
-服务将运行在 `http://localhost:3001`
+服务将运行在 `http://localhost:3101`
 
 ## API 接口
 

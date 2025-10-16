@@ -14,8 +14,8 @@
             <div class="option-section">
               <h3>🔌 Chrome 浏览器插件（推荐）</h3>
               <p class="option-desc">适用于 Chrome、Edge 等浏览器</p>
-              <a 
-                href="/0.1.2_0.zip" 
+              <a
+                href="/0.1.2_0.zip"
                 download="Allow X-Frame-Options.zip"
                 class="download-button primary"
               >
@@ -32,9 +32,9 @@
             <div class="option-section">
               <h3>💻 桌面应用程序</h3>
               <p class="option-desc">独立运行，功能完整</p>
-              <a 
-                href="https://github.com/MaskerPRC/tab-hive/releases" 
-                target="_blank" 
+              <a
+                href="https://github.com/MaskerPRC/tab-hive/releases"
+                target="_blank"
                 class="download-button secondary"
               >
                 📥 下载桌面应用
@@ -49,12 +49,12 @@
     </div>
 
     <!-- 顶部检测区域 -->
-    <div 
+    <div
       v-if="fullscreenIndex === null"
       class="top-trigger-area"
       @mouseenter="showPanel = true"
     ></div>
-    
+
     <ConfigPanel
       v-if="fullscreenIndex === null"
       :class="{ 'panel-visible': showPanel }"
@@ -110,8 +110,8 @@ export default {
   setup() {
     // 检测是否在 Electron 环境中
     const isElectron = ref(
-      typeof window !== 'undefined' && 
-      (window.electron !== undefined || 
+      typeof window !== 'undefined' &&
+      (window.electron !== undefined ||
        (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
     )
 
@@ -132,14 +132,14 @@ export default {
     const dialogPlaceholder = ref('')
     const dialogDefaultValue = ref('')
     let dialogResolve = null
-    
+
     // 自定义 prompt 方法
     const showPrompt = (message, defaultValue = '') => {
       // Electron 环境下直接返回默认值
       if (isElectron.value) {
         return Promise.resolve(defaultValue || '新布局')
       }
-      
+
       // 使用自定义对话框
       return new Promise((resolve) => {
         dialogType.value = 'prompt'
@@ -151,14 +151,14 @@ export default {
         dialogResolve = resolve
       })
     }
-    
+
     // 自定义 confirm 方法
     const showConfirm = (message) => {
       // Electron 环境下直接返回 true
       if (isElectron.value) {
         return Promise.resolve(true)
       }
-      
+
       // 使用自定义对话框
       return new Promise((resolve) => {
         dialogType.value = 'confirm'
@@ -168,7 +168,7 @@ export default {
         dialogResolve = resolve
       })
     }
-    
+
     // 对话框确认
     const handleDialogConfirm = (value) => {
       if (dialogResolve) {
@@ -176,7 +176,7 @@ export default {
         dialogResolve = null
       }
     }
-    
+
     // 对话框取消
     const handleDialogCancel = () => {
       if (dialogResolve) {
@@ -184,7 +184,7 @@ export default {
         dialogResolve = null
       }
     }
-    
+
     // 控制下载弹窗显示
     // 首次进入：如果不是 Electron 环境且没有看过弹窗，自动显示
     const showDownloadModal = ref(!isElectron.value && !hasSeenDownloadModal())
@@ -193,19 +193,19 @@ export default {
     const closeDownloadModal = () => {
       const isFirstTime = !hasSeenDownloadModal()
       showDownloadModal.value = false
-      
+
       // 保存用户已经看过弹窗的标记
       try {
         localStorage.setItem('tab-hive-seen-download-modal', 'true')
       } catch (e) {
         console.error('保存弹窗状态失败:', e)
       }
-      
+
       // 如果是首次关闭弹窗，显示顶栏让用户知道
       if (isFirstTime) {
         setTimeout(() => {
           showPanel.value = true
-          
+
           // 3秒后自动隐藏
           setTimeout(() => {
             showPanel.value = false
@@ -225,7 +225,7 @@ export default {
         const saved = localStorage.getItem('iframe-all-config')
         if (saved) {
           const config = JSON.parse(saved)
-          
+
           // 如果是旧格式（单个配置），转换为新格式（多布局）
           if (config.websites !== undefined && !config.layouts) {
             return {
@@ -237,7 +237,7 @@ export default {
               currentLayoutId: 1
             }
           }
-          
+
           // 新格式
           return config
         }
@@ -262,33 +262,33 @@ export default {
 
     // 加载保存的配置或使用默认值
     const savedConfig = loadFromStorage()
-    
+
     // 布局列表
     const layouts = ref(savedConfig ? savedConfig.layouts : [
       {
         id: 1,
         name: '默认布局',
         websites: [
-          { 
-            id: 1, 
-            url: 'https://www.baidu.com', 
-            title: '百度', 
+          {
+            id: 1,
+            url: 'https://www.baidu.com',
+            title: '百度',
             deviceType: 'desktop',
             position: { x: 20, y: 20 },
             size: { width: 400, height: 300 }
           },
-          { 
-            id: 2, 
-            url: 'https://www.bing.com', 
-            title: 'Bing', 
+          {
+            id: 2,
+            url: 'https://www.bing.com',
+            title: 'Bing',
             deviceType: 'desktop',
             position: { x: 440, y: 20 },
             size: { width: 400, height: 300 }
           },
-          { 
-            id: 3, 
-            url: 'https://www.google.com', 
-            title: 'Google', 
+          {
+            id: 3,
+            url: 'https://www.google.com',
+            title: 'Google',
             deviceType: 'desktop',
             position: { x: 20, y: 340 },
             size: { width: 400, height: 300 }
@@ -302,7 +302,7 @@ export default {
 
     // 当前布局（计算属性）
     const currentLayout = ref(layouts.value.find(l => l.id === currentLayoutId.value) || layouts.value[0])
-    
+
     // 网站列表（从当前布局中获取）- 深拷贝避免引用问题
     // 注意：不在这里设置默认position，让GridView自动计算布局
     const websites = ref(currentLayout.value.websites.map(site => ({
@@ -313,7 +313,7 @@ export default {
 
     // 全屏状态
     const fullscreenIndex = ref(null)
-    
+
     // 顶栏显示状态
     const showPanel = ref(false)
 
@@ -348,7 +348,7 @@ export default {
       const defaultWidth = 400
       const defaultHeight = 300
       const spacing = 20
-      
+
       // 查找所有现有网站的最大Y坐标
       let maxY = 20
       if (websites.value.length > 0) {
@@ -361,11 +361,11 @@ export default {
           }
         })
       }
-      
+
       // 新网站放在最下方
       const newX = 20
       const newY = websites.value.length === 0 ? 20 : maxY + spacing
-      
+
       websites.value.push({
         id: Date.now(),
         url: websiteData.url,
@@ -393,7 +393,7 @@ export default {
           websites.value[index].size = { ...size }
           console.log('更新大小:', websites.value[index].title, size)
         }
-        
+
         // 立即触发保存
         saveCurrentLayout()
       }
@@ -425,20 +425,20 @@ export default {
         if (layout.importMode === 'realtime' && !layout.isModified) {
           // 检查是否真的修改了
           const hasChanged = JSON.stringify(layout.websites) !== JSON.stringify(websites.value)
-          
+
           if (hasChanged) {
             layout.isModified = true
             console.log('检测到布局修改，已断开实时链接')
           }
         }
-        
+
         // 深拷贝网站数据，确保位置和大小信息被正确保存
         layout.websites = websites.value.map(site => ({
           ...site,
           position: site.position ? { ...site.position } : undefined,
           size: site.size ? { ...site.size } : undefined
         }))
-        
+
         console.log('保存布局:', layout.name, '网站数量:', layout.websites.length)
         saveToStorage()
       }
@@ -467,11 +467,11 @@ export default {
         alert('至少需要保留一个布局')
         return
       }
-      
+
       const index = layouts.value.findIndex(l => l.id === layoutId)
       if (index !== -1) {
         layouts.value.splice(index, 1)
-        
+
         // 如果删除的是当前布局，切换到第一个布局
         if (currentLayoutId.value === layoutId) {
           switchLayout(layouts.value[0].id)
@@ -498,10 +498,10 @@ export default {
       }
 
       try {
-        const API_BASE_URL = isElectron.value 
-          ? 'https://tabs.apexstone.ai/api' 
-          : (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
-        
+        const API_BASE_URL = isElectron.value
+          ? 'https://tabs.apexstone.ai/api'
+          : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+
         const response = await fetch(
           `${API_BASE_URL}/layouts/${layout.linkedTemplateId}/check-update?currentVersion=${layout.templateVersion || 1}`
         )
@@ -520,22 +520,22 @@ export default {
       }
 
       try {
-        const API_BASE_URL = isElectron.value 
-          ? 'https://tabs.apexstone.ai/api' 
-          : (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
-        
+        const API_BASE_URL = isElectron.value
+          ? 'https://tabs.apexstone.ai/api'
+          : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+
         const response = await fetch(`${API_BASE_URL}/layouts/${layout.linkedTemplateId}/latest`)
         const templateData = await response.json()
-        
+
         // 更新布局数据
         layout.websites = templateData.websites || []
         layout.templateVersion = templateData.version
-        
+
         // 如果是当前布局，也更新显示
         if (currentLayoutId.value === layoutId) {
           websites.value = templateData.websites || []
         }
-        
+
         saveToStorage()
         return true
       } catch (error) {
@@ -562,11 +562,11 @@ export default {
       try {
         const urlParams = new URLSearchParams(window.location.search)
         const urlsParam = urlParams.get('urls')
-        
+
         if (!urlsParam) return false
-        
+
         let websites = []
-        
+
         // 尝试解析不同格式的 URLs 参数
         try {
           // 格式1: JSON 数组 - [{"url":"https://google.com","title":"Google"},...]
@@ -608,30 +608,30 @@ export default {
             }
           })
         }
-        
+
         if (websites.length === 0) return false
-        
+
         // 获取其他可选参数
         const layoutName = urlParams.get('layoutName') || urlParams.get('name') || '导入的布局'
-        
+
         // 创建新布局
         createLayout(layoutName, {
           websites: websites
         })
-        
+
         // 清除 URL 参数（可选）
         if (urlParams.get('clearParams') !== 'false') {
           const newUrl = window.location.pathname + window.location.hash
           window.history.replaceState({}, document.title, newUrl)
         }
-        
+
         return true
       } catch (error) {
         console.error('从 URL 参数导入布局失败:', error)
         return false
       }
     }
-    
+
     // 从 URL 提取标题
     const extractTitleFromUrl = (url) => {
       try {
@@ -646,20 +646,20 @@ export default {
     onMounted(() => {
       // 首先尝试从 URL 参数导入布局
       const imported = importLayoutFromUrlParams()
-      
+
       // 如果有弹窗显示，等待弹窗关闭后再显示顶栏
       // 否则直接显示顶栏
       if (!showDownloadModal.value) {
         // 初始显示顶栏
         showPanel.value = true
-        
+
         // 如果成功导入了布局，显示提示
         if (imported) {
           setTimeout(() => {
             alert('已成功从 URL 参数导入布局！')
           }, 500)
         }
-        
+
         // 3秒后自动隐藏
         setTimeout(() => {
           showPanel.value = false

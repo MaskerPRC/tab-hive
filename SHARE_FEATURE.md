@@ -14,7 +14,7 @@ Tab Hive 现在支持布局分享功能！你可以将自己精心设计的布�
 npm run server
 ```
 
-后端服务将在 `http://localhost:3001` 上运行。
+后端服务将在 `http://localhost:3101` 上运行。
 
 ### 2. 启动前端应用
 
