@@ -91,6 +91,36 @@
       @confirm="handleDialogConfirm"
       @cancel="handleDialogCancel"
     />
+
+    <!-- 导入模式选择对话框 -->
+    <div v-if="showImportDialog" class="import-dialog-overlay" @click.self="closeImportDialog">
+      <div class="import-dialog">
+        <h3>选择导入模式</h3>
+        <p class="dialog-desc">你想如何导入这个布局？</p>
+
+        <div class="import-options">
+          <div class="import-option" @click="handleImportMode('realtime')">
+            <div class="option-icon">🔗</div>
+            <div class="option-content">
+              <h4>实时同步导入</h4>
+              <p>保持与原模板同步，当作者更新模板时可手动同步更新</p>
+              <span class="option-note">⚠️ 如果你修改了布局，同步更新时会覆盖你的改动</span>
+            </div>
+          </div>
+
+          <div class="import-option" @click="handleImportMode('copy')">
+            <div class="option-icon">📋</div>
+            <div class="option-content">
+              <h4>拷贝导入</h4>
+              <p>创建一个独立的副本，可以自由修改</p>
+              <span class="option-note">💡 不受原模板更新影响</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="cancel-btn" @click="closeImportDialog">取消</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -530,6 +560,8 @@ export default {
         // 更新布局数据
         layout.websites = templateData.websites || []
         layout.templateVersion = templateData.version
+        // 重置修改标记，因为已经同步到最新版本
+        layout.isModified = false
 
         // 如果是当前布局，也更新显示
         if (currentLayoutId.value === layoutId) {
@@ -544,11 +576,62 @@ export default {
       }
     }
 
+    // 导入模式选择对话框
+    const showImportDialog = ref(false)
+    const selectedLayoutForImport = ref(null)
+
+    // 显示导入模式选择对话框
+    const showImportModeDialog = (layout) => {
+      selectedLayoutForImport.value = layout
+      showImportDialog.value = true
+    }
+
+    // 关闭导入对话框
+    const closeImportDialog = () => {
+      showImportDialog.value = false
+      selectedLayoutForImport.value = null
+    }
+
+    // 处理导入模式选择
+    const handleImportMode = async (mode) => {
+      if (!selectedLayoutForImport.value) return
+
+      const layout = selectedLayoutForImport.value
+      closeImportDialog()
+
+      try {
+        const API_BASE_URL = isElectron.value
+          ? 'https://tabs.apexstone.ai/api'
+          : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+
+        const response = await fetch(`${API_BASE_URL}/layouts/${layout.id}`)
+        const templateData = await response.json()
+
+        const suffix = mode === 'realtime' ? ' (实时)' : ' (副本)'
+        const newLayoutName = `${templateData.name || '共享布局'}${suffix}`
+
+        // 创建新布局并导入数据
+        createLayout(newLayoutName, {
+          websites: templateData.websites || [],
+          linkedTemplateId: mode === 'realtime' ? templateData.original_id : null,
+          importMode: mode,
+          templateVersion: templateData.version
+        })
+
+        const modeText = mode === 'realtime' ? '实时同步' : '拷贝'
+        alert(`布局已${modeText}导入成功！`)
+      } catch (error) {
+        console.error('加载布局失败:', error)
+        alert('加载布局失败')
+      }
+    }
+
     // 提供给子组件使用
     provide('showPrompt', showPrompt)
     provide('showConfirm', showConfirm)
     provide('checkTemplateUpdate', checkTemplateUpdate)
     provide('syncTemplateUpdate', syncTemplateUpdate)
+    provide('showImportModeDialog', showImportModeDialog)
 
     // 监听网站添加/删除，自动保存到当前布局
     // 注意：位置和大小的更新在 handleUpdateWebsite 中直接保存，避免频繁触发
@@ -680,6 +763,9 @@ export default {
       dialogDefaultValue,
       handleDialogConfirm,
       handleDialogCancel,
+      showImportDialog,
+      closeImportDialog,
+      handleImportMode,
       websites,
       layouts,
       currentLayoutId,
@@ -913,6 +999,142 @@ export default {
   transform: translateY(0);
 }
 
+/* 导入模式选择对话框 */
+.import-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.import-dialog {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.import-dialog h3 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  color: #333;
+  font-weight: 600;
+}
+
+.dialog-desc {
+  color: #666;
+  font-size: 15px;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.import-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.import-option {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+}
+
+.import-option:hover {
+  border-color: #FF5C00;
+  background: #fff5f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.15);
+}
+
+.option-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 17px;
+  color: #333;
+  font-weight: 600;
+}
+
+.option-content p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.option-note {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.cancel-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .electron-warning-modal {
@@ -939,6 +1161,26 @@ export default {
   .download-button {
     padding: 12px 24px;
     font-size: 14px;
+  }
+
+  .import-dialog {
+    padding: 24px;
+  }
+
+  .import-dialog h3 {
+    font-size: 20px;
+  }
+
+  .import-option {
+    padding: 16px;
+  }
+
+  .option-icon {
+    font-size: 28px;
+  }
+
+  .option-content h4 {
+    font-size: 16px;
   }
 }
 </style>

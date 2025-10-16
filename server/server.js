@@ -180,27 +180,48 @@ app.post('/api/layouts/share', (req, res) => {
   const ip = getClientIP(req);
   const { layout, isUpdate, originalId } = req.body;
 
+  console.log('收到分享请求:', { 
+    layoutName: layout?.name, 
+    isUpdate, 
+    originalId, 
+    ip: ip.substring(0, 10) + '...' // 只显示部分IP
+  });
+
   if (!layout || !layout.name || !layout.websites) {
     return res.status(400).json({ error: '无效的布局数据' });
   }
 
   // 如果是更新操作，检查是否是原作者
   if (isUpdate && originalId) {
+    console.log('执行更新操作，originalId:', originalId);
+    
+    // 查找具有相同 original_id 的最新版本
     db.get(
-      'SELECT ip_address, version FROM shared_layouts WHERE id = ? OR original_id = ? ORDER BY version DESC LIMIT 1',
-      [originalId, originalId],
+      'SELECT ip_address, version FROM shared_layouts WHERE original_id = ? ORDER BY version DESC LIMIT 1',
+      [originalId],
       (err, row) => {
-        if (err || !row) {
+        if (err) {
+          console.error('查询失败:', err);
+          return res.status(500).json({ error: '查询失败' });
+        }
+        
+        if (!row) {
+          console.error('未找到原始布局，originalId:', originalId);
           return res.status(404).json({ error: '原始布局不存在' });
         }
         
+        console.log('找到原始布局:', { ip_address: row.ip_address.substring(0, 10) + '...', version: row.version });
+        
         if (row.ip_address !== ip) {
+          console.error('IP不匹配，拒绝更新');
           return res.status(403).json({ error: '只有原作者可以更新模板' });
         }
 
         // 更新版本
         const layoutData = JSON.stringify(layout);
         const newVersion = row.version + 1;
+        
+        console.log('插入新版本:', newVersion);
         
         db.run(
           `INSERT INTO shared_layouts (layout_data, layout_name, rows, cols, website_count, ip_address, version, original_id, last_updated)
@@ -212,6 +233,8 @@ app.post('/api/layouts/share', (req, res) => {
               return res.status(500).json({ error: '更新失败' });
             }
 
+            console.log('版本更新成功! 新ID:', this.lastID, '新版本:', newVersion);
+            
             res.json({
               message: '版本更新成功',
               id: this.lastID,
@@ -303,6 +326,59 @@ app.get('/api/layouts/shared', (req, res) => {
 
     res.json({ layouts: rows });
   });
+});
+
+// API: 检查当前IP是否已分享过同名布局
+app.get('/api/layouts/check-own', (req, res) => {
+  const ip = getClientIP(req);
+  const { layoutName } = req.query;
+
+  console.log('检查同名布局请求:', { layoutName, ip: ip.substring(0, 10) + '...' });
+
+  if (!layoutName) {
+    return res.status(400).json({ error: '缺少布局名称' });
+  }
+
+  // 查找当前IP分享的同名布局的最新版本
+  db.get(
+    `SELECT s.id, s.version, s.original_id, s.layout_name
+     FROM shared_layouts s
+     INNER JOIN (
+       SELECT original_id, MAX(version) as max_version
+       FROM shared_layouts
+       WHERE ip_address = ?
+       GROUP BY original_id
+     ) latest ON s.original_id = latest.original_id AND s.version = latest.max_version
+     WHERE s.ip_address = ? AND s.layout_name = ?
+     LIMIT 1`,
+    [ip, ip, layoutName],
+    (err, row) => {
+      if (err) {
+        console.error('查询失败:', err);
+        return res.status(500).json({ error: '查询失败' });
+      }
+
+      if (row) {
+        console.log('找到同名布局:', { 
+          id: row.id, 
+          originalId: row.original_id, 
+          version: row.version 
+        });
+        res.json({
+          exists: true,
+          layoutId: row.id,
+          originalId: row.original_id,
+          currentVersion: row.version,
+          layoutName: row.layout_name
+        });
+      } else {
+        console.log('未找到同名布局');
+        res.json({
+          exists: false
+        });
+      }
+    }
+  );
 });
 
 // API: 获取布局详情

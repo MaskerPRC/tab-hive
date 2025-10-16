@@ -1,35 +1,5 @@
 <template>
   <div class="config-panel" @mouseleave="handlePanelMouseLeave">
-    <!-- 导入模式选择对话框 -->
-    <div v-if="showImportDialog" class="import-dialog-overlay" @click.self="closeImportDialog">
-      <div class="import-dialog">
-        <h3>选择导入模式</h3>
-        <p class="dialog-desc">你想如何导入这个布局？</p>
-
-        <div class="import-options">
-          <div class="import-option" @click="handleImportMode('realtime')">
-            <div class="option-icon">🔗</div>
-            <div class="option-content">
-              <h4>实时同步导入</h4>
-              <p>保持与原模板同步，当作者更新模板时自动更新</p>
-              <span class="option-note">⚠️ 如果你修改了布局，将自动断开同步链接</span>
-            </div>
-          </div>
-
-          <div class="import-option" @click="handleImportMode('copy')">
-            <div class="option-icon">📋</div>
-            <div class="option-content">
-              <h4>拷贝导入</h4>
-              <p>创建一个独立的副本，可以自由修改</p>
-              <span class="option-note">💡 不受原模板更新影响</span>
-            </div>
-          </div>
-        </div>
-
-        <button class="cancel-btn" @click="closeImportDialog">取消</button>
-      </div>
-    </div>
-
     <div class="config-header">
       <div class="logo-title">
         <img src="/128x128.png" alt="Tab Hive Logo" class="logo-img" />
@@ -107,17 +77,18 @@
                       <span class="layout-item-name">
                         {{ layout.name }}
                         <span v-if="layout.importMode === 'realtime' && !layout.isModified" class="realtime-badge" title="实时同步">🔗</span>
-                        <span v-if="layout.isModified" class="modified-badge" title="已修改，链接已断开">✏️</span>
+                        <span v-if="layout.isModified" class="modified-badge" title="已修改（同步更新时会覆盖改动）">✏️</span>
                         <span v-if="layout.templateVersion" class="version-text">v{{ layout.templateVersion }}</span>
                       </span>
                       <span class="layout-info">({{ layout.websites.length }}个网站)</span>
                     </div>
                     <div class="layout-actions">
                       <button
-                        v-if="layout.importMode === 'realtime' && !layout.isModified"
+                        v-if="layout.importMode === 'realtime'"
                         class="btn-icon btn-sync"
+                        :class="{ 'btn-sync-modified': layout.isModified }"
                         @click="handleSyncTemplate(layout, $event)"
-                        title="检查并同步更新"
+                        :title="layout.isModified ? '检查并同步更新（将覆盖你的改动）' : '检查并同步更新'"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <polyline points="23 4 23 10 17 10"/>
@@ -188,7 +159,7 @@
                   v-for="layout in sharedLayouts"
                   :key="layout.id"
                   class="dropdown-item shared-item"
-                  @click="showImportModeDialog(layout)"
+                  @click="handleImportLayout(layout)"
                 >
                   <span class="layout-item-name">{{ layout.layout_name }}</span>
                   <span class="layout-info">
@@ -265,8 +236,6 @@ export default {
     const searchQuery = ref('')
     const sharedLayouts = ref([])
     const loadingShared = ref(false)
-    const showImportDialog = ref(false)
-    const selectedLayoutForImport = ref(null)
     let hideTimer = null
     let searchTimeout = null
 
@@ -275,6 +244,7 @@ export default {
     const showConfirm = inject('showConfirm')
     const checkTemplateUpdate = inject('checkTemplateUpdate')
     const syncTemplateUpdate = inject('syncTemplateUpdate')
+    const showImportModeDialog = inject('showImportModeDialog')
 
     // 检测是否在 Electron 环境中
     const isElectron = typeof window !== 'undefined' &&
@@ -456,50 +426,10 @@ export default {
       }, 300)
     }
 
-    // 显示导入模式选择对话框
-    const showImportModeDialog = (layout) => {
-      selectedLayoutForImport.value = layout
-      showImportDialog.value = true
-    }
-
-    // 关闭导入对话框
-    const closeImportDialog = () => {
-      showImportDialog.value = false
-      selectedLayoutForImport.value = null
-    }
-
-    // 处理导入模式选择
-    const handleImportMode = async (mode) => {
-      if (!selectedLayoutForImport.value) return
-
-      const layout = selectedLayoutForImport.value
-      closeImportDialog()
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/layouts/${layout.id}`)
-        const templateData = await response.json()
-
-        const suffix = mode === 'realtime' ? ' (实时)' : ' (副本)'
-        const newLayoutName = `${templateData.name || '共享布局'}${suffix}`
-
-        // 创建新布局并导入数据
-        emit('create-layout', newLayoutName, {
-          rows: templateData.rows,
-          cols: templateData.cols,
-          websites: templateData.websites || [],
-          linkedTemplateId: mode === 'realtime' ? templateData.original_id : null,
-          importMode: mode,
-          templateVersion: templateData.version
-        })
-
-        showLayoutDropdown.value = false
-
-        const modeText = mode === 'realtime' ? '实时同步' : '拷贝'
-        alert(`布局已${modeText}导入成功！`)
-      } catch (error) {
-        console.error('加载布局失败:', error)
-        alert('加载布局失败')
-      }
+    // 导入布局（调用父组件提供的对话框）
+    const handleImportLayout = (layout) => {
+      showLayoutDropdown.value = false
+      showImportModeDialog(layout)
     }
 
     // 加载共享布局并应用（保留旧版本兼容）
@@ -528,6 +458,22 @@ export default {
       event.stopPropagation()
 
       try {
+        // 如果用户已修改，先显示警告
+        if (layout.isModified) {
+          const confirmOverride = await showConfirm(
+            `⚠️ 警告：你已经修改过此布局！\n\n` +
+            `同步更新将会覆盖你的所有改动，包括：\n` +
+            `• 添加或删除的网站\n` +
+            `• 修改的网站信息\n` +
+            `• 调整的布局位置\n\n` +
+            `确定要继续同步吗？此操作无法撤销。`
+          )
+          
+          if (!confirmOverride) {
+            return
+          }
+        }
+
         const updateInfo = await checkTemplateUpdate(layout.id)
 
         if (!updateInfo.hasUpdate) {
@@ -535,7 +481,11 @@ export default {
           return
         }
 
-        if (await showConfirm(`发现新版本 v${updateInfo.latestVersion}，是否立即同步更新？`)) {
+        const confirmMessage = layout.isModified
+          ? `发现新版本 v${updateInfo.latestVersion}，同步后将覆盖你的改动。\n\n确定要立即同步更新吗？`
+          : `发现新版本 v${updateInfo.latestVersion}，是否立即同步更新？`
+
+        if (await showConfirm(confirmMessage)) {
           const success = await syncTemplateUpdate(layout.id)
           if (success) {
             alert(`已成功更新到 v${updateInfo.latestVersion}`)
@@ -558,24 +508,81 @@ export default {
         return
       }
 
-      if (!await showConfirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
-        return
-      }
-
       try {
+        // 首先检查是否已经分享过同名布局
+        const checkResponse = await fetch(
+          `${API_BASE_URL}/layouts/check-own?layoutName=${encodeURIComponent(layout.name)}`
+        )
+        const checkData = await checkResponse.json()
+
+        console.log('检查同名布局结果:', checkData)
+
+        let isUpdate = false
+        let originalId = null
+
+        // 如果找到同名布局，询问是否更新版本
+        if (checkData.exists) {
+          const confirmUpdate = await showConfirm(
+            `检测到你之前已经分享过名为 "${layout.name}" 的布局（当前版本 v${checkData.currentVersion}）。\n\n` +
+            `是否要更新为新版本 v${checkData.currentVersion + 1}？\n\n` +
+            `点击"确定"将更新版本，点击"取消"将创建新的分享布局。`
+          )
+          
+          if (confirmUpdate) {
+            isUpdate = true
+            originalId = checkData.originalId
+            console.log('用户选择更新版本，originalId:', originalId)
+          } else {
+            console.log('用户选择创建新的分享布局')
+          }
+        } else {
+          console.log('未找到同名布局，将创建新的分享')
+          // 如果不是更新，显示普通的分享确认
+          if (!await showConfirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
+            return
+          }
+        }
+
+        // 为兼容数据库表结构，添加已废弃的 rows 和 cols 字段（使用默认值）
+        const layoutData = {
+          ...layout,
+          rows: layout.rows || 1,  // 使用默认值 1（字段已废弃，仅为满足数据库约束）
+          cols: layout.cols || 1   // 使用默认值 1（字段已废弃，仅为满足数据库约束）
+        }
+
+        const requestBody = { 
+          layout: layoutData,
+          isUpdate: isUpdate,
+          originalId: originalId
+        }
+
+        console.log('准备发送分享请求:', {
+          layoutName: layoutData.name,
+          isUpdate,
+          originalId,
+          websiteCount: layoutData.websites?.length
+        })
+
         const response = await fetch(`${API_BASE_URL}/layouts/share`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ layout })
+          body: JSON.stringify(requestBody)
         })
 
         const data = await response.json()
 
+        console.log('分享响应:', { status: response.status, data })
+
         if (response.ok) {
-          alert(`分享成功！\n今日还可分享 ${data.remaining} 次`)
+          if (isUpdate) {
+            alert(`版本更新成功！已更新到 v${data.version}`)
+          } else {
+            alert(`分享成功！\n今日还可分享 ${data.remaining} 次`)
+          }
         } else {
+          console.error('分享失败，服务器返回错误:', data)
           alert(data.error || '分享失败')
         }
       } catch (error) {
@@ -592,8 +599,6 @@ export default {
       searchQuery,
       sharedLayouts,
       loadingShared,
-      showImportDialog,
-      selectedLayoutForImport,
       currentLayoutName,
       toggleLayoutDropdown,
       selectLayout,
@@ -611,9 +616,7 @@ export default {
       searchSharedLayouts,
       loadSharedLayout,
       handleShareLayout,
-      showImportModeDialog,
-      closeImportDialog,
-      handleImportMode,
+      handleImportLayout,
       handleSyncTemplate
     }
   }
@@ -1030,136 +1033,6 @@ export default {
   stroke: currentColor;
 }
 
-/* 导入模式对话框 */
-.import-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.import-dialog {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 600px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.import-dialog h3 {
-  margin: 0 0 12px 0;
-  font-size: 24px;
-  color: #333;
-  font-weight: 600;
-}
-
-.dialog-desc {
-  color: #666;
-  font-size: 14px;
-  margin: 0 0 24px 0;
-}
-
-.import-options {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.import-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 20px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.import-option:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.2);
-}
-
-.option-icon {
-  font-size: 36px;
-  flex-shrink: 0;
-}
-
-.option-content {
-  flex: 1;
-}
-
-.option-content h4 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  color: #333;
-  font-weight: 600;
-}
-
-.option-content p {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.option-note {
-  font-size: 12px;
-  color: #999;
-  font-style: italic;
-}
-
-.cancel-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  color: #999;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.cancel-btn:hover {
-  background: #f5f5f5;
-  color: #666;
-  border-color: #ccc;
-}
-
 /* 布局项内容 */
 .layout-item-content {
   display: flex;
@@ -1211,27 +1084,23 @@ export default {
   background: rgba(255, 255, 255, 0.2) !important;
 }
 
+/* 已修改状态的同步按钮 */
+.btn-sync-modified {
+  color: #ff9800;
+}
+
+.btn-sync-modified:hover {
+  background: rgba(255, 152, 0, 0.1) !important;
+}
+
+.dropdown-item.active .btn-sync-modified:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .import-dialog {
-    padding: 24px;
-    width: 95%;
-  }
-
-  .import-dialog h3 {
-    font-size: 20px;
-  }
-
-  .import-option {
-    padding: 16px;
-  }
-
-  .option-icon {
-    font-size: 28px;
-  }
-
-  .option-content h4 {
-    font-size: 16px;
+  .config-panel {
+    font-size: 14px;
   }
 }
 </style>
