@@ -91,37 +91,74 @@ function initDatabase() {
       const hasVersion = columns.some(col => col.name === 'version');
       const hasLastUpdated = columns.some(col => col.name === 'last_updated');
       
+      // 使用一个数组来跟踪需要添加的列
+      const alterOps = [];
+      
       if (!hasOriginalId) {
         console.log('添加 original_id 列...');
-        db.run('ALTER TABLE shared_layouts ADD COLUMN original_id INTEGER');
+        alterOps.push(new Promise((resolve, reject) => {
+          db.run('ALTER TABLE shared_layouts ADD COLUMN original_id INTEGER', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        }));
       }
       
       if (!hasVersion) {
         console.log('添加 version 列...');
-        db.run('ALTER TABLE shared_layouts ADD COLUMN version INTEGER DEFAULT 1');
+        alterOps.push(new Promise((resolve, reject) => {
+          db.run('ALTER TABLE shared_layouts ADD COLUMN version INTEGER DEFAULT 1', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        }));
       }
       
       if (!hasLastUpdated) {
         console.log('添加 last_updated 列...');
-        db.run('ALTER TABLE shared_layouts ADD COLUMN last_updated DATETIME', (err) => {
-          if (err) {
-            console.error('添加 last_updated 列失败:', err);
-            return;
+        alterOps.push(new Promise((resolve, reject) => {
+          db.run('ALTER TABLE shared_layouts ADD COLUMN last_updated DATETIME', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        }));
+      }
+      
+      // 等待所有 ALTER TABLE 操作完成后再执行后续操作
+      Promise.all(alterOps)
+        .then(() => {
+          // 为现有记录设置 original_id 和 version
+          if (!hasOriginalId || !hasVersion) {
+            db.run('UPDATE shared_layouts SET original_id = id, version = 1 WHERE original_id IS NULL', (err) => {
+              if (err) {
+                console.error('更新 original_id 和 version 失败:', err);
+              }
+            });
           }
+          
           // 为现有记录设置默认值
-          db.run('UPDATE shared_layouts SET last_updated = created_at WHERE last_updated IS NULL');
+          if (!hasLastUpdated) {
+            db.run('UPDATE shared_layouts SET last_updated = created_at WHERE last_updated IS NULL', (err) => {
+              if (err) {
+                console.error('更新 last_updated 失败:', err);
+              }
+            });
+          }
+          
+          // 创建索引（在列添加之后）
+          db.run('CREATE INDEX IF NOT EXISTS idx_ip_date ON upload_records(ip_address, upload_date)');
+          db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON shared_layouts(created_at DESC)');
+          db.run('CREATE INDEX IF NOT EXISTS idx_original_id ON shared_layouts(original_id)', (err) => {
+            if (err) {
+              console.error('创建索引失败:', err);
+            } else {
+              console.log('✓ 数据库初始化完成');
+            }
+          });
+        })
+        .catch((err) => {
+          console.error('添加列失败:', err);
         });
-      }
-      
-      // 为现有记录设置 original_id 和 version
-      if (!hasOriginalId || !hasVersion) {
-        db.run('UPDATE shared_layouts SET original_id = id, version = 1 WHERE original_id IS NULL');
-      }
-      
-      // 创建索引（在列添加之后）
-      db.run('CREATE INDEX IF NOT EXISTS idx_ip_date ON upload_records(ip_address, upload_date)');
-      db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON shared_layouts(created_at DESC)');
-      db.run('CREATE INDEX IF NOT EXISTS idx_original_id ON shared_layouts(original_id)');
     });
   });
 }

@@ -1,0 +1,219 @@
+<template>
+  <div v-if="visible" class="import-dialog-overlay" @click.self="handleClose">
+    <div class="import-dialog">
+      <h3>选择导入模式</h3>
+      <p class="dialog-desc">你想如何导入这个布局？</p>
+
+      <div class="import-options">
+        <div class="import-option" @click="handleSelectMode('realtime')">
+          <div class="option-icon">🔗</div>
+          <div class="option-content">
+            <h4>实时同步导入</h4>
+            <p>保持与原模板同步，当作者更新模板时可手动同步更新</p>
+            <span class="option-note">⚠️ 如果你修改了布局，同步更新时会覆盖你的改动</span>
+          </div>
+        </div>
+
+        <div class="import-option" @click="handleSelectMode('copy')">
+          <div class="option-icon">📋</div>
+          <div class="option-content">
+            <h4>拷贝导入</h4>
+            <p>创建一个独立的副本，可以自由修改</p>
+            <span class="option-note">💡 不受原模板更新影响</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="cancel-btn" @click="handleClose">取消</button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'ImportModeDialog',
+  props: {
+    visible: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['close', 'select-mode'],
+  setup(props, { emit }) {
+    const handleClose = () => {
+      emit('close')
+    }
+
+    const handleSelectMode = (mode) => {
+      emit('select-mode', mode)
+    }
+
+    return {
+      handleClose,
+      handleSelectMode
+    }
+  }
+}
+</script>
+
+<style scoped>
+/* 导入模式选择对话框 */
+.import-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.import-dialog {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.import-dialog h3 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  color: #333;
+  font-weight: 600;
+}
+
+.dialog-desc {
+  color: #666;
+  font-size: 15px;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.import-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.import-option {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+}
+
+.import-option:hover {
+  border-color: #FF5C00;
+  background: #fff5f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.15);
+}
+
+.option-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 17px;
+  color: #333;
+  font-weight: 600;
+}
+
+.option-content p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.option-note {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.cancel-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .import-dialog {
+    padding: 24px;
+  }
+
+  .import-dialog h3 {
+    font-size: 20px;
+  }
+
+  .import-option {
+    padding: 16px;
+  }
+
+  .option-icon {
+    font-size: 28px;
+  }
+
+  .option-content h4 {
+    font-size: 16px;
+  }
+}
+</style>
+

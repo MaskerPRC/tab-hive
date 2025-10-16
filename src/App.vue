@@ -1,52 +1,7 @@
 <template>
   <div class="app-container" @mousemove="handleMouseMove">
     <!-- 下载插件/客户端提醒弹窗 -->
-    <div v-if="showDownloadModal" class="electron-warning-overlay" @click.self="closeDownloadModal">
-      <div class="electron-warning-modal">
-        <div class="warning-icon">⚠️</div>
-        <h2>需要安装插件才能正常使用</h2>
-        <p class="warning-message">
-          本应用需要在特定环境中运行才能加载 iframe 网页。<br/>
-          请选择下列方式之一安装后使用：
-        </p>
-        <div class="warning-actions">
-          <div class="download-options">
-            <div class="option-section">
-              <h3>🔌 Chrome 浏览器插件（推荐）</h3>
-              <p class="option-desc">适用于 Chrome、Edge 等浏览器</p>
-              <a
-                href="/0.1.2_0.zip"
-                download="Allow X-Frame-Options.zip"
-                class="download-button primary"
-              >
-                📥 下载 Chrome 插件
-              </a>
-              <p class="install-hint">
-                下载后请解压，然后在浏览器中加载解压后的文件夹<br/>
-                <a href="https://zhuanlan.zhihu.com/p/16585597394" target="_blank" class="tutorial-link">
-                  📖 查看详细安装教程
-                </a>
-              </p>
-            </div>
-            <div class="divider">或</div>
-            <div class="option-section">
-              <h3>💻 桌面应用程序</h3>
-              <p class="option-desc">独立运行，功能完整</p>
-              <a
-                href="https://github.com/MaskerPRC/tab-hive/releases"
-                target="_blank"
-                class="download-button secondary"
-              >
-                📥 下载桌面应用
-              </a>
-            </div>
-          </div>
-          <button @click="closeDownloadModal" class="dismiss-button">
-            我知道了（暂时继续浏览）
-          </button>
-        </div>
-      </div>
-    </div>
+    <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
 
     <!-- 顶部检测区域 -->
     <div
@@ -60,9 +15,9 @@
       :class="{ 'panel-visible': showPanel }"
       :layouts="layouts"
       :currentLayoutId="currentLayoutId"
-      @switch-layout="switchLayout"
-      @create-layout="(name, options) => createLayout(name, options)"
-      @delete-layout="deleteLayout"
+      @switch-layout="handleSwitchLayout"
+      @create-layout="handleCreateLayout"
+      @delete-layout="handleDeleteLayout"
       @rename-layout="renameLayout"
       @show-download-modal="handleShowDownloadModal"
       @mouseenter="showPanel = true"
@@ -93,34 +48,11 @@
     />
 
     <!-- 导入模式选择对话框 -->
-    <div v-if="showImportDialog" class="import-dialog-overlay" @click.self="closeImportDialog">
-      <div class="import-dialog">
-        <h3>选择导入模式</h3>
-        <p class="dialog-desc">你想如何导入这个布局？</p>
-
-        <div class="import-options">
-          <div class="import-option" @click="handleImportMode('realtime')">
-            <div class="option-icon">🔗</div>
-            <div class="option-content">
-              <h4>实时同步导入</h4>
-              <p>保持与原模板同步，当作者更新模板时可手动同步更新</p>
-              <span class="option-note">⚠️ 如果你修改了布局，同步更新时会覆盖你的改动</span>
-            </div>
-          </div>
-
-          <div class="import-option" @click="handleImportMode('copy')">
-            <div class="option-icon">📋</div>
-            <div class="option-content">
-              <h4>拷贝导入</h4>
-              <p>创建一个独立的副本，可以自由修改</p>
-              <span class="option-note">💡 不受原模板更新影响</span>
-            </div>
-          </div>
-        </div>
-
-        <button class="cancel-btn" @click="closeImportDialog">取消</button>
-      </div>
-    </div>
+    <ImportModeDialog
+      :visible="showImportDialog"
+      @close="closeImportDialog"
+      @select-mode="handleImportModeSelect"
+    />
   </div>
 </template>
 
@@ -129,21 +61,30 @@ import { ref, watch, onMounted, provide } from 'vue'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
 import Dialog from './components/Dialog.vue'
+import DownloadModal from './components/DownloadModal.vue'
+import ImportModeDialog from './components/ImportModeDialog.vue'
+import { useDialog } from './composables/useDialog'
+import { useLayoutManager } from './composables/useLayoutManager'
+import { useWebsiteManager } from './composables/useWebsiteManager'
+import { useImportExport } from './composables/useImportExport'
 
 export default {
   name: 'App',
   components: {
     ConfigPanel,
     GridView,
-    Dialog
+    Dialog,
+    DownloadModal,
+    ImportModeDialog
   },
   setup() {
-    // 检测是否在 Electron 环境中
-    const isElectron = ref(
-      typeof window !== 'undefined' &&
-      (window.electron !== undefined ||
-       (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
-    )
+    // 使用 composables
+    const dialog = useDialog()
+    const layoutManager = useLayoutManager()
+    const importExport = useImportExport()
+
+    // 初始化网站管理器
+    const websiteManager = useWebsiteManager(layoutManager.currentLayout.value.websites)
 
     // 检查用户是否已经看过首次弹窗
     const hasSeenDownloadModal = () => {
@@ -154,70 +95,14 @@ export default {
       }
     }
 
-    // 对话框状态
-    const dialogVisible = ref(false)
-    const dialogType = ref('confirm')
-    const dialogTitle = ref('提示')
-    const dialogMessage = ref('')
-    const dialogPlaceholder = ref('')
-    const dialogDefaultValue = ref('')
-    let dialogResolve = null
-
-    // 自定义 prompt 方法
-    const showPrompt = (message, defaultValue = '') => {
-      // Electron 环境下直接返回默认值
-      if (isElectron.value) {
-        return Promise.resolve(defaultValue || '新布局')
-      }
-
-      // 使用自定义对话框
-      return new Promise((resolve) => {
-        dialogType.value = 'prompt'
-        dialogTitle.value = '输入'
-        dialogMessage.value = message
-        dialogPlaceholder.value = defaultValue
-        dialogDefaultValue.value = defaultValue
-        dialogVisible.value = true
-        dialogResolve = resolve
-      })
-    }
-
-    // 自定义 confirm 方法
-    const showConfirm = (message) => {
-      // Electron 环境下直接返回 true
-      if (isElectron.value) {
-        return Promise.resolve(true)
-      }
-
-      // 使用自定义对话框
-      return new Promise((resolve) => {
-        dialogType.value = 'confirm'
-        dialogTitle.value = '确认'
-        dialogMessage.value = message
-        dialogVisible.value = true
-        dialogResolve = resolve
-      })
-    }
-
-    // 对话框确认
-    const handleDialogConfirm = (value) => {
-      if (dialogResolve) {
-        dialogResolve(value)
-        dialogResolve = null
-      }
-    }
-
-    // 对话框取消
-    const handleDialogCancel = () => {
-      if (dialogResolve) {
-        dialogResolve(dialogType.value === 'prompt' ? null : false)
-        dialogResolve = null
-      }
-    }
-
     // 控制下载弹窗显示
-    // 首次进入：如果不是 Electron 环境且没有看过弹窗，自动显示
-    const showDownloadModal = ref(!isElectron.value && !hasSeenDownloadModal())
+    const showDownloadModal = ref(!dialog.isElectron.value && !hasSeenDownloadModal())
+
+    // 全屏状态
+    const fullscreenIndex = ref(null)
+
+    // 顶栏显示状态
+    const showPanel = ref(false)
 
     // 关闭下载弹窗
     const closeDownloadModal = () => {
@@ -249,104 +134,6 @@ export default {
       showDownloadModal.value = true
     }
 
-    // 从 localStorage 加载配置
-    const loadFromStorage = () => {
-      try {
-        const saved = localStorage.getItem('iframe-all-config')
-        if (saved) {
-          const config = JSON.parse(saved)
-
-          // 如果是旧格式（单个配置），转换为新格式（多布局）
-          if (config.websites !== undefined && !config.layouts) {
-            return {
-              layouts: [{
-                id: 1,
-                name: '默认布局',
-                websites: config.websites || []
-              }],
-              currentLayoutId: 1
-            }
-          }
-
-          // 新格式
-          return config
-        }
-      } catch (e) {
-        console.error('加载配置失败:', e)
-      }
-      return null
-    }
-
-    // 保存配置到 localStorage
-    const saveToStorage = () => {
-      try {
-        const config = {
-          layouts: layouts.value,
-          currentLayoutId: currentLayoutId.value
-        }
-        localStorage.setItem('iframe-all-config', JSON.stringify(config))
-      } catch (e) {
-        console.error('保存配置失败:', e)
-      }
-    }
-
-    // 加载保存的配置或使用默认值
-    const savedConfig = loadFromStorage()
-
-    // 布局列表
-    const layouts = ref(savedConfig ? savedConfig.layouts : [
-      {
-        id: 1,
-        name: '默认布局',
-        websites: [
-          {
-            id: 1,
-            url: 'https://www.baidu.com',
-            title: '百度',
-            deviceType: 'desktop',
-            position: { x: 20, y: 20 },
-            size: { width: 400, height: 300 }
-          },
-          {
-            id: 2,
-            url: 'https://www.bing.com',
-            title: 'Bing',
-            deviceType: 'desktop',
-            position: { x: 440, y: 20 },
-            size: { width: 400, height: 300 }
-          },
-          {
-            id: 3,
-            url: 'https://www.google.com',
-            title: 'Google',
-            deviceType: 'desktop',
-            position: { x: 20, y: 340 },
-            size: { width: 400, height: 300 }
-          }
-        ]
-      }
-    ])
-
-    // 当前布局 ID
-    const currentLayoutId = ref(savedConfig?.currentLayoutId || 1)
-
-    // 当前布局（计算属性）
-    const currentLayout = ref(layouts.value.find(l => l.id === currentLayoutId.value) || layouts.value[0])
-
-    // 网站列表（从当前布局中获取）- 深拷贝避免引用问题
-    // 注意：不在这里设置默认position，让GridView自动计算布局
-    const websites = ref(currentLayout.value.websites.map(site => ({
-      ...site,
-      position: site.position ? { ...site.position } : undefined,
-      size: site.size ? { ...site.size } : undefined
-    })))
-
-    // 全屏状态
-    const fullscreenIndex = ref(null)
-
-    // 顶栏显示状态
-    const showPanel = ref(false)
-
     const handleFullscreen = (index) => {
       fullscreenIndex.value = index
     }
@@ -375,360 +162,85 @@ export default {
     }
 
     const handleAddWebsite = (websiteData) => {
-      const defaultWidth = 400
-      const defaultHeight = 300
-      const spacing = 20
-
-      // 查找所有现有网站的最大Y坐标
-      let maxY = 20
-      if (websites.value.length > 0) {
-        websites.value.forEach(site => {
-          if (site.position && site.size) {
-            const bottomY = site.position.y + site.size.height
-            if (bottomY > maxY) {
-              maxY = bottomY
-            }
-          }
-        })
-      }
-
-      // 新网站放在最下方
-      const newX = 20
-      const newY = websites.value.length === 0 ? 20 : maxY + spacing
-
-      websites.value.push({
-        id: Date.now(),
-        url: websiteData.url,
-        title: websiteData.title,
-        deviceType: websiteData.deviceType || 'desktop',
-        position: websiteData.position || { x: newX, y: newY },
-        size: websiteData.size || { width: defaultWidth, height: defaultHeight }
-      })
+      websiteManager.addWebsite(websiteData)
     }
 
     const handleRemoveWebsite = (index) => {
-      websites.value.splice(index, 1)
+      websiteManager.removeWebsite(index)
     }
 
-    const handleUpdateWebsite = ({ index, title, url, deviceType, position, size }) => {
-      if (websites.value[index]) {
-        if (title !== undefined) websites.value[index].title = title
-        if (url !== undefined) websites.value[index].url = url
-        if (deviceType !== undefined) websites.value[index].deviceType = deviceType
-        if (position !== undefined) {
-          websites.value[index].position = { ...position }
-          console.log('更新位置:', websites.value[index].title, position)
-        }
-        if (size !== undefined) {
-          websites.value[index].size = { ...size }
-          console.log('更新大小:', websites.value[index].title, size)
-        }
-
-        // 立即触发保存
-        saveCurrentLayout()
-      }
+    const handleUpdateWebsite = (params) => {
+      websiteManager.updateWebsite(params)
+      // 立即触发保存
+      layoutManager.saveCurrentLayout(websiteManager.websites.value)
     }
 
     // 切换布局
-    const switchLayout = (layoutId) => {
-      const layout = layouts.value.find(l => l.id === layoutId)
-      if (layout) {
-        currentLayoutId.value = layoutId
-        currentLayout.value = layout
-        // 深拷贝网站数据，避免引用问题
-        // 注意：不在这里设置默认position，让GridView自动计算布局
-        websites.value = layout.websites.map(site => ({
-          ...site,
-          position: site.position ? { ...site.position } : undefined,
-          size: site.size ? { ...site.size } : undefined
-        }))
-        console.log('切换布局:', layout.name, '加载了', websites.value.length, '个网站')
-        saveToStorage()
-      }
-    }
-
-    // 保存当前布局（更新当前布局的数据）
-    const saveCurrentLayout = () => {
-      const layout = layouts.value.find(l => l.id === currentLayoutId.value)
-      if (layout) {
-        // 检查是否是实时导入的模板，如果是则标记为已修改
-        if (layout.importMode === 'realtime' && !layout.isModified) {
-          // 检查是否真的修改了
-          const hasChanged = JSON.stringify(layout.websites) !== JSON.stringify(websites.value)
-
-          if (hasChanged) {
-            layout.isModified = true
-            console.log('检测到布局修改，已断开实时链接')
-          }
-        }
-
-        // 深拷贝网站数据，确保位置和大小信息被正确保存
-        layout.websites = websites.value.map(site => ({
-          ...site,
-          position: site.position ? { ...site.position } : undefined,
-          size: site.size ? { ...site.size } : undefined
-        }))
-
-        console.log('保存布局:', layout.name, '网站数量:', layout.websites.length)
-        saveToStorage()
-      }
+    const handleSwitchLayout = (layoutId) => {
+      const websites = layoutManager.switchLayout(layoutId)
+      websiteManager.setWebsites(websites)
     }
 
     // 创建新布局
-    const createLayout = (name, options = {}) => {
-      const newLayout = {
-        id: Date.now(),
-        name: name || `布局 ${layouts.value.length + 1}`,
-        websites: options.websites || [],
-        // 模板链接相关字段
-        linkedTemplateId: options.linkedTemplateId || null, // 链接的原始模板ID (original_id)
-        importMode: options.importMode || null, // 'realtime' 或 'copy' 或 null
-        isModified: false, // 用户是否修改过（实时导入时使用）
-        templateVersion: options.templateVersion || null // 当前模板版本
-      }
-      layouts.value.push(newLayout)
-      switchLayout(newLayout.id)
-      return newLayout
+    const handleCreateLayout = (name, options = {}) => {
+      const newLayout = layoutManager.createLayout(name, options)
+      handleSwitchLayout(newLayout.id)
     }
 
     // 删除布局
-    const deleteLayout = (layoutId) => {
-      if (layouts.value.length <= 1) {
+    const handleDeleteLayout = (layoutId) => {
+      if (layoutManager.layouts.value.length <= 1) {
         alert('至少需要保留一个布局')
         return
       }
 
-      const index = layouts.value.findIndex(l => l.id === layoutId)
-      if (index !== -1) {
-        layouts.value.splice(index, 1)
-
-        // 如果删除的是当前布局，切换到第一个布局
-        if (currentLayoutId.value === layoutId) {
-          switchLayout(layouts.value[0].id)
-        } else {
-          saveToStorage()
-        }
+      const result = layoutManager.deleteLayout(layoutId)
+      
+      // 如果删除的是当前布局，切换到第一个布局
+      if (typeof result === 'number') {
+        handleSwitchLayout(result)
       }
-    }
-
-    // 重命名布局
-    const renameLayout = (layoutId, newName) => {
-      const layout = layouts.value.find(l => l.id === layoutId)
-      if (layout) {
-        layout.name = newName
-        saveToStorage()
-      }
-    }
-
-    // 检查模板更新
-    const checkTemplateUpdate = async (layoutId) => {
-      const layout = layouts.value.find(l => l.id === layoutId)
-      if (!layout || !layout.linkedTemplateId || layout.importMode !== 'realtime' || layout.isModified) {
-        return { hasUpdate: false }
-      }
-
-      try {
-        const API_BASE_URL = isElectron.value
-          ? 'https://tabs.apexstone.ai/api'
-          : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
-
-        const response = await fetch(
-          `${API_BASE_URL}/layouts/${layout.linkedTemplateId}/check-update?currentVersion=${layout.templateVersion || 1}`
-        )
-        return await response.json()
-      } catch (error) {
-        console.error('检查更新失败:', error)
-        return { hasUpdate: false }
-      }
-    }
-
-    // 同步模板更新
-    const syncTemplateUpdate = async (layoutId) => {
-      const layout = layouts.value.find(l => l.id === layoutId)
-      if (!layout || !layout.linkedTemplateId) {
-        return false
-      }
-
-      try {
-        const API_BASE_URL = isElectron.value
-          ? 'https://tabs.apexstone.ai/api'
-          : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
-
-        const response = await fetch(`${API_BASE_URL}/layouts/${layout.linkedTemplateId}/latest`)
-        const templateData = await response.json()
-
-        // 更新布局数据
-        layout.websites = templateData.websites || []
-        layout.templateVersion = templateData.version
-        // 重置修改标记，因为已经同步到最新版本
-        layout.isModified = false
-
-        // 如果是当前布局，也更新显示
-        if (currentLayoutId.value === layoutId) {
-          websites.value = templateData.websites || []
-        }
-
-        saveToStorage()
-        return true
-      } catch (error) {
-        console.error('同步更新失败:', error)
-        return false
-      }
-    }
-
-    // 导入模式选择对话框
-    const showImportDialog = ref(false)
-    const selectedLayoutForImport = ref(null)
-
-    // 显示导入模式选择对话框
-    const showImportModeDialog = (layout) => {
-      selectedLayoutForImport.value = layout
-      showImportDialog.value = true
-    }
-
-    // 关闭导入对话框
-    const closeImportDialog = () => {
-      showImportDialog.value = false
-      selectedLayoutForImport.value = null
     }
 
     // 处理导入模式选择
-    const handleImportMode = async (mode) => {
-      if (!selectedLayoutForImport.value) return
-
-      const layout = selectedLayoutForImport.value
-      closeImportDialog()
-
-      try {
-        const API_BASE_URL = isElectron.value
-          ? 'https://tabs.apexstone.ai/api'
-          : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
-
-        const response = await fetch(`${API_BASE_URL}/layouts/${layout.id}`)
-        const templateData = await response.json()
-
-        const suffix = mode === 'realtime' ? ' (实时)' : ' (副本)'
-        const newLayoutName = `${templateData.name || '共享布局'}${suffix}`
-
-        // 创建新布局并导入数据
-        createLayout(newLayoutName, {
-          websites: templateData.websites || [],
-          linkedTemplateId: mode === 'realtime' ? templateData.original_id : null,
-          importMode: mode,
-          templateVersion: templateData.version
-        })
-
-        const modeText = mode === 'realtime' ? '实时同步' : '拷贝'
-        alert(`布局已${modeText}导入成功！`)
-      } catch (error) {
-        console.error('加载布局失败:', error)
-        alert('加载布局失败')
-      }
+    const handleImportModeSelect = (mode) => {
+      importExport.handleImportMode(
+        mode,
+        dialog.isElectron.value,
+        (layoutData) => {
+          handleCreateLayout(layoutData.name, layoutData)
+        }
+      )
     }
 
     // 提供给子组件使用
-    provide('showPrompt', showPrompt)
-    provide('showConfirm', showConfirm)
-    provide('checkTemplateUpdate', checkTemplateUpdate)
-    provide('syncTemplateUpdate', syncTemplateUpdate)
-    provide('showImportModeDialog', showImportModeDialog)
+    provide('showPrompt', dialog.showPrompt)
+    provide('showConfirm', dialog.showConfirm)
+    provide('checkTemplateUpdate', (layoutId) => 
+      layoutManager.checkTemplateUpdate(layoutId, dialog.isElectron.value)
+    )
+    provide('syncTemplateUpdate', (layoutId) => 
+      layoutManager.syncTemplateUpdate(
+        layoutId, 
+        dialog.isElectron.value, 
+        (websites) => websiteManager.setWebsites(websites)
+      )
+    )
+    provide('showImportModeDialog', importExport.showImportModeDialog)
 
     // 监听网站添加/删除，自动保存到当前布局
-    // 注意：位置和大小的更新在 handleUpdateWebsite 中直接保存，避免频繁触发
-    watch(() => websites.value.length, () => {
+    watch(() => websiteManager.websites.value.length, () => {
       console.log('网站数量变化，触发保存')
-      saveCurrentLayout()
+      layoutManager.saveCurrentLayout(websiteManager.websites.value)
     })
-
-    // 从 URL 参数导入布局
-    const importLayoutFromUrlParams = () => {
-      try {
-        const urlParams = new URLSearchParams(window.location.search)
-        const urlsParam = urlParams.get('urls')
-
-        if (!urlsParam) return false
-
-        let websites = []
-
-        // 尝试解析不同格式的 URLs 参数
-        try {
-          // 格式1: JSON 数组 - [{"url":"https://google.com","title":"Google"},...]
-          const parsed = JSON.parse(urlsParam)
-          if (Array.isArray(parsed)) {
-            websites = parsed.map((item, index) => {
-              if (typeof item === 'string') {
-                // 简单字符串数组
-                const url = item.startsWith('http') ? item : `https://${item}`
-                return {
-                  id: Date.now() + index,
-                  url: url,
-                  title: extractTitleFromUrl(url),
-                  deviceType: 'desktop'
-                }
-              } else if (typeof item === 'object' && item.url) {
-                // 对象数组
-                const url = item.url.startsWith('http') ? item.url : `https://${item.url}`
-                return {
-                  id: Date.now() + index,
-                  url: url,
-                  title: item.title || extractTitleFromUrl(url),
-                  deviceType: item.deviceType || 'desktop'
-                }
-              }
-              return null
-            }).filter(Boolean)
-          }
-        } catch (e) {
-          // 格式2: 逗号分隔的 URLs - https://google.com,https://bing.com
-          const urlList = urlsParam.split(',').map(u => u.trim()).filter(Boolean)
-          websites = urlList.map((urlStr, index) => {
-            const url = urlStr.startsWith('http') ? urlStr : `https://${urlStr}`
-            return {
-              id: Date.now() + index,
-              url: url,
-              title: extractTitleFromUrl(url),
-              deviceType: 'desktop'
-            }
-          })
-        }
-
-        if (websites.length === 0) return false
-
-        // 获取其他可选参数
-        const layoutName = urlParams.get('layoutName') || urlParams.get('name') || '导入的布局'
-
-        // 创建新布局
-        createLayout(layoutName, {
-          websites: websites
-        })
-
-        // 清除 URL 参数（可选）
-        if (urlParams.get('clearParams') !== 'false') {
-          const newUrl = window.location.pathname + window.location.hash
-          window.history.replaceState({}, document.title, newUrl)
-        }
-
-        return true
-      } catch (error) {
-        console.error('从 URL 参数导入布局失败:', error)
-        return false
-      }
-    }
-
-    // 从 URL 提取标题
-    const extractTitleFromUrl = (url) => {
-      try {
-        const urlObj = new URL(url)
-        return urlObj.hostname.replace('www.', '')
-      } catch (e) {
-        return '网站'
-      }
-    }
 
     // 页面加载时自动显示顶栏，然后隐藏
     onMounted(() => {
       // 首先尝试从 URL 参数导入布局
-      const imported = importLayoutFromUrlParams()
+      const importedLayout = importExport.importLayoutFromUrlParams()
+      if (importedLayout) {
+        handleCreateLayout(importedLayout.name, importedLayout)
+      }
 
       // 如果有弹窗显示，等待弹窗关闭后再显示顶栏
       // 否则直接显示顶栏
@@ -737,7 +249,7 @@ export default {
         showPanel.value = true
 
         // 如果成功导入了布局，显示提示
-        if (imported) {
+        if (importedLayout) {
           setTimeout(() => {
             alert('已成功从 URL 参数导入布局！')
           }, 500)
@@ -751,26 +263,29 @@ export default {
     })
 
     return {
-      isElectron,
+      // 状态
       showDownloadModal,
-      closeDownloadModal,
-      handleShowDownloadModal,
-      dialogVisible,
-      dialogType,
-      dialogTitle,
-      dialogMessage,
-      dialogPlaceholder,
-      dialogDefaultValue,
-      handleDialogConfirm,
-      handleDialogCancel,
-      showImportDialog,
-      closeImportDialog,
-      handleImportMode,
-      websites,
-      layouts,
-      currentLayoutId,
       fullscreenIndex,
       showPanel,
+      websites: websiteManager.websites,
+      layouts: layoutManager.layouts,
+      currentLayoutId: layoutManager.currentLayoutId,
+      // 对话框
+      dialogVisible: dialog.dialogVisible,
+      dialogType: dialog.dialogType,
+      dialogTitle: dialog.dialogTitle,
+      dialogMessage: dialog.dialogMessage,
+      dialogPlaceholder: dialog.dialogPlaceholder,
+      dialogDefaultValue: dialog.dialogDefaultValue,
+      handleDialogConfirm: dialog.handleDialogConfirm,
+      handleDialogCancel: dialog.handleDialogCancel,
+      // 导入对话框
+      showImportDialog: importExport.showImportDialog,
+      closeImportDialog: importExport.closeImportDialog,
+      handleImportModeSelect,
+      // 方法
+      closeDownloadModal,
+      handleShowDownloadModal,
       handleFullscreen,
       exitFullscreen,
       handleMouseMove,
@@ -778,10 +293,10 @@ export default {
       handleAddWebsite,
       handleRemoveWebsite,
       handleUpdateWebsite,
-      switchLayout,
-      createLayout,
-      deleteLayout,
-      renameLayout
+      handleSwitchLayout,
+      handleCreateLayout,
+      handleDeleteLayout,
+      renameLayout: layoutManager.renameLayout
     }
   }
 }
@@ -794,185 +309,6 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-/* Electron 环境警告遮罩层 */
-.electron-warning-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  backdrop-filter: blur(5px);
-}
-
-.electron-warning-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 48px;
-  max-width: 680px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  animation: fadeInScale 0.3s ease-out;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.warning-icon {
-  font-size: 64px;
-  margin-bottom: 24px;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-.electron-warning-modal h2 {
-  margin: 0 0 16px 0;
-  font-size: 28px;
-  color: #333;
-  font-weight: 600;
-}
-
-.warning-message {
-  color: #666;
-  font-size: 16px;
-  line-height: 1.6;
-  margin: 0 0 32px 0;
-}
-
-.warning-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.download-options {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.option-section {
-  background: #f8f9fa;
-  padding: 24px;
-  border-radius: 12px;
-  border: 2px solid #e9ecef;
-}
-
-.option-section h3 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  color: #333;
-}
-
-.option-desc {
-  color: #666;
-  font-size: 14px;
-  margin: 0 0 16px 0;
-}
-
-.install-hint {
-  color: #888;
-  font-size: 12px;
-  margin: 12px 0 0 0;
-  line-height: 1.8;
-}
-
-.tutorial-link {
-  color: #FF5C00;
-  text-decoration: none;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  transition: all 0.2s ease;
-}
-
-.tutorial-link:hover {
-  color: #FF7A33;
-  text-decoration: underline;
-}
-
-.divider {
-  color: #999;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 0;
-}
-
-.download-button {
-  display: inline-block;
-  padding: 14px 32px;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.download-button.primary {
-  background: #FF5C00;
-  box-shadow: 0 4px 15px rgba(255, 92, 0, 0.3);
-}
-
-.download-button.primary:hover {
-  background: #FF7A33;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 92, 0, 0.4);
-}
-
-.download-button.secondary {
-  background: #FF5C00;
-  box-shadow: 0 4px 15px rgba(255, 92, 0, 0.3);
-}
-
-.download-button.secondary:hover {
-  background: #FF7A33;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 92, 0, 0.4);
-}
-
-.dismiss-button {
-  padding: 12px 32px;
-  background: transparent;
-  color: #999;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.dismiss-button:hover {
-  background: #f5f5f5;
-  color: #666;
-  border-color: #ccc;
 }
 
 .top-trigger-area {
@@ -998,190 +334,4 @@ export default {
 .app-container :deep(.config-panel.panel-visible) {
   transform: translateY(0);
 }
-
-/* 导入模式选择对话框 */
-.import-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10001;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.import-dialog {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.import-dialog h3 {
-  margin: 0 0 12px 0;
-  font-size: 24px;
-  color: #333;
-  font-weight: 600;
-}
-
-.dialog-desc {
-  color: #666;
-  font-size: 15px;
-  margin: 0 0 24px 0;
-  line-height: 1.5;
-}
-
-.import-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.import-option {
-  display: flex;
-  gap: 16px;
-  padding: 20px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #fafafa;
-}
-
-.import-option:hover {
-  border-color: #FF5C00;
-  background: #fff5f0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.15);
-}
-
-.option-icon {
-  font-size: 32px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.option-content {
-  flex: 1;
-}
-
-.option-content h4 {
-  margin: 0 0 8px 0;
-  font-size: 17px;
-  color: #333;
-  font-weight: 600;
-}
-
-.option-content p {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.option-note {
-  display: block;
-  font-size: 12px;
-  color: #999;
-  font-style: italic;
-  line-height: 1.4;
-}
-
-.cancel-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  color: #666;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-btn:hover {
-  background: #f5f5f5;
-  color: #333;
-  border-color: #ccc;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .electron-warning-modal {
-    padding: 32px 24px;
-    max-width: 95%;
-  }
-
-  .electron-warning-modal h2 {
-    font-size: 22px;
-  }
-
-  .warning-message {
-    font-size: 14px;
-  }
-
-  .option-section {
-    padding: 20px;
-  }
-
-  .option-section h3 {
-    font-size: 18px;
-  }
-
-  .download-button {
-    padding: 12px 24px;
-    font-size: 14px;
-  }
-
-  .import-dialog {
-    padding: 24px;
-  }
-
-  .import-dialog h3 {
-    font-size: 20px;
-  }
-
-  .import-option {
-    padding: 16px;
-  }
-
-  .option-icon {
-    font-size: 28px;
-  }
-
-  .option-content h4 {
-    font-size: 16px;
-  }
-}
 </style>
-
