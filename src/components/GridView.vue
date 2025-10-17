@@ -1,18 +1,18 @@
 <template>
-  <div 
-    class="grid-view" 
+  <div
+    class="grid-view"
     :class="{ 'fullscreen-mode': fullscreenIndex !== null }"
     @dragenter.prevent="handleDragEnter"
     @dragleave="handleViewDragLeave"
     @mousemove="handleGridMouseMove"
   >
     <!-- 全屏模式下的顶部退出按钮条 -->
-    <div 
+    <div
       v-if="fullscreenIndex !== null && showFullscreenBar"
       class="fullscreen-exit-bar"
       @mouseleave="handleFullscreenBarLeave"
     >
-      <button 
+      <button
         class="btn-exit-fullscreen"
         @click="$emit('exitFullscreen')"
       >
@@ -23,13 +23,13 @@
       </button>
     </div>
     <!-- 拖动/调整大小时的全局遮罩层，防止iframe捕获鼠标事件 -->
-    <div 
+    <div
       v-if="isDraggingItem || isResizing"
       class="drag-overlay"
     ></div>
 
     <!-- 添加网站浮动按钮 -->
-    <button 
+    <button
       v-if="fullscreenIndex === null"
       class="btn-add-website-float"
       @click="startAddWebsite(-1)"
@@ -48,9 +48,9 @@
         <h3>{{ editingSlot === -1 ? '添加网站' : '编辑网站' }}</h3>
         <div class="form-group">
           <label>网站名称：</label>
-          <input 
+          <input
             v-model="newWebsite.title"
-            type="text" 
+            type="text"
             placeholder="例如：Google"
             class="form-input"
             @keyup.enter="confirmAddWebsite"
@@ -59,9 +59,9 @@
         </div>
         <div class="form-group">
           <label>网站地址：</label>
-          <input 
+          <input
             v-model="newWebsite.url"
-            type="text" 
+            type="text"
             placeholder="例如：bbc.com 或 https://bbc.com"
             class="form-input"
             @keyup.enter="confirmAddWebsite"
@@ -71,17 +71,17 @@
           <label>设备类型：</label>
           <div class="device-type-selector">
             <label class="device-option" :class="{ active: newWebsite.deviceType === 'desktop' }">
-              <input 
-                type="radio" 
-                value="desktop" 
+              <input
+                type="radio"
+                value="desktop"
                 v-model="newWebsite.deviceType"
               />
               <span>🖥️ PC版</span>
             </label>
             <label class="device-option" :class="{ active: newWebsite.deviceType === 'mobile' }">
-              <input 
-                type="radio" 
-                value="mobile" 
+              <input
+                type="radio"
+                value="mobile"
                 v-model="newWebsite.deviceType"
               />
               <span>📱 手机版</span>
@@ -99,9 +99,9 @@
       </div>
     </div>
 
-    <div 
+    <div
       class="grid-container"
-      :class="{ 
+      :class="{
         'free-layout': true,
         'is-dragging': isDraggingItem || isResizing
       }"
@@ -110,7 +110,7 @@
         v-for="(item, index) in allWebsites"
         :key="item.id"
         class="grid-item"
-        :class="{ 
+        :class="{
           'fullscreen': fullscreenIndex === index,
           'hidden': isHidden(index),
           'empty-slot': !item.url,
@@ -124,7 +124,7 @@
       >
         <!-- 已有网站显示 -->
         <template v-if="item.url">
-          <iframe 
+          <iframe
             :src="getWebsiteUrl(item)"
             frameborder="0"
             sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
@@ -133,7 +133,7 @@
             :title="item.title"
           ></iframe>
           <!-- 拖动手柄 -->
-          <div 
+          <div
             class="drag-handle"
             @mousedown="startDrag($event, index)"
             @touchstart="startDrag($event, index)"
@@ -149,7 +149,7 @@
             </svg>
           </div>
           <!-- 拖放捕获层 -->
-          <div 
+          <div
             v-if="isDragging"
             class="drop-zone"
             @dragover.prevent="handleDragOver(index)"
@@ -167,7 +167,7 @@
           </div>
           <!-- 非全屏模式下的浮动按钮 -->
           <div v-if="fullscreenIndex === null" class="floating-actions">
-            <button 
+            <button
               class="btn-action btn-refresh"
               @click="handleRefreshWebsite(index)"
               title="刷新页面"
@@ -178,7 +178,7 @@
                 <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
               </svg>
             </button>
-            <button 
+            <button
               class="btn-action btn-edit"
               @click="handleEditWebsite(index)"
               title="编辑链接"
@@ -188,7 +188,7 @@
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
             </button>
-            <button 
+            <button
               class="btn-action"
               @click="$emit('fullscreen', index)"
               title="全屏查看"
@@ -197,7 +197,7 @@
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
               </svg>
             </button>
-            <button 
+            <button
               class="btn-action btn-remove"
               @click="handleRemoveWebsite(index)"
               title="删除网站"
@@ -207,7 +207,7 @@
               </svg>
             </button>
           </div>
-          
+
           <!-- 调整大小手柄 -->
           <div class="resize-handles">
             <div class="resize-handle resize-se" @mousedown="startResize($event, index, 'se')"></div>
@@ -267,24 +267,24 @@ export default {
     const itemPositions = ref({})
     const itemSizes = ref({})
     const isColliding = ref(false) // 碰撞状态
-    
+
     // 网格吸附配置
     const GRID_SIZE = 20 // 网格单元大小（像素）
     const COLLISION_MARGIN = 20 // 碰撞检测边距（一个网格单位）
-    
+
     // 吸附到网格的辅助函数
     const snapToGrid = (value) => {
       return Math.round(value / GRID_SIZE) * GRID_SIZE
     }
-    
+
     // 检测两个矩形是否重叠
     const checkCollision = (rect1, rect2) => {
-      return !(rect1.x + rect1.width <= rect2.x || 
-               rect2.x + rect2.width <= rect1.x || 
-               rect1.y + rect1.height <= rect2.y || 
+      return !(rect1.x + rect1.width <= rect2.x ||
+               rect2.x + rect2.width <= rect1.x ||
+               rect1.y + rect1.height <= rect2.y ||
                rect2.y + rect2.height <= rect1.y)
     }
-    
+
     // 检测指定索引的元素是否与其他元素碰撞（包含边距）
     const checkCollisionWithOthers = (index, newPos, newSize) => {
       // 扩大检测区域，为rect1添加边距
@@ -294,16 +294,16 @@ export default {
         width: newSize.width + COLLISION_MARGIN,
         height: newSize.height + COLLISION_MARGIN
       }
-      
+
       // 检测与其他所有元素的碰撞
       for (let i = 0; i < allWebsites.value.length; i++) {
         if (i === index) continue // 跳过自己
-        
+
         const pos = itemPositions.value[i]
         const size = itemSizes.value[i]
-        
+
         if (!pos || !size) continue
-        
+
         // 也为rect2添加边距
         const rect2 = {
           x: pos.x - COLLISION_MARGIN / 2,
@@ -311,26 +311,26 @@ export default {
           width: size.width + COLLISION_MARGIN,
           height: size.height + COLLISION_MARGIN
         }
-        
+
         if (checkCollision(rect1, rect2)) {
           return true // 发生碰撞（考虑边距）
         }
       }
-      
+
       return false // 无碰撞
     }
-    
+
     // 检测移动是否在远离碰撞（用于允许从重叠状态移出）
     const isMovingAway = (index, oldPos, newPos) => {
       // 检测与所有其他元素的距离是否在增加
       for (let i = 0; i < allWebsites.value.length; i++) {
         if (i === index) continue
-        
+
         const otherPos = itemPositions.value[i]
         const otherSize = itemSizes.value[i]
-        
+
         if (!otherPos || !otherSize) continue
-        
+
         // 计算中心点
         const currentSize = itemSizes.value[index] || { width: 400, height: 300 }
         const oldCenter = {
@@ -345,39 +345,39 @@ export default {
           x: otherPos.x + otherSize.width / 2,
           y: otherPos.y + otherSize.height / 2
         }
-        
+
         // 计算距离
         const oldDist = Math.sqrt(
-          Math.pow(oldCenter.x - otherCenter.x, 2) + 
+          Math.pow(oldCenter.x - otherCenter.x, 2) +
           Math.pow(oldCenter.y - otherCenter.y, 2)
         )
         const newDist = Math.sqrt(
-          Math.pow(newCenter.x - otherCenter.x, 2) + 
+          Math.pow(newCenter.x - otherCenter.x, 2) +
           Math.pow(newCenter.y - otherCenter.y, 2)
         )
-        
+
         // 如果距离增加，说明在远离
         if (newDist > oldDist) {
           return true
         }
       }
-      
+
       return false
     }
-    
+
     // 初始化网格布局
     const initializeGridLayout = () => {
       const container = document.querySelector('.grid-container')
       if (!container) return
-      
+
       const containerWidth = container.clientWidth
       const defaultItemWidth = 400
       const defaultItemHeight = 300
       const spacing = 20
-      
+
       // 计算每行可以放置多少个项目
       const itemsPerRow = Math.max(1, Math.floor(containerWidth / (defaultItemWidth + spacing)))
-      
+
       // 为每个项目计算初始位置和大小
       allWebsites.value.forEach((item, index) => {
         // 优先从数据中加载位置和大小
@@ -393,10 +393,10 @@ export default {
         else {
           const row = Math.floor(index / itemsPerRow)
           const col = index % itemsPerRow
-          
+
           const x = col * (defaultItemWidth + spacing) + spacing
           const y = row * (defaultItemHeight + spacing) + spacing
-          
+
           itemPositions.value[index] = { x, y }
           itemSizes.value[index] = { width: defaultItemWidth, height: defaultItemHeight }
         }
@@ -408,12 +408,12 @@ export default {
       // 进入全屏时自动显示按钮条
       if (newVal !== null && oldVal === null) {
         showFullscreenBar.value = true
-        
+
         // 清除之前的定时器
         if (hideTimer) {
           clearTimeout(hideTimer)
         }
-        
+
         // 2秒后自动隐藏
         hideTimer = setTimeout(() => {
           showFullscreenBar.value = false
@@ -435,12 +435,12 @@ export default {
           gridTemplateRows: '1fr'
         }
       }
-      
+
       // 如果行数超过3，使用 minmax 让每行至少有固定高度，允许滚动
-      const rowTemplate = props.rows > 3 
+      const rowTemplate = props.rows > 3
         ? `repeat(${props.rows}, minmax(300px, 1fr))`
         : `repeat(${props.rows}, 1fr)`
-      
+
       return {
         display: 'grid',
         gridTemplateColumns: `repeat(${props.cols}, 1fr)`,
@@ -467,13 +467,13 @@ export default {
     // 获取网站URL，支持设备类型
     const getWebsiteUrl = (item) => {
       if (!item.url) return ''
-      
+
       // 如果是手机版，尝试转换为移动版URL
       if (item.deviceType === 'mobile') {
         try {
           const url = new URL(item.url)
           const hostname = url.hostname
-          
+
           // 常见网站的移动版转换规则
           const mobileRules = {
             // 如果已经是 m. 开头，不处理
@@ -483,7 +483,7 @@ export default {
             // 其他情况：example.com -> m.example.com
             'default': 'm.' + hostname.replace(/^www\./, '')
           }
-          
+
           // 应用转换规则
           let newHostname = hostname
           if (hostname.startsWith('m.')) {
@@ -494,7 +494,7 @@ export default {
           } else {
             newHostname = 'm.' + hostname
           }
-          
+
           url.hostname = newHostname
           return url.toString()
         } catch (e) {
@@ -503,7 +503,7 @@ export default {
           return item.url
         }
       }
-      
+
       return item.url
     }
 
@@ -513,7 +513,7 @@ export default {
       if (props.fullscreenIndex === index) {
         return {}
       }
-      
+
       // 如果位置还未初始化，先初始化
       if (!itemPositions.value[index] || !itemSizes.value[index]) {
         // 确保容器已存在
@@ -525,21 +525,21 @@ export default {
           const defaultItemHeight = 300
           const spacing = 20
           const itemsPerRow = Math.max(1, Math.floor(containerWidth / (defaultItemWidth + spacing)))
-          
+
           const row = Math.floor(index / itemsPerRow)
           const col = index % itemsPerRow
-          
+
           const x = col * (defaultItemWidth + spacing) + spacing
           const y = row * (defaultItemHeight + spacing) + spacing
-          
+
           itemPositions.value[index] = { x, y }
           itemSizes.value[index] = { width: defaultItemWidth, height: defaultItemHeight }
         }
       }
-      
+
       const position = itemPositions.value[index] || { x: 20, y: 20 }
       const size = itemSizes.value[index] || { width: 400, height: 300 }
-      
+
       return {
         position: 'absolute',
         left: `${position.x}px`,
@@ -562,12 +562,12 @@ export default {
     const confirmAddWebsite = () => {
       if (newWebsite.value.title && newWebsite.value.url) {
         let url = newWebsite.value.url.trim()
-        
+
         // 如果URL不是以 http:// 或 https:// 开头，自动添加 https://
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
           url = 'https://' + url
         }
-        
+
         // 验证URL格式
         try {
           new URL(url)
@@ -575,7 +575,7 @@ export default {
           alert('请输入有效的网址格式，例如：google.com 或 https://google.com')
           return
         }
-        
+
         // 如果是编辑模式
         if (editingSlot.value !== -1 && editingSlot.value !== null) {
           emit('update-website', {
@@ -592,7 +592,7 @@ export default {
             deviceType: newWebsite.value.deviceType
           })
         }
-        
+
         editingSlot.value = null
         newWebsite.value = { title: '', url: '', deviceType: 'desktop' }
       }
@@ -685,11 +685,11 @@ export default {
     const handleDrop = (event, index) => {
       isDragging.value = false
       dragOverIndex.value = null
-      
+
       // 获取拖放的数据
       let url = ''
       let title = ''
-      
+
       // 尝试从不同的数据格式中获取URL
       if (event.dataTransfer.getData('text/uri-list')) {
         url = event.dataTransfer.getData('text/uri-list')
@@ -698,22 +698,22 @@ export default {
       } else if (event.dataTransfer.getData('URL')) {
         url = event.dataTransfer.getData('URL')
       }
-      
+
       // 尝试获取标题
       if (event.dataTransfer.getData('text/x-moz-url')) {
         const mozUrl = event.dataTransfer.getData('text/x-moz-url').split('\n')
         url = mozUrl[0]
         title = mozUrl[1] || ''
       }
-      
+
       // 清理URL（移除可能的换行符）
       url = url.trim().split('\n')[0]
-      
+
       if (!url || !url.startsWith('http')) {
         alert('请拖入有效的网址')
         return
       }
-      
+
       // 如果没有标题，尝试从URL提取
       if (!title) {
         try {
@@ -723,7 +723,7 @@ export default {
           title = '新网站'
         }
       }
-      
+
       // 如果已有网站，提示用户
       const currentWebsite = props.websites[index]
       if (currentWebsite && currentWebsite.url) {
@@ -742,32 +742,32 @@ export default {
       if (event.target.classList.contains('resize-handle')) {
         return
       }
-      
+
       // 检查是否点击了表单元素或其内部
       const target = event.target
-      if (target.closest('.add-website-form') || 
+      if (target.closest('.add-website-form') ||
           target.classList.contains('add-website-form') ||
           target.tagName === 'INPUT' ||
           target.tagName === 'BUTTON' ||
           target.closest('.floating-actions')) {
         return
       }
-      
+
       event.preventDefault()
       event.stopPropagation()
-      
+
       isDraggingItem.value = true
       currentDragIndex.value = index
-      
+
       // 给 body 添加类，全局禁用 iframe
       document.body.classList.add('dragging-item')
-      
+
       const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX
       const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY
-      
+
       dragStartPos.value = { x: clientX, y: clientY }
       dragStartItemPos.value = { ...itemPositions.value[index] }
-      
+
       document.addEventListener('mousemove', handleDragMove, { passive: false })
       document.addEventListener('mouseup', handleDragEnd)
       document.addEventListener('touchmove', handleDragMove, { passive: false })
@@ -777,28 +777,28 @@ export default {
     // 处理拖拽移动
     const handleDragMove = (event) => {
       if (!isDraggingItem.value) return
-      
+
       event.preventDefault()
       event.stopPropagation()
-      
+
       const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX
       const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY
-      
+
       const deltaX = clientX - dragStartPos.value.x
       const deltaY = clientY - dragStartPos.value.y
-      
+
       const newX = Math.max(0, dragStartItemPos.value.x + deltaX)
       const newY = Math.max(0, dragStartItemPos.value.y + deltaY)
-      
+
       const currentSize = itemSizes.value[currentDragIndex.value] || { width: 400, height: 300 }
-      
+
       // 检测碰撞
       const hasCollision = checkCollisionWithOthers(currentDragIndex.value, { x: newX, y: newY }, currentSize)
       const currentPos = itemPositions.value[currentDragIndex.value]
       const movingAway = isMovingAway(currentDragIndex.value, currentPos, { x: newX, y: newY })
-      
+
       isColliding.value = hasCollision
-      
+
       // 如果没有碰撞，或者正在远离碰撞（解除重叠），允许移动
       if (!hasCollision || movingAway) {
         itemPositions.value[currentDragIndex.value] = { x: newX, y: newY }
@@ -816,7 +816,7 @@ export default {
             y: snapToGrid(currentPos.y)
           }
           itemPositions.value[currentDragIndex.value] = snappedPos
-          
+
           // 保存位置到数据中
           emit('update-website', {
             index: currentDragIndex.value,
@@ -824,14 +824,14 @@ export default {
           })
         }
       }
-      
+
       // 移除 body 类，恢复 iframe 交互
       document.body.classList.remove('dragging-item')
-      
+
       isDraggingItem.value = false
       isColliding.value = false
       currentDragIndex.value = -1
-      
+
       document.removeEventListener('mousemove', handleDragMove)
       document.removeEventListener('mouseup', handleDragEnd)
       document.removeEventListener('touchmove', handleDragMove)
@@ -842,23 +842,23 @@ export default {
     const startResize = (event, index, handle) => {
       event.preventDefault()
       event.stopPropagation()
-      
+
       isResizing.value = true
       resizeHandle.value = handle
       currentDragIndex.value = index
-      
+
       // 给 body 添加类，全局禁用 iframe
       document.body.classList.add('resizing-item')
-      
+
       const clientX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX
       const clientY = event.type === 'touchstart' ? event.touches[0].clientY : event.clientY
-      
+
       dragStartPos.value = { x: clientX, y: clientY }
       dragStartItemPos.value = { ...itemPositions.value[index] }
-      
+
       const currentSize = itemSizes.value[index] || { width: 300, height: 200 }
       dragStartItemPos.value = { ...dragStartItemPos.value, ...currentSize }
-      
+
       document.addEventListener('mousemove', handleResizeMove, { passive: false })
       document.addEventListener('mouseup', handleResizeEnd)
       document.addEventListener('touchmove', handleResizeMove, { passive: false })
@@ -868,38 +868,38 @@ export default {
     // 处理调整大小移动
     const handleResizeMove = (event) => {
       if (!isResizing.value) return
-      
+
       event.preventDefault()
       event.stopPropagation()
-      
+
       const clientX = event.type === 'touchmove' ? event.touches[0].clientX : event.clientX
       const clientY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY
-      
+
       const deltaX = clientX - dragStartPos.value.x
       const deltaY = clientY - dragStartPos.value.y
-      
+
       const currentSize = itemSizes.value[currentDragIndex.value] || { width: 300, height: 200 }
       let newWidth = currentSize.width
       let newHeight = currentSize.height
-      
+
       if (resizeHandle.value.includes('e')) {
         newWidth = Math.max(200, dragStartItemPos.value.width + deltaX)
       }
       if (resizeHandle.value.includes('s')) {
         newHeight = Math.max(150, dragStartItemPos.value.height + deltaY)
       }
-      
+
       const currentPos = itemPositions.value[currentDragIndex.value] || { x: 0, y: 0 }
-      
+
       // 检测碰撞
       const hasCollision = checkCollisionWithOthers(currentDragIndex.value, currentPos, { width: newWidth, height: newHeight })
-      
+
       // 对于调整大小，检测是否在缩小（缩小总是允许的，因为可能在解除重叠）
       const currentSizeVal = itemSizes.value[currentDragIndex.value] || { width: 300, height: 200 }
       const isShrinking = newWidth < currentSizeVal.width || newHeight < currentSizeVal.height
-      
+
       isColliding.value = hasCollision
-      
+
       // 如果没有碰撞，或者正在缩小（解除重叠），允许调整
       if (!hasCollision || isShrinking) {
         itemSizes.value[currentDragIndex.value] = { width: newWidth, height: newHeight }
@@ -917,7 +917,7 @@ export default {
             height: snapToGrid(currentSize.height)
           }
           itemSizes.value[currentDragIndex.value] = snappedSize
-          
+
           // 保存大小到数据中
           emit('update-website', {
             index: currentDragIndex.value,
@@ -925,15 +925,15 @@ export default {
           })
         }
       }
-      
+
       // 移除 body 类，恢复 iframe 交互
       document.body.classList.remove('resizing-item')
-      
+
       isResizing.value = false
       isColliding.value = false
       resizeHandle.value = ''
       currentDragIndex.value = -1
-      
+
       document.removeEventListener('mousemove', handleResizeMove)
       document.removeEventListener('mouseup', handleResizeEnd)
       document.removeEventListener('touchmove', handleResizeMove)
@@ -947,17 +947,17 @@ export default {
         initializeGridLayout()
       })
     }, { immediate: false })
-    
+
     // 组件挂载时初始化布局
     onMounted(() => {
       nextTick(() => {
         initializeGridLayout()
       })
-      
+
       // 监听窗口大小变化
       window.addEventListener('resize', initializeGridLayout)
     })
-    
+
     // 组件卸载时清理定时器和事件监听
     onUnmounted(() => {
       if (hideTimer) {
@@ -1173,7 +1173,7 @@ export default {
 .grid-container.free-layout {
   position: relative;
   min-height: 100vh;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 92, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 92, 0, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
@@ -1193,6 +1193,7 @@ export default {
   position: relative;
   min-height: 300px;
   cursor: move;
+  border: solid 1px #FF5C00;
 }
 
 .grid-item.draggable:hover {
