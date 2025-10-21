@@ -14,7 +14,7 @@ function createWindow() {
     height: 900,
     minWidth: 800,
     minHeight: 600,
-    icon: path.join(__dirname, '../public/icon.png'),
+    icon: path.join(__dirname, '../public/256x256.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -25,8 +25,8 @@ function createWindow() {
     },
     backgroundColor: '#f5f5f5',
     show: false,
-    frame: true,
-    titleBarStyle: 'default'
+    frame: false, // 无边框窗口
+    titleBarStyle: 'hidden'
   })
 
   // 开发模式加载开发服务器，生产模式加载构建文件
@@ -144,6 +144,50 @@ ipcMain.handle('execute-in-iframe', async (event, iframeId, code) => {
     console.error('[Electron Main] IPC处理错误:', error.message)
     return { success: false, error: error.message }
   }
+})
+
+// 窗口控制 IPC 处理器
+ipcMain.on('window-minimize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize()
+  }
+})
+
+ipcMain.on('window-maximize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow.maximize()
+    }
+  }
+})
+
+ipcMain.on('window-close', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close()
+  }
+})
+
+ipcMain.on('window-fullscreen', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setFullScreen(!mainWindow.isFullScreen())
+  }
+})
+
+// 监听窗口状态变化
+ipcMain.handle('window-is-maximized', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.isMaximized()
+  }
+  return false
+})
+
+ipcMain.handle('window-is-fullscreen', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.isFullScreen()
+  }
+  return false
 })
 
 app.on('window-all-closed', () => {

@@ -1,5 +1,8 @@
 <template>
   <div class="app-container" @mousemove="handleMouseMove">
+    <!-- 自定义标题栏（仅在 Electron 中显示） -->
+    <TitleBar />
+    
     <!-- 下载插件/客户端提醒弹窗 -->
     <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
 
@@ -58,6 +61,7 @@
 
 <script>
 import { ref, watch, onMounted, provide } from 'vue'
+import TitleBar from './components/TitleBar.vue'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
 import Dialog from './components/Dialog.vue'
@@ -71,6 +75,7 @@ import { useImportExport } from './composables/useImportExport'
 export default {
   name: 'App',
   components: {
+    TitleBar,
     ConfigPanel,
     GridView,
     Dialog,
@@ -309,6 +314,12 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
+  padding-top: 0;
+}
+
+/* 如果有 TitleBar（Electron），为其留出空间 */
+.app-container:has(.title-bar) {
+  padding-top: 32px;
 }
 
 .top-trigger-area {
@@ -321,6 +332,11 @@ export default {
   pointer-events: all;
 }
 
+/* 如果有 TitleBar，调整触发区域位置 */
+.app-container:has(.title-bar) .top-trigger-area {
+  top: 32px;
+}
+
 .app-container :deep(.config-panel) {
   position: fixed;
   top: 0;
@@ -329,6 +345,11 @@ export default {
   z-index: 999;
   transform: translateY(-100%);
   transition: transform 0.3s ease-out;
+}
+
+/* 如果有 TitleBar，调整 ConfigPanel 位置 */
+.app-container:has(.title-bar) :deep(.config-panel) {
+  top: 32px;
 }
 
 .app-container :deep(.config-panel.panel-visible) {
