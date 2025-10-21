@@ -48,6 +48,20 @@
           并限制视口宽度为 375px，适合查看响应式网站的移动布局
         </div>
       </div>
+      <div class="form-group">
+        <label>目标选择器（可选）：</label>
+        <input
+          v-model="localWebsite.targetSelector"
+          type="text"
+          placeholder="例如：#main-content 或 .video-player"
+          class="form-input"
+          @keyup.enter="handleConfirm"
+        />
+        <div class="selector-hint">
+          💡 全屏时只显示匹配此CSS选择器的元素（仅Electron版本和Chrome插件支持）<br>
+          留空则显示整个页面
+        </div>
+      </div>
       <div class="form-actions">
         <button class="btn-confirm" @click="handleConfirm">确定</button>
         <button class="btn-cancel" @click="$emit('cancel')">取消</button>
@@ -75,7 +89,8 @@ export default {
       default: () => ({
         title: '',
         url: '',
-        deviceType: 'desktop'
+        deviceType: 'desktop',
+        targetSelector: ''
       })
     }
   },
@@ -85,7 +100,8 @@ export default {
     const localWebsite = ref({
       title: '',
       url: '',
-      deviceType: 'desktop'
+      deviceType: 'desktop',
+      targetSelector: ''
     })
 
     // 监听 website prop 变化，更新本地数据
@@ -231,6 +247,17 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #1e40af;
+}
+
+.selector-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #fff4e6;
+  border-left: 3px solid #ff9800;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e65100;
 }
 
 .device-option {

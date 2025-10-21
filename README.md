@@ -15,6 +15,7 @@
 - 🔄 **多布局配置** - 创建多个布局场景，快速切换（如工作、学习、娱乐等）
 - 🔍 单击任意网页进行全屏查看
 - ↩️ 全屏模式下可缩放回 Grid 状态
+- 🎯 **CSS选择器全屏** - 配置CSS选择器，全屏时只显示指定元素（如视频播放器、文章正文等）
 - 💾 自动保存配置，下次打开自动恢复
 - 🎨 现代化 UI 设计，主题色 #FF5C00
 - 🌐 **布局分享** - 分享你的布局给其他用户，或浏览使用他人分享的布局
@@ -199,6 +200,51 @@ http://localhost:3000/?urls=https://twitter.com,https://facebook.com,https://ins
 ```
 
 详细说明请查看 [URL_IMPORT.md](./URL_IMPORT.md)
+
+### CSS选择器全屏功能 🆕
+
+Tab Hive 现在支持在全屏时只显示iframe中指定CSS选择器的元素！
+
+#### 应用场景
+
+- 🎬 **视频网站** - 只显示视频播放器，隐藏评论和推荐
+- 📖 **文章阅读** - 只显示文章正文，屏蔽广告和侧边栏
+- 📺 **直播平台** - 聚焦直播画面，隐藏弹幕控制
+- 📊 **数据看板** - 展示特定图表或数据面板
+
+#### 使用方法
+
+1. **Electron版本**（内置支持，无需扩展）
+   - 添加/编辑网站时填写"目标选择器"
+   - 例如：`#movie_player`（YouTube播放器）
+   - 全屏时只显示该元素
+
+2. **网页版本**（需要Chrome扩展）
+   - 安装Chrome扩展（见下方）
+   - 在Tab Hive中配置选择器
+   - 全屏时扩展会自动应用
+
+#### 常用选择器示例
+
+```
+YouTube:      #movie_player
+Bilibili:     .bilibili-player
+知乎文章:      .Post-Main
+通用视频:      video
+```
+
+#### Chrome扩展安装
+
+```bash
+1. 打开 chrome://extensions/
+2. 启用"开发者模式"
+3. 点击"加载已解压的扩展程序"
+4. 选择项目中的 chrome-extension 文件夹
+```
+
+详细说明请查看：
+- [SELECTOR_FEATURE.md](./SELECTOR_FEATURE.md) - 功能详细说明
+- [chrome-extension/INSTALL.md](./chrome-extension/INSTALL.md) - Chrome扩展安装指南
 
 ## 注意事项
 

@@ -52,6 +52,7 @@
           <span>Help</span>
         </a>
         <button
+          v-if="!isElectron"
           class="btn-download"
           @click="$emit('show-download-modal')"
           title="下载桌面客户端或插件"
@@ -76,7 +77,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import LayoutDropdown from './LayoutDropdown.vue'
 import { useSharedLayouts } from '../composables/useSharedLayouts'
 import { useLayoutOperations } from '../composables/useLayoutOperations'
@@ -109,13 +110,15 @@ export default {
     const showImportModeDialog = inject('showImportModeDialog')
 
     // 检测是否在 Electron 环境中
-    const isElectron = typeof window !== 'undefined' &&
-      (window.electron !== undefined ||
-       (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
+    const isElectron = computed(() => {
+      return typeof window !== 'undefined' &&
+        (window.electron !== undefined ||
+         (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
+    })
 
     // 使用 composables
-    const sharedLayouts = useSharedLayouts(isElectron)
-    const operations = useLayoutOperations(isElectron)
+    const sharedLayouts = useSharedLayouts(isElectron.value)
+    const operations = useLayoutOperations(isElectron.value)
 
     // 点击外部区域关闭下拉菜单
     const handleClickOutside = (event) => {
@@ -254,6 +257,7 @@ export default {
     }
 
     return {
+      isElectron,
       showLayoutDropdown,
       sharedLayouts,
       operations,

@@ -16,12 +16,15 @@
     <!-- 已有网站显示 -->
     <template v-if="item.url">
       <iframe
+        :ref="el => setIframeRef(el)"
+        :data-iframe-id="`iframe-${item.id}`"
         :src="websiteUrl"
         frameborder="0"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+        v-bind="isElectron ? {} : { sandbox: 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads' }"
         class="website-iframe"
         :class="{ 'mobile-view': item.deviceType === 'mobile' }"
         :title="item.title"
+        :allow="'autoplay; fullscreen; picture-in-picture'"
       ></iframe>
       
       <!-- 拖动手柄 -->
@@ -114,7 +117,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
 export default {
   name: 'WebsiteCard',
@@ -170,6 +173,19 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'edit', 'fullscreen', 'remove', 'resize-start'],
   setup(props) {
+    const iframeRef = ref(null)
+    const originalStyles = ref(null)
+    
+    // 检测是否在Electron环境
+    const isElectron = computed(() => window.electron?.isElectron || false)
+
+    /**
+     * 设置iframe引用
+     */
+    const setIframeRef = (el) => {
+      iframeRef.value = el
+    }
+
     /**
      * 获取网站URL，支持设备类型
      */
@@ -205,8 +221,336 @@ export default {
       return props.item.url
     })
 
+    /**
+     * 应用选择器（在Grid模式下只显示指定元素）
+     */
+    const applySelectorFullscreen = async () => {
+      // 必须有选择器和iframe引用
+      if (!props.item.targetSelector || !iframeRef.value) {
+        console.log('[Tab Hive] 跳过应用选择器：', {
+          hasSelector: !!props.item.targetSelector,
+          hasIframe: !!iframeRef.value
+        })
+        return
+      }
+      
+      console.log('[Tab Hive] 开始应用选择器（Grid模式）')
+
+      // 检查是否在Electron环境
+      const isElectronEnv = window.electron?.isElectron
+
+      if (isElectronEnv) {
+        // Electron环境：注入CSS样式到iframe
+        try {
+          console.log('[Tab Hive] Electron环境 - 应用选择器:', props.item.targetSelector)
+          
+          const styleId = `tabhive-selector-style-${props.item.id}`
+          const selector = props.item.targetSelector
+          
+          // 创建style标签注入到iframe
+          const code = `
+            (function() {
+              try {
+                const selector = '${selector.replace(/'/g, "\\'")}';
+                console.log('[Tab Hive iframe] 应用选择器:', selector);
+                
+                // 移除旧的style
+                const oldStyle = document.getElementById('${styleId}');
+                if (oldStyle) {
+                  oldStyle.remove();
+                }
+                
+                // 检查元素是否存在
+                const targetElement = document.querySelector(selector);
+                if (!targetElement) {
+                  console.warn('[Tab Hive iframe] 未找到选择器对应的元素:', selector);
+                  return { success: false, error: '未找到元素' };
+                }
+                
+                // 输出调试信息
+                console.log('[Tab Hive iframe] 目标元素信息:', {
+                  tagName: targetElement.tagName,
+                  className: targetElement.className,
+                  id: targetElement.id,
+                  width: targetElement.offsetWidth,
+                  height: targetElement.offsetHeight,
+                  computedStyle: window.getComputedStyle(targetElement).display
+                });
+                
+                // 遍历父元素链，隐藏每一层的兄弟元素
+                let current = targetElement;
+                let hiddenCount = 0;
+                
+                while (current && current !== document.body) {
+                  // 获取所有兄弟元素
+                  const parent = current.parentElement;
+                  if (parent) {
+                    Array.from(parent.children).forEach(sibling => {
+                      // 如果不是当前元素，且不是script/style/link，就隐藏
+                      if (sibling !== current && 
+                          !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+                        sibling.style.display = 'none';
+                        sibling.setAttribute('data-tabhive-hidden', 'true');
+                        hiddenCount++;
+                      }
+                    });
+                  }
+                  current = parent;
+                }
+                
+                console.log('[Tab Hive iframe] 已隐藏 ' + hiddenCount + ' 个兄弟元素');
+                
+                // 创建style标签，让目标元素填满
+                const style = document.createElement('style');
+                style.id = '${styleId}';
+                style.textContent = \`
+                  /* Tab Hive - 让选择器元素填满整个区域 */
+                  
+                  /* 重置body和html */
+                  html, body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    overflow: hidden !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                  }
+                  
+                  /* 目标元素：fixed定位，填满整个视口 */
+                  \${selector} {
+                    display: block !important;
+                    visibility: visible !important;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    z-index: 999999 !important;
+                    object-fit: contain !important;
+                  }
+                  
+                  /* 确保子元素可见 */
+                  \${selector} * {
+                    visibility: visible !important;
+                  }
+                \`;
+                
+                document.head.appendChild(style);
+                
+                // 检查应用后的状态
+                setTimeout(() => {
+                  console.log('[Tab Hive iframe] 样式应用后元素状态:', {
+                    display: window.getComputedStyle(targetElement).display,
+                    visibility: window.getComputedStyle(targetElement).visibility,
+                    width: targetElement.offsetWidth,
+                    height: targetElement.offsetHeight,
+                    position: targetElement.getBoundingClientRect()
+                  });
+                }, 100);
+                
+                console.log('[Tab Hive iframe] 选择器全屏已应用');
+                return { success: true };
+              } catch (e) {
+                console.error('[Tab Hive iframe] 错误:', e);
+                return { success: false, error: e.message };
+              }
+            })()
+          `
+
+          const result = await window.electron.executeInIframe(`iframe-${props.item.id}`, code)
+          if (!result.success) {
+            console.warn('[Tab Hive] 选择器应用失败:', result.error)
+          }
+        } catch (error) {
+          console.error('[Tab Hive] 应用选择器全屏失败:', error)
+        }
+      } else {
+        // Chrome扩展环境：通过postMessage与content script通信
+        try {
+          // 生成唯一请求ID
+          const requestId = `selector-fullscreen-${Date.now()}`
+          
+          // 创建Promise等待响应
+          const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', responseHandler)
+              reject(new Error('Chrome扩展响应超时'))
+            }, 5000)
+
+            const responseHandler = (event) => {
+              if (event.data.source === 'tab-hive-extension' && 
+                  event.data.action === 'applySelectorFullscreenResponse' &&
+                  event.data.requestId === requestId) {
+                clearTimeout(timeout)
+                window.removeEventListener('message', responseHandler)
+                resolve(event.data.response)
+              }
+            }
+
+            window.addEventListener('message', responseHandler)
+
+            // 发送消息到iframe
+            if (iframeRef.value && iframeRef.value.contentWindow) {
+              iframeRef.value.contentWindow.postMessage({
+                source: 'tab-hive',
+                action: 'applySelectorFullscreen',
+                selector: props.item.targetSelector,
+                requestId: requestId
+              }, '*')
+            }
+          })
+
+          if (!response.success) {
+            console.error('应用选择器全屏失败:', response.error)
+          }
+        } catch (error) {
+          console.error('Chrome扩展通信失败:', error.message)
+          console.warn('请确保已安装Tab Hive Chrome扩展')
+        }
+      }
+    }
+
+    /**
+     * 恢复原始样式（移除选择器效果，显示完整网页）
+     */
+    const restoreOriginalStyles = async () => {
+      if (!props.item.targetSelector || !iframeRef.value) {
+        console.log('[Tab Hive] 跳过恢复样式：', {
+          hasSelector: !!props.item.targetSelector,
+          hasIframe: !!iframeRef.value
+        })
+        return
+      }
+      
+      console.log('[Tab Hive] 开始恢复原始样式（全屏模式）')
+
+      const isElectronEnv = window.electron?.isElectron
+
+      if (isElectronEnv) {
+        try {
+          console.log('[Tab Hive] 恢复原始样式')
+          
+          const styleId = `tabhive-selector-style-${props.item.id}`
+          
+          const code = `
+            (function() {
+              try {
+                // 移除注入的style标签
+                const style = document.getElementById('${styleId}');
+                if (style) {
+                  style.remove();
+                  console.log('[Tab Hive iframe] 样式已移除');
+                }
+                
+                // 恢复所有被隐藏的兄弟元素
+                const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+                let restoredCount = 0;
+                hiddenElements.forEach(el => {
+                  el.style.display = '';
+                  el.removeAttribute('data-tabhive-hidden');
+                  restoredCount++;
+                });
+                console.log('[Tab Hive iframe] 已恢复 ' + restoredCount + ' 个元素');
+                
+                return { success: true };
+              } catch (e) {
+                console.error('[Tab Hive iframe] 移除样式失败:', e);
+                return { success: false, error: e.message };
+              }
+            })()
+          `
+
+          await window.electron.executeInIframe(`iframe-${props.item.id}`, code)
+        } catch (error) {
+          console.error('[Tab Hive] 恢复原始样式失败:', error)
+        }
+      } else {
+        // Chrome扩展环境
+        try {
+          const requestId = `restore-styles-${Date.now()}`
+          
+          const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', responseHandler)
+              reject(new Error('Chrome扩展响应超时'))
+            }, 5000)
+
+            const responseHandler = (event) => {
+              if (event.data.source === 'tab-hive-extension' && 
+                  event.data.action === 'restoreOriginalStylesResponse' &&
+                  event.data.requestId === requestId) {
+                clearTimeout(timeout)
+                window.removeEventListener('message', responseHandler)
+                resolve(event.data.response)
+              }
+            }
+
+            window.addEventListener('message', responseHandler)
+
+            if (iframeRef.value && iframeRef.value.contentWindow) {
+              iframeRef.value.contentWindow.postMessage({
+                source: 'tab-hive',
+                action: 'restoreOriginalStyles',
+                requestId: requestId
+              }, '*')
+            }
+          })
+
+          if (!response.success) {
+            console.error('恢复原始样式失败:', response.error)
+          }
+        } catch (error) {
+          console.error('Chrome扩展通信失败:', error.message)
+        }
+      }
+    }
+
+    // 监听全屏状态变化
+    watch(() => props.isFullscreen, async (newVal) => {
+      console.log('[Tab Hive Watch] 全屏状态变化:', newVal)
+      console.log('[Tab Hive Watch] 目标选择器:', props.item.targetSelector)
+      console.log('[Tab Hive Watch] iframe引用:', iframeRef.value)
+      
+      if (!newVal && props.item.targetSelector) {
+        // 退出全屏 -> Grid模式 -> 应用选择器（只显示指定元素）
+        console.log('[Tab Hive Watch] 退出全屏，进入Grid模式，应用选择器')
+        setTimeout(async () => {
+          await applySelectorFullscreen()
+        }, 1000)
+      } else if (newVal && props.item.targetSelector) {
+        // 进入全屏 -> 移除选择器效果（显示完整页面）
+        console.log('[Tab Hive Watch] 进入全屏，移除选择器效果，显示完整页面')
+        await restoreOriginalStyles()
+      }
+    })
+
+    // 监听iframe加载完成
+    onMounted(() => {
+      if (iframeRef.value) {
+        iframeRef.value.addEventListener('load', async () => {
+          // 如果不是全屏状态且有选择器，应用选择器
+          if (!props.isFullscreen && props.item.targetSelector) {
+            console.log('[Tab Hive] iframe加载完成，应用选择器（Grid模式）')
+            setTimeout(async () => {
+              await applySelectorFullscreen()
+            }, 1000)
+          }
+        })
+      }
+    })
+
+    onUnmounted(() => {
+      // 清理：移除所有注入的样式
+      if (props.item.targetSelector) {
+        restoreOriginalStyles()
+      }
+    })
+
     return {
-      websiteUrl
+      websiteUrl,
+      isElectron,
+      setIframeRef
     }
   }
 }
