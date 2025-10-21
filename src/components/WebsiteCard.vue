@@ -507,44 +507,45 @@ export default {
     }
 
     // 监听全屏状态变化
-    watch(() => props.isFullscreen, async (newVal) => {
+    watch(() => props.isFullscreen, async (newVal, oldVal) => {
       console.log('[Tab Hive Watch] 全屏状态变化:', newVal)
       console.log('[Tab Hive Watch] 目标选择器:', props.item.targetSelector)
       console.log('[Tab Hive Watch] iframe引用:', iframeRef.value)
       
-      if (!newVal && props.item.targetSelector) {
-        // 退出全屏 -> Grid模式 -> 应用选择器（只显示指定元素）
-        console.log('[Tab Hive Watch] 退出全屏，进入Grid模式，应用选择器')
-        setTimeout(async () => {
-          await applySelectorFullscreen()
-        }, 1000)
-      } else if (newVal && props.item.targetSelector) {
-        // 进入全屏 -> 移除选择器效果（显示完整页面）
-        console.log('[Tab Hive Watch] 进入全屏，移除选择器效果，显示完整页面')
-        await restoreOriginalStyles()
+      // 如果配置了选择器，全屏切换时刷新iframe
+      if (props.item.targetSelector && iframeRef.value && oldVal !== undefined) {
+        console.log('[Tab Hive Watch] 配置了选择器，刷新iframe以切换显示模式')
+        // 刷新iframe
+        const currentSrc = iframeRef.value.src
+        iframeRef.value.src = currentSrc
       }
+      
+      // 如果没有配置选择器，不做任何处理（保留用户输入）
     })
 
     // 监听iframe加载完成
     onMounted(() => {
       if (iframeRef.value) {
         iframeRef.value.addEventListener('load', async () => {
+          console.log('[Tab Hive] iframe加载完成')
+          console.log('[Tab Hive] 当前状态 - 全屏:', props.isFullscreen, '选择器:', props.item.targetSelector)
+          
           // 如果不是全屏状态且有选择器，应用选择器
           if (!props.isFullscreen && props.item.targetSelector) {
-            console.log('[Tab Hive] iframe加载完成，应用选择器（Grid模式）')
+            console.log('[Tab Hive] Grid模式 + 有选择器，等待1秒后应用选择器')
             setTimeout(async () => {
               await applySelectorFullscreen()
             }, 1000)
+          } else {
+            console.log('[Tab Hive] 全屏模式或无选择器，显示完整页面')
           }
         })
       }
     })
 
     onUnmounted(() => {
-      // 清理：移除所有注入的样式
-      if (props.item.targetSelector) {
-        restoreOriginalStyles()
-      }
+      // 组件卸载时不需要特别清理，因为iframe会被销毁
+      console.log('[Tab Hive] WebsiteCard组件卸载')
     })
 
     return {
