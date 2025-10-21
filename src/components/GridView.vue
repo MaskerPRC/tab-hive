@@ -123,7 +123,8 @@ export default {
       title: '',
       url: '',
       deviceType: 'desktop',
-      targetSelector: ''
+      targetSelector: '',
+      autoRefreshInterval: 0
     })
 
     // 所有网站列表
@@ -206,7 +207,8 @@ export default {
         title: '',
         url: '',
         deviceType: 'desktop',
-        targetSelector: ''
+        targetSelector: '',
+        autoRefreshInterval: 0
       }
     }
 
@@ -226,7 +228,7 @@ export default {
       }
 
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '' }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0 }
     }
 
     /**
@@ -234,7 +236,7 @@ export default {
      */
     const cancelAddWebsite = () => {
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '' }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0 }
     }
 
     /**
@@ -267,7 +269,8 @@ export default {
           title: website.title,
           url: website.url,
           deviceType: website.deviceType || 'desktop',
-          targetSelector: website.targetSelector || ''
+          targetSelector: website.targetSelector || '',
+          autoRefreshInterval: website.autoRefreshInterval || 0
         }
       }
     }

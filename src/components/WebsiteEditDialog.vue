@@ -64,6 +64,27 @@
           留空则始终显示整个页面
         </div>
       </div>
+      <div class="form-group">
+        <label>自动刷新间隔（可选）：</label>
+        <div class="refresh-interval-selector">
+          <input
+            v-model.number="localWebsite.autoRefreshInterval"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="0"
+            class="form-input refresh-input"
+            @keyup.enter="handleConfirm"
+          />
+          <span class="interval-unit">秒</span>
+        </div>
+        <div class="refresh-hint">
+          💡 设置iframe自动刷新的时间间隔（秒）<br>
+          • 设置为 0 或留空表示不自动刷新<br>
+          • 建议最小值：30秒（避免频繁刷新影响性能）<br>
+          • 适用场景：实时监控、数据大屏等需要定期更新的页面
+        </div>
+      </div>
       <div class="form-actions">
         <button class="btn-confirm" @click="handleConfirm">确定</button>
         <button class="btn-cancel" @click="$emit('cancel')">取消</button>
@@ -92,7 +113,8 @@ export default {
         title: '',
         url: '',
         deviceType: 'desktop',
-        targetSelector: ''
+        targetSelector: '',
+        autoRefreshInterval: 0
       })
     }
   },
@@ -103,7 +125,8 @@ export default {
       title: '',
       url: '',
       deviceType: 'desktop',
-      targetSelector: ''
+      targetSelector: '',
+      autoRefreshInterval: 0
     })
 
     // 监听 website prop 变化，更新本地数据
@@ -334,6 +357,34 @@ export default {
 
 .btn-cancel:hover {
   background: #d0d0d0;
+}
+
+.refresh-interval-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-input {
+  flex: 1;
+}
+
+.interval-unit {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.refresh-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #f0fdf4;
+  border-left: 3px solid #10b981;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #065f46;
 }
 </style>
 

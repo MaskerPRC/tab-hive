@@ -44,6 +44,7 @@ export function useWebsiteManager(initialWebsites = []) {
       title: websiteData.title,
       deviceType: websiteData.deviceType || 'desktop',
       targetSelector: websiteData.targetSelector || '',
+      autoRefreshInterval: websiteData.autoRefreshInterval || 0,
       position: websiteData.position || { x: newX, y: newY },
       size: websiteData.size || { width: defaultWidth, height: defaultHeight }
     })
@@ -65,15 +66,17 @@ export function useWebsiteManager(initialWebsites = []) {
    * @param {string} params.url - URL
    * @param {string} params.deviceType - 设备类型
    * @param {string} params.targetSelector - 目标选择器
+   * @param {number} params.autoRefreshInterval - 自动刷新间隔（秒）
    * @param {Object} params.position - 位置
    * @param {Object} params.size - 大小
    */
-  const updateWebsite = ({ index, title, url, deviceType, targetSelector, position, size }) => {
+  const updateWebsite = ({ index, title, url, deviceType, targetSelector, autoRefreshInterval, position, size }) => {
     if (websites.value[index]) {
       if (title !== undefined) websites.value[index].title = title
       if (url !== undefined) websites.value[index].url = url
       if (deviceType !== undefined) websites.value[index].deviceType = deviceType
       if (targetSelector !== undefined) websites.value[index].targetSelector = targetSelector
+      if (autoRefreshInterval !== undefined) websites.value[index].autoRefreshInterval = autoRefreshInterval
       if (position !== undefined) {
         websites.value[index].position = { ...position }
         console.log('更新位置:', websites.value[index].title, position)
