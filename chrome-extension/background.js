@@ -67,72 +67,97 @@ async function handleRestoreOriginalStyles(request, sender, sendResponse) {
  */
 function applySelectorFullscreenInPage(selector) {
   try {
+    console.log('[Tab Hive iframe] 应用选择器:', selector);
+    
     const targetElement = document.querySelector(selector);
     
     if (!targetElement) {
-      console.error('[Tab Hive] 未找到选择器对应的元素:', selector);
-      return { success: false, error: '未找到选择器对应的元素' };
+      console.warn('[Tab Hive iframe] 未找到选择器对应的元素:', selector);
+      return { success: false, error: '未找到元素' };
     }
-
-    // 保存原始样式
-    if (!window.__tabHiveOriginalStyles) {
-      window.__tabHiveOriginalStyles = {
-        body: {
-          overflow: document.body.style.overflow,
-          margin: document.body.style.margin,
-          padding: document.body.style.padding,
-          backgroundColor: document.body.style.backgroundColor
-        },
-        html: {
-          overflow: document.documentElement.style.overflow
-        },
-        target: {
-          position: targetElement.style.position,
-          top: targetElement.style.top,
-          left: targetElement.style.left,
-          width: targetElement.style.width,
-          height: targetElement.style.height,
-          zIndex: targetElement.style.zIndex,
-          margin: targetElement.style.margin,
-          padding: targetElement.style.padding
-        },
-        hiddenElements: []
-      };
-    }
-
-    // 隐藏其他元素
-    document.querySelectorAll('body > *').forEach(el => {
-      if (!el.contains(targetElement) && el !== targetElement) {
-        if (el.style.display !== 'none') {
-          window.__tabHiveOriginalStyles.hiddenElements.push({
-            element: el,
-            display: el.style.display
-          });
-          el.style.display = 'none';
-        }
-      }
-    });
-
-    // 将目标元素全屏化
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    document.body.style.backgroundColor = '#000';
     
-    targetElement.style.position = 'fixed';
-    targetElement.style.top = '0';
-    targetElement.style.left = '0';
-    targetElement.style.width = '100vw';
-    targetElement.style.height = '100vh';
-    targetElement.style.zIndex = '999999';
-    targetElement.style.margin = '0';
-    targetElement.style.padding = '0';
-
-    console.log('[Tab Hive] 选择器全屏已应用:', selector);
+    // 输出调试信息
+    console.log('[Tab Hive iframe] 目标元素信息:', {
+      tagName: targetElement.tagName,
+      className: targetElement.className,
+      id: targetElement.id,
+      width: targetElement.offsetWidth,
+      height: targetElement.offsetHeight
+    });
+    
+    // 遍历父元素链，隐藏每一层的兄弟元素
+    let current = targetElement;
+    let hiddenCount = 0;
+    
+    while (current && current !== document.body) {
+      // 获取所有兄弟元素
+      const parent = current.parentElement;
+      if (parent) {
+        Array.from(parent.children).forEach(sibling => {
+          // 如果不是当前元素，且不是script/style/link，就隐藏
+          if (sibling !== current && 
+              !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+            sibling.style.display = 'none';
+            sibling.setAttribute('data-tabhive-hidden', 'true');
+            hiddenCount++;
+          }
+        });
+      }
+      current = parent;
+    }
+    
+    console.log('[Tab Hive iframe] 已隐藏 ' + hiddenCount + ' 个兄弟元素');
+    
+    // 创建style标签，让目标元素填满
+    const styleId = 'tabhive-selector-style';
+    
+    // 移除旧的style
+    const oldStyle = document.getElementById(styleId);
+    if (oldStyle) {
+      oldStyle.remove();
+    }
+    
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      /* Tab Hive - 让选择器元素填满整个区域 */
+      
+      /* 重置body和html */
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      
+      /* 目标元素：fixed定位，填满整个视口 */
+      ${selector} {
+        display: block !important;
+        visibility: visible !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 999999 !important;
+        object-fit: contain !important;
+      }
+      
+      /* 确保子元素可见 */
+      ${selector} * {
+        visibility: visible !important;
+      }
+    `;
+    
+    document.head.appendChild(style);
+    
+    console.log('[Tab Hive iframe] 选择器全屏已应用');
     return { success: true };
   } catch (error) {
-    console.error('[Tab Hive] 应用选择器全屏时出错:', error);
+    console.error('[Tab Hive iframe] 错误:', error);
     return { success: false, error: error.message };
   }
 }
@@ -142,43 +167,28 @@ function applySelectorFullscreenInPage(selector) {
  */
 function restoreOriginalStylesInPage() {
   try {
-    if (!window.__tabHiveOriginalStyles) {
-      return { success: true, message: '没有需要恢复的样式' };
+    // 移除注入的style标签
+    const styleId = 'tabhive-selector-style';
+    const style = document.getElementById(styleId);
+    if (style) {
+      style.remove();
+      console.log('[Tab Hive iframe] 样式已移除');
     }
-
-    const styles = window.__tabHiveOriginalStyles;
-
-    // 恢复html和body样式
-    document.documentElement.style.overflow = styles.html.overflow;
-    document.body.style.overflow = styles.body.overflow;
-    document.body.style.margin = styles.body.margin;
-    document.body.style.padding = styles.body.padding;
-    document.body.style.backgroundColor = styles.body.backgroundColor;
-
-    // 显示所有之前隐藏的元素
-    styles.hiddenElements.forEach(({ element, display }) => {
-      element.style.display = display;
+    
+    // 恢复所有被隐藏的兄弟元素
+    const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+    let restoredCount = 0;
+    hiddenElements.forEach(el => {
+      el.style.display = '';
+      el.removeAttribute('data-tabhive-hidden');
+      restoredCount++;
     });
-
-    // 恢复目标元素样式
-    const targetElement = document.querySelector('[style*="position: fixed"]');
-    if (targetElement) {
-      targetElement.style.position = styles.target.position;
-      targetElement.style.top = styles.target.top;
-      targetElement.style.left = styles.target.left;
-      targetElement.style.width = styles.target.width;
-      targetElement.style.height = styles.target.height;
-      targetElement.style.zIndex = styles.target.zIndex;
-      targetElement.style.margin = styles.target.margin;
-      targetElement.style.padding = styles.target.padding;
-    }
-
-    delete window.__tabHiveOriginalStyles;
-
-    console.log('[Tab Hive] 原始样式已恢复');
+    console.log('[Tab Hive iframe] 已恢复 ' + restoredCount + ' 个元素');
+    
+    console.log('[Tab Hive iframe] 原始样式已恢复');
     return { success: true };
   } catch (error) {
-    console.error('[Tab Hive] 恢复原始样式时出错:', error);
+    console.error('[Tab Hive iframe] 恢复原始样式时出错:', error);
     return { success: false, error: error.message };
   }
 }

@@ -187,6 +187,106 @@ export default {
     }
 
     /**
+     * 通过Chrome扩展应用选择器
+     */
+    const applySelectorViaExtension = async () => {
+      try {
+        // 直接向iframe内注入消息，让content script接收
+        const iframe = iframeRef.value
+        if (!iframe || !iframe.contentWindow) {
+          console.error('[Tab Hive] iframe不可用')
+          return
+        }
+
+        console.log('[Tab Hive] 向iframe发送消息，请求应用选择器')
+        
+        // 注入执行代码的函数到iframe
+        // 由于跨域，我们需要通过扩展来执行
+        const script = `
+          (function() {
+            const selector = '${props.item.targetSelector.replace(/'/g, "\\'")}';
+            const targetElement = document.querySelector(selector);
+            
+            if (!targetElement) {
+              console.warn('[Tab Hive iframe] 未找到选择器:', selector);
+              return;
+            }
+            
+            console.log('[Tab Hive iframe] 找到目标元素，应用选择器');
+            
+            // 隐藏兄弟元素
+            let current = targetElement;
+            let hiddenCount = 0;
+            
+            while (current && current !== document.body) {
+              const parent = current.parentElement;
+              if (parent) {
+                Array.from(parent.children).forEach(sibling => {
+                  if (sibling !== current && 
+                      !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+                    sibling.style.display = 'none';
+                    sibling.setAttribute('data-tabhive-hidden', 'true');
+                    hiddenCount++;
+                  }
+                });
+              }
+              current = parent;
+            }
+            
+            // 注入样式
+            const styleId = 'tabhive-selector-style';
+            let style = document.getElementById(styleId);
+            if (!style) {
+              style = document.createElement('style');
+              style.id = styleId;
+              document.head.appendChild(style);
+            }
+            
+            style.textContent = \`
+              html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                width: 100% !important;
+                height: 100% !important;
+              }
+              
+              \${selector} {
+                display: block !important;
+                visibility: visible !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 999999 !important;
+                object-fit: contain !important;
+              }
+              
+              \${selector} * {
+                visibility: visible !important;
+              }
+            \`;
+            
+            console.log('[Tab Hive iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
+          })();
+        `
+
+        // 向iframe发送postMessage，iframe内的content script会接收
+        console.log('[Tab Hive] 向iframe.contentWindow发送消息，选择器:', props.item.targetSelector)
+        iframe.contentWindow.postMessage({
+          source: 'tab-hive',
+          action: 'executeScriptInIframe',
+          selector: props.item.targetSelector
+        }, '*')
+      } catch (error) {
+        console.error('[Tab Hive] Chrome扩展调用失败:', error)
+      }
+    }
+
+    /**
      * 获取网站URL，支持设备类型
      */
     const websiteUrl = computed(() => {
@@ -239,8 +339,10 @@ export default {
       // 检查是否在Electron环境
       const isElectronEnv = window.electron?.isElectron
 
+      console.log('[Tab Hive] 环境检测:', { isElectron: isElectronEnv })
+      
       if (isElectronEnv) {
-        // Electron环境：注入CSS样式到iframe
+        // Electron环境：通过IPC注入CSS样式到iframe
         try {
           console.log('[Tab Hive] Electron环境 - 应用选择器:', props.item.targetSelector)
           
@@ -363,50 +465,114 @@ export default {
             console.warn('[Tab Hive] 选择器应用失败:', result.error)
           }
         } catch (error) {
-          console.error('[Tab Hive] 应用选择器全屏失败:', error)
+          console.error('[Tab Hive] 应用选择器失败:', error)
         }
       } else {
-        // Chrome扩展环境：通过postMessage与content script通信
+        // 浏览器环境：尝试直接操作iframe（同域）或等待Chrome扩展
+        console.log('[Tab Hive] 浏览器环境 - 尝试应用选择器')
+        console.log('[Tab Hive] iframe引用检查:', {
+          hasIframe: !!iframeRef.value,
+          hasContentWindow: !!iframeRef.value?.contentWindow,
+          hasContentDocument: !!iframeRef.value?.contentDocument
+        })
+        
         try {
-          // 生成唯一请求ID
-          const requestId = `selector-fullscreen-${Date.now()}`
-          
-          // 创建Promise等待响应
-          const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              window.removeEventListener('message', responseHandler)
-              reject(new Error('Chrome扩展响应超时'))
-            }, 5000)
-
-            const responseHandler = (event) => {
-              if (event.data.source === 'tab-hive-extension' && 
-                  event.data.action === 'applySelectorFullscreenResponse' &&
-                  event.data.requestId === requestId) {
-                clearTimeout(timeout)
-                window.removeEventListener('message', responseHandler)
-                resolve(event.data.response)
-              }
-            }
-
-            window.addEventListener('message', responseHandler)
-
-            // 发送消息到iframe
-            if (iframeRef.value && iframeRef.value.contentWindow) {
-              iframeRef.value.contentWindow.postMessage({
-                source: 'tab-hive',
-                action: 'applySelectorFullscreen',
-                selector: props.item.targetSelector,
-                requestId: requestId
-              }, '*')
-            }
-          })
-
-          if (!response.success) {
-            console.error('应用选择器全屏失败:', response.error)
+          // 尝试直接访问iframe（如果同域）
+          if (!iframeRef.value) {
+            console.warn('[Tab Hive] iframe引用不存在')
+            return
           }
+          
+          if (!iframeRef.value.contentWindow) {
+            console.warn('[Tab Hive] iframe.contentWindow不可用')
+            return
+          }
+          
+          if (!iframeRef.value.contentDocument) {
+            // 跨域iframe - 尝试通过Chrome扩展
+            console.warn('[Tab Hive] iframe.contentDocument不可用（跨域iframe）')
+            console.info('[Tab Hive] 尝试使用Chrome扩展...')
+            
+            // 通过postMessage与Chrome扩展通信
+            await applySelectorViaExtension()
+            return
+          }
+          
+          console.log('[Tab Hive] 可以访问iframe内容，开始应用选择器')
+          
+          const iframeDoc = iframeRef.value.contentDocument
+          const targetElement = iframeDoc.querySelector(props.item.targetSelector)
+          
+          if (!targetElement) {
+            console.warn('[Tab Hive] 未找到选择器对应的元素:', props.item.targetSelector)
+            return
+          }
+          
+          console.log('[Tab Hive] 直接操作iframe，应用选择器')
+          
+          // 遍历父元素链，隐藏每一层的兄弟元素
+          let current = targetElement
+          let hiddenCount = 0
+          
+          while (current && current !== iframeDoc.body) {
+            const parent = current.parentElement
+            if (parent) {
+              Array.from(parent.children).forEach(sibling => {
+                if (sibling !== current && 
+                    !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+                  sibling.style.display = 'none'
+                  sibling.setAttribute('data-tabhive-hidden', 'true')
+                  hiddenCount++
+                }
+              })
+            }
+            current = parent
+          }
+          
+          console.log('[Tab Hive] 已隐藏 ' + hiddenCount + ' 个兄弟元素')
+          
+          // 创建style标签
+          const styleId = `tabhive-selector-style-${props.item.id}`
+          let style = iframeDoc.getElementById(styleId)
+          if (!style) {
+            style = iframeDoc.createElement('style')
+            style.id = styleId
+            iframeDoc.head.appendChild(style)
+          }
+          
+          style.textContent = `
+            /* Tab Hive - 让选择器元素填满整个区域 */
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              width: 100% !important;
+              height: 100% !important;
+            }
+            
+            ${props.item.targetSelector} {
+              display: block !important;
+              visibility: visible !important;
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              z-index: 999999 !important;
+              object-fit: contain !important;
+            }
+            
+            ${props.item.targetSelector} * {
+              visibility: visible !important;
+            }
+          `
+          
+          console.log('[Tab Hive] 选择器已应用（浏览器环境）')
         } catch (error) {
-          console.error('Chrome扩展通信失败:', error.message)
-          console.warn('请确保已安装Tab Hive Chrome扩展')
+          console.warn('[Tab Hive] 无法直接访问iframe（跨域限制）:', error.message)
+          console.info('[Tab Hive] 提示：如需支持跨域网站，请安装Tab Hive Chrome扩展')
         }
       }
     }
@@ -466,42 +632,61 @@ export default {
           console.error('[Tab Hive] 恢复原始样式失败:', error)
         }
       } else {
-        // Chrome扩展环境
+        // 浏览器环境：尝试直接清理
+        console.log('[Tab Hive] 浏览器环境 - 尝试恢复原始样式')
+        
         try {
-          const requestId = `restore-styles-${Date.now()}`
-          
-          const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              window.removeEventListener('message', responseHandler)
-              reject(new Error('Chrome扩展响应超时'))
-            }, 5000)
-
-            const responseHandler = (event) => {
-              if (event.data.source === 'tab-hive-extension' && 
-                  event.data.action === 'restoreOriginalStylesResponse' &&
-                  event.data.requestId === requestId) {
-                clearTimeout(timeout)
-                window.removeEventListener('message', responseHandler)
-                resolve(event.data.response)
-              }
+          if (iframeRef.value && iframeRef.value.contentDocument) {
+            // 同域iframe - 直接操作
+            const iframeDoc = iframeRef.value.contentDocument
+            
+            // 移除style标签
+            const styleId = `tabhive-selector-style-${props.item.id}`
+            const style = iframeDoc.getElementById(styleId)
+            if (style) {
+              style.remove()
+              console.log('[Tab Hive] 样式已移除')
             }
-
-            window.addEventListener('message', responseHandler)
-
-            if (iframeRef.value && iframeRef.value.contentWindow) {
-              iframeRef.value.contentWindow.postMessage({
-                source: 'tab-hive',
-                action: 'restoreOriginalStyles',
-                requestId: requestId
-              }, '*')
-            }
-          })
-
-          if (!response.success) {
-            console.error('恢复原始样式失败:', response.error)
+            
+            // 恢复被隐藏的元素
+            const hiddenElements = iframeDoc.querySelectorAll('[data-tabhive-hidden]')
+            let restoredCount = 0
+            hiddenElements.forEach(el => {
+              el.style.display = ''
+              el.removeAttribute('data-tabhive-hidden')
+              restoredCount++
+            })
+            console.log('[Tab Hive] 已恢复 ' + restoredCount + ' 个元素')
+          } else if (iframeRef.value && iframeRef.value.contentWindow) {
+            // 跨域iframe - 通过Chrome扩展
+            console.log('[Tab Hive] 跨域iframe，通过扩展恢复样式')
+            const script = `
+              (function() {
+                const styleId = 'tabhive-selector-style';
+                const style = document.getElementById(styleId);
+                if (style) {
+                  style.remove();
+                  console.log('[Tab Hive iframe] 样式已移除');
+                }
+                
+                const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+                let restoredCount = 0;
+                hiddenElements.forEach(el => {
+                  el.style.display = '';
+                  el.removeAttribute('data-tabhive-hidden');
+                  restoredCount++;
+                });
+                console.log('[Tab Hive iframe] 已恢复', restoredCount, '个元素');
+              })();
+            `
+            
+            iframeRef.value.contentWindow.postMessage({
+              source: 'tab-hive',
+              action: 'restoreTabHiveStyles'
+            }, '*')
           }
         } catch (error) {
-          console.error('Chrome扩展通信失败:', error.message)
+          console.warn('[Tab Hive] 恢复样式失败:', error.message)
         }
       }
     }

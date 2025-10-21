@@ -58,8 +58,10 @@
           @keyup.enter="handleConfirm"
         />
         <div class="selector-hint">
-          💡 全屏时只显示匹配此CSS选择器的元素（仅Electron版本和Chrome插件支持）<br>
-          留空则显示整个页面
+          💡 Grid模式下只显示匹配此CSS选择器的元素，全屏时显示完整页面<br>
+          • Electron版本：完全支持所有网站<br>
+          • 浏览器版本：仅支持同域iframe（跨域网站请使用Electron）<br>
+          留空则始终显示整个页面
         </div>
       </div>
       <div class="form-actions">
