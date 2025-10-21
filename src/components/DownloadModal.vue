@@ -1,51 +1,60 @@
 <template>
   <div v-if="visible" class="electron-warning-overlay" @click.self="handleClose">
     <div class="electron-warning-modal">
-      <div class="warning-icon">⚠️</div>
-      <h2>需要安装插件才能正常使用</h2>
+      <div class="warning-header">
+        <div class="warning-icon">⚠️</div>
+        <h2>需要安装插件才能正常使用</h2>
+      </div>
       <p class="warning-message">
         本应用需要在特定环境中运行才能加载 iframe 网页。<br/>
         请选择下列方式之一安装后使用：
       </p>
       <div class="warning-actions">
         <div class="download-options">
-          <div class="option-section">
-            <h3>🔌 CORS 解除插件（推荐）</h3>
-            <p class="option-desc">解除网站 iframe 限制，适用于 Chrome、Edge 等浏览器</p>
-            <a
-              href="/0.1.2_0.zip"
-              download="Allow X-Frame-Options.zip"
-              class="download-button primary"
-            >
-              📥 下载 CORS 解除插件
-            </a>
-            <p class="install-hint">
-              下载后请解压，然后在浏览器中加载解压后的文件夹<br/>
+          <div class="plugins-group">
+            <div class="plugins-container">
+              <div class="plugin-item">
+                <h3>🔌 CORS 解除插件（推荐）</h3>
+                <p class="option-desc">解除网站 iframe 限制，适用于 Chrome、Edge 等浏览器</p>
+                <a
+                  href="/0.1.2_0.zip"
+                  download="Allow X-Frame-Options.zip"
+                  class="download-button primary"
+                >
+                  📥 下载 CORS 解除插件
+                </a>
+                <p class="install-hint">
+                  下载后请解压，然后在浏览器中加载解压后的文件夹
+                </p>
+              </div>
+              <div class="plugin-item">
+                <h3>🎯 选择器插件（可选）</h3>
+                <p class="option-desc">支持使用 CSS 选择器定位并全屏显示网页特定元素</p>
+                <a
+                  href="/tab-hive-selector-extension.zip"
+                  download="Tab-Hive-Selector-Extension.zip"
+                  class="download-button primary"
+                >
+                  📥 下载选择器插件
+                </a>
+                <p class="install-hint">
+                  配合 CORS 插件使用，可聚焦于视频播放器、文章内容等特定区域<br/>
+                  在编辑网站时填写"目标选择器"字段（如 <code>#player</code>）
+                </p>
+              </div>
+            </div>
+            <div class="tutorial-section">
               <a href="https://zhuanlan.zhihu.com/p/16585597394" target="_blank" class="tutorial-link">
                 📖 查看详细安装教程
               </a>
-            </p>
-          </div>
-          <div class="divider">+</div>
-          <div class="option-section">
-            <h3>🎯 选择器插件（可选）</h3>
-            <p class="option-desc">支持使用 CSS 选择器定位并全屏显示网页特定元素</p>
-            <a
-              href="/tab-hive-selector-extension.zip"
-              download="Tab-Hive-Selector-Extension.zip"
-              class="download-button primary"
-            >
-              📥 下载选择器插件
-            </a>
-            <p class="install-hint">
-              配合 CORS 插件使用，可聚焦于视频播放器、文章内容等特定区域<br/>
-              在编辑网站时填写"目标选择器"字段（如 <code>#player</code>）
-            </p>
+            </div>
           </div>
           <div class="divider">或</div>
-          <div class="option-section">
-            <h3>💻 桌面应用程序</h3>
-            <p class="option-desc">独立运行，功能完整，无需安装插件</p>
+          <div class="option-section desktop-section">
+            <div class="desktop-info">
+              <h3>💻 桌面应用程序</h3>
+              <p class="option-desc">独立运行，功能完整，无需安装插件</p>
+            </div>
             <a
               href="https://github.com/MaskerPRC/tab-hive/releases"
               target="_blank"
@@ -105,13 +114,20 @@ export default {
   background: white;
   border-radius: 16px;
   padding: 48px;
-  max-width: 680px;
+  max-width: 900px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   text-align: center;
   animation: fadeInScale 0.3s ease-out;
   max-height: 90vh;
   overflow-y: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.electron-warning-modal::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 @keyframes fadeInScale {
@@ -125,10 +141,18 @@ export default {
   }
 }
 
+.warning-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .warning-icon {
-  font-size: 64px;
-  margin-bottom: 24px;
+  font-size: 48px;
   animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse {
@@ -141,7 +165,7 @@ export default {
 }
 
 .electron-warning-modal h2 {
-  margin: 0 0 16px 0;
+  margin: 0;
   font-size: 28px;
   color: #333;
   font-weight: 600;
@@ -166,11 +190,84 @@ export default {
   gap: 20px;
 }
 
+.plugins-group {
+  background: #f8f9fa;
+  padding: 24px;
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+}
+
+.plugins-container {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 20px 0;
+  margin: 0 -20px 16px -20px;
+}
+
+.plugin-item {
+  display: table-cell;
+  vertical-align: top;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.plugin-item h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.plugin-item .option-desc {
+  margin: 0 0 16px 0;
+  min-height: 40px;
+}
+
+.plugin-item .download-button {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.plugin-item .install-hint {
+  margin: 0;
+}
+
+.tutorial-section {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+}
+
 .option-section {
   background: #f8f9fa;
   padding: 24px;
   border-radius: 12px;
   border: 2px solid #e9ecef;
+}
+
+.desktop-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.desktop-info {
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+.desktop-section .download-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.desktop-section .option-desc {
+  margin: 0;
 }
 
 .option-section h3 {
@@ -289,8 +386,44 @@ export default {
     font-size: 14px;
   }
 
+  .plugins-container {
+    display: block;
+    margin: 0 0 16px 0;
+  }
+
+  .plugin-item {
+    display: block;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .plugin-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .plugin-item h3 {
+    font-size: 16px;
+  }
+
+  .plugin-item .option-desc {
+    min-height: auto;
+  }
+
   .option-section {
     padding: 20px;
+  }
+
+  .desktop-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .desktop-info {
+    text-align: center;
+  }
+
+  .desktop-section .download-button {
+    width: 100%;
   }
 
   .option-section h3 {
