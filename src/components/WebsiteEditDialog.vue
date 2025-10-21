@@ -66,21 +66,52 @@
       </div>
       <div class="form-group">
         <label>自动刷新间隔（可选）：</label>
-        <div class="refresh-interval-selector">
-          <input
-            v-model.number="localWebsite.autoRefreshInterval"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="0"
-            class="form-input refresh-input"
-            @keyup.enter="handleConfirm"
-          />
-          <span class="interval-unit">秒</span>
+        
+        <!-- 常用预设 -->
+        <div class="refresh-presets">
+          <button
+            v-for="preset in refreshPresets"
+            :key="preset.value"
+            type="button"
+            class="preset-btn"
+            :class="{ active: isPresetActive(preset.value) }"
+            @click="selectPreset(preset.value)"
+          >
+            {{ preset.label }}
+          </button>
         </div>
+        
+        <!-- 自定义配置 -->
+        <div class="refresh-custom">
+          <div class="custom-label">自定义：</div>
+          <div class="refresh-interval-selector">
+            <input
+              v-model.number="customValue"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="0"
+              class="form-input refresh-input"
+              @keyup.enter="handleConfirm"
+              @input="handleCustomInput"
+            />
+            <select
+              v-model="timeUnit"
+              class="form-input unit-select"
+              @change="handleUnitChange"
+            >
+              <option value="seconds">秒</option>
+              <option value="minutes">分钟</option>
+              <option value="hours">小时</option>
+              <option value="days">天</option>
+            </select>
+          </div>
+        </div>
+        
         <div class="refresh-hint">
-          💡 设置iframe自动刷新的时间间隔（秒）<br>
-          • 设置为 0 或留空表示不自动刷新<br>
+          💡 设置iframe自动刷新的时间间隔<br>
+          • 点击预设快速选择，或自定义时间和单位<br>
+          • 设置为 0 表示不自动刷新<br>
           • 建议最小值：30秒（避免频繁刷新影响性能）<br>
           • 适用场景：实时监控、数据大屏等需要定期更新的页面
         </div>
@@ -94,7 +125,7 @@
 </template>
 
 <script>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 
 export default {
   name: 'WebsiteEditDialog',
@@ -130,9 +161,56 @@ export default {
       autoRefreshInterval: 0
     })
 
+    // 自定义时间值和单位
+    const customValue = ref(0)
+    const timeUnit = ref('seconds')
+
+    // 常用预设（单位：秒）
+    const refreshPresets = [
+      { label: '不刷新', value: 0 },
+      { label: '30秒', value: 30 },
+      { label: '1分钟', value: 60 },
+      { label: '5分钟', value: 300 },
+      { label: '30分钟', value: 1800 },
+      { label: '1小时', value: 3600 },
+      { label: '1天', value: 86400 }
+    ]
+
+    // 时间单位转换为秒的系数
+    const unitToSeconds = {
+      seconds: 1,
+      minutes: 60,
+      hours: 3600,
+      days: 86400
+    }
+
+    // 将秒转换为最合适的单位和值
+    const convertSecondsToUnit = (seconds) => {
+      if (seconds === 0) {
+        return { value: 0, unit: 'seconds' }
+      }
+      
+      // 尝试从大到小的单位
+      if (seconds >= 86400 && seconds % 86400 === 0) {
+        return { value: seconds / 86400, unit: 'days' }
+      }
+      if (seconds >= 3600 && seconds % 3600 === 0) {
+        return { value: seconds / 3600, unit: 'hours' }
+      }
+      if (seconds >= 60 && seconds % 60 === 0) {
+        return { value: seconds / 60, unit: 'minutes' }
+      }
+      return { value: seconds, unit: 'seconds' }
+    }
+
     // 监听 website prop 变化，更新本地数据
     watch(() => props.website, (newVal) => {
       localWebsite.value = { ...newVal }
+      
+      // 将秒数转换为合适的单位显示
+      const converted = convertSecondsToUnit(newVal.autoRefreshInterval || 0)
+      customValue.value = converted.value
+      timeUnit.value = converted.unit
     }, { immediate: true, deep: true })
 
     // 监听对话框显示，自动聚焦到标题输入框
@@ -146,6 +224,31 @@ export default {
         })
       }
     })
+
+    // 选择预设
+    const selectPreset = (seconds) => {
+      localWebsite.value.autoRefreshInterval = seconds
+      const converted = convertSecondsToUnit(seconds)
+      customValue.value = converted.value
+      timeUnit.value = converted.unit
+    }
+
+    // 判断预设是否被激活
+    const isPresetActive = (presetValue) => {
+      return localWebsite.value.autoRefreshInterval === presetValue
+    }
+
+    // 处理自定义输入
+    const handleCustomInput = () => {
+      const seconds = (customValue.value || 0) * unitToSeconds[timeUnit.value]
+      localWebsite.value.autoRefreshInterval = seconds
+    }
+
+    // 处理单位变化
+    const handleUnitChange = () => {
+      const seconds = (customValue.value || 0) * unitToSeconds[timeUnit.value]
+      localWebsite.value.autoRefreshInterval = seconds
+    }
 
     const handleConfirm = () => {
       if (localWebsite.value.title && localWebsite.value.url) {
@@ -191,6 +294,13 @@ export default {
     return {
       titleInput,
       localWebsite,
+      customValue,
+      timeUnit,
+      refreshPresets,
+      selectPreset,
+      isPresetActive,
+      handleCustomInput,
+      handleUnitChange,
       handleConfirm,
       handleOverlayMouseDown,
       handleOverlayClick
@@ -380,6 +490,52 @@ export default {
   background: #d0d0d0;
 }
 
+.refresh-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.preset-btn {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.preset-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 92, 0, 0.1);
+}
+
+.preset-btn.active {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.3);
+}
+
+.refresh-custom {
+  margin-top: 12px;
+}
+
+.custom-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
 .refresh-interval-selector {
   display: flex;
   align-items: center;
@@ -388,6 +544,19 @@ export default {
 
 .refresh-input {
   flex: 1;
+  min-width: 0;
+}
+
+.unit-select {
+  flex: 0 0 90px;
+  cursor: pointer;
+  padding: 12px 10px;
+  font-size: 14px;
+}
+
+.unit-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 .interval-unit {
@@ -398,7 +567,7 @@ export default {
 }
 
 .refresh-hint {
-  margin-top: 8px;
+  margin-top: 12px;
   padding: 10px;
   background: #f0fdf4;
   border-left: 3px solid #10b981;

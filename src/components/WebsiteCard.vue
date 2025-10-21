@@ -160,11 +160,35 @@ export default {
     // 格式化倒计时显示
     const formatTime = (seconds) => {
       if (!seconds || seconds <= 0) return ''
-      const mins = Math.floor(seconds / 60)
+      
+      const days = Math.floor(seconds / 86400)
+      const hours = Math.floor((seconds % 86400) / 3600)
+      const mins = Math.floor((seconds % 3600) / 60)
       const secs = seconds % 60
+      
+      // 根据时间长度选择最合适的显示格式
+      if (days > 0) {
+        // 显示天和小时
+        if (hours > 0) {
+          return `${days}天${hours}时`
+        }
+        return `${days}天`
+      }
+      
+      if (hours > 0) {
+        // 显示小时和分钟
+        if (mins > 0) {
+          return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+        }
+        return `${hours}时`
+      }
+      
       if (mins > 0) {
+        // 显示分钟和秒
         return `${mins}:${secs.toString().padStart(2, '0')}`
       }
+      
+      // 只显示秒
       return `${secs}s`
     }
 
