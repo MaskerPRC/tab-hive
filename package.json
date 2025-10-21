@@ -72,7 +72,7 @@
           ]
         }
       ],
-      "icon": "public/256x256.png",
+      "icon": "public/512x512.png",
       "category": "public.app-category.productivity"
     },
     "linux": {
