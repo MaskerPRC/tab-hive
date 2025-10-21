@@ -60,7 +60,7 @@
           ]
         }
       ],
-      "icon": "public/256x256.ico"
+      "icon": "public/256x256.png"
     },
     "mac": {
       "target": [
