@@ -1,7 +1,7 @@
 <template>
   <Transition name="dialog-fade">
-    <div v-if="visible" class="dialog-overlay" @click="handleOverlayClick">
-      <div class="dialog-box" @click.stop>
+    <div v-if="visible" class="dialog-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
+      <div class="dialog-box" @click.stop @mousedown.stop>
         <div class="dialog-header">
           <h3>{{ title }}</h3>
         </div>
@@ -63,11 +63,13 @@ export default {
   setup(props, { emit }) {
     const inputValue = ref('')
     const inputRef = ref(null)
+    const mouseDownOnOverlay = ref(false)
 
     // 监听 visible 变化，自动聚焦输入框
     watch(() => props.visible, (newVal) => {
       if (newVal) {
         inputValue.value = props.defaultValue
+        mouseDownOnOverlay.value = false
         if (props.type === 'prompt') {
           nextTick(() => {
             inputRef.value?.focus()
@@ -91,8 +93,21 @@ export default {
       emit('update:visible', false)
     }
 
-    const handleOverlayClick = () => {
-      handleCancel()
+    const handleOverlayMouseDown = (event) => {
+      // 只有当直接点击 overlay 时才标记
+      if (event.target === event.currentTarget) {
+        mouseDownOnOverlay.value = true
+      } else {
+        mouseDownOnOverlay.value = false
+      }
+    }
+
+    const handleOverlayClick = (event) => {
+      // 只有当 mousedown 和 click 都发生在 overlay 上时才关闭
+      if (event.target === event.currentTarget && mouseDownOnOverlay.value) {
+        handleCancel()
+      }
+      mouseDownOnOverlay.value = false
     }
 
     return {
@@ -100,6 +115,7 @@ export default {
       inputRef,
       handleConfirm,
       handleCancel,
+      handleOverlayMouseDown,
       handleOverlayClick
     }
   }

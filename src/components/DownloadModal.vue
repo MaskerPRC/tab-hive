@@ -10,14 +10,14 @@
       <div class="warning-actions">
         <div class="download-options">
           <div class="option-section">
-            <h3>🔌 Chrome 浏览器插件（推荐）</h3>
-            <p class="option-desc">适用于 Chrome、Edge 等浏览器</p>
+            <h3>🔌 CORS 解除插件（推荐）</h3>
+            <p class="option-desc">解除网站 iframe 限制，适用于 Chrome、Edge 等浏览器</p>
             <a
               href="/0.1.2_0.zip"
               download="Allow X-Frame-Options.zip"
               class="download-button primary"
             >
-              📥 下载 Chrome 插件
+              📥 下载 CORS 解除插件
             </a>
             <p class="install-hint">
               下载后请解压，然后在浏览器中加载解压后的文件夹<br/>
@@ -26,10 +26,26 @@
               </a>
             </p>
           </div>
+          <div class="divider">+</div>
+          <div class="option-section">
+            <h3>🎯 选择器插件（可选）</h3>
+            <p class="option-desc">支持使用 CSS 选择器定位并全屏显示网页特定元素</p>
+            <a
+              href="/tab-hive-selector-extension.zip"
+              download="Tab-Hive-Selector-Extension.zip"
+              class="download-button primary"
+            >
+              📥 下载选择器插件
+            </a>
+            <p class="install-hint">
+              配合 CORS 插件使用，可聚焦于视频播放器、文章内容等特定区域<br/>
+              在编辑网站时填写"目标选择器"字段（如 <code>#player</code>）
+            </p>
+          </div>
           <div class="divider">或</div>
           <div class="option-section">
             <h3>💻 桌面应用程序</h3>
-            <p class="option-desc">独立运行，功能完整</p>
+            <p class="option-desc">独立运行，功能完整，无需安装插件</p>
             <a
               href="https://github.com/MaskerPRC/tab-hive/releases"
               target="_blank"
@@ -174,6 +190,15 @@ export default {
   font-size: 12px;
   margin: 12px 0 0 0;
   line-height: 1.8;
+}
+
+.install-hint code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  color: #FF5C00;
+  font-size: 11px;
 }
 
 .tutorial-link {

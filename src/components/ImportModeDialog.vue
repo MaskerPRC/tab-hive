@@ -1,6 +1,6 @@
 <template>
-  <div v-if="visible" class="import-dialog-overlay" @click.self="handleClose">
-    <div class="import-dialog">
+  <div v-if="visible" class="import-dialog-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
+    <div class="import-dialog" @mousedown.stop>
       <h3>选择导入模式</h3>
       <p class="dialog-desc">你想如何导入这个布局？</p>
 
@@ -30,6 +30,8 @@
 </template>
 
 <script>
+import { ref, watch } from 'vue'
+
 export default {
   name: 'ImportModeDialog',
   props: {
@@ -40,6 +42,15 @@ export default {
   },
   emits: ['close', 'select-mode'],
   setup(props, { emit }) {
+    const mouseDownOnOverlay = ref(false)
+
+    // 监听对话框显示，重置状态
+    watch(() => props.visible, (newVal) => {
+      if (newVal) {
+        mouseDownOnOverlay.value = false
+      }
+    })
+
     const handleClose = () => {
       emit('close')
     }
@@ -48,9 +59,28 @@ export default {
       emit('select-mode', mode)
     }
 
+    const handleOverlayMouseDown = (event) => {
+      // 只有当直接点击 overlay 时才标记
+      if (event.target === event.currentTarget) {
+        mouseDownOnOverlay.value = true
+      } else {
+        mouseDownOnOverlay.value = false
+      }
+    }
+
+    const handleOverlayClick = (event) => {
+      // 只有当 mousedown 和 click 都发生在 overlay 上时才关闭
+      if (event.target === event.currentTarget && mouseDownOnOverlay.value) {
+        handleClose()
+      }
+      mouseDownOnOverlay.value = false
+    }
+
     return {
       handleClose,
-      handleSelectMode
+      handleSelectMode,
+      handleOverlayMouseDown,
+      handleOverlayClick
     }
   }
 }

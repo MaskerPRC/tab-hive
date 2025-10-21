@@ -466,6 +466,29 @@ export function useIframeSelector(props) {
   }
 
   /**
+   * 触发iframe大小微调以刷新布局
+   */
+  const triggerIframeResize = () => {
+    if (iframeRef.value) {
+      const iframe = iframeRef.value
+      const originalWidth = iframe.style.width
+      const originalHeight = iframe.style.height
+      
+      // 临时改变大小
+      iframe.style.width = 'calc(100% - 1px)'
+      iframe.style.height = 'calc(100% - 1px)'
+      
+      // 在下一帧恢复
+      requestAnimationFrame(() => {
+        iframe.style.width = originalWidth || '100%'
+        iframe.style.height = originalHeight || '100%'
+      })
+      
+      console.log('[Tab Hive] 已触发iframe大小微调以刷新布局')
+    }
+  }
+
+  /**
    * 设置iframe加载完成监听器
    */
   const setupIframeLoadListener = () => {
@@ -478,6 +501,10 @@ export function useIframeSelector(props) {
           console.log('[Tab Hive] Grid模式 + 有选择器，等待1秒后应用选择器')
           setTimeout(async () => {
             await applySelectorFullscreen()
+            // 应用选择器后，触发iframe大小微调以刷新布局
+            setTimeout(() => {
+              triggerIframeResize()
+            }, 100)
           }, 1000)
         } else {
           console.log('[Tab Hive] 全屏模式或无选择器，显示完整页面')

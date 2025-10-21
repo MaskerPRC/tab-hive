@@ -164,7 +164,7 @@ export default {
       isColliding: resizeIsColliding,
       startResize: startResizeItem,
       handleResizeEnd
-    } = useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers)
+    } = useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, allWebsites)
 
     // 全屏
     const fullscreenIndexRef = computed(() => props.fullscreenIndex)

@@ -1,6 +1,6 @@
 <template>
-  <div v-if="show" class="edit-website-overlay" @click.self="$emit('cancel')">
-    <div class="edit-website-dialog">
+  <div v-if="show" class="edit-website-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
+    <div class="edit-website-dialog" @mousedown.stop>
       <h3>{{ editingIndex === -1 ? '添加网站' : '编辑网站' }}</h3>
       <div class="form-group">
         <label>网站名称：</label>
@@ -121,6 +121,7 @@ export default {
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
     const titleInput = ref(null)
+    const mouseDownOnOverlay = ref(false)
     const localWebsite = ref({
       title: '',
       url: '',
@@ -137,6 +138,7 @@ export default {
     // 监听对话框显示，自动聚焦到标题输入框
     watch(() => props.show, (newVal) => {
       if (newVal) {
+        mouseDownOnOverlay.value = false
         nextTick(() => {
           if (titleInput.value) {
             titleInput.value.focus()
@@ -169,10 +171,29 @@ export default {
       }
     }
 
+    const handleOverlayMouseDown = (event) => {
+      // 只有当直接点击 overlay 时才标记
+      if (event.target === event.currentTarget) {
+        mouseDownOnOverlay.value = true
+      } else {
+        mouseDownOnOverlay.value = false
+      }
+    }
+
+    const handleOverlayClick = (event) => {
+      // 只有当 mousedown 和 click 都发生在 overlay 上时才关闭
+      if (event.target === event.currentTarget && mouseDownOnOverlay.value) {
+        emit('cancel')
+      }
+      mouseDownOnOverlay.value = false
+    }
+
     return {
       titleInput,
       localWebsite,
-      handleConfirm
+      handleConfirm,
+      handleOverlayMouseDown,
+      handleOverlayClick
     }
   }
 }

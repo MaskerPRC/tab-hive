@@ -4,7 +4,7 @@
  */
 import { ref } from 'vue'
 
-export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers) {
+export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, websites) {
   const isResizing = ref(false)
   const resizeHandle = ref('')
   const dragStartPos = ref({ x: 0, y: 0 })
@@ -83,10 +83,13 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
     const currentSizeVal = itemSizes.value[currentDragIndex.value] || { width: 300, height: 200 }
     const isShrinking = newWidth < currentSizeVal.width || newHeight < currentSizeVal.height
 
+    // 检查当前项目是否有选择器（选择器类型的iframe可以自由调整大小）
+    const hasSelector = websites?.value?.[currentDragIndex.value]?.targetSelector
+    
     isColliding.value = hasCollision
 
-    // 如果没有碰撞，或者正在缩小（解除重叠），允许调整
-    if (!hasCollision || isShrinking) {
+    // 如果没有碰撞，或者正在缩小（解除重叠），或者有选择器（选择器iframe可以自由调整），允许调整
+    if (!hasCollision || isShrinking || hasSelector) {
       itemSizes.value[currentDragIndex.value] = { width: newWidth, height: newHeight }
     }
   }
