@@ -41,9 +41,179 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
+
+  // 拦截新窗口打开 - 在macOS全屏时不跳转到新窗口
+  // 策略：创建新窗口但立即关闭，然后通知主页面在iframe中导航
+  mainWindow.webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
+    console.log('[Window Open Guard] 拦截新窗口打开:', { url, frameName, disposition })
+    
+    // 发送消息到渲染进程，让它在最近点击的iframe中导航
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        console.log('[Window Open Guard] 尝试在iframe中打开:', '${url.replace(/'/g, "\\'")}');
+        
+        // 查找最近获得焦点的iframe
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.tagName === 'IFRAME') {
+          console.log('[Window Open Guard] 找到活动iframe，在其中导航');
+          try {
+            activeElement.contentWindow.location.href = '${url.replace(/'/g, "\\'")}';
+            return true;
+          } catch (e) {
+            console.log('[Window Open Guard] 导航失败:', e.message);
+          }
+        }
+        
+        // 如果没有找到活动iframe，尝试在最后一个iframe中打开
+        const iframes = document.querySelectorAll('iframe');
+        if (iframes.length > 0) {
+          const lastIframe = iframes[iframes.length - 1];
+          console.log('[Window Open Guard] 在最后一个iframe中导航');
+          try {
+            lastIframe.contentWindow.location.href = '${url.replace(/'/g, "\\'")}';
+            return true;
+          } catch (e) {
+            console.log('[Window Open Guard] 导航失败:', e.message);
+          }
+        }
+        
+        console.log('[Window Open Guard] 未找到可用iframe');
+        return false;
+      })();
+    `).catch(err => {
+      console.log('[Window Open Guard] 执行失败:', err.message)
+    })
+    
+    // 阻止打开新窗口
+    return { action: 'deny' }
+  })
+
   // 监听页面加载完成
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('[Electron Main] 页面加载完成')
+    
+    // 注入JavaScript来处理iframe中的链接和window.open
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        console.log('[Link Handler] 初始化iframe链接和window.open处理器');
+        
+        // 处理iframe的函数
+        const setupIframe = (iframe) => {
+          console.log('[Link Handler] 设置iframe:', iframe.src);
+          
+          const injectCode = () => {
+            try {
+              if (!iframe.contentWindow) {
+                console.log('[Link Handler] contentWindow不可用');
+                return;
+              }
+              
+              // 重写window.open - 让它在当前iframe中导航而不是打开新窗口
+              const script = \`
+                (function() {
+                  console.log('[Link Handler] 注入iframe window.open拦截器');
+                  
+                  // 保存原始的window.open
+                  const originalOpen = window.open;
+                  
+                  // 重写window.open
+                  window.open = function(url, target, features) {
+                    console.log('[Link Handler] window.open被调用:', url, target);
+                    
+                    // 如果是_blank或新窗口，改为在当前页面打开
+                    if (!target || target === '_blank' || target === '_new') {
+                      console.log('[Link Handler] 重定向到当前iframe:', url);
+                      window.location.href = url;
+                      return window;
+                    }
+                    
+                    // 其他情况也在当前页面打开
+                    window.location.href = url;
+                    return window;
+                  };
+                  
+                  // 修改所有target="_blank"的链接
+                  const modifyLinks = () => {
+                    const links = document.querySelectorAll('a[target="_blank"]');
+                    links.forEach(link => {
+                      link.setAttribute('target', '_self');
+                    });
+                  };
+                  
+                  // 立即执行
+                  modifyLinks();
+                  
+                  // 监听DOM变化
+                  if (document.body) {
+                    const observer = new MutationObserver(modifyLinks);
+                    observer.observe(document.body, {
+                      childList: true,
+                      subtree: true,
+                      attributes: true,
+                      attributeFilter: ['target']
+                    });
+                  }
+                  
+                  console.log('[Link Handler] window.open拦截器安装完成');
+                })();
+              \`;
+              
+              iframe.contentWindow.eval(script);
+              console.log('[Link Handler] ✅ 成功注入到iframe');
+            } catch (e) {
+              console.log('[Link Handler] ❌ 注入失败（可能是跨域）:', e.message);
+            }
+          };
+          
+          // 立即尝试注入
+          injectCode();
+          
+          // 监听load事件，在加载完成后注入
+          iframe.addEventListener('load', () => {
+            console.log('[Link Handler] iframe加载完成，重新注入');
+            setTimeout(injectCode, 0);
+            setTimeout(injectCode, 50);
+            setTimeout(injectCode, 200);
+          });
+        };
+        
+        // 监听iframe的创建
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+              if (node.tagName === 'IFRAME') {
+                console.log('[Link Handler] 检测到新iframe');
+                setupIframe(node);
+              }
+            });
+          });
+        });
+        
+        // 开始监听DOM变化
+        if (document.body) {
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+          
+          // 处理现有的iframe
+          document.querySelectorAll('iframe').forEach(setupIframe);
+        } else {
+          // 如果body还未加载，等待DOMContentLoaded
+          document.addEventListener('DOMContentLoaded', () => {
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true
+            });
+            document.querySelectorAll('iframe').forEach(setupIframe);
+          });
+        }
+        
+        console.log('[Link Handler] 初始化完成');
+      })();
+    `).catch(err => {
+      console.error('[Electron Main] 注入链接处理器失败:', err)
+    })
   })
 
   // 禁用所有iframe的CORS限制，并转发 Cookie
