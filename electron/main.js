@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 
+// 设置 User-Agent
+app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
+
 // 完全禁用CORS和安全策略
 app.commandLine.appendSwitch('disable-web-security')
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
@@ -37,22 +40,36 @@ function createWindow() {
     console.log('[Electron Main] 生产模式，加载本地文件')
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
-  
+
   // 监听页面加载完成
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('[Electron Main] 页面加载完成')
   })
 
-  // 禁用所有iframe的CORS限制
+  // 禁用所有iframe的CORS限制，并转发 Cookie
   mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
     { urls: ['*://*/*'] },
-    (details, callback) => {
-      callback({
-        requestHeaders: {
-          ...details.requestHeaders,
-          'Referer': details.url,
+    async (details, callback) => {
+      const requestHeaders = { ...details.requestHeaders }
+
+      // 获取当前域名的所有 cookies
+      try {
+        const url = new URL(details.url)
+        const cookies = await mainWindow.webContents.session.cookies.get({
+          domain: url.hostname
+        })
+
+        // 如果有 cookie，添加到请求头中
+        if (cookies.length > 0) {
+          const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ')
+          requestHeaders['Cookie'] = cookieString
+          console.log(`[Cookie] 为 ${url.hostname} 添加 Cookie:`, cookieString.substring(0, 100))
         }
-      })
+      } catch (e) {
+        // 忽略错误，继续请求
+      }
+
+      callback({ requestHeaders })
     }
   )
 
@@ -60,18 +77,46 @@ function createWindow() {
     { urls: ['*://*/*'] },
     (details, callback) => {
       const responseHeaders = { ...details.responseHeaders }
-      
+
       // 移除阻止iframe加载的headers
       delete responseHeaders['x-frame-options']
       delete responseHeaders['X-Frame-Options']
       delete responseHeaders['content-security-policy']
       delete responseHeaders['Content-Security-Policy']
-      
+
       // 添加允许CORS的headers
       responseHeaders['Access-Control-Allow-Origin'] = ['*']
       responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS']
       responseHeaders['Access-Control-Allow-Headers'] = ['*']
       responseHeaders['Access-Control-Allow-Credentials'] = ['true']
+
+      // 修改 Set-Cookie 的 SameSite 属性，使其在 iframe 中也能工作
+      if (responseHeaders['set-cookie']) {
+        responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(cookie => {
+          // 移除 SameSite=Lax 或 SameSite=Strict
+          let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
+          // 添加 SameSite=None 和 Secure（iframe 中必需）
+          if (!modifiedCookie.includes('SameSite=None')) {
+            modifiedCookie += '; SameSite=None'
+          }
+          if (!modifiedCookie.includes('Secure')) {
+            modifiedCookie += '; Secure'
+          }
+          return modifiedCookie
+        })
+      }
+      if (responseHeaders['Set-Cookie']) {
+        responseHeaders['Set-Cookie'] = responseHeaders['Set-Cookie'].map(cookie => {
+          let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
+          if (!modifiedCookie.includes('SameSite=None')) {
+            modifiedCookie += '; SameSite=None'
+          }
+          if (!modifiedCookie.includes('Secure')) {
+            modifiedCookie += '; Secure'
+          }
+          return modifiedCookie
+        })
+      }
 
       callback({ responseHeaders })
     }
@@ -100,7 +145,7 @@ app.whenReady().then(() => {
 ipcMain.handle('execute-in-iframe', async (event, iframeId, code) => {
   try {
     console.log('[Electron Main] 收到execute-in-iframe请求:', iframeId)
-    
+
     if (!mainWindow || mainWindow.isDestroyed()) {
       console.error('[Electron Main] mainWindow不可用')
       return { success: false, error: 'Window not available' }
@@ -136,7 +181,7 @@ ipcMain.handle('execute-in-iframe', async (event, iframeId, code) => {
         }
       })()
     `)
-    
+
     console.log('[Electron Main] 执行结果:', result)
     return result
   } catch (error) {
