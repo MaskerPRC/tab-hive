@@ -20,7 +20,7 @@
         :data-iframe-id="`iframe-${item.id}`"
         :src="websiteUrl"
         frameborder="0"
-        v-bind="isElectron ? {} : { sandbox: 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads' }"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
         class="website-iframe"
         :class="{ 'mobile-view': item.deviceType === 'mobile' }"
         :title="item.title"
