@@ -12,16 +12,6 @@ contextBridge.exposeInMainWorld('electron', {
   executeInIframe: (iframeId, code) => {
     console.log('[Preload] executeInIframe 被调用:', iframeId)
     return ipcRenderer.invoke('execute-in-iframe', iframeId, code)
-  },
-  
-  // 窗口控制 API
-  windowControls: {
-    minimize: () => ipcRenderer.send('window-minimize'),
-    maximize: () => ipcRenderer.send('window-maximize'),
-    close: () => ipcRenderer.send('window-close'),
-    fullscreen: () => ipcRenderer.send('window-fullscreen'),
-    isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
-    isFullscreen: () => ipcRenderer.invoke('window-is-fullscreen')
   }
 })
 
