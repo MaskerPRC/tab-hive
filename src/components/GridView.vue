@@ -15,7 +15,7 @@
 
     <!-- 拖动/调整大小时的全局遮罩层，防止iframe捕获鼠标事件 -->
     <div
-      v-if="isDraggingItem || isResizing"
+      v-if="isDraggingOrResizing"
       class="drag-overlay"
     ></div>
 
@@ -42,38 +42,51 @@
       @cancel="cancelAddWebsite"
     />
 
+    <!-- Gridstack 容器 -->
     <div
-      class="grid-container"
+      ref="gridContainer"
+      class="grid-stack"
       :class="{
-        'free-layout': true,
-        'is-dragging': isDraggingItem || isResizing
+        'is-dragging': isDraggingOrResizing
       }"
     >
-      <WebsiteCard
+      <!-- Gridstack 会自动管理这些元素 -->
+      <div
         v-for="(item, index) in allWebsites"
         :key="item.id"
-        :item="item"
-        :index="index"
-        :item-style="getItemStyle(item, index, fullscreenIndex)"
-        :is-fullscreen="fullscreenIndex === index"
-        :is-hidden="isHidden(index)"
-        :is-drag-over="dragOverIndex === index"
-        :is-external-dragging="isDragging"
-        :is-dragging="isDraggingItem"
-        :is-current-drag="currentDragIndex === index"
-        :is-resizing="isResizing"
-        :is-current-resize="currentResizeIndex === index"
-        :is-colliding="dragIsColliding || resizeIsColliding"
-        @drag-start="startDrag($event, index)"
-        @drag-over="handleDragOver"
-        @drag-leave="handleDragLeave"
-        @drop="handleDrop"
-        @refresh="handleRefreshWebsite"
-        @edit="handleEditWebsite"
-        @fullscreen="$emit('fullscreen', index)"
-        @remove="handleRemoveWebsite"
-        @resize-start="startResize($event, index, $event)"
-      />
+        :gs-id="String(index)"
+        :gs-x="getGridX(item, index)"
+        :gs-y="getGridY(item, index)"
+        :gs-w="getGridW(item, index)"
+        :gs-h="getGridH(item, index)"
+        :gs-min-w="2"
+        :gs-min-h="2"
+        class="grid-stack-item"
+      >
+        <div class="grid-stack-item-content">
+          <WebsiteCard
+            :item="item"
+            :index="index"
+            :item-style="{}"
+            :is-fullscreen="fullscreenIndex === index"
+            :is-hidden="isHidden(index)"
+            :is-drag-over="dragOverIndex === index"
+            :is-external-dragging="isDragging"
+            :is-dragging="false"
+            :is-current-drag="false"
+            :is-resizing="false"
+            :is-current-resize="false"
+            :is-colliding="false"
+            @drag-over="handleDragOver"
+            @drag-leave="handleDragLeave"
+            @drop="handleDrop"
+            @refresh="handleRefreshWebsite"
+            @edit="handleEditWebsite"
+            @fullscreen="$emit('fullscreen', index)"
+            @remove="handleRemoveWebsite"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -83,10 +96,7 @@ import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
-import { useCollisionDetection } from '../composables/useCollisionDetection'
-import { useGridLayout } from '../composables/useGridLayout'
-import { useItemDrag } from '../composables/useItemDrag'
-import { useItemResize } from '../composables/useItemResize'
+import { useGridstack } from '../composables/useGridstack'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useUrlDrop } from '../composables/useUrlDrop'
 
@@ -132,39 +142,22 @@ export default {
       return props.websites || []
     })
 
-    // 碰撞检测
-    const { 
-      isColliding: collisionIsColliding, 
-      checkCollisionWithOthers, 
-      isMovingAway 
-    } = useCollisionDetection()
-
-    // 网格布局
+    // Gridstack 集成
     const {
-      itemPositions,
-      itemSizes,
-      snapToGrid,
-      initializeGridLayout,
-      getItemStyle
-    } = useGridLayout(allWebsites)
+      gridContainer,
+      gridInstance,
+      isInitialized,
+      initGridstack,
+      refreshGrid,
+      pixelToGrid,
+      gridToPixel
+    } = useGridstack(allWebsites, emit)
 
-    // 拖拽
-    const {
-      isDraggingItem,
-      currentDragIndex,
-      isColliding: dragIsColliding,
-      startDrag: startDragItem,
-      handleDragEnd
-    } = useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway)
-
-    // 调整大小
-    const {
-      isResizing,
-      currentDragIndex: currentResizeIndex,
-      isColliding: resizeIsColliding,
-      startResize: startResizeItem,
-      handleResizeEnd
-    } = useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, allWebsites)
+    // 拖拽和调整大小状态（由 body 类名控制）
+    const isDraggingOrResizing = computed(() => {
+      return document.body.classList.contains('dragging-item') || 
+             document.body.classList.contains('resizing-item')
+    })
 
     // 全屏
     const fullscreenIndexRef = computed(() => props.fullscreenIndex)
@@ -185,6 +178,38 @@ export default {
       handleDragLeave,
       handleDrop
     } = useUrlDrop()
+
+    // 像素到网格单位的转换（用于初始化）
+    const PIXEL_TO_GRID_WIDTH = 100
+    const PIXEL_TO_GRID_HEIGHT = 100
+
+    const getGridX = (item, index) => {
+      if (item.position && item.position.x !== undefined) {
+        return Math.round(item.position.x / PIXEL_TO_GRID_WIDTH)
+      }
+      return (index % 3) * 4  // 默认布局：每行3个，每个宽4格
+    }
+
+    const getGridY = (item, index) => {
+      if (item.position && item.position.y !== undefined) {
+        return Math.round(item.position.y / PIXEL_TO_GRID_HEIGHT)
+      }
+      return Math.floor(index / 3) * 3  // 默认布局：每个高3格
+    }
+
+    const getGridW = (item, index) => {
+      if (item.size && item.size.width) {
+        return Math.max(2, Math.round(item.size.width / PIXEL_TO_GRID_WIDTH))
+      }
+      return 4  // 默认宽度 4 格
+    }
+
+    const getGridH = (item, index) => {
+      if (item.size && item.size.height) {
+        return Math.max(2, Math.round(item.size.height / PIXEL_TO_GRID_HEIGHT))
+      }
+      return 3  // 默认高度 3 格
+    }
 
     /**
      * 判断某个索引的网站是否应该隐藏
@@ -275,77 +300,52 @@ export default {
       }
     }
 
-    /**
-     * 开始拖拽
-     */
-    const startDrag = (event, index) => {
-      startDragItem(event, index, allWebsites.value.length)
-    }
-
-    /**
-     * 开始调整大小
-     */
-    const startResize = (event, index, handle) => {
-      // 从事件对象中提取 handle
-      const target = event.target
-      if (target.classList.contains('resize-se')) {
-        startResizeItem(event, index, 'se')
-      } else if (target.classList.contains('resize-e')) {
-        startResizeItem(event, index, 'e')
-      } else if (target.classList.contains('resize-s')) {
-        startResizeItem(event, index, 's')
+    // 监听网站列表变化
+    watch(allWebsites, async () => {
+      console.log('[GridView] 网站列表变化，等待初始化 Gridstack')
+      await nextTick()
+      
+      if (!isInitialized.value) {
+        console.log('[GridView] Gridstack 未初始化，初始化中...')
+        await initGridstack()
+      } else {
+        console.log('[GridView] Gridstack 已初始化，刷新网格')
+        // 可以选择刷新或者让 Gridstack 自动处理
       }
-    }
+    }, { deep: true })
 
-    // 监听网站列表变化，初始化新添加的项目
-    watch(allWebsites, () => {
-      // 使用 nextTick 确保 DOM 已更新
-      nextTick(() => {
-        initializeGridLayout()
-      })
-    }, { immediate: false })
-
-    // 组件挂载时初始化布局
-    onMounted(() => {
-      nextTick(() => {
-        initializeGridLayout()
-      })
-
-      // 监听窗口大小变化
-      window.addEventListener('resize', initializeGridLayout)
-
-      // 监听全局鼠标抬起事件，处理拖拽和调整大小结束
-      document.addEventListener('mouseup', () => {
-        if (isDraggingItem.value) {
-          handleDragEnd(emit)
-        }
-        if (isResizing.value) {
-          handleResizeEnd(emit)
-        }
-      })
+    // 组件挂载时初始化
+    onMounted(async () => {
+      console.log('[GridView] onMounted，准备初始化 Gridstack')
+      await nextTick()
+      await nextTick() // 等待两次以确保 DOM 完全渲染
+      
+      if (gridContainer.value) {
+        await initGridstack()
+      } else {
+        console.error('[GridView] gridContainer 未找到')
+      }
     })
 
-    // 组件卸载时清理事件监听
+    // 组件卸载时清理
     onUnmounted(() => {
       cleanupFullscreen()
-      window.removeEventListener('resize', initializeGridLayout)
     })
 
     return {
       allWebsites,
       isHidden,
-      getItemStyle,
       editingSlot,
       newWebsite,
       dragOverIndex,
       isDragging,
       showFullscreenBar,
-      isDraggingItem,
-      isResizing,
-      currentDragIndex,
-      currentResizeIndex,
-      dragIsColliding,
-      resizeIsColliding,
+      isDraggingOrResizing,
+      gridContainer,
+      getGridX,
+      getGridY,
+      getGridW,
+      getGridH,
       startAddWebsite,
       confirmAddWebsite,
       cancelAddWebsite,
@@ -358,9 +358,7 @@ export default {
       handleViewDragLeave,
       handleDragOver,
       handleDragLeave,
-      handleDrop,
-      startDrag,
-      startResize
+      handleDrop
     }
   }
 }
@@ -431,16 +429,11 @@ export default {
   display: block;
 }
 
-.grid-container {
+/* Gridstack 容器样式 */
+.grid-stack {
   width: 100%;
-  min-height: 100%;
-  height: auto;
-  position: relative;
-}
-
-.grid-container.free-layout {
-  position: relative;
   min-height: 100vh;
+  position: relative;
   background-image:
     linear-gradient(to right, rgba(255, 92, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 92, 0, 0.05) 1px, transparent 1px);
@@ -449,7 +442,29 @@ export default {
 }
 
 /* 全局拖动或调整大小时，禁用所有iframe的鼠标事件 */
-.grid-container.is-dragging .website-iframe {
+.grid-stack.is-dragging .website-iframe {
   pointer-events: none;
+}
+
+/* Gridstack 元素样式 */
+.grid-stack-item {
+  position: absolute;
+}
+
+.grid-stack-item-content {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 让 WebsiteCard 填充整个 grid-stack-item-content */
+.grid-stack-item-content :deep(.grid-item) {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
 }
 </style>

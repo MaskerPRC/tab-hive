@@ -27,11 +27,8 @@
         :allow="'autoplay; fullscreen; picture-in-picture'"
       ></iframe>
       
-      <!-- 拖动手柄 -->
-      <DragHandle
-        @mousedown="$emit('drag-start', $event, index)"
-        @touchstart="$emit('drag-start', $event, index)"
-      />
+      <!-- 拖动手柄 - Gridstack 会自动处理拖拽 -->
+      <DragHandle class="drag-handle" />
       
       <!-- 拖放区域和提示 -->
       <DropZone
@@ -51,10 +48,8 @@
         @remove="$emit('remove', index)"
       />
 
-      <!-- 调整大小手柄 -->
-      <ResizeHandles
-        @resize-start="(event, direction) => $emit('resize-start', event, index, direction)"
-      />
+      <!-- 调整大小手柄 - Gridstack 会自动处理 -->
+      <!-- ResizeHandles 不需要了，Gridstack 有自己的调整大小手柄 -->
       
       <!-- 自动刷新倒计时显示 -->
       <div v-if="item.autoRefreshInterval > 0 && remainingTime > 0" class="refresh-timer">
