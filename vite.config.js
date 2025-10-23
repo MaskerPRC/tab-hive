@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import react from '@vitejs/plugin-react'
 import archiver from 'archiver'
 import fs from 'fs'
 import path from 'path'
@@ -47,11 +46,7 @@ function zipChromeExtension() {
 }
 
 export default defineConfig({
-  plugins: [
-    vue(), 
-    react(), // 添加 React 插件支持
-    zipChromeExtension()
-  ],
+  plugins: [vue(), zipChromeExtension()],
   base: './', // 使用相对路径，适配Electron
   server: {
     port: 3000,
