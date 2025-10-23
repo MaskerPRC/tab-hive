@@ -21,6 +21,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false, // 禁用沙箱以允许访问iframe
       webSecurity: false, // 禁用web安全策略
       allowRunningInsecureContent: true,
       webviewTag: true,
@@ -88,132 +89,99 @@ function createWindow() {
     return { action: 'deny' }
   })
 
+  // 监听所有 frame 的创建，用于在 iframe 中注入代码
+  mainWindow.webContents.on('did-frame-navigate', (event, url, httpResponseCode, httpStatusText, isMainFrame, frameProcessId, frameRoutingId) => {
+    if (!isMainFrame) {
+      console.log('[Electron Main] iframe 导航完成:', url)
+      
+      // 查找对应的 frame
+      const frame = mainWindow.webContents.mainFrame.framesInSubtree.find(
+        f => f.processId === frameProcessId && f.routingId === frameRoutingId
+      )
+      
+      if (frame) {
+        // 在 iframe 中注入代码
+        setTimeout(() => {
+          frame.executeJavaScript(`
+            (function() {
+              console.log('[iframe] 注入代码执行监听器');
+              
+              // 保存原始的window.open
+              const originalOpen = window.open;
+              
+              // 重写window.open
+              window.open = function(url, target, features) {
+                console.log('[iframe] window.open被调用:', url, target);
+                
+                // 如果是_blank或新窗口，改为在当前页面打开
+                if (!target || target === '_blank' || target === '_new') {
+                  console.log('[iframe] 重定向到当前iframe:', url);
+                  window.location.href = url;
+                  return window;
+                }
+                
+                // 其他情况也在当前页面打开
+                window.location.href = url;
+                return window;
+              };
+              
+              // 添加 postMessage 监听器用于执行代码（选择器功能）
+              window.addEventListener('message', function(e) {
+                if (e.data && e.data.type === 'exec-code') {
+                  console.log('[iframe] 收到代码执行请求');
+                  try {
+                    const result = eval(e.data.code);
+                    window.parent.postMessage({
+                      type: 'exec-result',
+                      messageId: e.data.messageId,
+                      result: { success: true, result: result }
+                    }, '*');
+                  } catch (error) {
+                    console.error('[iframe] 代码执行失败:', error);
+                    window.parent.postMessage({
+                      type: 'exec-result',
+                      messageId: e.data.messageId,
+                      result: { success: false, error: error.message }
+                    }, '*');
+                  }
+                }
+              });
+              
+              // 修改所有target="_blank"的链接
+              const modifyLinks = () => {
+                const links = document.querySelectorAll('a[target="_blank"]');
+                links.forEach(link => {
+                  link.setAttribute('target', '_self');
+                });
+              };
+              
+              // 立即执行
+              modifyLinks();
+              
+              // 监听DOM变化
+              if (document.body) {
+                const observer = new MutationObserver(modifyLinks);
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true,
+                  attributes: true,
+                  attributeFilter: ['target']
+                });
+              }
+              
+              console.log('[iframe] 代码注入完成');
+            })();
+          `).catch(err => {
+            console.error('[Electron Main] iframe 代码注入失败:', err.message)
+          })
+        }, 100)
+      }
+    }
+  })
+
   // 监听页面加载完成
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('[Electron Main] 页面加载完成')
-    
-    // 注入JavaScript来处理iframe中的链接和window.open
-    mainWindow.webContents.executeJavaScript(`
-      (function() {
-        console.log('[Link Handler] 初始化iframe链接和window.open处理器');
-        
-        // 处理iframe的函数
-        const setupIframe = (iframe) => {
-          console.log('[Link Handler] 设置iframe:', iframe.src);
-          
-          const injectCode = () => {
-            try {
-              if (!iframe.contentWindow) {
-                console.log('[Link Handler] contentWindow不可用');
-                return;
-              }
-              
-              // 重写window.open - 让它在当前iframe中导航而不是打开新窗口
-              const script = \`
-                (function() {
-                  console.log('[Link Handler] 注入iframe window.open拦截器');
-                  
-                  // 保存原始的window.open
-                  const originalOpen = window.open;
-                  
-                  // 重写window.open
-                  window.open = function(url, target, features) {
-                    console.log('[Link Handler] window.open被调用:', url, target);
-                    
-                    // 如果是_blank或新窗口，改为在当前页面打开
-                    if (!target || target === '_blank' || target === '_new') {
-                      console.log('[Link Handler] 重定向到当前iframe:', url);
-                      window.location.href = url;
-                      return window;
-                    }
-                    
-                    // 其他情况也在当前页面打开
-                    window.location.href = url;
-                    return window;
-                  };
-                  
-                  // 修改所有target="_blank"的链接
-                  const modifyLinks = () => {
-                    const links = document.querySelectorAll('a[target="_blank"]');
-                    links.forEach(link => {
-                      link.setAttribute('target', '_self');
-                    });
-                  };
-                  
-                  // 立即执行
-                  modifyLinks();
-                  
-                  // 监听DOM变化
-                  if (document.body) {
-                    const observer = new MutationObserver(modifyLinks);
-                    observer.observe(document.body, {
-                      childList: true,
-                      subtree: true,
-                      attributes: true,
-                      attributeFilter: ['target']
-                    });
-                  }
-                  
-                  console.log('[Link Handler] window.open拦截器安装完成');
-                })();
-              \`;
-              
-              iframe.contentWindow.eval(script);
-              console.log('[Link Handler] ✅ 成功注入到iframe');
-            } catch (e) {
-              console.log('[Link Handler] ❌ 注入失败（可能是跨域）:', e.message);
-            }
-          };
-          
-          // 立即尝试注入
-          injectCode();
-          
-          // 监听load事件，在加载完成后注入
-          iframe.addEventListener('load', () => {
-            console.log('[Link Handler] iframe加载完成，重新注入');
-            setTimeout(injectCode, 0);
-            setTimeout(injectCode, 50);
-            setTimeout(injectCode, 200);
-          });
-        };
-        
-        // 监听iframe的创建
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            mutation.addedNodes.forEach((node) => {
-              if (node.tagName === 'IFRAME') {
-                console.log('[Link Handler] 检测到新iframe');
-                setupIframe(node);
-              }
-            });
-          });
-        });
-        
-        // 开始监听DOM变化
-        if (document.body) {
-          observer.observe(document.body, {
-            childList: true,
-            subtree: true
-          });
-          
-          // 处理现有的iframe
-          document.querySelectorAll('iframe').forEach(setupIframe);
-        } else {
-          // 如果body还未加载，等待DOMContentLoaded
-          document.addEventListener('DOMContentLoaded', () => {
-            observer.observe(document.body, {
-              childList: true,
-              subtree: true
-            });
-            document.querySelectorAll('iframe').forEach(setupIframe);
-          });
-        }
-        
-        console.log('[Link Handler] 初始化完成');
-      })();
-    `).catch(err => {
-      console.error('[Electron Main] 注入链接处理器失败:', err)
-    })
   })
 
   // 禁用所有iframe的CORS限制，并转发 Cookie
@@ -321,39 +289,103 @@ ipcMain.handle('execute-in-iframe', async (event, iframeId, code) => {
       return { success: false, error: 'Window not available' }
     }
 
-    // 在主窗口的渲染进程中执行代码
+    // 首先尝试使用 frame API 直接执行
+    try {
+      console.log('[Electron Main] 尝试使用 frame API')
+      
+      // 遍历所有 frames 查找目标 iframe
+      const frames = mainWindow.webContents.mainFrame.framesInSubtree
+      console.log('[Electron Main] 找到', frames.length, '个 frames')
+      
+      for (const frame of frames) {
+        try {
+          // 检查是否是目标 iframe
+          const frameIframeId = await frame.executeJavaScript(`
+            (function() {
+              if (window.frameElement) {
+                return window.frameElement.getAttribute('data-iframe-id');
+              }
+              return null;
+            })()
+          `).catch(() => null)
+          
+          if (frameIframeId === iframeId) {
+            console.log('[Electron Main] 找到目标 iframe，直接执行代码')
+            const result = await frame.executeJavaScript(code)
+            console.log('[Electron Main] 代码执行成功')
+            return { success: true, result: result }
+          }
+        } catch (e) {
+          // 忽略单个 frame 的错误，继续查找
+          console.log('[Electron Main] frame 检查失败:', e.message)
+        }
+      }
+      
+      console.log('[Electron Main] 未通过 frame API 找到目标 iframe')
+    } catch (e) {
+      console.error('[Electron Main] frame API 失败:', e.message)
+    }
+
+    // 如果 frame API 失败，使用 postMessage 方法
+    console.log('[Electron Main] 使用 postMessage 后备方法')
+    
     const result = await mainWindow.webContents.executeJavaScript(`
       (function() {
-        try {
-          console.log('[Electron Renderer] 查找iframe:', '${iframeId}');
-          const iframe = document.querySelector('iframe[data-iframe-id="${iframeId}"]');
-          
-          if (!iframe) {
-            console.error('[Electron Renderer] 未找到iframe');
-            return { success: false, error: 'Iframe not found' };
+        return new Promise((resolve) => {
+          try {
+            console.log('[Electron Renderer] 查找iframe:', '${iframeId}');
+            const iframe = document.querySelector('iframe[data-iframe-id="${iframeId}"]');
+            
+            if (!iframe) {
+              console.error('[Electron Renderer] 未找到iframe');
+              resolve({ success: false, error: 'Iframe not found' });
+              return;
+            }
+            
+            if (!iframe.contentWindow) {
+              console.error('[Electron Renderer] iframe.contentWindow不可用');
+              resolve({ success: false, error: 'Iframe contentWindow not available' });
+              return;
+            }
+            
+            console.log('[Electron Renderer] 使用 postMessage 发送代码...');
+            
+            // 使用 postMessage 与 iframe 通信
+            const messageId = 'exec-' + Date.now() + '-' + Math.random();
+            
+            const handleMessage = (e) => {
+              if (e.data && e.data.type === 'exec-result' && e.data.messageId === messageId) {
+                window.removeEventListener('message', handleMessage);
+                resolve(e.data.result);
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            // 5秒超时
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve({ success: false, error: 'Execution timeout' });
+            }, 5000);
+            
+            // 发送执行请求
+            iframe.contentWindow.postMessage({
+              type: 'exec-code',
+              messageId: messageId,
+              code: \`${code.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`
+            }, '*');
+            
+          } catch (e) {
+            console.error('[Electron Renderer] 执行失败:', e.message);
+            resolve({ success: false, error: e.message });
           }
-          
-          if (!iframe.contentWindow) {
-            console.error('[Electron Renderer] iframe.contentWindow不可用');
-            return { success: false, error: 'Iframe contentWindow not available' };
-          }
-          
-          console.log('[Electron Renderer] 正在执行代码...');
-          
-          // 在iframe的context中执行代码
-          const result = iframe.contentWindow.eval(\`${code.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`);
-          
-          console.log('[Electron Renderer] 代码执行成功');
-          return { success: true, result: result };
-        } catch (e) {
-          console.error('[Electron Renderer] 执行失败:', e.message);
-          return { success: false, error: e.message };
-        }
+        });
       })()
     `)
 
     console.log('[Electron Main] 执行结果:', result)
     return result
+    
   } catch (error) {
     console.error('[Electron Main] IPC处理错误:', error.message)
     return { success: false, error: error.message }
