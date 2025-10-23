@@ -62,10 +62,10 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
     let newHeight = currentSize.height
 
     if (resizeHandle.value.includes('e')) {
-      newWidth = Math.max(200, dragStartItemPos.value.width + deltaX)
+      newWidth = Math.max(1, dragStartItemPos.value.width + deltaX)
     }
     if (resizeHandle.value.includes('s')) {
-      newHeight = Math.max(150, dragStartItemPos.value.height + deltaY)
+      newHeight = Math.max(1, dragStartItemPos.value.height + deltaY)
     }
 
     const currentPos = itemPositions.value[currentDragIndex.value] || { x: 0, y: 0 }
