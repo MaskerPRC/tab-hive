@@ -216,24 +216,50 @@ function createWindow() {
     })
   })
 
+  // Cookie 缓存，避免在请求拦截器中使用 async
+  const cookieCache = new Map()
+  const COOKIE_CACHE_TTL = 5000 // 缓存 5 秒
+
+  // 异步更新 cookie 缓存
+  const updateCookieCache = async (hostname) => {
+    try {
+      const cookies = await mainWindow.webContents.session.cookies.get({
+        domain: hostname
+      })
+      cookieCache.set(hostname, {
+        cookies,
+        timestamp: Date.now()
+      })
+    } catch (e) {
+      console.error(`[Cookie] 获取 ${hostname} 的 cookies 失败:`, e.message)
+    }
+  }
+
   // 禁用所有iframe的CORS限制，并转发 Cookie
   mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
     { urls: ['*://*/*'] },
-    async (details, callback) => {
+    (details, callback) => {
       const requestHeaders = { ...details.requestHeaders }
 
-      // 获取当前域名的所有 cookies
+      // 获取当前域名的 cookies（使用缓存）
       try {
         const url = new URL(details.url)
-        const cookies = await mainWindow.webContents.session.cookies.get({
-          domain: url.hostname
-        })
+        const hostname = url.hostname
+        
+        // 检查缓存
+        const cached = cookieCache.get(hostname)
+        const now = Date.now()
+        
+        // 异步更新缓存（不阻塞当前请求）
+        if (!cached || (now - cached.timestamp) > COOKIE_CACHE_TTL) {
+          updateCookieCache(hostname)
+        }
 
-        // 如果有 cookie，添加到请求头中
-        if (cookies.length > 0) {
-          const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ')
+        // 如果有缓存的 cookie，添加到请求头中
+        if (cached && cached.cookies.length > 0) {
+          const cookieString = cached.cookies.map(c => `${c.name}=${c.value}`).join('; ')
           requestHeaders['Cookie'] = cookieString
-          console.log(`[Cookie] 为 ${url.hostname} 添加 Cookie:`, cookieString.substring(0, 100))
+          console.log(`[Cookie] 为 ${hostname} 注入 Cookie (${cached.cookies.length} 个)`)
         }
       } catch (e) {
         // 忽略错误，继续请求
@@ -242,6 +268,17 @@ function createWindow() {
       callback({ requestHeaders })
     }
   )
+
+  // 监听 cookie 变化，更新缓存
+  mainWindow.webContents.session.cookies.on('changed', (event, cookie, cause, removed) => {
+    if (!removed && cookie.domain) {
+      const hostname = cookie.domain.startsWith('.') 
+        ? cookie.domain.substring(1) 
+        : cookie.domain
+      console.log(`[Cookie] Cookie 变化，更新缓存: ${hostname}`)
+      updateCookieCache(hostname)
+    }
+  })
 
   mainWindow.webContents.session.webRequest.onHeadersReceived(
     { urls: ['*://*/*'] },
