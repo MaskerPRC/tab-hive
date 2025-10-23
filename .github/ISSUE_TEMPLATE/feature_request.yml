@@ -1,0 +1,138 @@
+name: ✨ 功能请求
+description: 建议一个新功能或改进
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你的建议！我们重视每一个功能请求。请详细描述你的想法。
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: 功能类型
+      description: 这个请求属于哪一类？
+      options:
+        - 新功能
+        - 功能改进
+        - 用户体验优化
+        - 性能优化
+        - 文档改进
+        - 其他
+      multiple: false
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 目标平台
+      description: 你希望在哪个平台上实现这个功能？
+      options:
+        - 所有平台
+        - Web 版本
+        - Electron 桌面客户端
+        - Chrome 扩展
+        - 不确定
+      multiple: true
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题描述
+      description: 你遇到了什么问题？这个功能将解决什么痛点？
+      placeholder: |
+        例如：我在使用多个布局时，经常需要在不同布局之间复制网站配置，这个过程很繁琐...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 期望的解决方案
+      description: 你希望如何解决这个问题？详细描述你期望的功能
+      placeholder: |
+        例如：希望能够支持批量复制/移动网站到其他布局，或者支持布局模板功能...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案
+      description: 你是否考虑过其他解决方案？如果有，请描述
+      placeholder: |
+        例如：也可以考虑支持网站分组功能，然后将分组应用到不同布局...
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 使用场景
+      description: 详细描述这个功能的使用场景
+      placeholder: |
+        例如：
+        1. 创建"工作"布局，包含常用的开发工具网站
+        2. 创建"学习"布局，想复用其中部分开发工具
+        3. 使用复制功能，选择要复制的网站，一键复制到新布局
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: UI/交互设计建议（可选）
+      description: |
+        如果有的话，可以描述或上传界面设计的草图/截图
+        💡 提示：你可以直接拖拽图片到这里
+      placeholder: |
+        描述你期望的交互流程，或拖拽设计图到这里...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级（你的看法）
+      description: 你认为这个功能的优先级如何？
+      options:
+        - 高（严重影响使用体验）
+        - 中（会显著改善体验）
+        - 低（锦上添花的功能）
+      multiple: false
+    validations:
+      required: true
+
+  - type: textarea
+    id: similar-products
+    attributes:
+      label: 类似产品参考（可选）
+      description: 是否有其他产品实现了类似功能？可以作为参考
+      placeholder: |
+        例如：Chrome 的标签页分组功能、Notion 的页面模板功能等...
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 其他信息
+      description: 添加任何其他关于功能请求的信息
+      placeholder: |
+        - 这个功能对你的工作流程有多大帮助？
+        - 你预计会多频繁地使用这个功能？
+        - 其他相关想法...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      options:
+        - label: 我已经搜索过现有的 issues 和 discussions，确认这不是重复请求
+          required: true
+        - label: 我已经阅读了项目的功能文档，确认该功能尚未实现
+          required: true
+        - label: 我愿意贡献代码来实现这个功能（可选）
+          required: false
+        - label: 我愿意参与功能的测试和反馈
+          required: false
+

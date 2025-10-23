@@ -1,0 +1,194 @@
+name: 🐛 Bug 报告
+description: 报告一个问题或错误
+title: "[Bug]: "
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你花时间填写这个 bug 报告！请尽可能详细地描述问题，这将帮助我们更快地定位和解决问题。
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 使用平台
+      description: 你在哪个平台上遇到了这个问题？
+      options:
+        - Web 版本（浏览器直接访问）
+        - Electron 桌面客户端
+        - Chrome 扩展（选择器全屏助手）
+      multiple: false
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本号
+      description: |
+        你使用的是哪个版本？
+        - Web版本：查看页面底部或控制台
+        - Electron版本：查看关于页面或下载的安装包文件名
+        - Chrome扩展：chrome://extensions/ 页面查看
+      placeholder: "例如：0.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      description: 你使用的操作系统是？
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (Ubuntu/Debian)
+        - Linux (其他发行版)
+        - 其他
+      multiple: false
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: 浏览器版本（Web版本必填）
+      description: 如果使用 Web 版本或遇到扩展相关问题，请填写浏览器及版本
+      placeholder: "例如：Chrome 120.0.6099.109、Edge 120.0.2210.91"
+
+  - type: dropdown
+    id: feature
+    attributes:
+      label: 相关功能模块
+      description: 问题发生在哪个功能模块？
+      options:
+        - 网站添加/删除
+        - Grid 布局配置
+        - 多布局管理
+        - 全屏查看
+        - CSS选择器全屏
+        - 布局分享/导入
+        - URL参数导入
+        - 自动刷新
+        - 拖放操作
+        - 本地存储/配置保存
+        - 其他
+      multiple: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 问题描述
+      description: 清晰简洁地描述你遇到的问题
+      placeholder: 告诉我们发生了什么...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 复现步骤
+      description: 请提供详细的步骤来复现这个问题
+      placeholder: |
+        1. 打开 Tab Hive...
+        2. 添加网站 'xxx'...
+        3. 点击全屏按钮...
+        4. 看到错误提示...
+      value: |
+        1. 
+        2. 
+        3. 
+        4. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 你期望发生什么？
+      placeholder: 描述你期望的正常行为...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际行为
+      description: 实际上发生了什么？
+      placeholder: 描述实际发生的情况...
+    validations:
+      required: true
+
+  - type: input
+    id: website-url
+    attributes:
+      label: 问题网站URL（如适用）
+      description: 如果问题与特定网站相关，请提供该网站的URL
+      placeholder: "例如：https://example.com"
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图或录屏
+      description: |
+        如果可以，请添加截图或录屏来帮助说明问题
+        💡 提示：你可以直接拖拽图片或视频到这里
+      placeholder: 拖拽图片到这里...
+
+  - type: textarea
+    id: console-logs
+    attributes:
+      label: 控制台日志或错误信息
+      description: |
+        如果有相关的控制台日志或错误信息，请粘贴在这里
+        
+        **如何查看控制台：**
+        - Web版本：按 F12 打开开发者工具
+        - Electron版本：在菜单中选择 View → Toggle Developer Tools
+        - Chrome扩展：右键扩展图标 → 检查弹出内容
+      placeholder: |
+        请粘贴控制台的错误信息...
+      render: shell
+
+  - type: textarea
+    id: layout-config
+    attributes:
+      label: 布局配置（如适用）
+      description: |
+        如果问题与特定布局配置相关，可以导出并粘贴你的布局JSON配置
+        这将帮助我们更准确地重现问题
+      placeholder: |
+        粘贴你的布局JSON配置...
+      render: json
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 其他信息
+      description: 添加任何其他关于问题的上下文信息
+      placeholder: |
+        - 问题是否稳定复现？
+        - 问题开始出现的时间？
+        - 是否尝试过清除配置？
+        - 是否安装了其他扩展可能有冲突？
+        - 网络环境（本地/远程部署）？
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      description: 在提交之前，请确认以下事项
+      options:
+        - label: 我已经搜索过现有的 issues，确认这不是重复问题
+          required: true
+        - label: 我已经阅读了相关文档（README.md 和功能说明文档）
+          required: true
+        - label: 我已经尝试清除浏览器缓存或重新安装应用
+          required: false
+        - label: 我愿意提供更多信息来帮助定位问题
+          required: false
+
