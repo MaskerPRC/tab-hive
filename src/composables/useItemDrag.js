@@ -3,6 +3,7 @@
  * 处理网格项目的拖拽移动逻辑
  */
 import { ref } from 'vue'
+import { performCollisionPush } from './collisionPushAlgorithm'
 
 export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway) {
   const isDraggingItem = ref(false)
@@ -94,9 +95,41 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
 
     isColliding.value = hasCollision
 
-    // 如果没有碰撞，或者正在远离碰撞（解除重叠），允许移动
-    if (!hasCollision || movingAway) {
-      itemPositions.value[currentDragIndex.value] = { x: newX, y: newY }
+    // 先更新当前蜂巢的位置
+    itemPositions.value[currentDragIndex.value] = { x: newX, y: newY }
+
+    // 如果有碰撞且不是在远离，执行推开算法（拖拽时推开力度较小，仅轻微推开）
+    if (hasCollision && !movingAway) {
+      console.log('[拖拽] 检测到碰撞，执行推开算法', {
+        index: currentDragIndex.value,
+        hasCollision,
+        movingAway,
+        newPos: { x: newX, y: newY },
+        currentSize
+      })
+
+      // 执行碰撞推开算法
+      const newPositions = performCollisionPush(
+        currentDragIndex.value,
+        { x: newX, y: newY },
+        currentSize,
+        itemPositions.value,
+        itemSizes.value,
+        Object.keys(itemPositions.value).length
+      )
+
+      console.log('[拖拽] 推开算法完成，更新位置', {
+        oldPositions: itemPositions.value,
+        newPositions
+      })
+
+      // 更新所有蜂巢的位置
+      itemPositions.value = { ...newPositions }
+    } else {
+      console.log('[拖拽] 跳过推开算法', {
+        hasCollision,
+        movingAway
+      })
     }
   }
 

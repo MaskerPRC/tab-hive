@@ -3,6 +3,7 @@
  * 处理网格项目的尺寸调整逻辑
  */
 import { ref } from 'vue'
+import { performCollisionPush } from './collisionPushAlgorithm'
 
 export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, websites) {
   const isResizing = ref(false)
@@ -82,15 +83,52 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
     // 对于调整大小，检测是否在缩小（缩小总是允许的，因为可能在解除重叠）
     const currentSizeVal = itemSizes.value[currentDragIndex.value] || { width: 300, height: 200 }
     const isShrinking = newWidth < currentSizeVal.width || newHeight < currentSizeVal.height
+    const isGrowing = newWidth > currentSizeVal.width || newHeight > currentSizeVal.height
 
     // 检查当前项目是否有选择器（选择器类型的iframe可以自由调整大小）
     const hasSelector = websites?.value?.[currentDragIndex.value]?.targetSelector
     
     isColliding.value = hasCollision
 
-    // 如果没有碰撞，或者正在缩小（解除重叠），或者有选择器（选择器iframe可以自由调整），允许调整
-    if (!hasCollision || isShrinking || hasSelector) {
-      itemSizes.value[currentDragIndex.value] = { width: newWidth, height: newHeight }
+    // 先更新当前蜂巢的尺寸
+    itemSizes.value[currentDragIndex.value] = { width: newWidth, height: newHeight }
+
+    // 如果正在放大且有碰撞，执行推开算法
+    if (hasCollision && isGrowing && !hasSelector) {
+      console.log('[调整大小] 检测到碰撞，执行推开算法', {
+        index: currentDragIndex.value,
+        hasCollision,
+        isGrowing,
+        isShrinking,
+        hasSelector,
+        currentPos,
+        newSize: { width: newWidth, height: newHeight }
+      })
+
+      // 执行碰撞推开算法
+      const newPositions = performCollisionPush(
+        currentDragIndex.value,
+        currentPos,
+        { width: newWidth, height: newHeight },
+        itemPositions.value,
+        itemSizes.value,
+        Object.keys(itemPositions.value).length
+      )
+
+      console.log('[调整大小] 推开算法完成，更新位置', {
+        oldPositions: itemPositions.value,
+        newPositions
+      })
+
+      // 更新所有蜂巢的位置
+      itemPositions.value = { ...newPositions }
+    } else {
+      console.log('[调整大小] 跳过推开算法', {
+        hasCollision,
+        isGrowing,
+        isShrinking,
+        hasSelector
+      })
     }
   }
 
