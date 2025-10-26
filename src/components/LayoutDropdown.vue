@@ -33,7 +33,7 @@
       </div>
 
       <!-- 我的布局 -->
-      <div v-if="activeTab === 'my'">
+      <div v-if="activeTab === 'my'" class="tab-content">
         <div class="dropdown-header">
           <span>布局列表</span>
           <button class="btn-new-layout" @click="$emit('create-layout')" title="新建布局">
@@ -129,7 +129,7 @@
       </div>
 
       <!-- 共享布局 -->
-      <div v-if="activeTab === 'shared'">
+      <div v-if="activeTab === 'shared'" class="tab-content">
         <div class="dropdown-header">
           <input
             :value="searchQuery"
@@ -384,28 +384,41 @@ export default {
   transform: scale(1.1);
 }
 
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; /* 重要：让 flex 容器可以收缩 */
+  overflow: hidden;
+}
+
 .dropdown-list {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  min-height: 0; /* 重要：让滚动生效 */
 }
 
 .dropdown-list::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .dropdown-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  margin: 4px 0;
 }
 
 .dropdown-list::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
+  background: rgba(255, 92, 0, 0.5);
+  border-radius: 4px;
+  min-height: 30px;
+  border: 1px solid transparent;
 }
 
 .dropdown-list::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: rgba(255, 92, 0, 0.8);
+  border: 1px solid rgba(255, 92, 0, 0.3);
 }
 
 .dropdown-item {
