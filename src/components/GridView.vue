@@ -11,6 +11,15 @@
       :show="fullscreenIndex !== null && showFullscreenBar"
       @exit="$emit('exitFullscreen')"
       @leave="handleFullscreenBarLeave"
+      @selectElement="startElementSelection"
+    />
+
+    <!-- 元素选择器覆盖层 -->
+    <ElementSelector
+      :is-active="isSelectingElement"
+      :target-iframe="fullscreenIframe"
+      @select="handleElementSelected"
+      @cancel="cancelElementSelection"
     />
 
     <!-- 拖动/调整大小时的全局遮罩层，防止iframe捕获鼠标事件 -->
@@ -85,6 +94,7 @@ import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
+import ElementSelector from './ElementSelector.vue'
 import { useCollisionDetection } from '../composables/useCollisionDetection'
 import { useGridLayout } from '../composables/useGridLayout'
 import { useItemDrag } from '../composables/useItemDrag'
@@ -97,7 +107,8 @@ export default {
   components: {
     FullscreenBar,
     WebsiteEditDialog,
-    WebsiteCard
+    WebsiteCard,
+    ElementSelector
   },
   props: {
     websites: {
@@ -132,6 +143,10 @@ export default {
       targetSelector: '',
       autoRefreshInterval: 0
     })
+
+    // 元素选择器状态
+    const isSelectingElement = ref(false)
+    const fullscreenIframe = ref(null)
 
     // 所有网站列表
     const allWebsites = computed(() => {
@@ -317,6 +332,61 @@ export default {
       }
     }
 
+    /**
+     * 开始元素选择
+     */
+    const startElementSelection = () => {
+      if (props.fullscreenIndex === null) {
+        console.warn('只能在全屏模式下选择元素')
+        return
+      }
+
+      // 获取全屏iframe
+      const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
+      if (iframeElements[props.fullscreenIndex]) {
+        fullscreenIframe.value = iframeElements[props.fullscreenIndex]
+        isSelectingElement.value = true
+        console.log('开始元素选择模式')
+      } else {
+        console.error('未找到全屏iframe')
+      }
+    }
+
+    /**
+     * 处理元素选择完成
+     */
+    const handleElementSelected = ({ selector }) => {
+      console.log('选中元素选择器:', selector)
+      
+      if (props.fullscreenIndex !== null && props.websites[props.fullscreenIndex]) {
+        const website = props.websites[props.fullscreenIndex]
+        
+        // 更新网站的targetSelector
+        emit('update-website', {
+          index: props.fullscreenIndex,
+          title: website.title,
+          url: website.url,
+          deviceType: website.deviceType || 'desktop',
+          targetSelector: selector,
+          autoRefreshInterval: website.autoRefreshInterval || 0
+        })
+        
+        alert(`已设置元素选择器：\n${selector}\n\n退出全屏后将自动应用该选择器。`)
+      }
+      
+      isSelectingElement.value = false
+      fullscreenIframe.value = null
+    }
+
+    /**
+     * 取消元素选择
+     */
+    const cancelElementSelection = () => {
+      console.log('取消元素选择')
+      isSelectingElement.value = false
+      fullscreenIframe.value = null
+    }
+
     // 监听网站列表变化，初始化新添加的项目
     watch(allWebsites, () => {
       // 使用 nextTick 确保 DOM 已更新
@@ -366,6 +436,8 @@ export default {
       currentResizeIndex,
       dragIsColliding,
       resizeIsColliding,
+      isSelectingElement,
+      fullscreenIframe,
       startAddWebsite,
       confirmAddWebsite,
       cancelAddWebsite,
@@ -381,7 +453,10 @@ export default {
       handleDragLeave,
       handleDrop,
       startDrag,
-      startResize
+      startResize,
+      startElementSelection,
+      handleElementSelected,
+      cancelElementSelection
     }
   }
 }

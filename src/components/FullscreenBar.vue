@@ -5,6 +5,17 @@
     @mouseleave="$emit('leave')"
   >
     <button
+      class="btn-selector"
+      @click="$emit('selectElement')"
+      title="选择元素"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+        <path d="M13 13l6 6"/>
+      </svg>
+      <span>选择元素</span>
+    </button>
+    <button
       class="btn-exit-fullscreen"
       @click="$emit('exit')"
     >
@@ -25,7 +36,7 @@ export default {
       required: true
     }
   },
-  emits: ['exit', 'leave']
+  emits: ['exit', 'leave', 'selectElement']
 }
 </script>
 
@@ -42,6 +53,8 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   animation: slideDown 0.3s ease-out;
+  display: flex;
+  gap: 0;
 }
 
 @keyframes slideDown {
@@ -55,6 +68,7 @@ export default {
   }
 }
 
+.btn-selector,
 .btn-exit-fullscreen {
   display: flex;
   align-items: center;
@@ -67,12 +81,19 @@ export default {
   font-size: 15px;
   font-weight: 500;
   transition: all 0.3s;
+  position: relative;
 }
 
+.btn-selector {
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-selector:hover,
 .btn-exit-fullscreen:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
+.btn-selector svg,
 .btn-exit-fullscreen svg {
   display: block;
 }
