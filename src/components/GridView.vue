@@ -70,6 +70,7 @@
         @drag-leave="handleDragLeave"
         @drop="handleDrop"
         @refresh="handleRefreshWebsite"
+        @copy="handleCopyWebsite"
         @edit="handleEditWebsite"
         @fullscreen="$emit('fullscreen', index)"
         @remove="handleRemoveWebsite"
@@ -120,7 +121,7 @@ export default {
       default: () => ({ showTitles: false })
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'remove-website', 'update-website'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website'],
   setup(props, { emit }) {
     // 编辑网站状态
     const editingSlot = ref(null)
@@ -245,6 +246,13 @@ export default {
     }
 
     /**
+     * 复制网站
+     */
+    const handleCopyWebsite = (index) => {
+      emit('copy-website', index)
+    }
+
+    /**
      * 删除网站
      */
     const handleRemoveWebsite = (index) => {
@@ -361,6 +369,7 @@ export default {
       startAddWebsite,
       confirmAddWebsite,
       cancelAddWebsite,
+      handleCopyWebsite,
       handleRemoveWebsite,
       handleRefreshWebsite,
       handleEditWebsite,

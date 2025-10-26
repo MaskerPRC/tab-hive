@@ -7,6 +7,12 @@
       v-html="ICONS.refresh"
     />
     <button
+      class="btn-action btn-copy"
+      @click="$emit('copy')"
+      title="复制蜂巢"
+      v-html="ICONS.copy"
+    />
+    <button
       class="btn-action btn-edit"
       @click="$emit('edit')"
       title="编辑链接"
@@ -32,7 +38,7 @@ import { ICONS } from './icons.js'
 
 export default {
   name: 'FloatingActions',
-  emits: ['refresh', 'edit', 'fullscreen', 'remove'],
+  emits: ['refresh', 'copy', 'edit', 'fullscreen', 'remove'],
   setup() {
     return {
       ICONS
@@ -91,6 +97,14 @@ export default {
 
 .btn-refresh:hover {
   background: rgba(76, 175, 80, 0.9) !important;
+}
+
+.btn-copy {
+  background: rgba(156, 39, 176, 0.7) !important;
+}
+
+.btn-copy:hover {
+  background: rgba(156, 39, 176, 0.9) !important;
 }
 
 .btn-edit {

@@ -66,6 +66,7 @@
       <FloatingActions
         v-if="!isFullscreen"
         @refresh="handleManualRefresh"
+        @copy="$emit('copy', index)"
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
@@ -159,7 +160,7 @@ export default {
       default: false
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'edit', 'fullscreen', 'remove', 'resize-start'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start'],
   setup(props, { emit }) {
     // 双缓冲相关状态
     const isBufferLoading = ref(false)

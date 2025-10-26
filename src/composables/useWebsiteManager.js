@@ -59,6 +59,46 @@ export function useWebsiteManager(initialWebsites = []) {
   }
 
   /**
+   * 复制网站
+   * @param {number} index - 要复制的网站索引
+   */
+  const copyWebsite = (index) => {
+    if (!websites.value[index]) {
+      console.error('无效的索引:', index)
+      return
+    }
+
+    const sourceSite = websites.value[index]
+    const spacing = 20
+
+    // 计算新位置：在原网站右侧或下方
+    let newX = sourceSite.position.x + sourceSite.size.width + spacing
+    let newY = sourceSite.position.y
+
+    // 如果右侧空间不够（超出视口宽度80%），则放在下方
+    const maxX = window.innerWidth * 0.8
+    if (newX + sourceSite.size.width > maxX) {
+      newX = sourceSite.position.x
+      newY = sourceSite.position.y + sourceSite.size.height + spacing
+    }
+
+    // 创建复制的网站
+    const copiedSite = {
+      id: Date.now(),
+      url: sourceSite.url,
+      title: `${sourceSite.title} - 副本`,
+      deviceType: sourceSite.deviceType || 'desktop',
+      targetSelector: sourceSite.targetSelector || '',
+      autoRefreshInterval: sourceSite.autoRefreshInterval || 0,
+      position: { x: newX, y: newY },
+      size: { ...sourceSite.size }
+    }
+
+    websites.value.push(copiedSite)
+    console.log('已复制网站:', sourceSite.title, '->', copiedSite.title)
+  }
+
+  /**
    * 更新网站
    * @param {Object} params - 更新参数
    * @param {number} params.index - 网站索引
@@ -106,6 +146,7 @@ export function useWebsiteManager(initialWebsites = []) {
     // 方法
     addWebsite,
     removeWebsite,
+    copyWebsite,
     updateWebsite,
     setWebsites
   }

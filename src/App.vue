@@ -34,6 +34,7 @@
       @fullscreen="handleFullscreen"
       @exitFullscreen="exitFullscreen"
       @add-website="handleAddWebsite"
+      @copy-website="handleCopyWebsite"
       @remove-website="handleRemoveWebsite"
       @update-website="handleUpdateWebsite"
     />
@@ -168,6 +169,10 @@ export default {
       websiteManager.addWebsite(websiteData)
     }
 
+    const handleCopyWebsite = (index) => {
+      websiteManager.copyWebsite(index)
+    }
+
     const handleRemoveWebsite = (index) => {
       websiteManager.removeWebsite(index)
     }
@@ -300,6 +305,7 @@ export default {
       handleMouseMove,
       handlePanelLeave,
       handleAddWebsite,
+      handleCopyWebsite,
       handleRemoveWebsite,
       handleUpdateWebsite,
       handleSwitchLayout,
