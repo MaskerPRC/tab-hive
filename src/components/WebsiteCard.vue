@@ -192,8 +192,8 @@ export default {
       // 重置状态
       isBufferReady.value = false
       
-      // 设置缓冲URL并显示缓冲iframe
-      bufferUrl.value = websiteUrl.value + (websiteUrl.value.includes('?') ? '&' : '?') + '_t=' + Date.now()
+      // 设置缓冲URL并显示缓冲iframe（使用原URL，通过key强制重新加载）
+      bufferUrl.value = websiteUrl.value
       isBufferLoading.value = true
       
       // 监听缓冲iframe加载完成

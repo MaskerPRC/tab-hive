@@ -282,14 +282,13 @@ export default {
     const handleRefreshWebsite = (index) => {
       const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
       if (iframe) {
-        // 添加时间戳参数强制刷新，避免缓存
+        // 通过重新设置src来刷新iframe
         const currentSrc = iframe.src
-        const separator = currentSrc.includes('?') ? '&' : '?'
-        const timestamp = Date.now()
-        
-        // 如果URL已经有时间戳参数，替换它
-        const urlWithoutTimestamp = currentSrc.replace(/[?&]_t=\d+/, '')
-        iframe.src = urlWithoutTimestamp + separator + '_t=' + timestamp
+        iframe.src = 'about:blank'
+        // 使用setTimeout确保浏览器识别到URL变化
+        setTimeout(() => {
+          iframe.src = currentSrc
+        }, 10)
       }
     }
 
