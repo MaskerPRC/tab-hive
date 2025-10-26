@@ -49,9 +49,10 @@
 ### 核心组件
 
 1. **ElementSelector.vue** - 元素选择器主组件
-   - 提供覆盖层和高亮效果
-   - 处理鼠标移动和点击事件
-   - 生成CSS选择器
+   - 自动检测运行环境（浏览器 vs Electron）
+   - 浏览器环境：通过postMessage与Chrome扩展通信
+   - Electron环境：使用window.electron.executeInIframe API
+   - 显示当前悬停元素的选择器
 
 2. **FullscreenBar.vue** - 全屏工具栏
    - 添加了"选择元素"按钮
@@ -61,11 +62,25 @@
    - 集成元素选择器
    - 处理选择结果并更新网站配置
 
-### 依赖库
+4. **Chrome Extension (content.js)** - Chrome扩展内容脚本
+   - 在iframe内部创建选择器UI
+   - 处理鼠标事件和元素高亮
+   - 生成CSS选择器
+   - 通过postMessage与父页面通信
 
-- **css-selector-generator** - 自动生成最优CSS选择器
-  - 支持ID、Class、Tag、Attribute选择器
-  - 自动优化选择器唯一性
+### 环境支持
+
+#### 浏览器环境
+- **需要Chrome扩展** - 位于 `chrome-extension` 文件夹
+- 通过postMessage跨域通信
+- 扩展在iframe内部创建选择器UI
+- 支持跨域iframe
+
+#### Electron环境
+- 使用Electron的IPC机制
+- 通过executeInIframe注入脚本
+- 轮询检测选择状态
+- 无需额外扩展
 
 ## 选择器生成策略
 
