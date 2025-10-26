@@ -2,66 +2,71 @@
   <div v-if="show" class="edit-website-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="edit-website-dialog" @mousedown.stop>
       <h3>{{ editingIndex === -1 ? '添加网站' : '编辑网站' }}</h3>
-      <div class="form-group">
-        <label>网站名称：</label>
-        <input
-          v-model="localWebsite.title"
-          type="text"
-          placeholder="例如：Google"
-          class="form-input"
-          @keyup.enter="handleConfirm"
-          ref="titleInput"
-        />
-      </div>
-      <div class="form-group">
-        <label>网站地址：</label>
-        <input
-          v-model="localWebsite.url"
-          type="text"
-          placeholder="例如：bbc.com 或 https://bbc.com"
-          class="form-input"
-          @keyup.enter="handleConfirm"
-        />
-      </div>
-      <div class="form-group">
-        <label>设备类型：</label>
-        <div class="device-type-selector">
-          <label class="device-option" :class="{ active: localWebsite.deviceType === 'desktop' }">
-            <input
-              type="radio"
-              value="desktop"
-              v-model="localWebsite.deviceType"
-            />
-            <span>🖥️ PC版</span>
-          </label>
-          <label class="device-option" :class="{ active: localWebsite.deviceType === 'mobile' }">
-            <input
-              type="radio"
-              value="mobile"
-              v-model="localWebsite.deviceType"
-            />
-            <span>📱 手机版</span>
-          </label>
+      
+      <!-- 第一行：网站名称和网站地址 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>网站名称：</label>
+          <input
+            v-model="localWebsite.title"
+            type="text"
+            placeholder="例如：Google"
+            class="form-input"
+            @keyup.enter="handleConfirm"
+            ref="titleInput"
+          />
         </div>
-        <div class="device-hint" v-if="localWebsite.deviceType === 'mobile'">
-          💡 手机版会自动将域名转换为移动版（如 www.xxx.com → m.xxx.com）<br>
-          并限制视口宽度为 375px，适合查看响应式网站的移动布局
+        <div class="form-group">
+          <label>网站地址：</label>
+          <input
+            v-model="localWebsite.url"
+            type="text"
+            placeholder="例如：bbc.com 或 https://bbc.com"
+            class="form-input"
+            @keyup.enter="handleConfirm"
+          />
         </div>
       </div>
-      <div class="form-group">
-        <label>目标选择器（可选）：</label>
-        <input
-          v-model="localWebsite.targetSelector"
-          type="text"
-          placeholder="例如：#main-content 或 .video-player"
-          class="form-input"
-          @keyup.enter="handleConfirm"
-        />
-        <div class="selector-hint">
-          💡 Grid模式下只显示匹配此CSS选择器的元素，全屏时显示完整页面<br>
-          • Electron版本：完全支持所有网站<br>
-          • 浏览器版本：仅支持同域iframe（跨域网站请使用Electron）<br>
-          留空则始终显示整个页面
+      
+      <!-- 第二行：设备类型和目标选择器 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>设备类型：</label>
+          <div class="device-type-selector">
+            <label class="device-option" :class="{ active: localWebsite.deviceType === 'desktop' }">
+              <input
+                type="radio"
+                value="desktop"
+                v-model="localWebsite.deviceType"
+              />
+              <span>🖥️ PC版</span>
+            </label>
+            <label class="device-option" :class="{ active: localWebsite.deviceType === 'mobile' }">
+              <input
+                type="radio"
+                value="mobile"
+                v-model="localWebsite.deviceType"
+              />
+              <span>📱 手机版</span>
+            </label>
+          </div>
+          <div class="device-hint" v-if="localWebsite.deviceType === 'mobile'">
+            💡 手机版会自动将域名转换为移动版（如 www.xxx.com → m.xxx.com）并限制视口宽度为 375px
+          </div>
+        </div>
+        <div class="form-group">
+          <label>目标选择器（可选）：</label>
+          <input
+            v-model="localWebsite.targetSelector"
+            type="text"
+            placeholder="例如：#main-content 或 .video-player"
+            class="form-input"
+            @keyup.enter="handleConfirm"
+          />
+          <div class="selector-hint">
+            💡 Grid模式下只显示匹配此CSS选择器的元素，全屏时显示完整页面<br>
+            留空则始终显示整个页面
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -338,7 +343,7 @@ export default {
   background: white;
   border-radius: 16px;
   padding: 32px;
-  max-width: 500px;
+  max-width: 1000px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
@@ -360,6 +365,17 @@ export default {
   margin: 0 0 24px 0;
   font-size: 24px;
   text-align: center;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .form-group {
@@ -575,6 +591,22 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #065f46;
+}
+
+/* 响应式设计：在较小屏幕上切换回纵向布局 */
+@media (max-width: 900px) {
+  .edit-website-dialog {
+    max-width: 600px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-row .form-group {
+    margin-bottom: 20px;
+  }
 }
 </style>
 
