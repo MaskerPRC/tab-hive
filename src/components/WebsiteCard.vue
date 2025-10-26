@@ -315,6 +315,11 @@ export default {
   opacity: 0.8;
 }
 
+/* 悬停时显示倒计时 */
+.grid-item:hover .refresh-timer {
+  opacity: 1;
+}
+
 /* 自动刷新倒计时显示 */
 .refresh-timer {
   position: absolute;
@@ -334,6 +339,7 @@ export default {
   pointer-events: none;
   backdrop-filter: blur(4px);
   transition: all 0.3s ease;
+  opacity: 0;
 }
 
 .timer-icon {
