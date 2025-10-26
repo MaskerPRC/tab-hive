@@ -114,6 +114,192 @@ export function useIframeSelector(props) {
   }
 
   /**
+   * 通用选择器应用方法（可应用到任何iframe）
+   * @param {HTMLIFrameElement} targetIframe - 目标iframe元素
+   * @param {Object} item - 网站数据对象
+   */
+  const applySelector = async (targetIframe, item) => {
+    if (!item.targetSelector || !targetIframe) {
+      console.log('[Tab Hive] 跳过应用选择器：', {
+        hasSelector: !!item.targetSelector,
+        hasIframe: !!targetIframe
+      })
+      return
+    }
+    
+    console.log('[Tab Hive] 开始应用选择器到指定iframe')
+
+    const isElectronEnv = window.electron?.isElectron
+    
+    if (isElectronEnv) {
+      // Electron环境
+      try {
+        const styleId = `tabhive-selector-style-${item.id}`
+        const selector = item.targetSelector
+        
+        const code = `
+          (function() {
+            try {
+              const selector = '${selector.replace(/'/g, "\\'")}';
+              console.log('[Tab Hive iframe] 应用选择器:', selector);
+              
+              const oldStyle = document.getElementById('${styleId}');
+              if (oldStyle) {
+                oldStyle.remove();
+              }
+              
+              const targetElement = document.querySelector(selector);
+              if (!targetElement) {
+                console.warn('[Tab Hive iframe] 未找到选择器对应的元素:', selector);
+                return { success: false, error: '未找到元素' };
+              }
+              
+              let current = targetElement;
+              let hiddenCount = 0;
+              
+              while (current && current !== document.body) {
+                const parent = current.parentElement;
+                if (parent) {
+                  Array.from(parent.children).forEach(sibling => {
+                    if (sibling !== current && 
+                        !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+                      sibling.style.display = 'none';
+                      sibling.setAttribute('data-tabhive-hidden', 'true');
+                      hiddenCount++;
+                    }
+                  });
+                }
+                current = parent;
+              }
+              
+              console.log('[Tab Hive iframe] 已隐藏 ' + hiddenCount + ' 个兄弟元素');
+              
+              const style = document.createElement('style');
+              style.id = '${styleId}';
+              style.textContent = \`
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  overflow: hidden !important;
+                  width: 100% !important;
+                  height: 100% !important;
+                }
+                
+                \${selector} {
+                  display: block !important;
+                  visibility: visible !important;
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  z-index: 999999 !important;
+                  object-fit: contain !important;
+                }
+                
+                \${selector} * {
+                  visibility: visible !important;
+                }
+              \`;
+              
+              document.head.appendChild(style);
+              console.log('[Tab Hive iframe] 选择器已应用');
+              return { success: true };
+            } catch (e) {
+              console.error('[Tab Hive iframe] 错误:', e);
+              return { success: false, error: e.message };
+            }
+          })()
+        `
+
+        const iframeId = targetIframe.getAttribute('data-iframe-id')
+        const result = await window.electron.executeInIframe(iframeId, code)
+        if (!result.success) {
+          console.warn('[Tab Hive] 选择器应用失败:', result.error)
+        }
+      } catch (error) {
+        console.error('[Tab Hive] 应用选择器失败:', error)
+      }
+    } else {
+      // 浏览器环境
+      try {
+        if (!targetIframe.contentDocument) {
+          console.warn('[Tab Hive] iframe.contentDocument不可用（跨域iframe）')
+          return
+        }
+        
+        const iframeDoc = targetIframe.contentDocument
+        const targetElement = iframeDoc.querySelector(item.targetSelector)
+        
+        if (!targetElement) {
+          console.warn('[Tab Hive] 未找到选择器对应的元素:', item.targetSelector)
+          return
+        }
+        
+        let current = targetElement
+        let hiddenCount = 0
+        
+        while (current && current !== iframeDoc.body) {
+          const parent = current.parentElement
+          if (parent) {
+            Array.from(parent.children).forEach(sibling => {
+              if (sibling !== current && 
+                  !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+                sibling.style.display = 'none'
+                sibling.setAttribute('data-tabhive-hidden', 'true')
+                hiddenCount++
+              }
+            })
+          }
+          current = parent
+        }
+        
+        const styleId = `tabhive-selector-style-${item.id}`
+        let style = iframeDoc.getElementById(styleId)
+        if (!style) {
+          style = iframeDoc.createElement('style')
+          style.id = styleId
+          iframeDoc.head.appendChild(style)
+        }
+        
+        style.textContent = `
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            width: 100% !important;
+            height: 100% !important;
+          }
+          
+          ${item.targetSelector} {
+            display: block !important;
+            visibility: visible !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            z-index: 999999 !important;
+            object-fit: contain !important;
+          }
+          
+          ${item.targetSelector} * {
+            visibility: visible !important;
+          }
+        `
+        
+        console.log('[Tab Hive] 选择器已应用（浏览器环境）')
+      } catch (error) {
+        console.warn('[Tab Hive] 无法直接访问iframe（跨域限制）:', error.message)
+      }
+    }
+  }
+
+  /**
    * 应用选择器（在Grid模式下只显示指定元素）
    */
   const applySelectorFullscreen = async () => {
@@ -542,7 +728,8 @@ export function useIframeSelector(props) {
     setIframeRef,
     applySelectorFullscreen,
     restoreOriginalStyles,
-    getWebsiteUrl
+    getWebsiteUrl,
+    applySelector
   }
 }
 

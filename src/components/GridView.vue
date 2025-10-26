@@ -257,9 +257,16 @@ export default {
      * 刷新网站
      */
     const handleRefreshWebsite = (index) => {
-      const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe`)
+      const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
       if (iframe) {
-        iframe.src = iframe.src
+        // 添加时间戳参数强制刷新，避免缓存
+        const currentSrc = iframe.src
+        const separator = currentSrc.includes('?') ? '&' : '?'
+        const timestamp = Date.now()
+        
+        // 如果URL已经有时间戳参数，替换它
+        const urlWithoutTimestamp = currentSrc.replace(/[?&]_t=\d+/, '')
+        iframe.src = urlWithoutTimestamp + separator + '_t=' + timestamp
       }
     }
 

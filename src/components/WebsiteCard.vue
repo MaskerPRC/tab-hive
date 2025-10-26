@@ -15,6 +15,7 @@
   >
     <!-- 已有网站显示 -->
     <template v-if="item.url">
+      <!-- 主iframe -->
       <iframe
         :ref="setIframeRef"
         :data-iframe-id="`iframe-${item.id}`"
@@ -24,6 +25,20 @@
         class="website-iframe"
         :class="{ 'mobile-view': item.deviceType === 'mobile' }"
         :title="item.title"
+        :allow="'autoplay; fullscreen; picture-in-picture'"
+      ></iframe>
+      
+      <!-- 后台缓冲iframe（双缓冲机制） -->
+      <iframe
+        v-if="isBufferLoading"
+        :ref="setBufferIframeRef"
+        :data-iframe-id="`iframe-buffer-${item.id}`"
+        :src="bufferUrl"
+        frameborder="0"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
+        class="website-iframe buffer-iframe"
+        :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
+        :title="`${item.title} (加载中)`"
         :allow="'autoplay; fullscreen; picture-in-picture'"
       ></iframe>
       
@@ -50,7 +65,7 @@
       <!-- 非全屏模式下的浮动按钮 -->
       <FloatingActions
         v-if="!isFullscreen"
-        @refresh="$emit('refresh', index)"
+        @refresh="handleManualRefresh"
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
@@ -74,7 +89,7 @@
 </template>
 
 <script>
-import { computed, toRef } from 'vue'
+import { computed, toRef, ref, nextTick } from 'vue'
 import FloatingActions from './FloatingActions.vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
@@ -146,24 +161,96 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'edit', 'fullscreen', 'remove', 'resize-start'],
   setup(props, { emit }) {
+    // 双缓冲相关状态
+    const isBufferLoading = ref(false)
+    const isBufferReady = ref(false)
+    const bufferUrl = ref('')
+    const bufferIframeRef = ref(null)
+    const mainIframeKey = ref(0)
+    
+    // 设置缓冲iframe引用
+    const setBufferIframeRef = (el) => {
+      bufferIframeRef.value = el
+    }
+    
     // 使用iframe选择器composable
     const {
       isElectron,
       setIframeRef,
-      getWebsiteUrl
+      getWebsiteUrl,
+      applySelector
     } = useIframeSelector(props)
 
     // 计算网站URL
     const websiteUrl = computed(() => getWebsiteUrl())
+    
+    // 双缓冲刷新方法
+    const refreshWithDoubleBuffer = () => {
+      console.log('[Tab Hive] 使用双缓冲刷新:', props.item.title)
+      
+      // 重置状态
+      isBufferReady.value = false
+      
+      // 设置缓冲URL并显示缓冲iframe
+      bufferUrl.value = websiteUrl.value + (websiteUrl.value.includes('?') ? '&' : '?') + '_t=' + Date.now()
+      isBufferLoading.value = true
+      
+      // 监听缓冲iframe加载完成
+      nextTick(() => {
+        if (bufferIframeRef.value) {
+          const handleBufferLoad = async () => {
+            console.log('[Tab Hive] 缓冲iframe加载完成')
+            
+            // 如果有选择器，等待应用选择器
+            if (!props.isFullscreen && props.item.targetSelector) {
+              console.log('[Tab Hive] 等待应用选择器到缓冲iframe')
+              await new Promise(resolve => setTimeout(resolve, 1000))
+              
+              // 应用选择器到缓冲iframe
+              await applySelector(bufferIframeRef.value, props.item)
+              
+              // 再等待一小段时间确保选择器完全应用
+              await new Promise(resolve => setTimeout(resolve, 200))
+            }
+            
+            console.log('[Tab Hive] 缓冲准备完成，显示缓冲iframe')
+            
+            // 缓冲iframe准备完成，显示在前面
+            isBufferReady.value = true
+            
+            // 等待一小段时间让用户看到新内容
+            await new Promise(resolve => setTimeout(resolve, 50))
+            
+            // 刷新主iframe（在后台进行）
+            console.log('[Tab Hive] 刷新主iframe')
+            emit('refresh', props.index)
+            
+            // 等待一段时间后移除缓冲iframe
+            setTimeout(() => {
+              isBufferLoading.value = false
+              isBufferReady.value = false
+              bufferUrl.value = ''
+              mainIframeKey.value++
+              console.log('[Tab Hive] 双缓冲刷新完成')
+            }, 500)
+          }
+          
+          bufferIframeRef.value.addEventListener('load', handleBufferLoad, { once: true })
+        }
+      })
+    }
 
+    // 手动刷新处理
+    const handleManualRefresh = () => {
+      console.log('[Tab Hive] 手动刷新')
+      refreshWithDoubleBuffer()
+    }
+    
     // 使用自动刷新功能
     const itemRef = toRef(props, 'item')
     const { remainingTime, resetTimer } = useAutoRefresh({
       item: itemRef,
-      onRefresh: () => {
-        // 触发刷新事件
-        emit('refresh', props.index)
-      }
+      onRefresh: refreshWithDoubleBuffer
     })
 
     // 格式化倒计时显示
@@ -207,7 +294,14 @@ export default {
       setIframeRef,
       remainingTime,
       formatTime,
-      resetTimer
+      resetTimer,
+      isBufferLoading,
+      isBufferReady,
+      bufferUrl,
+      setBufferIframeRef,
+      refreshWithDoubleBuffer,
+      mainIframeKey,
+      handleManualRefresh
     }
   }
 }
@@ -425,5 +519,24 @@ export default {
 .grid-item.dragging .refresh-timer,
 .grid-item.resizing .refresh-timer {
   opacity: 0.3;
+}
+
+/* 双缓冲iframe样式 */
+.buffer-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.buffer-iframe.buffer-ready {
+  visibility: visible;
+  z-index: 10;
+  opacity: 1;
 }
 </style>
