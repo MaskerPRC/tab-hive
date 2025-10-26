@@ -3,12 +3,18 @@
     <!-- 下载插件/客户端提醒弹窗 -->
     <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
 
-    <!-- 顶部检测区域 -->
+    <!-- 左侧检测区域和展开标签 -->
     <div
       v-if="fullscreenIndex === null"
-      class="top-trigger-area"
+      class="left-trigger-area"
       @mouseenter="showPanel = true"
-    ></div>
+    >
+      <div class="sidebar-toggle-indicator" :class="{ 'hidden': showPanel }">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+    </div>
 
     <ConfigPanel
       v-if="fullscreenIndex === null"
@@ -105,7 +111,7 @@ export default {
     // 全屏状态
     const fullscreenIndex = ref(null)
 
-    // 顶栏显示状态
+    // 侧边栏显示状态
     const showPanel = ref(false)
 
     // 关闭下载弹窗
@@ -120,7 +126,7 @@ export default {
         console.error('保存弹窗状态失败:', e)
       }
 
-      // 如果是首次关闭弹窗，显示顶栏让用户知道
+      // 如果是首次关闭弹窗，显示侧边栏让用户知道
       if (isFirstTime) {
         setTimeout(() => {
           showPanel.value = true
@@ -147,8 +153,8 @@ export default {
     }
 
     const handleMouseMove = (event) => {
-      // 鼠标在顶部 5px 区域时显示面板
-      if (event.clientY < 5) {
+      // 鼠标在左侧 5px 区域时显示面板
+      if (event.clientX < 5) {
         showPanel.value = true
       }
     }
@@ -247,7 +253,7 @@ export default {
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
     })
 
-    // 页面加载时自动显示顶栏，然后隐藏
+    // 页面加载时自动显示左侧栏，然后隐藏
     onMounted(() => {
       // 首先尝试从 URL 参数导入布局
       const importedLayout = importExport.importLayoutFromUrlParams()
@@ -255,10 +261,10 @@ export default {
         handleCreateLayout(importedLayout.name, importedLayout)
       }
 
-      // 如果有弹窗显示，等待弹窗关闭后再显示顶栏
-      // 否则直接显示顶栏
+      // 如果有弹窗显示，等待弹窗关闭后再显示侧边栏
+      // 否则直接显示侧边栏
       if (!showDownloadModal.value) {
-        // 初始显示顶栏
+        // 初始显示侧边栏
         showPanel.value = true
 
         // 如果成功导入了布局，显示提示
@@ -327,27 +333,71 @@ export default {
   position: relative;
 }
 
-.top-trigger-area {
+.left-trigger-area {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 5px;
+  width: 5px;
+  height: 100%;
   z-index: 1000;
   pointer-events: all;
+}
+
+.sidebar-toggle-indicator {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 80px;
+  background: var(--primary-color);
+  border-radius: 0 8px 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease-out;
+  opacity: 0.7;
+  z-index: 998;
+}
+
+.sidebar-toggle-indicator:hover {
+  opacity: 1;
+  width: 35px;
+  box-shadow: 2px 0 12px rgba(255, 92, 0, 0.3);
+}
+
+.sidebar-toggle-indicator svg {
+  color: white;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.sidebar-toggle-indicator.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
 }
 
 .app-container :deep(.config-panel) {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
+  bottom: 0;
   z-index: 999;
-  transform: translateY(-100%);
+  transform: translateX(-100%);
   transition: transform 0.3s ease-out;
 }
 
 .app-container :deep(.config-panel.panel-visible) {
-  transform: translateY(0);
+  transform: translateX(0);
 }
 </style>

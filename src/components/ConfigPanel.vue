@@ -1,13 +1,14 @@
 <template>
   <div class="config-panel" @mouseleave="handlePanelMouseLeave">
-    <div class="config-header">
-      <div class="logo-title">
+    <div class="sidebar-content">
+      <!-- Logo 和标题 -->
+      <div class="logo-section">
         <img src="/128x128.png" alt="Tab Hive Logo" class="logo-img" />
-        <h2>Tab Hive</h2>
+        <h2 class="app-title">Tab Hive</h2>
       </div>
 
       <!-- 布局选择器 -->
-      <div class="layout-selector">
+      <div class="layout-section">
         <LayoutDropdown
           :visible="showLayoutDropdown"
           :layouts="layouts"
@@ -37,7 +38,8 @@
         />
       </div>
 
-      <div class="right-actions">
+      <!-- 设置和操作按钮 -->
+      <div class="actions-section">
         <label class="toggle-control" title="显示/隐藏蜂巢标题">
           <span class="toggle-label">显示标题</span>
           <input
@@ -48,9 +50,10 @@
           />
           <span class="toggle-slider"></span>
         </label>
+
         <button
           @click="openHelp"
-          class="btn-help"
+          class="sidebar-btn btn-help"
           title="使用帮助"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -58,11 +61,12 @@
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <span>Help</span>
+          <span>使用帮助</span>
         </button>
+
         <button
           v-if="!isElectron"
-          class="btn-download"
+          class="sidebar-btn btn-download"
           @click="$emit('show-download-modal')"
           title="下载桌面客户端或插件"
         >
@@ -73,15 +77,19 @@
           </svg>
           <span>下载插件</span>
         </button>
-        <button class="btn-clear" @click="clearConfig" title="清除所有配置">
+
+        <button class="sidebar-btn btn-clear" @click="clearConfig" title="清除所有配置">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
-          清除配置
+          <span>清除配置</span>
         </button>
       </div>
     </div>
+
+    <!-- 右侧边缘提示条 -->
+    <div class="sidebar-edge-indicator"></div>
   </div>
 </template>
 
@@ -316,136 +324,76 @@ export default {
 <style scoped>
 .config-panel {
   background: white;
-  border-bottom: 2px solid var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.config-header {
+  width: 280px;
+  height: 100%;
+  border-right: 3px solid var(--primary-color);
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 25px;
-  gap: 30px;
-}
-
-.logo-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-img {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-}
-
-.config-header h2 {
-  color: var(--primary-color);
-  font-size: 24px;
-  font-weight: 600;
-  white-space: nowrap;
-  margin: 0;
-}
-
-/* 布局选择器 */
-.layout-selector {
   position: relative;
 }
 
-.right-actions {
+.sidebar-content {
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  gap: 25px;
 }
 
-.btn-help {
+/* Logo 区域 */
+.logo-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  background: transparent;
-  color: #666;
-  border: 1px solid #ddd;
-  padding: 10px 18px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
-  transition: all 0.3s;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
 }
 
-.btn-help:hover {
-  background: #fff5f0;
+.logo-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.app-title {
   color: var(--primary-color);
-  border-color: var(--primary-color);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
 }
 
-.btn-help svg {
-  stroke: currentColor;
+/* 布局选择器区域 */
+.layout-section {
+  position: relative;
+  flex: 1;
 }
 
-.btn-download {
+/* 操作按钮区域 */
+.actions-section {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.3s;
-}
-
-.btn-download:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 92, 0, 0.3);
-}
-
-.btn-download svg {
-  stroke: currentColor;
-}
-
-.btn-clear {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  color: #666;
-  border: 1px solid #ddd;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s;
-}
-
-.btn-clear:hover {
-  background: #fff5f0;
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.btn-clear svg {
-  stroke: currentColor;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 2px solid #f0f0f0;
 }
 
 /* 开关控件样式 */
 .toggle-control {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   cursor: pointer;
   user-select: none;
   position: relative;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 8px;
   transition: background 0.3s;
+  background: #f8f8f8;
 }
 
 .toggle-control:hover {
@@ -472,6 +420,7 @@ export default {
   background: #ddd;
   border-radius: 12px;
   transition: background 0.3s;
+  flex-shrink: 0;
 }
 
 .toggle-slider::before {
@@ -494,10 +443,127 @@ export default {
   transform: translateX(18px);
 }
 
+/* 侧边栏按钮通用样式 */
+.sidebar-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.3s;
+  border: none;
+}
+
+.btn-help {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.btn-help:hover {
+  background: #fff5f0;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateX(2px);
+}
+
+.btn-help svg {
+  stroke: currentColor;
+}
+
+.btn-download {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-download:hover {
+  background: var(--primary-hover);
+  transform: translateX(2px);
+  box-shadow: 0 4px 8px rgba(255, 92, 0, 0.3);
+}
+
+.btn-download svg {
+  stroke: currentColor;
+}
+
+.btn-clear {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.btn-clear:hover {
+  background: #fff5f0;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateX(2px);
+}
+
+.btn-clear svg {
+  stroke: currentColor;
+}
+
+/* 右侧边缘提示条 */
+.sidebar-edge-indicator {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60px;
+  background: var(--primary-color);
+  border-radius: 4px 0 0 4px;
+  opacity: 0.6;
+  transition: all 0.3s;
+}
+
+.config-panel:hover .sidebar-edge-indicator {
+  opacity: 0.9;
+  height: 80px;
+}
+
+/* 滚动条样式 */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .config-panel {
-    font-size: 14px;
+    width: 240px;
+  }
+  
+  .sidebar-content {
+    padding: 15px;
+  }
+  
+  .logo-img {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .app-title {
+    font-size: 20px;
   }
 }
 </style>
