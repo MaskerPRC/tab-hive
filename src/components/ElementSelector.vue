@@ -256,23 +256,31 @@ export default {
       try {
         await window.electron.executeInIframe(iframeId, `
           (function() {
+            // 隐藏并移除高亮元素
             if (window.__tabhiveSelector) {
+              if (window.__tabhiveSelector.highlight) {
+                window.__tabhiveSelector.highlight.style.display = 'none';
+                if (window.__tabhiveSelector.highlight.parentNode) {
+                  window.__tabhiveSelector.highlight.parentNode.removeChild(window.__tabhiveSelector.highlight);
+                }
+              }
               if (window.__tabhiveSelector.overlay && window.__tabhiveSelector.overlay.parentNode) {
                 window.__tabhiveSelector.overlay.parentNode.removeChild(window.__tabhiveSelector.overlay);
               }
-              if (window.__tabhiveSelector.highlight && window.__tabhiveSelector.highlight.parentNode) {
-                window.__tabhiveSelector.highlight.parentNode.removeChild(window.__tabhiveSelector.highlight);
-              }
               window.__tabhiveSelector = null;
             }
+            // 移除样式
             const style = document.getElementById('tabhive-element-selector-styles');
             if (style && style.parentNode) {
               style.parentNode.removeChild(style);
             }
+            // 重置变量
             window.__currentSelector = null;
             window.__selectedSelector = null;
+            console.log('[Tab Hive Electron] 选择器已清理，高亮已隐藏');
           })()
         `)
+        console.log('[Tab Hive] Electron选择器清理完成')
       } catch (error) {
         console.warn('[Tab Hive] 清理Electron选择器失败:', error)
       }
