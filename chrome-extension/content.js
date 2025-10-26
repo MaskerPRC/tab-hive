@@ -116,9 +116,24 @@ window.addEventListener('message', async (event) => {
       // 在当前页面（iframe）中应用选择器
       console.log('[Tab Hive Extension] 应用选择器:', message.selector)
       try {
-        applyTabHiveSelectorInIframe(message.selector)
+        const result = applyTabHiveSelectorInIframe(message.selector)
+        // 发送完成回调
+        window.parent.postMessage({
+          source: 'tab-hive-extension',
+          action: 'selectorApplied',
+          requestId: message.requestId,
+          success: result.success,
+          hiddenCount: result.hiddenCount
+        }, '*')
       } catch (error) {
         console.error('[Tab Hive Extension] 选择器应用失败:', error)
+        window.parent.postMessage({
+          source: 'tab-hive-extension',
+          action: 'selectorApplied',
+          requestId: message.requestId,
+          success: false,
+          error: error.message
+        }, '*')
       }
     } else if (message.action === 'restoreTabHiveStyles') {
       // 恢复原始样式
@@ -195,7 +210,7 @@ function applyTabHiveSelectorInIframe(selector) {
     
     if (!targetElement) {
       console.warn('[Tab Hive iframe] 未找到选择器:', selector);
-      return;
+      return { success: false, error: '未找到元素' };
     }
     
     console.log('[Tab Hive iframe] 找到目标元素，开始处理');
@@ -258,9 +273,11 @@ function applyTabHiveSelectorInIframe(selector) {
       }
     `;
     
-    console.log('[Tab Hive iframe] 选择器已应用');
+    console.log('[Tab Hive iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
+    return { success: true, hiddenCount: hiddenCount };
   } catch (error) {
     console.error('[Tab Hive iframe] 错误:', error);
+    return { success: false, error: error.message };
   }
 }
 

@@ -10,6 +10,9 @@ export function useIframeSelector(props) {
   
   // 检测是否在Electron环境
   const isElectron = computed(() => window.electron?.isElectron || false)
+  
+  // 主iframe加载完成回调
+  let onMainIframeReadyCallback = null
 
   /**
    * 设置iframe引用
@@ -20,103 +23,71 @@ export function useIframeSelector(props) {
 
   /**
    * 通过Chrome扩展应用选择器
+   * @param {HTMLIFrameElement} targetIframe - 目标iframe
+   * @param {string} selector - CSS选择器
+   * @returns {Promise} 返回Promise，在选择器应用完成后resolve
    */
-  const applySelectorViaExtension = async () => {
-    try {
-      const iframe = iframeRef.value
-      if (!iframe || !iframe.contentWindow) {
-        console.error('[Tab Hive] iframe不可用')
-        return
+  const applySelectorViaExtension = (targetIframe, selector) => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!targetIframe || !targetIframe.contentWindow) {
+          console.error('[Tab Hive] iframe不可用')
+          reject(new Error('iframe不可用'))
+          return
+        }
+
+        console.log('[Tab Hive] 向iframe发送消息，请求应用选择器')
+        
+        // 生成唯一的请求ID
+        const requestId = `selector-${Date.now()}-${Math.random()}`
+        
+        // 监听扩展的回调
+        const handleMessage = (event) => {
+          if (event.data && 
+              event.data.source === 'tab-hive-extension' && 
+              event.data.action === 'selectorApplied' &&
+              event.data.requestId === requestId) {
+            
+            console.log('[Tab Hive] 收到扩展回调:', event.data)
+            window.removeEventListener('message', handleMessage)
+            
+            if (event.data.success) {
+              console.log('[Tab Hive] 选择器应用成功，隐藏了', event.data.hiddenCount, '个元素')
+              resolve({ success: true, hiddenCount: event.data.hiddenCount })
+            } else {
+              console.warn('[Tab Hive] 选择器应用失败:', event.data.error)
+              reject(new Error(event.data.error || '选择器应用失败'))
+            }
+          }
+        }
+        
+        window.addEventListener('message', handleMessage)
+        
+        // 设置超时
+        setTimeout(() => {
+          window.removeEventListener('message', handleMessage)
+          reject(new Error('等待扩展回调超时'))
+        }, 5000)
+        
+        // 发送消息到iframe
+        targetIframe.contentWindow.postMessage({
+          source: 'tab-hive',
+          action: 'executeScriptInIframe',
+          selector: selector,
+          requestId: requestId
+        }, '*')
+      } catch (error) {
+        console.error('[Tab Hive] Chrome扩展调用失败:', error)
+        reject(error)
       }
-
-      console.log('[Tab Hive] 向iframe发送消息，请求应用选择器')
-      
-      const script = `
-        (function() {
-          const selector = '${props.item.targetSelector.replace(/'/g, "\\'")}';
-          const targetElement = document.querySelector(selector);
-          
-          if (!targetElement) {
-            console.warn('[Tab Hive iframe] 未找到选择器:', selector);
-            return;
-          }
-          
-          console.log('[Tab Hive iframe] 找到目标元素，应用选择器');
-          
-          // 隐藏兄弟元素
-          let current = targetElement;
-          let hiddenCount = 0;
-          
-          while (current && current !== document.body) {
-            const parent = current.parentElement;
-            if (parent) {
-              Array.from(parent.children).forEach(sibling => {
-                if (sibling !== current && 
-                    !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
-                  sibling.style.display = 'none';
-                  sibling.setAttribute('data-tabhive-hidden', 'true');
-                  hiddenCount++;
-                }
-              });
-            }
-            current = parent;
-          }
-          
-          // 注入样式
-          const styleId = 'tabhive-selector-style';
-          let style = document.getElementById(styleId);
-          if (!style) {
-            style = document.createElement('style');
-            style.id = styleId;
-            document.head.appendChild(style);
-          }
-          
-          style.textContent = \`
-            html, body {
-              margin: 0 !important;
-              padding: 0 !important;
-              overflow: hidden !important;
-              width: 100% !important;
-              height: 100% !important;
-            }
-            
-            \${selector} {
-              display: block !important;
-              visibility: visible !important;
-              position: fixed !important;
-              top: 0 !important;
-              left: 0 !important;
-              width: 100vw !important;
-              height: 100vh !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              z-index: 999999 !important;
-              object-fit: contain !important;
-            }
-            
-            \${selector} * {
-              visibility: visible !important;
-            }
-          \`;
-          
-          console.log('[Tab Hive iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
-        })();
-      `
-
-      iframe.contentWindow.postMessage({
-        source: 'tab-hive',
-        action: 'executeScriptInIframe',
-        selector: props.item.targetSelector
-      }, '*')
-    } catch (error) {
-      console.error('[Tab Hive] Chrome扩展调用失败:', error)
-    }
+    })
   }
 
   /**
    * 通用选择器应用方法（可应用到任何iframe）
    * @param {HTMLIFrameElement} targetIframe - 目标iframe元素
    * @param {Object} item - 网站数据对象
+   * @returns {Promise<boolean>} 返回选择器是否成功应用
    */
   const applySelector = async (targetIframe, item) => {
     if (!item.targetSelector || !targetIframe) {
@@ -124,7 +95,7 @@ export function useIframeSelector(props) {
         hasSelector: !!item.targetSelector,
         hasIframe: !!targetIframe
       })
-      return
+      return false
     }
     
     console.log('[Tab Hive] 开始应用选择器到指定iframe')
@@ -218,16 +189,29 @@ export function useIframeSelector(props) {
         const result = await window.electron.executeInIframe(iframeId, code)
         if (!result.success) {
           console.warn('[Tab Hive] 选择器应用失败:', result.error)
+          return false
         }
+        return true
       } catch (error) {
         console.error('[Tab Hive] 应用选择器失败:', error)
+        return false
       }
     } else {
       // 浏览器环境
       try {
         if (!targetIframe.contentDocument) {
           console.warn('[Tab Hive] iframe.contentDocument不可用（跨域iframe）')
-          return
+          console.info('[Tab Hive] 尝试使用Chrome扩展并等待完成...')
+          
+          try {
+            // 使用Chrome扩展应用选择器，并等待完成
+            await applySelectorViaExtension(targetIframe, item.targetSelector)
+            console.log('[Tab Hive] Chrome扩展应用选择器成功')
+            return true
+          } catch (error) {
+            console.error('[Tab Hive] Chrome扩展应用选择器失败:', error.message)
+            return false
+          }
         }
         
         const iframeDoc = targetIframe.contentDocument
@@ -293,8 +277,10 @@ export function useIframeSelector(props) {
         `
         
         console.log('[Tab Hive] 选择器已应用（浏览器环境）')
+        return true
       } catch (error) {
         console.warn('[Tab Hive] 无法直接访问iframe（跨域限制）:', error.message)
+        return false
       }
     }
   }
@@ -450,8 +436,13 @@ export function useIframeSelector(props) {
         
         if (!iframeRef.value.contentDocument) {
           console.warn('[Tab Hive] iframe.contentDocument不可用（跨域iframe）')
-          console.info('[Tab Hive] 尝试使用Chrome扩展...')
-          await applySelectorViaExtension()
+          console.info('[Tab Hive] 尝试使用Chrome扩展并等待完成...')
+          try {
+            await applySelectorViaExtension(iframeRef.value, props.item.targetSelector)
+            console.log('[Tab Hive] Chrome扩展应用选择器成功')
+          } catch (error) {
+            console.error('[Tab Hive] Chrome扩展应用选择器失败:', error.message)
+          }
           return
         }
         
@@ -675,6 +666,13 @@ export function useIframeSelector(props) {
   }
 
   /**
+   * 设置主iframe加载完成回调
+   */
+  const setOnMainIframeReady = (callback) => {
+    onMainIframeReadyCallback = callback
+  }
+
+  /**
    * 设置iframe加载完成监听器
    */
   const setupIframeLoadListener = () => {
@@ -690,10 +688,20 @@ export function useIframeSelector(props) {
             // 应用选择器后，触发iframe大小微调以刷新布局
             setTimeout(() => {
               triggerIframeResize()
+              // 通知主iframe已准备就绪
+              if (onMainIframeReadyCallback) {
+                console.log('[Tab Hive] 通知主iframe准备就绪')
+                onMainIframeReadyCallback()
+              }
             }, 100)
           }, 1000)
         } else {
           console.log('[Tab Hive] 全屏模式或无选择器，显示完整页面')
+          // 通知主iframe已准备就绪
+          if (onMainIframeReadyCallback) {
+            console.log('[Tab Hive] 通知主iframe准备就绪（无选择器）')
+            onMainIframeReadyCallback()
+          }
         }
       })
     }
@@ -729,7 +737,8 @@ export function useIframeSelector(props) {
     applySelectorFullscreen,
     restoreOriginalStyles,
     getWebsiteUrl,
-    applySelector
+    applySelector,
+    setOnMainIframeReady
   }
 }
 

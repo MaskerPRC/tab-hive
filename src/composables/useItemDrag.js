@@ -125,12 +125,7 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
 
       // 更新所有蜂巢的位置
       itemPositions.value = { ...newPositions }
-    } else {
-      console.log('[拖拽] 跳过推开算法', {
-        hasCollision,
-        movingAway
-      })
-    }
+    } 
   }
 
   /**

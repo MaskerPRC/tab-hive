@@ -122,14 +122,7 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
 
       // 更新所有蜂巢的位置
       itemPositions.value = { ...newPositions }
-    } else {
-      console.log('[调整大小] 跳过推开算法', {
-        hasCollision,
-        isGrowing,
-        isShrinking,
-        hasSelector
-      })
-    }
+    } 
   }
 
   /**

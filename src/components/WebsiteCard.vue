@@ -174,13 +174,23 @@ export default {
       bufferIframeRef.value = el
     }
     
+    // 主iframe加载完成标志
+    const mainIframeReady = ref(false)
+    
     // 使用iframe选择器composable
     const {
       isElectron,
       setIframeRef,
       getWebsiteUrl,
-      applySelector
+      applySelector,
+      iframeRef,
+      setOnMainIframeReady
     } = useIframeSelector(props)
+    
+    // 设置主iframe准备就绪回调
+    setOnMainIframeReady(() => {
+      mainIframeReady.value = true
+    })
 
     // 计算网站URL
     const websiteUrl = computed(() => getWebsiteUrl())
@@ -202,38 +212,79 @@ export default {
           const handleBufferLoad = async () => {
             console.log('[Tab Hive] 缓冲iframe加载完成')
             
-            // 如果有选择器，等待应用选择器
-            if (!props.isFullscreen && props.item.targetSelector) {
-              console.log('[Tab Hive] 等待应用选择器到缓冲iframe')
+            // 判断是否需要应用选择器
+            const needSelector = !props.isFullscreen && props.item.targetSelector
+            
+            if (needSelector) {
+              // 选择器类型：需要等待选择器应用完成后再替换
+              console.log('[Tab Hive] 选择器类型页面，等待应用选择器到缓冲iframe')
+              
+              // 等待页面DOM准备好
               await new Promise(resolve => setTimeout(resolve, 1000))
               
-              // 应用选择器到缓冲iframe
-              await applySelector(bufferIframeRef.value, props.item)
-              
-              // 再等待一小段时间确保选择器完全应用
-              await new Promise(resolve => setTimeout(resolve, 200))
+              try {
+                // 应用选择器到缓冲iframe，等待真正完成
+                const success = await applySelector(bufferIframeRef.value, props.item)
+                
+                if (success) {
+                  // 再等待一小段时间确保选择器完全应用（元素隐藏完成）
+                  console.log('[Tab Hive] 选择器应用成功，等待DOM更新')
+                  await new Promise(resolve => setTimeout(resolve, 100))
+                  console.log('[Tab Hive] 选择器应用完成，缓冲准备就绪')
+                } else {
+                  console.warn('[Tab Hive] 选择器应用失败，仍然显示缓冲iframe')
+                }
+              } catch (error) {
+                console.error('[Tab Hive] 选择器应用出错:', error)
+              }
+            } else {
+              // 普通类型：加载完成后可以直接替换
+              console.log('[Tab Hive] 普通类型页面，缓冲准备就绪')
             }
             
-            console.log('[Tab Hive] 缓冲准备完成，显示缓冲iframe')
-            
             // 缓冲iframe准备完成，显示在前面
+            console.log('[Tab Hive] 显示缓冲iframe')
             isBufferReady.value = true
             
-            // 等待一小段时间让用户看到新内容
-            await new Promise(resolve => setTimeout(resolve, 50))
-            
-            // 刷新主iframe（在后台进行）
+            // 立即刷新主iframe（在后台进行）
             console.log('[Tab Hive] 刷新主iframe')
+            mainIframeReady.value = false
             emit('refresh', props.index)
             
-            // 等待一段时间后移除缓冲iframe
-            setTimeout(() => {
-              isBufferLoading.value = false
-              isBufferReady.value = false
-              bufferUrl.value = ''
-              mainIframeKey.value++
-              console.log('[Tab Hive] 双缓冲刷新完成')
-            }, 500)
+            // 等待主iframe加载完成（监听load事件）
+            if (iframeRef.value) {
+              const waitForMainIframe = () => {
+                return new Promise((resolve) => {
+                  const checkReady = () => {
+                    if (mainIframeReady.value) {
+                      console.log('[Tab Hive] 主iframe已准备就绪，移除缓冲iframe')
+                      resolve()
+                    } else {
+                      setTimeout(checkReady, 100)
+                    }
+                  }
+                  
+                  // 开始检查，最多等待5秒
+                  checkReady()
+                  setTimeout(() => {
+                    console.log('[Tab Hive] 等待主iframe超时，移除缓冲iframe')
+                    resolve()
+                  }, 5000)
+                })
+              }
+              
+              await waitForMainIframe()
+            } else {
+              // 如果没有主iframe引用，等待固定时间
+              await new Promise(resolve => setTimeout(resolve, 2000))
+            }
+            
+            // 移除缓冲iframe
+            isBufferLoading.value = false
+            isBufferReady.value = false
+            bufferUrl.value = ''
+            mainIframeKey.value++
+            console.log('[Tab Hive] 双缓冲刷新完成')
           }
           
           bufferIframeRef.value.addEventListener('load', handleBufferLoad, { once: true })
@@ -532,7 +583,7 @@ export default {
   visibility: hidden;
   z-index: -1;
   opacity: 0;
-  transition: opacity 0.2s ease-in-out;
+  /* 不使用过渡动画，立即显示 */
 }
 
 .buffer-iframe.buffer-ready {
