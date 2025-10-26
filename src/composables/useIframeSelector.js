@@ -176,8 +176,8 @@ export function useIframeSelector(props) {
               \`;
               
               document.head.appendChild(style);
-              console.log('[Tab Hive iframe] 选择器已应用');
-              return { success: true };
+              console.log('[Tab Hive iframe] 选择器已应用，隐藏了 ' + hiddenCount + ' 个元素');
+              return { success: true, hiddenCount: hiddenCount };
             } catch (e) {
               console.error('[Tab Hive iframe] 错误:', e);
               return { success: false, error: e.message };
@@ -186,10 +186,18 @@ export function useIframeSelector(props) {
         `
 
         const iframeId = targetIframe.getAttribute('data-iframe-id')
+        console.log('[Tab Hive] Electron环境 - 通过IPC应用选择器')
         const result = await window.electron.executeInIframe(iframeId, code)
+        
         if (!result.success) {
-          console.warn('[Tab Hive] 选择器应用失败:', result.error)
+          console.warn('[Tab Hive] Electron选择器应用失败:', result.error)
           return false
+        }
+        
+        if (result.result && result.result.hiddenCount !== undefined) {
+          console.log('[Tab Hive] Electron选择器应用成功，隐藏了', result.result.hiddenCount, '个元素')
+        } else {
+          console.log('[Tab Hive] Electron选择器应用成功')
         }
         return true
       } catch (error) {
@@ -398,8 +406,8 @@ export function useIframeSelector(props) {
                 });
               }, 100);
               
-              console.log('[Tab Hive iframe] 选择器全屏已应用');
-              return { success: true };
+              console.log('[Tab Hive iframe] 选择器全屏已应用，隐藏了 ' + hiddenCount + ' 个元素');
+              return { success: true, hiddenCount: hiddenCount };
             } catch (e) {
               console.error('[Tab Hive iframe] 错误:', e);
               return { success: false, error: e.message };
@@ -407,9 +415,15 @@ export function useIframeSelector(props) {
           })()
         `
 
+        console.log('[Tab Hive] Electron环境 - 通过IPC应用选择器（Grid模式）')
         const result = await window.electron.executeInIframe(`iframe-${props.item.id}`, code)
+        
         if (!result.success) {
-          console.warn('[Tab Hive] 选择器应用失败:', result.error)
+          console.warn('[Tab Hive] Electron选择器应用失败:', result.error)
+        } else if (result.result && result.result.hiddenCount !== undefined) {
+          console.log('[Tab Hive] Electron选择器应用成功（Grid模式），隐藏了', result.result.hiddenCount, '个元素')
+        } else {
+          console.log('[Tab Hive] Electron选择器应用成功（Grid模式）')
         }
       } catch (error) {
         console.error('[Tab Hive] 应用选择器失败:', error)
