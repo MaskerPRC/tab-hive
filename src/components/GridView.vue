@@ -74,6 +74,7 @@
         :is-current-resize="currentResizeIndex === index"
         :is-colliding="dragIsColliding || resizeIsColliding"
         :show-title="globalSettings?.showTitles"
+        :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
         @drag-start="startDrag($event, index)"
         @drag-over="handleDragOver"
         @drag-leave="handleDragLeave"

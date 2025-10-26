@@ -51,6 +51,17 @@
           <span class="toggle-slider"></span>
         </label>
 
+        <label class="toggle-control" title="选择器类型的蜂巢，全屏切换时是否刷新网页">
+          <span class="toggle-label">全屏切换刷新</span>
+          <input
+            type="checkbox"
+            :checked="refreshOnFullscreenToggle"
+            @change="handleToggleRefreshOnFullscreen"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-slider"></span>
+        </label>
+
         <button
           @click="openHelp"
           class="sidebar-btn btn-help"
@@ -116,9 +127,13 @@ export default {
     showTitles: {
       type: Boolean,
       default: false
+    },
+    refreshOnFullscreenToggle: {
+      type: Boolean,
+      default: true
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen'],
   setup(props, { emit }) {
     const showLayoutDropdown = ref(false)
     let hideTimer = null
@@ -292,6 +307,11 @@ export default {
       emit('toggle-titles', event.target.checked)
     }
 
+    // 切换全屏刷新配置
+    const handleToggleRefreshOnFullscreen = (event) => {
+      emit('toggle-refresh-on-fullscreen', event.target.checked)
+    }
+
     return {
       isElectron,
       showLayoutDropdown,
@@ -315,7 +335,8 @@ export default {
       handleImportLayout,
       handleShareLayout,
       handleSyncTemplate,
-      handleToggleTitles
+      handleToggleTitles,
+      handleToggleRefreshOnFullscreen
     }
   }
 }

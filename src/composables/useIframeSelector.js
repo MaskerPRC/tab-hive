@@ -727,11 +727,37 @@ export function useIframeSelector(props) {
     console.log('[Tab Hive Watch] 全屏状态变化:', newVal)
     console.log('[Tab Hive Watch] 目标选择器:', props.item.targetSelector)
     console.log('[Tab Hive Watch] iframe引用:', iframeRef.value)
+    console.log('[Tab Hive Watch] 全屏切换刷新配置:', props.refreshOnFullscreenToggle)
+    
+    // 检查是否需要在全屏切换时刷新
+    const shouldRefresh = props.refreshOnFullscreenToggle !== false // 默认为true
     
     if (props.item.targetSelector && iframeRef.value && oldVal !== undefined) {
-      console.log('[Tab Hive Watch] 配置了选择器，刷新iframe以切换显示模式')
-      const currentSrc = iframeRef.value.src
-      iframeRef.value.src = currentSrc
+      if (shouldRefresh) {
+        // 刷新模式：重新加载iframe
+        console.log('[Tab Hive Watch] 配置了选择器且允许刷新，刷新iframe以切换显示模式')
+        const currentSrc = iframeRef.value.src
+        iframeRef.value.src = currentSrc
+      } else {
+        // 不刷新模式：动态切换选择器应用
+        console.log('[Tab Hive Watch] 配置了选择器但不刷新，动态切换显示模式')
+        
+        if (newVal) {
+          // 进入全屏：恢复被隐藏的元素
+          console.log('[Tab Hive Watch] 进入全屏，恢复原始样式')
+          await restoreOriginalStyles()
+        } else {
+          // 退出全屏：重新应用选择器
+          console.log('[Tab Hive Watch] 退出全屏，重新应用选择器')
+          // 等待一小段时间确保DOM稳定
+          await new Promise(resolve => setTimeout(resolve, 100))
+          await applySelectorFullscreen()
+          // 应用选择器后，触发iframe大小微调以刷新布局
+          setTimeout(() => {
+            triggerIframeResize()
+          }, 100)
+        }
+      }
     }
   })
 

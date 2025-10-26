@@ -22,12 +22,14 @@
       :layouts="layouts"
       :currentLayoutId="currentLayoutId"
       :showTitles="layoutManager.globalSettings.value.showTitles"
+      :refreshOnFullscreenToggle="layoutManager.globalSettings.value.refreshOnFullscreenToggle"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
       @delete-layout="handleDeleteLayout"
       @rename-layout="renameLayout"
       @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
+      @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
@@ -194,6 +196,11 @@ export default {
       layoutManager.updateGlobalSettings({ showTitles })
     }
 
+    // 切换全屏刷新配置
+    const handleToggleRefreshOnFullscreen = (refreshOnFullscreenToggle) => {
+      layoutManager.updateGlobalSettings({ refreshOnFullscreenToggle })
+    }
+
     // 切换布局
     const handleSwitchLayout = (layoutId) => {
       const websites = layoutManager.switchLayout(layoutId)
@@ -318,7 +325,8 @@ export default {
       handleCreateLayout,
       handleDeleteLayout,
       renameLayout: layoutManager.renameLayout,
-      handleToggleTitles
+      handleToggleTitles,
+      handleToggleRefreshOnFullscreen
     }
   }
 }

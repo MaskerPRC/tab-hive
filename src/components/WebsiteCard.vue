@@ -158,6 +158,10 @@ export default {
     showTitle: {
       type: Boolean,
       default: false
+    },
+    refreshOnFullscreenToggle: {
+      type: Boolean,
+      default: true
     }
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start'],

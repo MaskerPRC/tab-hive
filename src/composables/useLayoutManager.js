@@ -22,7 +22,8 @@ export function useLayoutManager() {
             }],
             currentLayoutId: 1,
             globalSettings: {
-              showTitles: false // 默认不显示标题
+              showTitles: false, // 默认不显示标题
+              refreshOnFullscreenToggle: true // 默认全屏切换时刷新选择器类型的蜂巢
             }
           }
         }
@@ -30,7 +31,13 @@ export function useLayoutManager() {
         // 确保有全局设置
         if (!config.globalSettings) {
           config.globalSettings = {
-            showTitles: false // 默认不显示标题
+            showTitles: false, // 默认不显示标题
+            refreshOnFullscreenToggle: true // 默认全屏切换时刷新选择器类型的蜂巢
+          }
+        } else {
+          // 确保旧配置也有新字段
+          if (config.globalSettings.refreshOnFullscreenToggle === undefined) {
+            config.globalSettings.refreshOnFullscreenToggle = true
           }
         }
 
@@ -99,7 +106,8 @@ export function useLayoutManager() {
 
   // 全局设置
   const globalSettings = ref(savedConfig?.globalSettings || {
-    showTitles: false // 默认不显示标题
+    showTitles: false, // 默认不显示标题
+    refreshOnFullscreenToggle: true // 默认全屏切换时刷新选择器类型的蜂巢
   })
 
   // 当前布局（计算属性）
