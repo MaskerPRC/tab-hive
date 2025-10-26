@@ -90,7 +90,7 @@
 </template>
 
 <script>
-import { computed, toRef, ref, nextTick } from 'vue'
+import { computed, toRef, ref, nextTick, watch } from 'vue'
 import FloatingActions from './FloatingActions.vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
@@ -304,9 +304,22 @@ export default {
     
     // 使用自动刷新功能
     const itemRef = toRef(props, 'item')
-    const { remainingTime, resetTimer } = useAutoRefresh({
+    const { remainingTime, resetTimer, pauseTimer, resumeTimer } = useAutoRefresh({
       item: itemRef,
       onRefresh: refreshWithDoubleBuffer
+    })
+
+    // 监听全屏状态变化，控制自动刷新暂停/恢复
+    watch(() => props.isFullscreen, (isFullscreen) => {
+      if (isFullscreen) {
+        // 进入全屏，暂停自动刷新
+        console.log('[Tab Hive] 进入全屏，暂停自动刷新')
+        pauseTimer()
+      } else {
+        // 退出全屏，恢复自动刷新
+        console.log('[Tab Hive] 退出全屏，恢复自动刷新')
+        resumeTimer()
+      }
     })
 
     // 格式化倒计时显示

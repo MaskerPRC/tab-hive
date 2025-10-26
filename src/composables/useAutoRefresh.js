@@ -14,6 +14,10 @@ export function useAutoRefresh({ item, onRefresh }) {
   const timerId = ref(null)
   // 剩余时间（秒）
   const remainingTime = ref(0)
+  // 暂停时保存的剩余时间
+  const pausedRemainingTime = ref(0)
+  // 是否已暂停
+  const isPaused = ref(false)
 
   /**
    * 清除定时器
@@ -24,6 +28,8 @@ export function useAutoRefresh({ item, onRefresh }) {
       timerId.value = null
     }
     remainingTime.value = 0
+    pausedRemainingTime.value = 0
+    isPaused.value = false
   }
 
   /**
@@ -66,10 +72,48 @@ export function useAutoRefresh({ item, onRefresh }) {
   }
 
   /**
-   * 暂停定时器
+   * 暂停定时器（保存剩余时间）
    */
   const pauseTimer = () => {
-    clearTimer()
+    if (timerId.value && remainingTime.value > 0) {
+      // 保存当前剩余时间
+      pausedRemainingTime.value = remainingTime.value
+      isPaused.value = true
+      
+      // 清除定时器但不重置剩余时间
+      clearInterval(timerId.value)
+      timerId.value = null
+      
+      console.log('[Auto Refresh] 定时器已暂停，剩余时间:', pausedRemainingTime.value)
+    }
+  }
+
+  /**
+   * 恢复定时器（从暂停的时间继续）
+   */
+  const resumeTimer = () => {
+    if (isPaused.value && pausedRemainingTime.value > 0) {
+      console.log('[Auto Refresh] 恢复定时器，从剩余时间继续:', pausedRemainingTime.value)
+      
+      // 恢复剩余时间
+      remainingTime.value = pausedRemainingTime.value
+      isPaused.value = false
+      
+      // 重新启动定时器
+      timerId.value = setInterval(() => {
+        remainingTime.value--
+        
+        if (remainingTime.value <= 0) {
+          // 时间到，执行刷新
+          if (onRefresh && typeof onRefresh === 'function') {
+            onRefresh()
+          }
+          // 重置剩余时间
+          const interval = item.value?.autoRefreshInterval
+          remainingTime.value = interval || 0
+        }
+      }, 1000)
+    }
   }
 
   // 监听刷新间隔变化，自动启动或停止定时器
@@ -94,10 +138,12 @@ export function useAutoRefresh({ item, onRefresh }) {
     // 状态
     remainingTime,
     timerId,
+    isPaused,
     // 方法
     startTimer,
     resetTimer,
     pauseTimer,
+    resumeTimer,
     clearTimer
   }
 }
