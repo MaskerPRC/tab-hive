@@ -262,12 +262,13 @@ export default {
 }
 
 .layout-btn {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: white;
   border: 2px solid #e0e0e0;
-  padding: 10px 16px;
+  padding: 12px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
@@ -280,6 +281,7 @@ export default {
 .layout-btn:hover {
   border-color: var(--primary-color);
   background: var(--primary-light);
+  transform: translateX(2px);
 }
 
 .layout-btn svg {
@@ -287,24 +289,28 @@ export default {
 }
 
 .layout-name {
-  max-width: 150px;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: left;
 }
 
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  min-width: 400px;
+  position: fixed;
+  top: 180px;
+  left: 20px;
+  width: 240px;
+  max-height: calc(100vh - 200px);
   background: white;
   border: 2px solid var(--primary-color);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 1001;
   overflow: hidden;
-  animation: slideDown 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  animation: slideRight 0.2s ease-out;
 }
 
 .dropdown-tabs {
@@ -315,11 +321,12 @@ export default {
 
 .tab-btn {
   flex: 1;
-  padding: 12px 16px;
+  padding: 10px 12px;
   background: transparent;
   border: none;
   cursor: pointer;
   font-weight: 600;
+  font-size: 13px;
   color: #666;
   transition: all 0.3s;
   border-bottom: 3px solid transparent;
@@ -336,14 +343,14 @@ export default {
   border-bottom-color: var(--primary-color);
 }
 
-@keyframes slideDown {
+@keyframes slideRight {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateX(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
@@ -351,10 +358,11 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 12px;
   background: var(--primary-light);
   border-bottom: 1px solid #e0e0e0;
   font-weight: 600;
+  font-size: 13px;
   color: var(--primary-color);
 }
 
@@ -377,15 +385,34 @@ export default {
 }
 
 .dropdown-list {
-  max-height: 400px;
+  flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 
 .dropdown-item {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
   cursor: pointer;
   transition: all 0.2s;
   border-bottom: 1px solid #f0f0f0;
@@ -414,19 +441,27 @@ export default {
   gap: 4px;
   flex: 1;
   min-width: 0;
+  width: 100%;
 }
 
 .layout-item-name {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .layout-info {
-  font-size: 12px;
+  font-size: 11px;
   color: #999;
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .layout-actions {
@@ -434,6 +469,8 @@ export default {
   gap: 6px;
   opacity: 0;
   transition: opacity 0.2s;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .dropdown-item:hover .layout-actions {
@@ -505,11 +542,11 @@ export default {
 }
 
 .search-input {
-  flex: 1;
-  padding: 8px 12px;
+  width: 100%;
+  padding: 8px 10px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   transition: border-color 0.3s;
 }
@@ -566,13 +603,24 @@ export default {
 
 .realtime-badge,
 .modified-badge {
-  font-size: 12px;
+  font-size: 11px;
+  flex-shrink: 0;
 }
 
 .version-text {
-  font-size: 11px;
+  font-size: 10px;
   color: #999;
   font-weight: 400;
+  flex-shrink: 0;
+}
+
+.version-badge {
+  font-size: 10px !important;
+  padding: 1px 4px !important;
+}
+
+.views-count {
+  font-size: 10px !important;
 }
 </style>
 
