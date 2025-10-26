@@ -106,6 +106,11 @@ function createWindow() {
             (function() {
               console.log('[Tab Hive iframe] 注入代码执行监听器');
               
+              // ⚠️ 重要：在反检测脚本执行之前保存原始的window.parent引用
+              // 这样元素选择器可以使用它来发送消息到真正的父页面
+              const __originalParent = window.parent;
+              console.log('[Tab Hive iframe] 已保存原始window.parent引用');
+              
               // ===========================================
               // iframe反检测 - 让网站认为不在iframe中
               // ===========================================
@@ -194,24 +199,65 @@ function createWindow() {
                 return window;
               };
               
-              // 添加 postMessage 监听器用于执行代码（选择器功能）
+              // 添加 postMessage 监听器
               window.addEventListener('message', function(e) {
-                if (e.data && e.data.type === 'exec-code') {
+                const message = e.data;
+                
+                // 执行代码（旧的选择器功能）
+                if (message && message.type === 'exec-code') {
                   console.log('[Tab Hive iframe] 收到代码执行请求');
                   try {
-                    const result = eval(e.data.code);
-                    window.parent.postMessage({
+                    const result = eval(message.code);
+                    __originalParent.postMessage({
                       type: 'exec-result',
-                      messageId: e.data.messageId,
+                      messageId: message.messageId,
                       result: { success: true, result: result }
                     }, '*');
                   } catch (error) {
                     console.error('[Tab Hive iframe] 代码执行失败:', error);
-                    window.parent.postMessage({
+                    __originalParent.postMessage({
                       type: 'exec-result',
-                      messageId: e.data.messageId,
+                      messageId: message.messageId,
                       result: { success: false, error: error.message }
                     }, '*');
+                  }
+                }
+                
+                // 元素选择器消息（与Chrome扩展相同）
+                if (message && message.source === 'tab-hive') {
+                  if (message.action === 'startElementSelector') {
+                    console.log('[Tab Hive iframe] 启动元素选择器');
+                    try {
+                      window.__startElementSelector();
+                      __originalParent.postMessage({
+                        source: 'tab-hive-electron',
+                        action: 'elementSelectorStarted',
+                        requestId: message.requestId,
+                        success: true
+                      }, '*');
+                    } catch (error) {
+                      console.error('[Tab Hive iframe] 启动选择器失败:', error);
+                      __originalParent.postMessage({
+                        source: 'tab-hive-electron',
+                        action: 'elementSelectorStarted',
+                        requestId: message.requestId,
+                        success: false,
+                        error: error.message
+                      }, '*');
+                    }
+                  } else if (message.action === 'stopElementSelector') {
+                    console.log('[Tab Hive iframe] 停止元素选择器');
+                    try {
+                      window.__stopElementSelector();
+                      __originalParent.postMessage({
+                        source: 'tab-hive-electron',
+                        action: 'elementSelectorStopped',
+                        requestId: message.requestId,
+                        success: true
+                      }, '*');
+                    } catch (error) {
+                      console.error('[Tab Hive iframe] 停止选择器失败:', error);
+                    }
                   }
                 }
               });
@@ -237,6 +283,192 @@ function createWindow() {
                   attributeFilter: ['target']
                 });
               }
+              
+              // ===========================================
+              // 元素选择器功能（与Chrome扩展相同）
+              // ===========================================
+              
+              let selectorOverlay = null;
+              let selectorHighlight = null;
+              let currentHoveredElement = null;
+              
+              // 生成CSS选择器
+              function generateCssSelector(element) {
+                try {
+                  if (element.id) return '#' + element.id;
+                  if (element.className && typeof element.className === 'string') {
+                    const classes = element.className.trim().split(/\\s+/).filter(c => c && !c.startsWith('tabhive-'));
+                    if (classes.length > 0) return element.tagName.toLowerCase() + '.' + classes[0];
+                  }
+                  const parent = element.parentElement;
+                  if (parent) {
+                    const siblings = Array.from(parent.children);
+                    const index = siblings.indexOf(element) + 1;
+                    return parent.tagName.toLowerCase() + ' > ' + element.tagName.toLowerCase() + ':nth-child(' + index + ')';
+                  }
+                  return element.tagName.toLowerCase();
+                } catch (error) {
+                  return element.tagName.toLowerCase();
+                }
+              }
+              
+              // 启动元素选择器
+              window.__startElementSelector = function() {
+                console.log('[Tab Hive iframe] 在iframe中启动元素选择器');
+                
+                // 注入样式
+                const styleId = 'tabhive-element-selector-styles';
+                if (!document.getElementById(styleId)) {
+                  const style = document.createElement('style');
+                  style.id = styleId;
+                  style.textContent = \`
+                    .tabhive-selector-overlay {
+                      position: fixed !important;
+                      top: 0 !important;
+                      left: 0 !important;
+                      right: 0 !important;
+                      bottom: 0 !important;
+                      z-index: 2147483646 !important;
+                      cursor: crosshair !important;
+                      background: rgba(0, 0, 0, 0.02) !important;
+                      pointer-events: none !important;
+                    }
+                    * {
+                      cursor: crosshair !important;
+                    }
+                    .tabhive-element-highlight {
+                      position: absolute !important;
+                      border: 2px solid #ff5c00 !important;
+                      background: rgba(255, 92, 0, 0.1) !important;
+                      pointer-events: none !important;
+                      z-index: 2147483647 !important;
+                      transition: all 0.1s ease-out !important;
+                      box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.3) !important;
+                    }
+                  \`;
+                  document.head.appendChild(style);
+                }
+                
+                // 创建覆盖层
+                selectorOverlay = document.createElement('div');
+                selectorOverlay.className = 'tabhive-selector-overlay';
+                document.body.appendChild(selectorOverlay);
+                
+                // 创建高亮元素
+                selectorHighlight = document.createElement('div');
+                selectorHighlight.className = 'tabhive-element-highlight';
+                selectorHighlight.style.display = 'none';
+                document.body.appendChild(selectorHighlight);
+                
+                // 鼠标悬停处理
+                const handleMouseOver = function(event) {
+                  const element = event.target;
+                  if (element === selectorOverlay || element === selectorHighlight ||
+                      element.classList.contains('tabhive-selector-overlay') ||
+                      element.classList.contains('tabhive-element-highlight')) return;
+                  if (element.tagName === 'HTML' || element.tagName === 'BODY') return;
+                  
+                  currentHoveredElement = element;
+                  const selector = generateCssSelector(element);
+                  const rect = element.getBoundingClientRect();
+                  const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
+                  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                  
+                  selectorHighlight.style.top = (rect.top + scrollTop) + 'px';
+                  selectorHighlight.style.left = (rect.left + scrollLeft) + 'px';
+                  selectorHighlight.style.width = rect.width + 'px';
+                  selectorHighlight.style.height = rect.height + 'px';
+                  selectorHighlight.style.display = 'block';
+                  
+                  console.log('[Tab Hive iframe] 鼠标悬停:', element.tagName, selector);
+                  
+                  __originalParent.postMessage({
+                    source: 'tab-hive-electron',
+                    action: 'elementHovered',
+                    selector: selector
+                  }, '*');
+                  
+                  event.stopPropagation();
+                };
+                
+                // 点击处理
+                const handleClick = function(event) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  
+                  console.log('[Tab Hive iframe] 点击事件触发，当前悬停元素:', currentHoveredElement);
+                  
+                  if (currentHoveredElement) {
+                    const selector = generateCssSelector(currentHoveredElement);
+                    console.log('[Tab Hive iframe] 选中元素，选择器:', selector);
+                    
+                    __originalParent.postMessage({
+                      source: 'tab-hive-electron',
+                      action: 'elementSelected',
+                      selector: selector
+                    }, '*');
+                    console.log('[Tab Hive iframe] 已发送elementSelected消息到父页面');
+                    
+                    window.__stopElementSelector();
+                  } else {
+                    console.warn('[Tab Hive iframe] 点击时没有悬停的元素，忽略点击');
+                  }
+                };
+                
+                // ESC键处理
+                const handleKeyDown = function(event) {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    __originalParent.postMessage({
+                      source: 'tab-hive-electron',
+                      action: 'elementSelectorCancelled'
+                    }, '*');
+                    window.__stopElementSelector();
+                  }
+                };
+                
+                // 添加事件监听
+                document.addEventListener('mouseover', handleMouseOver, {capture: true, passive: true});
+                document.addEventListener('click', handleClick, {capture: true});
+                document.addEventListener('keydown', handleKeyDown, {capture: true});
+                
+                // 保存处理器引用以便后续移除
+                window.__selectorHandlers = { handleMouseOver, handleClick, handleKeyDown };
+                
+                console.log('[Tab Hive iframe] 元素选择器已启动');
+              };
+              
+              // 停止元素选择器
+              window.__stopElementSelector = function() {
+                console.log('[Tab Hive iframe] 停止元素选择器');
+                
+                // 移除事件监听器
+                if (window.__selectorHandlers) {
+                  const {handleMouseOver, handleClick, handleKeyDown} = window.__selectorHandlers;
+                  document.removeEventListener('mouseover', handleMouseOver, {capture: true, passive: true});
+                  document.removeEventListener('click', handleClick, {capture: true});
+                  document.removeEventListener('keydown', handleKeyDown, {capture: true});
+                  window.__selectorHandlers = null;
+                }
+                
+                // 隐藏并移除高亮
+                if (selectorHighlight) {
+                  selectorHighlight.style.display = 'none';
+                  if (selectorHighlight.parentNode) selectorHighlight.parentNode.removeChild(selectorHighlight);
+                }
+                if (selectorOverlay && selectorOverlay.parentNode) selectorOverlay.parentNode.removeChild(selectorOverlay);
+                
+                // 移除样式
+                const style = document.getElementById('tabhive-element-selector-styles');
+                if (style && style.parentNode) style.parentNode.removeChild(style);
+                
+                selectorOverlay = null;
+                selectorHighlight = null;
+                currentHoveredElement = null;
+                
+                console.log('[Tab Hive iframe] 元素选择器已停止，高亮已清除');
+              };
               
               console.log('[Tab Hive iframe] 代码注入完成 ✓');
             })();

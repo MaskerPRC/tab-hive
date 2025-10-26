@@ -44,7 +44,6 @@ export default {
      */
     const detectExtension = () => {
       return new Promise((resolve) => {
-        // 检查是否已经收到过extensionLoaded消息（存储在window上）
         if (window.__tabHiveExtensionDetected) {
           console.log('[Tab Hive] 扩展已检测到（从缓存）')
           resolve(true)
@@ -70,7 +69,6 @@ export default {
 
         window.addEventListener('message', handler)
         
-        // 请求扩展响应
         console.log('[Tab Hive] 发送ping消息检测扩展')
         window.postMessage({
           source: 'tab-hive',
@@ -80,227 +78,21 @@ export default {
     }
 
     /**
-     * 在Electron环境中启动元素选择器
+     * 启动元素选择器（Electron和浏览器使用相同方式）
      */
-    const startSelectorInElectron = async () => {
-      if (!props.targetIframe) {
-        console.error('[Tab Hive] 未提供targetIframe')
-        emit('cancel')
-        return
-      }
-
-      const iframeId = props.targetIframe.getAttribute('data-iframe-id')
-      if (!iframeId) {
-        console.error('[Tab Hive] iframe没有data-iframe-id属性')
-        emit('cancel')
-        return
-      }
-
-      try {
-        console.log('[Tab Hive] Electron环境 - 启动元素选择器')
-        
-        const code = `
-          (function() {
-            // 注入样式
-            const styleId = 'tabhive-element-selector-styles';
-            if (!document.getElementById(styleId)) {
-              const style = document.createElement('style');
-              style.id = styleId;
-              style.textContent = \`
-                .tabhive-selector-overlay {
-                  position: fixed !important;
-                  top: 0 !important;
-                  left: 0 !important;
-                  right: 0 !important;
-                  bottom: 0 !important;
-                  z-index: 2147483646 !important;
-                  cursor: crosshair !important;
-                  background: rgba(0, 0, 0, 0.05) !important;
-                }
-                .tabhive-element-highlight {
-                  position: absolute !important;
-                  border: 2px solid #ff5c00 !important;
-                  background: rgba(255, 92, 0, 0.1) !important;
-                  pointer-events: none !important;
-                  z-index: 2147483647 !important;
-                  box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.3) !important;
-                }
-              \`;
-              document.head.appendChild(style);
-            }
-            
-            // 创建覆盖层和高亮
-            window.__tabhiveSelector = {
-              overlay: document.createElement('div'),
-              highlight: document.createElement('div'),
-              currentElement: null
-            };
-            
-            window.__tabhiveSelector.overlay.className = 'tabhive-selector-overlay';
-            window.__tabhiveSelector.highlight.className = 'tabhive-element-highlight';
-            window.__tabhiveSelector.highlight.style.display = 'none';
-            
-            document.body.appendChild(window.__tabhiveSelector.overlay);
-            document.body.appendChild(window.__tabhiveSelector.highlight);
-            
-            // 生成选择器
-            window.__generateSelector = function(element) {
-              if (element.id) return '#' + element.id;
-              if (element.className && typeof element.className === 'string') {
-                const classes = element.className.trim().split(/\\s+/).filter(c => c && !c.startsWith('tabhive-'));
-                if (classes.length > 0) return element.tagName.toLowerCase() + '.' + classes[0];
-              }
-              return element.tagName.toLowerCase();
-            };
-            
-            // 鼠标悬停
-            window.__selectorMouseOver = function(event) {
-              const el = event.target;
-              if (el.classList.contains('tabhive-selector-overlay') || 
-                  el.classList.contains('tabhive-element-highlight') ||
-                  el.tagName === 'HTML' || el.tagName === 'BODY') return;
-              
-              window.__tabhiveSelector.currentElement = el;
-              const rect = el.getBoundingClientRect();
-              const h = window.__tabhiveSelector.highlight;
-              h.style.top = (rect.top + window.scrollY) + 'px';
-              h.style.left = (rect.left + window.scrollX) + 'px';
-              h.style.width = rect.width + 'px';
-              h.style.height = rect.height + 'px';
-              h.style.display = 'block';
-              
-              return window.__generateSelector(el);
-            };
-            
-            document.addEventListener('mouseover', function(e) {
-              const sel = window.__selectorMouseOver(e);
-              if (sel) {
-                // 通过设置window属性传递选择器
-                window.__currentSelector = sel;
-              }
-            }, true);
-            
-            // 点击选择
-            window.__selectorClick = function(event) {
-              event.preventDefault();
-              event.stopPropagation();
-              if (window.__tabhiveSelector.currentElement) {
-                return window.__generateSelector(window.__tabhiveSelector.currentElement);
-              }
-              return null;
-            };
-            
-            document.addEventListener('click', function(e) {
-              const sel = window.__selectorClick(e);
-              if (sel) {
-                window.__selectedSelector = sel;
-              }
-            }, true);
-            
-            return { success: true };
-          })()
-        `
-
-        await window.electron.executeInIframe(iframeId, code)
-        console.log('[Tab Hive] Electron元素选择器已启动')
-
-        // 轮询选择器状态
-        startElectronPolling(iframeId)
-      } catch (error) {
-        console.error('[Tab Hive] Electron启动选择器失败:', error)
-        alert('启动元素选择器失败: ' + error.message)
-        emit('cancel')
-      }
-    }
-
-    /**
-     * 轮询Electron中的选择器状态
-     */
-    let electronPollingInterval = null
-    const startElectronPolling = (iframeId) => {
-      electronPollingInterval = setInterval(async () => {
-        try {
-          // 检查当前悬停的选择器
-          const hoverResult = await window.electron.executeInIframe(iframeId, 
-            'window.__currentSelector || ""')
-          if (hoverResult && hoverResult.result) {
-            hoveredSelector.value = hoverResult.result
-          }
-
-          // 检查是否已选择
-          const selectResult = await window.electron.executeInIframe(iframeId, 
-            'window.__selectedSelector || ""')
-          if (selectResult && selectResult.result) {
-            const selector = selectResult.result
-            stopElectronPolling()
-            cleanupElectronSelector(iframeId)
-            emit('select', { selector })
-          }
-        } catch (error) {
-          console.warn('[Tab Hive] 轮询选择器状态失败:', error)
-        }
-      }, 100)
-    }
-
-    const stopElectronPolling = () => {
-      if (electronPollingInterval) {
-        clearInterval(electronPollingInterval)
-        electronPollingInterval = null
-      }
-    }
-
-    /**
-     * 清理Electron选择器
-     */
-    const cleanupElectronSelector = async (iframeId) => {
-      try {
-        await window.electron.executeInIframe(iframeId, `
-          (function() {
-            // 隐藏并移除高亮元素
-            if (window.__tabhiveSelector) {
-              if (window.__tabhiveSelector.highlight) {
-                window.__tabhiveSelector.highlight.style.display = 'none';
-                if (window.__tabhiveSelector.highlight.parentNode) {
-                  window.__tabhiveSelector.highlight.parentNode.removeChild(window.__tabhiveSelector.highlight);
-                }
-              }
-              if (window.__tabhiveSelector.overlay && window.__tabhiveSelector.overlay.parentNode) {
-                window.__tabhiveSelector.overlay.parentNode.removeChild(window.__tabhiveSelector.overlay);
-              }
-              window.__tabhiveSelector = null;
-            }
-            // 移除样式
-            const style = document.getElementById('tabhive-element-selector-styles');
-            if (style && style.parentNode) {
-              style.parentNode.removeChild(style);
-            }
-            // 重置变量
-            window.__currentSelector = null;
-            window.__selectedSelector = null;
-            console.log('[Tab Hive Electron] 选择器已清理，高亮已隐藏');
-          })()
-        `)
-        console.log('[Tab Hive] Electron选择器清理完成')
-      } catch (error) {
-        console.warn('[Tab Hive] 清理Electron选择器失败:', error)
-      }
-    }
-
-    /**
-     * 在浏览器环境中通过Chrome扩展启动元素选择器
-     */
-    const startSelectorViaChromeExtension = () => {
+    const startSelector = () => {
       if (!props.targetIframe || !props.targetIframe.contentWindow) {
         console.error('[Tab Hive] iframe不可用')
         emit('cancel')
         return
       }
 
-      console.log('[Tab Hive] 浏览器环境 - 通过Chrome扩展启动元素选择器')
+      const env = isElectron.value ? 'Electron' : '浏览器'
+      console.log(`[Tab Hive] ${env}环境 - 通过postMessage启动元素选择器`)
 
       const reqId = ++requestId
 
-      // 向iframe发送启动选择器的消息
+      // 向iframe发送启动选择器的消息（Electron和Chrome扩展相同）
       props.targetIframe.contentWindow.postMessage({
         source: 'tab-hive',
         action: 'startElementSelector',
@@ -314,28 +106,50 @@ export default {
      * 处理来自iframe的消息
      */
     const handleMessage = (event) => {
-      if (!event.data || event.data.source !== 'tab-hive-extension') {
-        return
+      console.log('[Tab Hive] 🔔 message事件触发, source:', event.data?.source, 'data:', event.data)
+      
+      if (!event.data) return
+      
+      // 调试：记录所有消息
+      if (event.data.source === 'tab-hive-extension' || event.data.source === 'tab-hive-electron') {
+        console.log('[Tab Hive] 📨 收到消息:', event.data)
       }
 
-      const { action, selector } = event.data
-      console.log('[Tab Hive] 收到iframe消息:', action, selector)
+      // Chrome扩展消息
+      if (event.data.source === 'tab-hive-extension') {
+        const { action, selector } = event.data
+        console.log('[Tab Hive] 收到Chrome扩展消息:', action, selector)
 
-      if (action === 'elementHovered') {
-        // 元素悬停
-        hoveredSelector.value = selector || ''
-        console.log('[Tab Hive] 更新悬停选择器:', selector)
-      } else if (action === 'elementSelected') {
-        // 元素已选择
-        console.log('[Tab Hive] 接收到选中的元素:', selector)
-        emit('select', { selector })
-        hoveredSelector.value = ''
-      } else if (action === 'elementSelectorCancelled') {
-        // 用户取消
-        console.log('[Tab Hive] 用户在iframe中取消了元素选择')
-        cancel()
-      } else if (action === 'elementSelectorStarted') {
-        console.log('[Tab Hive] 元素选择器已在iframe中启动')
+        if (action === 'elementHovered') {
+          hoveredSelector.value = selector || ''
+        } else if (action === 'elementSelected') {
+          console.log('[Tab Hive] 接收到选中的元素:', selector)
+          emit('select', { selector })
+          hoveredSelector.value = ''
+        } else if (action === 'elementSelectorCancelled') {
+          console.log('[Tab Hive] 用户在iframe中取消了元素选择')
+          cancel()
+        }
+      }
+
+      // Electron消息
+      if (event.data.source === 'tab-hive-electron') {
+        const { action, selector } = event.data
+        console.log('[Tab Hive] 收到Electron消息:', action, '选择器:', selector)
+
+        if (action === 'elementHovered') {
+          hoveredSelector.value = selector || ''
+          console.log('[Tab Hive] 更新悬停选择器:', selector)
+        } else if (action === 'elementSelected') {
+          console.log('[Tab Hive] ✅ 接收到选中的元素:', selector)
+          emit('select', { selector })
+          hoveredSelector.value = ''
+        } else if (action === 'elementSelectorCancelled') {
+          console.log('[Tab Hive] 用户在iframe中按ESC取消了元素选择')
+          cancel()
+        } else if (action === 'elementSelectorStarted') {
+          console.log('[Tab Hive] Electron元素选择器已在iframe中启动')
+        }
       }
     }
 
@@ -353,7 +167,6 @@ export default {
      */
     const cancel = () => {
       console.log('[Tab Hive] 用户取消元素选择器')
-      // 只emit事件，清理工作由watch处理
       emit('cancel')
     }
 
@@ -362,9 +175,10 @@ export default {
      */
     const initialize = async () => {
       if (isElectron.value) {
-        await startSelectorInElectron()
+        // Electron环境直接启动
+        startSelector()
       } else {
-        // 检测Chrome扩展
+        // 浏览器环境先检测扩展
         hasExtension.value = await detectExtension()
         
         if (!hasExtension.value) {
@@ -373,8 +187,24 @@ export default {
           return
         }
 
-        startSelectorViaChromeExtension()
+        startSelector()
       }
+    }
+
+    /**
+     * 清理
+     */
+    const cleanup = () => {
+      if (props.targetIframe && props.targetIframe.contentWindow) {
+        // 发送停止选择器消息
+        console.log('[Tab Hive] 发送停止选择器消息到iframe')
+        props.targetIframe.contentWindow.postMessage({
+          source: 'tab-hive',
+          action: 'stopElementSelector',
+          requestId: ++requestId
+        }, '*')
+      }
+      hoveredSelector.value = ''
     }
 
     // 监听isActive变化
@@ -385,33 +215,20 @@ export default {
         initialize()
       } else if (!newVal && oldVal) {
         // 从true变为false，清理
-        if (isElectron.value) {
-          stopElectronPolling()
-          if (props.targetIframe) {
-            const iframeId = props.targetIframe.getAttribute('data-iframe-id')
-            if (iframeId) {
-              cleanupElectronSelector(iframeId)
-            }
-          }
-        } else if (hasExtension.value && props.targetIframe && props.targetIframe.contentWindow) {
-          // 发送停止选择器消息
-          props.targetIframe.contentWindow.postMessage({
-            source: 'tab-hive',
-            action: 'stopElementSelector',
-            requestId: ++requestId
-          }, '*')
-        }
-        hoveredSelector.value = ''
+        cleanup()
       }
     })
 
     // 生命周期
     onMounted(() => {
+      console.log('[Tab Hive] ElementSelector组件已挂载，添加事件监听器')
       messageListener = handleMessage
       keydownListener = handleKeyDown
       
       window.addEventListener('message', messageListener)
       document.addEventListener('keydown', keydownListener)
+      
+      console.log('[Tab Hive] 消息监听器已添加到window')
     })
 
     onUnmounted(() => {
@@ -421,7 +238,6 @@ export default {
       if (keydownListener) {
         document.removeEventListener('keydown', keydownListener)
       }
-      stopElectronPolling()
     })
 
     return {
