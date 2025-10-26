@@ -24,9 +24,7 @@ export default {
 
 <style scoped>
 .drag-handle {
-  position: absolute;
-  top: 8px;
-  left: 8px;
+  position: relative;
   width: 32px;
   height: 32px;
   background: rgba(255, 92, 0, 0.9);
@@ -37,8 +35,8 @@ export default {
   cursor: move;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
-  z-index: 150;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .drag-handle:hover {
