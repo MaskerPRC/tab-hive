@@ -253,11 +253,26 @@ function createWindow() {
     console.log('[Electron Main] 页面加载完成')
   })
 
+  // 存储请求的 Origin，用于 CORS 响应
+  const requestOrigins = new Map()
+
   // 禁用所有iframe的CORS限制，并转发 Cookie
   mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
     { urls: ['*://*/*'] },
     async (details, callback) => {
       const requestHeaders = { ...details.requestHeaders }
+
+      // 存储请求的 Origin 头，用于后续的 CORS 响应
+      if (requestHeaders['Origin'] || requestHeaders['origin']) {
+        const origin = requestHeaders['Origin'] || requestHeaders['origin']
+        requestOrigins.set(details.url, origin)
+        console.log(`[CORS] 存储请求 Origin: ${origin} for ${details.url}`)
+        
+        // 5秒后清理，避免内存泄漏
+        setTimeout(() => {
+          requestOrigins.delete(details.url)
+        }, 5000)
+      }
 
       // 获取当前域名的所有 cookies
       try {
@@ -291,11 +306,40 @@ function createWindow() {
       delete responseHeaders['content-security-policy']
       delete responseHeaders['Content-Security-Policy']
 
-      // 添加允许CORS的headers
-      responseHeaders['Access-Control-Allow-Origin'] = ['*']
-      responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS']
-      responseHeaders['Access-Control-Allow-Headers'] = ['*']
-      responseHeaders['Access-Control-Allow-Credentials'] = ['true']
+      // 处理 CORS 头
+      // 如果之前存储了这个请求的 Origin，使用它；否则使用请求URL的 origin
+      const storedOrigin = requestOrigins.get(details.url)
+      
+      if (storedOrigin) {
+        // 有明确的请求 Origin，使用它并允许凭证
+        console.log(`[CORS] 使用存储的 Origin: ${storedOrigin}`)
+        responseHeaders['Access-Control-Allow-Origin'] = [storedOrigin]
+        responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
+        responseHeaders['Access-Control-Allow-Headers'] = ['*']
+        responseHeaders['Access-Control-Allow-Credentials'] = ['true']
+        responseHeaders['Access-Control-Expose-Headers'] = ['*']
+        responseHeaders['Vary'] = ['Origin']
+      } else {
+        // 没有明确的 Origin（可能是同源请求或导航请求）
+        // 使用请求URL的 origin 并允许凭证
+        try {
+          const urlObj = new URL(details.url)
+          const requestOrigin = `${urlObj.protocol}//${urlObj.host}`
+          
+          console.log(`[CORS] 使用请求URL的 origin: ${requestOrigin}`)
+          responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin]
+          responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
+          responseHeaders['Access-Control-Allow-Headers'] = ['*']
+          responseHeaders['Access-Control-Allow-Credentials'] = ['true']
+          responseHeaders['Access-Control-Expose-Headers'] = ['*']
+        } catch (e) {
+          // 如果无法解析 URL，使用宽松设置（但不带凭证以避免冲突）
+          console.log(`[CORS] URL 解析失败，使用通配符`)
+          responseHeaders['Access-Control-Allow-Origin'] = ['*']
+          responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
+          responseHeaders['Access-Control-Allow-Headers'] = ['*']
+        }
+      }
 
       // 修改 Set-Cookie 的 SameSite 属性，使其在 iframe 中也能工作
       if (responseHeaders['set-cookie']) {
