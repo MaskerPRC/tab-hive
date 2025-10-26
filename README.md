@@ -246,9 +246,36 @@ Bilibili:     .bilibili-player
 - [SELECTOR_FEATURE.md](./SELECTOR_FEATURE.md) - 功能详细说明
 - [chrome-extension/INSTALL.md](./chrome-extension/INSTALL.md) - Chrome扩展安装指南
 
+## iframe 反检测功能 🆕
+
+有些网站会检测到在 iframe 中运行并阻止显示。Tab Hive 提供了两种解决方案：
+
+### 方案1: Chrome 扩展（需要手动安装）
+
+安装后可以：
+- ✅ 移除 X-Frame-Options 响应头
+- ✅ 覆盖 JavaScript iframe 检测
+- ✅ 绕过大部分网站的检测
+
+安装方法：
+1. 打开 `chrome://extensions/`
+2. 启用"开发者模式"
+3. 加载 `chrome-extension` 文件夹
+
+### 方案2: Electron 桌面客户端（推荐，自动生效）
+
+桌面客户端内置完整的反检测功能：
+- ✅ 自动移除所有阻止响应头
+- ✅ 自动注入反检测代码到所有 iframe
+- ✅ 处理 Cookie SameSite 策略
+- ✅ 无需任何额外配置
+- ✅ 兼容性最佳
+
+**详细说明请查看：[IFRAME_ANTI_DETECTION.md](./IFRAME_ANTI_DETECTION.md)**
+
 ## 注意事项
 
-- 某些网站可能因为 CORS 策略或 X-Frame-Options 而无法在 iframe 中显示
+- 某些网站可能因为 CORS 策略或 X-Frame-Options 而无法在 iframe 中显示（建议使用 Electron 版本或安装 Chrome 扩展解决）
 - 建议使用支持现代 Web 标准的浏览器
 - 首次使用时会提示安装插件或下载桌面客户端
 

@@ -104,18 +104,87 @@ function createWindow() {
         setTimeout(() => {
           frame.executeJavaScript(`
             (function() {
-              console.log('[iframe] 注入代码执行监听器');
+              console.log('[Tab Hive iframe] 注入代码执行监听器');
+              
+              // ===========================================
+              // iframe反检测 - 让网站认为不在iframe中
+              // ===========================================
+              
+              console.log('[Tab Hive Anti-Detection] 开始应用反检测措施');
+              
+              // 方法1: 覆盖 window.top
+              try {
+                Object.defineProperty(window, 'top', {
+                  get: function() {
+                    return window.self;
+                  },
+                  configurable: false
+                });
+                console.log('[Tab Hive Anti-Detection] ✓ window.top 已重定向');
+              } catch (e) {
+                console.log('[Tab Hive Anti-Detection] ✗ window.top 覆盖失败:', e.message);
+              }
+              
+              // 方法2: 覆盖 window.parent
+              try {
+                Object.defineProperty(window, 'parent', {
+                  get: function() {
+                    return window.self;
+                  },
+                  configurable: false
+                });
+                console.log('[Tab Hive Anti-Detection] ✓ window.parent 已重定向');
+              } catch (e) {
+                console.log('[Tab Hive Anti-Detection] ✗ window.parent 覆盖失败:', e.message);
+              }
+              
+              // 方法3: 覆盖 window.frameElement
+              try {
+                Object.defineProperty(window, 'frameElement', {
+                  get: function() {
+                    return null;
+                  },
+                  configurable: false
+                });
+                console.log('[Tab Hive Anti-Detection] ✓ window.frameElement 已设置为 null');
+              } catch (e) {
+                console.log('[Tab Hive Anti-Detection] ✗ window.frameElement 覆盖失败:', e.message);
+              }
+              
+              // 方法4: 伪造 window.location.ancestorOrigins
+              try {
+                if (window.location.ancestorOrigins) {
+                  Object.defineProperty(window.location, 'ancestorOrigins', {
+                    get: function() {
+                      return {
+                        length: 0,
+                        item: function() { return null; },
+                        contains: function() { return false; }
+                      };
+                    }
+                  });
+                  console.log('[Tab Hive Anti-Detection] ✓ ancestorOrigins 已伪造');
+                }
+              } catch (e) {
+                console.log('[Tab Hive Anti-Detection] ✗ ancestorOrigins 覆盖失败:', e.message);
+              }
+              
+              console.log('[Tab Hive Anti-Detection] 反检测措施应用完成');
+              
+              // ===========================================
+              // window.open 拦截
+              // ===========================================
               
               // 保存原始的window.open
               const originalOpen = window.open;
               
               // 重写window.open
               window.open = function(url, target, features) {
-                console.log('[iframe] window.open被调用:', url, target);
+                console.log('[Tab Hive iframe] window.open被调用:', url, target);
                 
                 // 如果是_blank或新窗口，改为在当前页面打开
                 if (!target || target === '_blank' || target === '_new') {
-                  console.log('[iframe] 重定向到当前iframe:', url);
+                  console.log('[Tab Hive iframe] 重定向到当前iframe:', url);
                   window.location.href = url;
                   return window;
                 }
@@ -128,7 +197,7 @@ function createWindow() {
               // 添加 postMessage 监听器用于执行代码（选择器功能）
               window.addEventListener('message', function(e) {
                 if (e.data && e.data.type === 'exec-code') {
-                  console.log('[iframe] 收到代码执行请求');
+                  console.log('[Tab Hive iframe] 收到代码执行请求');
                   try {
                     const result = eval(e.data.code);
                     window.parent.postMessage({
@@ -137,7 +206,7 @@ function createWindow() {
                       result: { success: true, result: result }
                     }, '*');
                   } catch (error) {
-                    console.error('[iframe] 代码执行失败:', error);
+                    console.error('[Tab Hive iframe] 代码执行失败:', error);
                     window.parent.postMessage({
                       type: 'exec-result',
                       messageId: e.data.messageId,
@@ -169,7 +238,7 @@ function createWindow() {
                 });
               }
               
-              console.log('[iframe] 代码注入完成');
+              console.log('[Tab Hive iframe] 代码注入完成 ✓');
             })();
           `).catch(err => {
             console.error('[Electron Main] iframe 代码注入失败:', err.message)

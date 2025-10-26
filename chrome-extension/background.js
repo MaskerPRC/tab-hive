@@ -1,7 +1,46 @@
 /**
  * Tab Hive - Chrome Extension Background Script
  * 处理来自网页的消息，控制选择器全屏功能
+ * 并拦截HTTP响应头以解决iframe检测问题
  */
+
+// ===========================================
+// HTTP响应头拦截 - 解决iframe检测问题
+// ===========================================
+
+// 使用declarativeNetRequest API拦截并修改响应头
+chrome.declarativeNetRequest.updateDynamicRules({
+  removeRuleIds: [1], // 先移除可能存在的旧规则
+  addRules: [
+    {
+      id: 1,
+      priority: 1,
+      action: {
+        type: 'modifyHeaders',
+        responseHeaders: [
+          // 移除 X-Frame-Options 头
+          { header: 'X-Frame-Options', operation: 'remove' },
+          { header: 'x-frame-options', operation: 'remove' },
+          // 移除 Content-Security-Policy 中的 frame-ancestors
+          { header: 'Content-Security-Policy', operation: 'remove' },
+          { header: 'content-security-policy', operation: 'remove' }
+        ]
+      },
+      condition: {
+        urlFilter: '*',
+        resourceTypes: ['main_frame', 'sub_frame']
+      }
+    }
+  ]
+}).catch(err => {
+  console.log('[Tab Hive Extension] 无法设置响应头拦截规则 (这在某些浏览器版本中是正常的):', err);
+});
+
+console.log('[Tab Hive Extension] HTTP响应头拦截已启用');
+
+// ===========================================
+// 消息处理
+// ===========================================
 
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

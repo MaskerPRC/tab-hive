@@ -1,12 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Tab Hive - 选择器全屏助手",
-  "version": "1.0.0",
-  "description": "为Tab Hive提供选择器全屏功能支持，可以在网页中只显示指定CSS选择器的元素",
+  "name": "Tab Hive - iframe反检测助手",
+  "version": "2.0.0",
+  "description": "为Tab Hive提供iframe反检测和选择器全屏功能支持，解决网站在iframe中的显示问题",
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "webRequest",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -18,7 +21,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_end",
+      "run_at": "document_start",
       "all_frames": true
     }
   ],
