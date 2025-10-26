@@ -38,9 +38,8 @@
       </div>
 
       <div class="right-actions">
-        <a
-          href="./help.html"
-          target="_blank"
+        <button
+          @click="openHelp"
           class="btn-help"
           title="使用帮助"
         >
@@ -50,7 +49,7 @@
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           <span>Help</span>
-        </a>
+        </button>
         <button
           v-if="!isElectron"
           class="btn-download"
@@ -227,6 +226,16 @@ export default {
       }
     }
 
+    // 打开帮助页面（确保在顶层窗口中打开）
+    const openHelp = () => {
+      // 使用 window.top 确保在顶层窗口打开，避免在 iframe 中打开
+      if (window.top) {
+        window.top.open('./help.html', '_blank', 'noopener,noreferrer')
+      } else {
+        window.open('./help.html', '_blank', 'noopener,noreferrer')
+      }
+    }
+
     // 切换到共享标签页
     const handleSwitchToShared = () => {
       sharedLayouts.loadSharedLayouts()
@@ -269,6 +278,7 @@ export default {
       handleStartRename,
       handleConfirmRename,
       clearConfig,
+      openHelp,
       handleDropdownLeave,
       clearHideTimer,
       startHideTimer,
@@ -341,7 +351,7 @@ export default {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  text-decoration: none;
+  font-family: inherit;
   transition: all 0.3s;
 }
 
