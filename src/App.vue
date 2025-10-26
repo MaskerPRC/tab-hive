@@ -15,11 +15,13 @@
       :class="{ 'panel-visible': showPanel }"
       :layouts="layouts"
       :currentLayoutId="currentLayoutId"
+      :showTitles="layoutManager.globalSettings.value.showTitles"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
       @delete-layout="handleDeleteLayout"
       @rename-layout="renameLayout"
       @show-download-modal="handleShowDownloadModal"
+      @toggle-titles="handleToggleTitles"
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
@@ -28,6 +30,7 @@
       :rows="2"
       :cols="2"
       :fullscreenIndex="fullscreenIndex"
+      :globalSettings="layoutManager.globalSettings.value"
       @fullscreen="handleFullscreen"
       @exitFullscreen="exitFullscreen"
       @add-website="handleAddWebsite"
@@ -175,6 +178,11 @@ export default {
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
     }
 
+    // 切换标题显示
+    const handleToggleTitles = (showTitles) => {
+      layoutManager.updateGlobalSettings({ showTitles })
+    }
+
     // 切换布局
     const handleSwitchLayout = (layoutId) => {
       const websites = layoutManager.switchLayout(layoutId)
@@ -270,6 +278,7 @@ export default {
       websites: websiteManager.websites,
       layouts: layoutManager.layouts,
       currentLayoutId: layoutManager.currentLayoutId,
+      layoutManager,
       // 对话框
       dialogVisible: dialog.dialogVisible,
       dialogType: dialog.dialogType,
@@ -296,7 +305,8 @@ export default {
       handleSwitchLayout,
       handleCreateLayout,
       handleDeleteLayout,
-      renameLayout: layoutManager.renameLayout
+      renameLayout: layoutManager.renameLayout,
+      handleToggleTitles
     }
   }
 }

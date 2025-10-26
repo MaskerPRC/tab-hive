@@ -20,7 +20,17 @@ export function useLayoutManager() {
               name: '默认布局',
               websites: config.websites || []
             }],
-            currentLayoutId: 1
+            currentLayoutId: 1,
+            globalSettings: {
+              showTitles: false // 默认不显示标题
+            }
+          }
+        }
+
+        // 确保有全局设置
+        if (!config.globalSettings) {
+          config.globalSettings = {
+            showTitles: false // 默认不显示标题
           }
         }
 
@@ -34,11 +44,12 @@ export function useLayoutManager() {
   }
 
   // 保存配置到 localStorage
-  const saveToStorage = (layouts, currentLayoutId) => {
+  const saveToStorage = (layouts, currentLayoutId, globalSettings) => {
     try {
       const config = {
         layouts: layouts,
-        currentLayoutId: currentLayoutId
+        currentLayoutId: currentLayoutId,
+        globalSettings: globalSettings
       }
       localStorage.setItem('iframe-all-config', JSON.stringify(config))
     } catch (e) {
@@ -86,6 +97,11 @@ export function useLayoutManager() {
   // 当前布局 ID
   const currentLayoutId = ref(savedConfig?.currentLayoutId || 1)
 
+  // 全局设置
+  const globalSettings = ref(savedConfig?.globalSettings || {
+    showTitles: false // 默认不显示标题
+  })
+
   // 当前布局（计算属性）
   const currentLayout = ref(layouts.value.find(l => l.id === currentLayoutId.value) || layouts.value[0])
 
@@ -106,7 +122,7 @@ export function useLayoutManager() {
         size: site.size ? { ...site.size } : undefined
       }))
       console.log('切换布局:', layout.name, '加载了', websites.length, '个网站')
-      saveToStorage(layouts.value, currentLayoutId.value)
+      saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
       return websites
     }
     return []
@@ -138,7 +154,7 @@ export function useLayoutManager() {
       }))
 
       console.log('保存布局:', layout.name, '网站数量:', layout.websites.length)
-      saveToStorage(layouts.value, currentLayoutId.value)
+      saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
     }
   }
 
@@ -181,7 +197,7 @@ export function useLayoutManager() {
       if (currentLayoutId.value === layoutId) {
         return layouts.value[0].id
       } else {
-        saveToStorage(layouts.value, currentLayoutId.value)
+        saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
         return true
       }
     }
@@ -197,8 +213,17 @@ export function useLayoutManager() {
     const layout = layouts.value.find(l => l.id === layoutId)
     if (layout) {
       layout.name = newName
-      saveToStorage(layouts.value, currentLayoutId.value)
+      saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
     }
+  }
+
+  /**
+   * 更新全局设置
+   * @param {Object} settings - 新的设置
+   */
+  const updateGlobalSettings = (settings) => {
+    globalSettings.value = { ...globalSettings.value, ...settings }
+    saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
   }
 
   /**
@@ -260,7 +285,7 @@ export function useLayoutManager() {
         onWebsitesUpdate(templateData.websites || [])
       }
 
-      saveToStorage(layouts.value, currentLayoutId.value)
+      saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
       return true
     } catch (error) {
       console.error('同步更新失败:', error)
@@ -273,12 +298,14 @@ export function useLayoutManager() {
     layouts,
     currentLayoutId,
     currentLayout,
+    globalSettings,
     // 方法
     switchLayout,
     saveCurrentLayout,
     createLayout,
     deleteLayout,
     renameLayout,
+    updateGlobalSettings,
     checkTemplateUpdate,
     syncTemplateUpdate,
     saveToStorage

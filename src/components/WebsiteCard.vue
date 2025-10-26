@@ -27,11 +27,16 @@
         :allow="'autoplay; fullscreen; picture-in-picture'"
       ></iframe>
       
-      <!-- 拖动手柄 -->
-      <DragHandle
-        @mousedown="$emit('drag-start', $event, index)"
-        @touchstart="$emit('drag-start', $event, index)"
-      />
+      <!-- 拖动手柄和标题区域 -->
+      <div class="drag-title-container">
+        <DragHandle
+          @mousedown="$emit('drag-start', $event, index)"
+          @touchstart="$emit('drag-start', $event, index)"
+        />
+        <div v-if="showTitle" class="website-title">
+          {{ item.title }}
+        </div>
+      </div>
       
       <!-- 拖放区域和提示 -->
       <DropZone
@@ -131,6 +136,10 @@ export default {
       default: false
     },
     isColliding: {
+      type: Boolean,
+      default: false
+    },
+    showTitle: {
       type: Boolean,
       default: false
     }
@@ -289,18 +298,62 @@ export default {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* 悬停时显示拖动手柄 */
+/* 拖动手柄和标题容器 */
+.drag-title-container {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 150;
+  pointer-events: none;
+}
+
+.drag-title-container :deep(.drag-handle) {
+  pointer-events: all;
+}
+
+/* 网站标题样式 */
+.website-title {
+  background: rgba(255, 92, 0, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+/* 悬停时显示拖动手柄和标题 */
 .grid-item:hover :deep(.drag-handle) {
   opacity: 1;
 }
 
-/* 拖动时保持手柄可见 */
+.grid-item:hover .website-title {
+  opacity: 1;
+}
+
+/* 拖动时保持手柄和标题可见 */
 .grid-item.dragging :deep(.drag-handle) {
   opacity: 1;
 }
 
-/* 全屏模式下隐藏拖动手柄 */
-.grid-item.fullscreen :deep(.drag-handle) {
+.grid-item.dragging .website-title {
+  opacity: 1;
+}
+
+/* 全屏模式下隐藏拖动手柄和标题 */
+.grid-item.fullscreen :deep(.drag-handle),
+.grid-item.fullscreen .website-title {
   display: none;
 }
 

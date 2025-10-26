@@ -64,6 +64,7 @@
         :is-resizing="isResizing"
         :is-current-resize="currentResizeIndex === index"
         :is-colliding="dragIsColliding || resizeIsColliding"
+        :show-title="globalSettings?.showTitles"
         @drag-start="startDrag($event, index)"
         @drag-over="handleDragOver"
         @drag-leave="handleDragLeave"
@@ -113,6 +114,10 @@ export default {
     fullscreenIndex: {
       type: Number,
       default: null
+    },
+    globalSettings: {
+      type: Object,
+      default: () => ({ showTitles: false })
     }
   },
   emits: ['fullscreen', 'exitFullscreen', 'add-website', 'remove-website', 'update-website'],

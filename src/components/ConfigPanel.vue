@@ -38,6 +38,16 @@
       </div>
 
       <div class="right-actions">
+        <label class="toggle-control" title="显示/隐藏蜂巢标题">
+          <span class="toggle-label">显示标题</span>
+          <input
+            type="checkbox"
+            :checked="showTitles"
+            @change="handleToggleTitles"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-slider"></span>
+        </label>
         <button
           @click="openHelp"
           class="btn-help"
@@ -94,9 +104,13 @@ export default {
     currentLayoutId: {
       type: Number,
       required: true
+    },
+    showTitles: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles'],
   setup(props, { emit }) {
     const showLayoutDropdown = ref(false)
     let hideTimer = null
@@ -265,6 +279,11 @@ export default {
       await operations.syncTemplate(layout, checkTemplateUpdate, syncTemplateUpdate, showConfirm)
     }
 
+    // 切换标题显示
+    const handleToggleTitles = (event) => {
+      emit('toggle-titles', event.target.checked)
+    }
+
     return {
       isElectron,
       showLayoutDropdown,
@@ -287,7 +306,8 @@ export default {
       handleSearchShared,
       handleImportLayout,
       handleShareLayout,
-      handleSyncTemplate
+      handleSyncTemplate,
+      handleToggleTitles
     }
   }
 }
@@ -413,6 +433,65 @@ export default {
 
 .btn-clear svg {
   stroke: currentColor;
+}
+
+/* 开关控件样式 */
+.toggle-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 0.3s;
+}
+
+.toggle-control:hover {
+  background: #fff5f0;
+}
+
+.toggle-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.toggle-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  background: #ddd;
+  border-radius: 12px;
+  transition: background 0.3s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background: var(--primary-color);
+}
+
+.toggle-checkbox:checked + .toggle-slider::before {
+  transform: translateX(18px);
 }
 
 /* 响应式设计 */
