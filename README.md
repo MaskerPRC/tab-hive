@@ -3,8 +3,8 @@
 一个纯前端的网页工具，支持在同一个页面中集成并查看多个网站。像蜂巢一样组织你的网页！
 
 ## 📺 演示视频
+<img width="2975" height="1752" alt="image" src="https://github.com/user-attachments/assets/14884fb9-19a1-4f9c-b31f-0f94d5ed397b" />
 
-[![Tab Hive 演示视频](https://img.youtube.com/vi/z_rfNVBBLWo/maxresdefault.jpg)](https://youtu.be/z_rfNVBBLWo)
 
 点击观看完整演示：[https://youtu.be/z_rfNVBBLWo](https://youtu.be/z_rfNVBBLWo)
 
