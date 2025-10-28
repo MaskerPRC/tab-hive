@@ -1,5 +1,48 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const fs = require('fs')
+
+console.log('[Electron Main] ========== 开始加载注入脚本 ==========')
+console.log('[Electron Main] 当前目录:', __dirname)
+
+// 读取注入脚本
+try {
+  console.log('[Electron Main] 1/4 读取 window-open-handler.js...')
+  const windowOpenHandlerPath = path.join(__dirname, 'scripts/window-open-handler.js')
+  console.log('[Electron Main] 路径:', windowOpenHandlerPath)
+  const windowOpenHandlerScript = fs.readFileSync(windowOpenHandlerPath, 'utf8')
+  console.log('[Electron Main] ✓ window-open-handler.js 读取成功 (', windowOpenHandlerScript.length, 'bytes)')
+
+  console.log('[Electron Main] 2/4 读取 iframe-inject.js...')
+  const iframeInjectPath = path.join(__dirname, 'scripts/iframe-inject.js')
+  console.log('[Electron Main] 路径:', iframeInjectPath)
+  const iframeInjectScript = fs.readFileSync(iframeInjectPath, 'utf8')
+  console.log('[Electron Main] ✓ iframe-inject.js 读取成功 (', iframeInjectScript.length, 'bytes)')
+
+  console.log('[Electron Main] 3/4 读取 check-iframe-id.js...')
+  const checkIframeIdPath = path.join(__dirname, 'scripts/check-iframe-id.js')
+  console.log('[Electron Main] 路径:', checkIframeIdPath)
+  const checkIframeIdScript = fs.readFileSync(checkIframeIdPath, 'utf8')
+  console.log('[Electron Main] ✓ check-iframe-id.js 读取成功 (', checkIframeIdScript.length, 'bytes)')
+
+  console.log('[Electron Main] 4/4 读取 execute-in-iframe.js...')
+  const executeInIframePath = path.join(__dirname, 'scripts/execute-in-iframe.js')
+  console.log('[Electron Main] 路径:', executeInIframePath)
+  const executeInIframeScript = fs.readFileSync(executeInIframePath, 'utf8')
+  console.log('[Electron Main] ✓ execute-in-iframe.js 读取成功 (', executeInIframeScript.length, 'bytes)')
+
+  console.log('[Electron Main] ========== 所有脚本加载完成 ==========')
+  
+  // 导出脚本供后续使用
+  global.windowOpenHandlerScript = windowOpenHandlerScript
+  global.iframeInjectScript = iframeInjectScript
+  global.checkIframeIdScript = checkIframeIdScript
+  global.executeInIframeScript = executeInIframeScript
+} catch (error) {
+  console.error('[Electron Main] ✗ 脚本读取失败:', error.message)
+  console.error('[Electron Main] 错误详情:', error)
+  process.exit(1)
+}
 
 // 设置 User-Agent
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
@@ -12,6 +55,8 @@ app.commandLine.appendSwitch('disable-site-isolation-trials')
 let mainWindow
 
 function createWindow() {
+  console.log('[Electron Main] ========== 开始创建主窗口 ==========')
+  
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -32,6 +77,8 @@ function createWindow() {
     autoHideMenuBar: true // 隐藏菜单栏，但保留原生标题栏
   })
 
+  console.log('[Electron Main] 主窗口创建完成，准备加载内容')
+  
   // 开发模式加载开发服务器，生产模式加载构建文件
   if (process.env.NODE_ENV === 'development') {
     console.log('[Electron Main] 开发模式，加载 http://localhost:3000')
@@ -39,8 +86,25 @@ function createWindow() {
     mainWindow.webContents.openDevTools()
   } else {
     console.log('[Electron Main] 生产模式，加载本地文件')
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+    const indexPath = path.join(__dirname, '../dist/index.html')
+    console.log('[Electron Main] 文件路径:', indexPath)
+    mainWindow.loadFile(indexPath)
   }
+  
+  console.log('[Electron Main] 页面加载已启动')
+  
+  // 添加心跳日志，用于检测是否卡死
+  let heartbeatCount = 0
+  const heartbeatInterval = setInterval(() => {
+    heartbeatCount++
+    if (heartbeatCount <= 10) { // 只输出前10次，避免刷屏
+      console.log('[Electron Main] ❤️ 心跳', heartbeatCount, '- 主进程运行正常')
+    }
+    if (heartbeatCount === 10) {
+      console.log('[Electron Main] 心跳日志已达到10次，停止输出（主进程正常）')
+      clearInterval(heartbeatInterval)
+    }
+  }, 2000) // 每2秒一次
 
 
   // 拦截新窗口打开 - 在macOS全屏时不跳转到新窗口
@@ -48,42 +112,20 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
     console.log('[Window Open Guard] 拦截新窗口打开:', { url, frameName, disposition })
     
-    // 发送消息到渲染进程，让它在最近点击的iframe中导航
-    mainWindow.webContents.executeJavaScript(`
-      (function() {
-        console.log('[Window Open Guard] 尝试在iframe中打开:', '${url.replace(/'/g, "\\'")}');
-        
-        // 查找最近获得焦点的iframe
-        const activeElement = document.activeElement;
-        if (activeElement && activeElement.tagName === 'IFRAME') {
-          console.log('[Window Open Guard] 找到活动iframe，在其中导航');
-          try {
-            activeElement.contentWindow.location.href = '${url.replace(/'/g, "\\'")}';
-            return true;
-          } catch (e) {
-            console.log('[Window Open Guard] 导航失败:', e.message);
-          }
-        }
-        
-        // 如果没有找到活动iframe，尝试在最后一个iframe中打开
-        const iframes = document.querySelectorAll('iframe');
-        if (iframes.length > 0) {
-          const lastIframe = iframes[iframes.length - 1];
-          console.log('[Window Open Guard] 在最后一个iframe中导航');
-          try {
-            lastIframe.contentWindow.location.href = '${url.replace(/'/g, "\\'")}';
-            return true;
-          } catch (e) {
-            console.log('[Window Open Guard] 导航失败:', e.message);
-          }
-        }
-        
-        console.log('[Window Open Guard] 未找到可用iframe');
-        return false;
-      })();
-    `).catch(err => {
-      console.log('[Window Open Guard] 执行失败:', err.message)
-    })
+    try {
+      // 发送消息到渲染进程，让它在最近点击的iframe中导航
+      const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+      const scriptToExecute = global.windowOpenHandlerScript.replace('URL_TO_OPEN', escapedUrl)
+      console.log('[Window Open Guard] 准备执行脚本，URL长度:', escapedUrl.length)
+      
+      mainWindow.webContents.executeJavaScript(scriptToExecute).then(() => {
+        console.log('[Window Open Guard] ✓ 脚本执行成功')
+      }).catch(err => {
+        console.log('[Window Open Guard] ✗ 执行失败:', err.message)
+      })
+    } catch (error) {
+      console.error('[Window Open Guard] ✗ 处理失败:', error.message)
+    }
     
     // 阻止打开新窗口
     return { action: 'deny' }
@@ -92,390 +134,38 @@ function createWindow() {
   // 监听所有 frame 的创建，用于在 iframe 中注入代码
   mainWindow.webContents.on('did-frame-navigate', (event, url, httpResponseCode, httpStatusText, isMainFrame, frameProcessId, frameRoutingId) => {
     if (!isMainFrame) {
-      console.log('[Electron Main] iframe 导航完成:', url)
+      console.log('[Iframe Inject] ========== iframe 导航完成 ==========')
+      console.log('[Iframe Inject] URL:', url)
+      console.log('[Iframe Inject] HTTP状态:', httpResponseCode, httpStatusText)
+      console.log('[Iframe Inject] PID:', frameProcessId, 'RoutingID:', frameRoutingId)
       
-      // 查找对应的 frame
-      const frame = mainWindow.webContents.mainFrame.framesInSubtree.find(
-        f => f.processId === frameProcessId && f.routingId === frameRoutingId
-      )
-      
-      if (frame) {
-        // 在 iframe 中注入代码
-        setTimeout(() => {
-          frame.executeJavaScript(`
-            (function() {
-              console.log('[Tab Hive iframe] 注入代码执行监听器');
-              
-              // ⚠️ 重要：在反检测脚本执行之前保存原始的window.parent引用
-              // 这样元素选择器可以使用它来发送消息到真正的父页面
-              const __originalParent = window.parent;
-              console.log('[Tab Hive iframe] 已保存原始window.parent引用');
-              
-              // ===========================================
-              // iframe反检测 - 让网站认为不在iframe中
-              // ===========================================
-              
-              console.log('[Tab Hive Anti-Detection] 开始应用反检测措施');
-              
-              // 方法1: 覆盖 window.top
-              try {
-                Object.defineProperty(window, 'top', {
-                  get: function() {
-                    return window.self;
-                  },
-                  configurable: false
-                });
-                console.log('[Tab Hive Anti-Detection] ✓ window.top 已重定向');
-              } catch (e) {
-                console.log('[Tab Hive Anti-Detection] ✗ window.top 覆盖失败:', e.message);
-              }
-              
-              // 方法2: 覆盖 window.parent
-              try {
-                Object.defineProperty(window, 'parent', {
-                  get: function() {
-                    return window.self;
-                  },
-                  configurable: false
-                });
-                console.log('[Tab Hive Anti-Detection] ✓ window.parent 已重定向');
-              } catch (e) {
-                console.log('[Tab Hive Anti-Detection] ✗ window.parent 覆盖失败:', e.message);
-              }
-              
-              // 方法3: 覆盖 window.frameElement
-              try {
-                Object.defineProperty(window, 'frameElement', {
-                  get: function() {
-                    return null;
-                  },
-                  configurable: false
-                });
-                console.log('[Tab Hive Anti-Detection] ✓ window.frameElement 已设置为 null');
-              } catch (e) {
-                console.log('[Tab Hive Anti-Detection] ✗ window.frameElement 覆盖失败:', e.message);
-              }
-              
-              // 方法4: 伪造 window.location.ancestorOrigins
-              try {
-                if (window.location.ancestorOrigins) {
-                  Object.defineProperty(window.location, 'ancestorOrigins', {
-                    get: function() {
-                      return {
-                        length: 0,
-                        item: function() { return null; },
-                        contains: function() { return false; }
-                      };
-                    }
-                  });
-                  console.log('[Tab Hive Anti-Detection] ✓ ancestorOrigins 已伪造');
-                }
-              } catch (e) {
-                console.log('[Tab Hive Anti-Detection] ✗ ancestorOrigins 覆盖失败:', e.message);
-              }
-              
-              console.log('[Tab Hive Anti-Detection] 反检测措施应用完成');
-              
-              // ===========================================
-              // window.open 拦截
-              // ===========================================
-              
-              // 保存原始的window.open
-              const originalOpen = window.open;
-              
-              // 重写window.open
-              window.open = function(url, target, features) {
-                console.log('[Tab Hive iframe] window.open被调用:', url, target);
-                
-                // 如果是_blank或新窗口，改为在当前页面打开
-                if (!target || target === '_blank' || target === '_new') {
-                  console.log('[Tab Hive iframe] 重定向到当前iframe:', url);
-                  window.location.href = url;
-                  return window;
-                }
-                
-                // 其他情况也在当前页面打开
-                window.location.href = url;
-                return window;
-              };
-              
-              // 添加 postMessage 监听器
-              window.addEventListener('message', function(e) {
-                const message = e.data;
-                
-                // 执行代码（旧的选择器功能）
-                if (message && message.type === 'exec-code') {
-                  console.log('[Tab Hive iframe] 收到代码执行请求');
-                  try {
-                    const result = eval(message.code);
-                    __originalParent.postMessage({
-                      type: 'exec-result',
-                      messageId: message.messageId,
-                      result: { success: true, result: result }
-                    }, '*');
-                  } catch (error) {
-                    console.error('[Tab Hive iframe] 代码执行失败:', error);
-                    __originalParent.postMessage({
-                      type: 'exec-result',
-                      messageId: message.messageId,
-                      result: { success: false, error: error.message }
-                    }, '*');
-                  }
-                }
-                
-                // 元素选择器消息（与Chrome扩展相同）
-                if (message && message.source === 'tab-hive') {
-                  if (message.action === 'startElementSelector') {
-                    console.log('[Tab Hive iframe] 启动元素选择器');
-                    try {
-                      window.__startElementSelector();
-                      __originalParent.postMessage({
-                        source: 'tab-hive-electron',
-                        action: 'elementSelectorStarted',
-                        requestId: message.requestId,
-                        success: true
-                      }, '*');
-                    } catch (error) {
-                      console.error('[Tab Hive iframe] 启动选择器失败:', error);
-                      __originalParent.postMessage({
-                        source: 'tab-hive-electron',
-                        action: 'elementSelectorStarted',
-                        requestId: message.requestId,
-                        success: false,
-                        error: error.message
-                      }, '*');
-                    }
-                  } else if (message.action === 'stopElementSelector') {
-                    console.log('[Tab Hive iframe] 停止元素选择器');
-                    try {
-                      window.__stopElementSelector();
-                      __originalParent.postMessage({
-                        source: 'tab-hive-electron',
-                        action: 'elementSelectorStopped',
-                        requestId: message.requestId,
-                        success: true
-                      }, '*');
-                    } catch (error) {
-                      console.error('[Tab Hive iframe] 停止选择器失败:', error);
-                    }
-                  }
-                }
-              });
-              
-              // 修改所有target="_blank"的链接
-              const modifyLinks = () => {
-                const links = document.querySelectorAll('a[target="_blank"]');
-                links.forEach(link => {
-                  link.setAttribute('target', '_self');
-                });
-              };
-              
-              // 立即执行
-              modifyLinks();
-              
-              // 监听DOM变化
-              if (document.body) {
-                const observer = new MutationObserver(modifyLinks);
-                observer.observe(document.body, {
-                  childList: true,
-                  subtree: true,
-                  attributes: true,
-                  attributeFilter: ['target']
-                });
-              }
-              
-              // ===========================================
-              // 元素选择器功能（与Chrome扩展相同）
-              // ===========================================
-              
-              let selectorOverlay = null;
-              let selectorHighlight = null;
-              let currentHoveredElement = null;
-              
-              // 生成CSS选择器
-              function generateCssSelector(element) {
-                try {
-                  if (element.id) return '#' + element.id;
-                  if (element.className && typeof element.className === 'string') {
-                    const classes = element.className.trim().split(/\\s+/).filter(c => c && !c.startsWith('tabhive-'));
-                    if (classes.length > 0) return element.tagName.toLowerCase() + '.' + classes[0];
-                  }
-                  const parent = element.parentElement;
-                  if (parent) {
-                    const siblings = Array.from(parent.children);
-                    const index = siblings.indexOf(element) + 1;
-                    return parent.tagName.toLowerCase() + ' > ' + element.tagName.toLowerCase() + ':nth-child(' + index + ')';
-                  }
-                  return element.tagName.toLowerCase();
-                } catch (error) {
-                  return element.tagName.toLowerCase();
-                }
-              }
-              
-              // 启动元素选择器
-              window.__startElementSelector = function() {
-                console.log('[Tab Hive iframe] 在iframe中启动元素选择器');
-                
-                // 注入样式
-                const styleId = 'tabhive-element-selector-styles';
-                if (!document.getElementById(styleId)) {
-                  const style = document.createElement('style');
-                  style.id = styleId;
-                  style.textContent = \`
-                    .tabhive-selector-overlay {
-                      position: fixed !important;
-                      top: 0 !important;
-                      left: 0 !important;
-                      right: 0 !important;
-                      bottom: 0 !important;
-                      z-index: 2147483646 !important;
-                      cursor: crosshair !important;
-                      background: rgba(0, 0, 0, 0.02) !important;
-                      pointer-events: none !important;
-                    }
-                    * {
-                      cursor: crosshair !important;
-                    }
-                    .tabhive-element-highlight {
-                      position: absolute !important;
-                      border: 2px solid #ff5c00 !important;
-                      background: rgba(255, 92, 0, 0.1) !important;
-                      pointer-events: none !important;
-                      z-index: 2147483647 !important;
-                      transition: all 0.1s ease-out !important;
-                      box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.3) !important;
-                    }
-                  \`;
-                  document.head.appendChild(style);
-                }
-                
-                // 创建覆盖层
-                selectorOverlay = document.createElement('div');
-                selectorOverlay.className = 'tabhive-selector-overlay';
-                document.body.appendChild(selectorOverlay);
-                
-                // 创建高亮元素
-                selectorHighlight = document.createElement('div');
-                selectorHighlight.className = 'tabhive-element-highlight';
-                selectorHighlight.style.display = 'none';
-                document.body.appendChild(selectorHighlight);
-                
-                // 鼠标悬停处理
-                const handleMouseOver = function(event) {
-                  const element = event.target;
-                  if (element === selectorOverlay || element === selectorHighlight ||
-                      element.classList.contains('tabhive-selector-overlay') ||
-                      element.classList.contains('tabhive-element-highlight')) return;
-                  if (element.tagName === 'HTML' || element.tagName === 'BODY') return;
-                  
-                  currentHoveredElement = element;
-                  const selector = generateCssSelector(element);
-                  const rect = element.getBoundingClientRect();
-                  const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
-                  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-                  
-                  selectorHighlight.style.top = (rect.top + scrollTop) + 'px';
-                  selectorHighlight.style.left = (rect.left + scrollLeft) + 'px';
-                  selectorHighlight.style.width = rect.width + 'px';
-                  selectorHighlight.style.height = rect.height + 'px';
-                  selectorHighlight.style.display = 'block';
-                  
-                  console.log('[Tab Hive iframe] 鼠标悬停:', element.tagName, selector);
-                  
-                  __originalParent.postMessage({
-                    source: 'tab-hive-electron',
-                    action: 'elementHovered',
-                    selector: selector
-                  }, '*');
-                  
-                  event.stopPropagation();
-                };
-                
-                // 点击处理
-                const handleClick = function(event) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  
-                  console.log('[Tab Hive iframe] 点击事件触发，当前悬停元素:', currentHoveredElement);
-                  
-                  if (currentHoveredElement) {
-                    const selector = generateCssSelector(currentHoveredElement);
-                    console.log('[Tab Hive iframe] 选中元素，选择器:', selector);
-                    
-                    __originalParent.postMessage({
-                      source: 'tab-hive-electron',
-                      action: 'elementSelected',
-                      selector: selector
-                    }, '*');
-                    console.log('[Tab Hive iframe] 已发送elementSelected消息到父页面');
-                    
-                    window.__stopElementSelector();
-                  } else {
-                    console.warn('[Tab Hive iframe] 点击时没有悬停的元素，忽略点击');
-                  }
-                };
-                
-                // ESC键处理
-                const handleKeyDown = function(event) {
-                  if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    __originalParent.postMessage({
-                      source: 'tab-hive-electron',
-                      action: 'elementSelectorCancelled'
-                    }, '*');
-                    window.__stopElementSelector();
-                  }
-                };
-                
-                // 添加事件监听
-                document.addEventListener('mouseover', handleMouseOver, {capture: true, passive: true});
-                document.addEventListener('click', handleClick, {capture: true});
-                document.addEventListener('keydown', handleKeyDown, {capture: true});
-                
-                // 保存处理器引用以便后续移除
-                window.__selectorHandlers = { handleMouseOver, handleClick, handleKeyDown };
-                
-                console.log('[Tab Hive iframe] 元素选择器已启动');
-              };
-              
-              // 停止元素选择器
-              window.__stopElementSelector = function() {
-                console.log('[Tab Hive iframe] 停止元素选择器');
-                
-                // 移除事件监听器
-                if (window.__selectorHandlers) {
-                  const {handleMouseOver, handleClick, handleKeyDown} = window.__selectorHandlers;
-                  document.removeEventListener('mouseover', handleMouseOver, {capture: true, passive: true});
-                  document.removeEventListener('click', handleClick, {capture: true});
-                  document.removeEventListener('keydown', handleKeyDown, {capture: true});
-                  window.__selectorHandlers = null;
-                }
-                
-                // 隐藏并移除高亮
-                if (selectorHighlight) {
-                  selectorHighlight.style.display = 'none';
-                  if (selectorHighlight.parentNode) selectorHighlight.parentNode.removeChild(selectorHighlight);
-                }
-                if (selectorOverlay && selectorOverlay.parentNode) selectorOverlay.parentNode.removeChild(selectorOverlay);
-                
-                // 移除样式
-                const style = document.getElementById('tabhive-element-selector-styles');
-                if (style && style.parentNode) style.parentNode.removeChild(style);
-                
-                selectorOverlay = null;
-                selectorHighlight = null;
-                currentHoveredElement = null;
-                
-                console.log('[Tab Hive iframe] 元素选择器已停止，高亮已清除');
-              };
-              
-              console.log('[Tab Hive iframe] 代码注入完成 ✓');
-            })();
-          `).catch(err => {
-            console.error('[Electron Main] iframe 代码注入失败:', err.message)
-          })
-        }, 100)
+      try {
+        // 查找对应的 frame
+        console.log('[Iframe Inject] 查找对应的frame...')
+        const frame = mainWindow.webContents.mainFrame.framesInSubtree.find(
+          f => f.processId === frameProcessId && f.routingId === frameRoutingId
+        )
+        
+        if (frame) {
+          console.log('[Iframe Inject] ✓ 找到frame，准备注入代码')
+          console.log('[Iframe Inject] 注入脚本大小:', global.iframeInjectScript.length, 'bytes')
+          
+          // 在 iframe 中注入代码
+          setTimeout(() => {
+            console.log('[Iframe Inject] 开始执行注入...')
+            frame.executeJavaScript(global.iframeInjectScript).then(() => {
+              console.log('[Iframe Inject] ✓ 代码注入成功')
+            }).catch(err => {
+              console.error('[Iframe Inject] ✗ iframe代码注入失败:', err.message)
+              console.error('[Iframe Inject] 错误堆栈:', err.stack)
+            })
+          }, 100)
+        } else {
+          console.warn('[Iframe Inject] ✗ 未找到对应的frame')
+        }
+      } catch (error) {
+        console.error('[Iframe Inject] ✗ 处理iframe导航失败:', error.message)
+        console.error('[Iframe Inject] 错误堆栈:', error.stack)
       }
     }
   })
@@ -485,6 +175,8 @@ function createWindow() {
     console.log('[Electron Main] 页面加载完成')
   })
 
+  console.log('[Electron Main] 设置CORS和Cookie处理')
+  
   // 存储请求的 Origin，用于 CORS 响应
   const requestOrigins = new Map()
 
@@ -492,13 +184,14 @@ function createWindow() {
   mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
     { urls: ['*://*/*'] },
     async (details, callback) => {
+      // console.log('[CORS] onBeforeSendHeaders:', details.url.substring(0, 100))
       const requestHeaders = { ...details.requestHeaders }
 
       // 存储请求的 Origin 头，用于后续的 CORS 响应
       if (requestHeaders['Origin'] || requestHeaders['origin']) {
         const origin = requestHeaders['Origin'] || requestHeaders['origin']
         requestOrigins.set(details.url, origin)
-        console.log(`[CORS] 存储请求 Origin: ${origin} for ${details.url}`)
+        // console.log(`[CORS] 存储请求 Origin: ${origin} for ${details.url}`)
         
         // 5秒后清理，避免内存泄漏
         setTimeout(() => {
@@ -517,7 +210,7 @@ function createWindow() {
         if (cookies.length > 0) {
           const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ')
           requestHeaders['Cookie'] = cookieString
-          console.log(`[Cookie] 为 ${url.hostname} 添加 Cookie:`, cookieString.substring(0, 100))
+          // console.log(`[Cookie] 为 ${url.hostname} 添加 Cookie:`, cookieString.substring(0, 100))
         }
       } catch (e) {
         // 忽略错误，继续请求
@@ -544,7 +237,7 @@ function createWindow() {
       
       if (storedOrigin) {
         // 有明确的请求 Origin，使用它并允许凭证
-        console.log(`[CORS] 使用存储的 Origin: ${storedOrigin}`)
+        // console.log(`[CORS] 使用存储的 Origin: ${storedOrigin}`)
         responseHeaders['Access-Control-Allow-Origin'] = [storedOrigin]
         responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
         responseHeaders['Access-Control-Allow-Headers'] = ['*']
@@ -558,7 +251,7 @@ function createWindow() {
           const urlObj = new URL(details.url)
           const requestOrigin = `${urlObj.protocol}//${urlObj.host}`
           
-          console.log(`[CORS] 使用请求URL的 origin: ${requestOrigin}`)
+          // console.log(`[CORS] 使用请求URL的 origin: ${requestOrigin}`)
           responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin]
           responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
           responseHeaders['Access-Control-Allow-Headers'] = ['*']
@@ -566,7 +259,7 @@ function createWindow() {
           responseHeaders['Access-Control-Expose-Headers'] = ['*']
         } catch (e) {
           // 如果无法解析 URL，使用宽松设置（但不带凭证以避免冲突）
-          console.log(`[CORS] URL 解析失败，使用通配符`)
+          // console.log(`[CORS] URL 解析失败，使用通配符`)
           responseHeaders['Access-Control-Allow-Origin'] = ['*']
           responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
           responseHeaders['Access-Control-Allow-Headers'] = ['*']
@@ -606,133 +299,110 @@ function createWindow() {
   )
 
   mainWindow.once('ready-to-show', () => {
+    console.log('[Electron Main] 窗口准备完成，显示窗口')
     mainWindow.show()
   })
 
   mainWindow.on('closed', () => {
+    console.log('[Electron Main] 窗口已关闭')
     mainWindow = null
   })
+  
+  console.log('[Electron Main] ========== 主窗口创建流程完成 ==========')
 }
 
+console.log('[Electron Main] 等待应用就绪...')
+
 app.whenReady().then(() => {
+  console.log('[Electron Main] ========== 应用已就绪 ==========')
   createWindow()
 
   app.on('activate', () => {
+    console.log('[Electron Main] activate事件触发')
     if (BrowserWindow.getAllWindows().length === 0) {
+      console.log('[Electron Main] 没有窗口，创建新窗口')
       createWindow()
     }
   })
+  
+  console.log('[Electron Main] 事件监听器已设置')
 })
 
 // 处理在iframe中执行JavaScript的请求
 ipcMain.handle('execute-in-iframe', async (event, iframeId, code) => {
+  console.log('[IPC Execute] ========== 收到execute-in-iframe请求 ==========')
+  console.log('[IPC Execute] iframe ID:', iframeId)
+  console.log('[IPC Execute] 代码长度:', code.length, 'bytes')
+  
   try {
-    console.log('[Electron Main] 收到execute-in-iframe请求:', iframeId)
-
     if (!mainWindow || mainWindow.isDestroyed()) {
-      console.error('[Electron Main] mainWindow不可用')
+      console.error('[IPC Execute] ✗ mainWindow不可用')
       return { success: false, error: 'Window not available' }
     }
 
+    console.log('[IPC Execute] mainWindow状态: OK')
+
     // 首先尝试使用 frame API 直接执行
     try {
-      console.log('[Electron Main] 尝试使用 frame API')
+      console.log('[IPC Execute] 方法1: 尝试使用 frame API 直接执行')
       
       // 遍历所有 frames 查找目标 iframe
       const frames = mainWindow.webContents.mainFrame.framesInSubtree
-      console.log('[Electron Main] 找到', frames.length, '个 frames')
+      console.log('[IPC Execute] 找到', frames.length, '个 frames，开始遍历...')
       
+      let frameIndex = 0
       for (const frame of frames) {
+        frameIndex++
+        console.log('[IPC Execute] 检查frame', frameIndex + '/' + frames.length)
+        
         try {
           // 检查是否是目标 iframe
-          const frameIframeId = await frame.executeJavaScript(`
-            (function() {
-              if (window.frameElement) {
-                return window.frameElement.getAttribute('data-iframe-id');
-              }
-              return null;
-            })()
-          `).catch(() => null)
+          console.log('[IPC Execute] 执行check-iframe-id脚本...')
+          const frameIframeId = await frame.executeJavaScript(global.checkIframeIdScript).catch((err) => {
+            console.log('[IPC Execute] check失败:', err.message)
+            return null
+          })
+          
+          console.log('[IPC Execute] frame', frameIndex, '的ID:', frameIframeId)
           
           if (frameIframeId === iframeId) {
-            console.log('[Electron Main] 找到目标 iframe，直接执行代码')
+            console.log('[IPC Execute] ✓ 找到目标iframe (frame', frameIndex + ')，直接执行代码')
             const result = await frame.executeJavaScript(code)
-            console.log('[Electron Main] 代码执行成功')
+            console.log('[IPC Execute] ✓ 代码执行成功，结果:', result)
             return { success: true, result: result }
           }
         } catch (e) {
           // 忽略单个 frame 的错误，继续查找
-          console.log('[Electron Main] frame 检查失败:', e.message)
+          console.log('[IPC Execute] frame', frameIndex, '检查失败:', e.message)
         }
       }
       
-      console.log('[Electron Main] 未通过 frame API 找到目标 iframe')
+      console.log('[IPC Execute] ✗ 未通过 frame API 找到目标 iframe')
     } catch (e) {
-      console.error('[Electron Main] frame API 失败:', e.message)
+      console.error('[IPC Execute] ✗ frame API 方法失败:', e.message)
+      console.error('[IPC Execute] 错误堆栈:', e.stack)
     }
 
     // 如果 frame API 失败，使用 postMessage 方法
-    console.log('[Electron Main] 使用 postMessage 后备方法')
+    console.log('[IPC Execute] 方法2: 使用 postMessage 后备方法')
     
-    const result = await mainWindow.webContents.executeJavaScript(`
-      (function() {
-        return new Promise((resolve) => {
-          try {
-            console.log('[Electron Renderer] 查找iframe:', '${iframeId}');
-            const iframe = document.querySelector('iframe[data-iframe-id="${iframeId}"]');
-            
-            if (!iframe) {
-              console.error('[Electron Renderer] 未找到iframe');
-              resolve({ success: false, error: 'Iframe not found' });
-              return;
-            }
-            
-            if (!iframe.contentWindow) {
-              console.error('[Electron Renderer] iframe.contentWindow不可用');
-              resolve({ success: false, error: 'Iframe contentWindow not available' });
-              return;
-            }
-            
-            console.log('[Electron Renderer] 使用 postMessage 发送代码...');
-            
-            // 使用 postMessage 与 iframe 通信
-            const messageId = 'exec-' + Date.now() + '-' + Math.random();
-            
-            const handleMessage = (e) => {
-              if (e.data && e.data.type === 'exec-result' && e.data.messageId === messageId) {
-                window.removeEventListener('message', handleMessage);
-                resolve(e.data.result);
-              }
-            };
-            
-            window.addEventListener('message', handleMessage);
-            
-            // 5秒超时
-            setTimeout(() => {
-              window.removeEventListener('message', handleMessage);
-              resolve({ success: false, error: 'Execution timeout' });
-            }, 5000);
-            
-            // 发送执行请求
-            iframe.contentWindow.postMessage({
-              type: 'exec-code',
-              messageId: messageId,
-              code: \`${code.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`
-            }, '*');
-            
-          } catch (e) {
-            console.error('[Electron Renderer] 执行失败:', e.message);
-            resolve({ success: false, error: e.message });
-          }
-        });
-      })()
-    `)
+    console.log('[IPC Execute] 准备脚本替换...')
+    const scriptToExecute = global.executeInIframeScript
+      .replace('IFRAME_ID', iframeId)
+      .replace('CODE_TO_EXECUTE', code.replace(/`/g, '\\`').replace(/\$/g, '\\$'))
+    
+    console.log('[IPC Execute] 脚本准备完成，长度:', scriptToExecute.length, 'bytes')
+    console.log('[IPC Execute] 开始执行postMessage脚本...')
+    
+    const result = await mainWindow.webContents.executeJavaScript(scriptToExecute)
 
-    console.log('[Electron Main] 执行结果:', result)
+    console.log('[IPC Execute] ✓ postMessage方法执行完成')
+    console.log('[IPC Execute] 结果:', result)
     return result
     
   } catch (error) {
-    console.error('[Electron Main] IPC处理错误:', error.message)
+    console.error('[IPC Execute] ✗ IPC处理错误:', error.message)
+    console.error('[IPC Execute] 错误堆栈:', error.stack)
     return { success: false, error: error.message }
   }
 })
