@@ -170,6 +170,30 @@ window.addEventListener('message', async (event) => {
           error: error.message
         }, '*')
       }
+    } else if (message.action === 'navigateElement') {
+      // 导航到父/子元素
+      console.log('[Tab Hive Extension] 导航元素:', message.direction)
+      try {
+        navigateToElement(message.direction)
+      } catch (error) {
+        console.error('[Tab Hive Extension] 元素导航失败:', error)
+      }
+    } else if (message.action === 'restartElementSelector') {
+      // 重新启动元素选择器（完全清空并重新开始）
+      console.log('[Tab Hive Extension] 重新启动元素选择器')
+      try {
+        restartElementSelectorInIframe()
+      } catch (error) {
+        console.error('[Tab Hive Extension] 重新启动选择器失败:', error)
+      }
+    } else if (message.action === 'cleanupElementSelector') {
+      // 完全清理选择器（移除所有高亮和状态）
+      console.log('[Tab Hive Extension] 完全清理选择器')
+      try {
+        completeCleanupInIframe()
+      } catch (error) {
+        console.error('[Tab Hive Extension] 完全清理失败:', error)
+      }
     }
   }
 });
@@ -427,31 +451,73 @@ function stopElementSelectorInIframe() {
   document.removeEventListener('click', handleSelectorClick, {capture: true});
   document.removeEventListener('keydown', handleSelectorKeyDown, {capture: true});
   
-  // 隐藏并移除高亮元素
-  if (selectorHighlight) {
-    selectorHighlight.style.display = 'none';
-    if (selectorHighlight.parentNode) {
-      selectorHighlight.parentNode.removeChild(selectorHighlight);
-    }
-  }
+  // 保留高亮显示但移除事件
+  // 不移除 selectorHighlight，这样用户还能看到选中的元素
   
   // 移除覆盖层
   if (selectorOverlay && selectorOverlay.parentNode) {
     selectorOverlay.parentNode.removeChild(selectorOverlay);
   }
   
-  // 移除样式
+  // 移除样式中的 cursor: crosshair
   const style = document.getElementById('tabhive-element-selector-styles');
-  if (style && style.parentNode) {
-    style.parentNode.removeChild(style);
+  if (style) {
+    style.textContent = `
+      .tabhive-element-highlight {
+        position: absolute !important;
+        border: 2px solid #ff5c00 !important;
+        background: rgba(255, 92, 0, 0.1) !important;
+        pointer-events: none !important;
+        z-index: 2147483647 !important;
+        transition: all 0.1s ease-out !important;
+        box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.3) !important;
+      }
+    `;
   }
   
-  // 重置变量
+  // 重置覆盖层变量，但保留当前元素引用用于导航
   selectorOverlay = null;
-  selectorHighlight = null;
-  currentHoveredElement = null;
+  // 不清空 currentHoveredElement，这样导航功能还能用
+  // 不清空 selectorHighlight，保持高亮显示
   
-  console.log('[Tab Hive] 元素选择器已停止，高亮已清除');
+  console.log('[Tab Hive] 元素选择器已停止交互，但保留高亮和当前元素');
+}
+
+/**
+ * 获取元素的详细信息
+ */
+function getElementInfo(element) {
+  try {
+    const computedStyle = window.getComputedStyle(element);
+    return {
+      tagName: element.tagName.toLowerCase(),
+      id: element.id || '',
+      className: element.className || '',
+      width: Math.round(element.offsetWidth),
+      height: Math.round(element.offsetHeight),
+      display: computedStyle.display,
+      position: computedStyle.position,
+      zIndex: computedStyle.zIndex,
+      // 获取文本内容（限制长度）
+      textContent: element.textContent ? element.textContent.substring(0, 100) : '',
+      // 获取常用属性
+      attributes: {
+        href: element.getAttribute('href'),
+        src: element.getAttribute('src'),
+        alt: element.getAttribute('alt'),
+        title: element.getAttribute('title'),
+        type: element.getAttribute('type'),
+        value: element.getAttribute('value')
+      }
+    };
+  } catch (error) {
+    console.error('[Tab Hive] 获取元素信息失败:', error);
+    return {
+      tagName: element.tagName.toLowerCase(),
+      width: 0,
+      height: 0
+    };
+  }
 }
 
 /**
@@ -488,12 +554,22 @@ function handleSelectorMouseOver(event) {
   selectorHighlight.style.height = rect.height + 'px';
   selectorHighlight.style.display = 'block';
   
-  // 发送选择器到父页面
+  // 获取元素信息
+  const elementInfo = getElementInfo(element);
+  
+  // 发送选择器和详细信息到父页面
   try {
     window.parent.postMessage({
       source: 'tab-hive-extension',
       action: 'elementHovered',
-      selector: selector
+      selector: selector,
+      rect: {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      },
+      elementInfo: elementInfo
     }, '*');
     console.log('[Tab Hive] 已发送hover消息到父页面');
   } catch (error) {
@@ -514,15 +590,24 @@ function handleSelectorClick(event) {
   
   if (currentHoveredElement) {
     const selector = generateCssSelector(currentHoveredElement);
+    const rect = currentHoveredElement.getBoundingClientRect();
+    const elementInfo = getElementInfo(currentHoveredElement);
     
     console.log('[Tab Hive] 选中元素:', selector);
     
-    // 发送选择结果到父页面
+    // 发送选择结果到父页面，包含矩形和详细信息
     try {
       window.parent.postMessage({
         source: 'tab-hive-extension',
         action: 'elementSelected',
-        selector: selector
+        selector: selector,
+        rect: {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height
+        },
+        elementInfo: elementInfo
       }, '*');
       console.log('[Tab Hive] 已发送选择消息到父页面');
     } catch (error) {
@@ -552,6 +637,164 @@ function handleSelectorKeyDown(event) {
     
     // 停止选择器
     stopElementSelectorInIframe();
+  }
+}
+
+/**
+ * 重新启动元素选择器（完全清空并重新开始）
+ */
+function restartElementSelectorInIframe() {
+  console.log('[Tab Hive] 重新启动元素选择器，完全清理旧状态');
+  
+  // 移除事件监听器（如果存在）
+  document.removeEventListener('mouseover', handleSelectorMouseOver, {capture: true, passive: true});
+  document.removeEventListener('click', handleSelectorClick, {capture: true});
+  document.removeEventListener('keydown', handleSelectorKeyDown, {capture: true});
+  
+  // 完全移除高亮元素
+  if (selectorHighlight) {
+    console.log('[Tab Hive] 移除旧的高亮框');
+    if (selectorHighlight.parentNode) {
+      selectorHighlight.parentNode.removeChild(selectorHighlight);
+    }
+    selectorHighlight = null;
+  }
+  
+  // 移除覆盖层
+  if (selectorOverlay) {
+    if (selectorOverlay.parentNode) {
+      selectorOverlay.parentNode.removeChild(selectorOverlay);
+    }
+    selectorOverlay = null;
+  }
+  
+  // 移除样式
+  const style = document.getElementById('tabhive-element-selector-styles');
+  if (style) {
+    if (style.parentNode) {
+      style.parentNode.removeChild(style);
+    }
+  }
+  
+  // 清空当前元素
+  currentHoveredElement = null;
+  
+  console.log('[Tab Hive] 清理完成，准备重新启动');
+  
+  // 短暂延迟后重新启动
+  setTimeout(() => {
+    startElementSelectorInIframe();
+  }, 100);
+}
+
+/**
+ * 完全清理选择器（移除所有高亮和状态）
+ */
+function completeCleanupInIframe() {
+  console.log('[Tab Hive] 完全清理选择器（移除所有高亮）');
+  
+  // 移除事件监听器
+  document.removeEventListener('mouseover', handleSelectorMouseOver, {capture: true, passive: true});
+  document.removeEventListener('click', handleSelectorClick, {capture: true});
+  document.removeEventListener('keydown', handleSelectorKeyDown, {capture: true});
+  
+  // 完全移除高亮元素
+  if (selectorHighlight) {
+    if (selectorHighlight.parentNode) {
+      selectorHighlight.parentNode.removeChild(selectorHighlight);
+    }
+    selectorHighlight = null;
+  }
+  
+  // 移除覆盖层
+  if (selectorOverlay) {
+    if (selectorOverlay.parentNode) {
+      selectorOverlay.parentNode.removeChild(selectorOverlay);
+    }
+    selectorOverlay = null;
+  }
+  
+  // 移除样式
+  const style = document.getElementById('tabhive-element-selector-styles');
+  if (style) {
+    if (style.parentNode) {
+      style.parentNode.removeChild(style);
+    }
+  }
+  
+  // 清空当前元素
+  currentHoveredElement = null;
+  
+  console.log('[Tab Hive] 完全清理完成');
+}
+
+/**
+ * 导航到父元素或子元素
+ */
+function navigateToElement(direction) {
+  if (!currentHoveredElement) {
+    console.warn('[Tab Hive] 没有当前元素可导航');
+    return;
+  }
+  
+  let newElement = null;
+  
+  if (direction === 'parent') {
+    // 导航到父元素
+    newElement = currentHoveredElement.parentElement;
+    if (!newElement || newElement.tagName === 'BODY' || newElement.tagName === 'HTML') {
+      console.warn('[Tab Hive] 已到达顶层元素');
+      return;
+    }
+  } else if (direction === 'child') {
+    // 导航到第一个非脚本/样式的子元素
+    const children = Array.from(currentHoveredElement.children);
+    newElement = children.find(child => 
+      !['SCRIPT', 'STYLE', 'LINK', 'META'].includes(child.tagName)
+    );
+    if (!newElement) {
+      console.warn('[Tab Hive] 没有可用的子元素');
+      return;
+    }
+  }
+  
+  if (newElement) {
+    currentHoveredElement = newElement;
+    const selector = generateCssSelector(newElement);
+    const rect = newElement.getBoundingClientRect();
+    const elementInfo = getElementInfo(newElement);
+    
+    console.log('[Tab Hive] 导航到新元素:', selector);
+    
+    // 更新高亮位置
+    const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    
+    if (selectorHighlight) {
+      selectorHighlight.style.top = (rect.top + scrollTop) + 'px';
+      selectorHighlight.style.left = (rect.left + scrollLeft) + 'px';
+      selectorHighlight.style.width = rect.width + 'px';
+      selectorHighlight.style.height = rect.height + 'px';
+      selectorHighlight.style.display = 'block';
+    }
+    
+    // 发送更新到父页面
+    try {
+      window.parent.postMessage({
+        source: 'tab-hive-extension',
+        action: 'elementHovered',
+        selector: selector,
+        rect: {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height
+        },
+        elementInfo: elementInfo
+      }, '*');
+    } catch (error) {
+      console.error('[Tab Hive] 发送导航消息失败:', error);
+    }
   }
 }
 

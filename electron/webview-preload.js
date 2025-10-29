@@ -53,6 +53,21 @@ ipcRenderer.on('stop-element-selector', (event, data) => {
   stopElementSelector()
 })
 
+ipcRenderer.on('navigate-element', (event, data) => {
+  console.log('[Webview Preload] 收到导航元素请求:', data.direction)
+  navigateToElement(data.direction)
+})
+
+ipcRenderer.on('restart-element-selector', (event, data) => {
+  console.log('[Webview Preload] 收到重新启动选择器请求')
+  restartElementSelector()
+})
+
+ipcRenderer.on('cleanup-element-selector', (event, data) => {
+  console.log('[Webview Preload] 收到完全清理选择器请求')
+  completeCleanupSelector()
+})
+
 // 元素选择器状态
 let isSelectingElement = false
 let hoveredElement = null
@@ -96,16 +111,14 @@ function stopElementSelector() {
   document.removeEventListener('click', handleClick, true)
   document.removeEventListener('keydown', handleKeyDown, true)
   
-  // 移除覆盖层
-  if (overlayDiv && overlayDiv.parentNode) {
-    overlayDiv.parentNode.removeChild(overlayDiv)
-    overlayDiv = null
-  }
+  // 保留覆盖层的高亮显示，但移除交互
+  // overlayDiv 保留，这样用户还能看到选中的元素
   
   // 恢复页面滚动
   document.body.style.overflow = ''
   
-  hoveredElement = null
+  // 不清空 hoveredElement，这样导航功能还能用
+  console.log('[Webview Preload] 元素选择器已停止交互，但保留高亮和当前元素')
 }
 
 /**
@@ -123,6 +136,43 @@ function createOverlay() {
     transition: all 0.1s ease;
   `
   document.body.appendChild(overlayDiv)
+}
+
+/**
+ * 获取元素的详细信息
+ */
+function getElementInfo(element) {
+  try {
+    const computedStyle = window.getComputedStyle(element)
+    return {
+      tagName: element.tagName.toLowerCase(),
+      id: element.id || '',
+      className: element.className || '',
+      width: Math.round(element.offsetWidth),
+      height: Math.round(element.offsetHeight),
+      display: computedStyle.display,
+      position: computedStyle.position,
+      zIndex: computedStyle.zIndex,
+      // 获取文本内容（限制长度）
+      textContent: element.textContent ? element.textContent.substring(0, 100) : '',
+      // 获取常用属性
+      attributes: {
+        href: element.getAttribute('href'),
+        src: element.getAttribute('src'),
+        alt: element.getAttribute('alt'),
+        title: element.getAttribute('title'),
+        type: element.getAttribute('type'),
+        value: element.getAttribute('value')
+      }
+    }
+  } catch (error) {
+    console.error('[Webview Preload] 获取元素信息失败:', error)
+    return {
+      tagName: element.tagName.toLowerCase(),
+      width: 0,
+      height: 0
+    }
+  }
 }
 
 /**
@@ -149,8 +199,20 @@ function handleMouseMove(event) {
   // 生成选择器
   const selector = generateSelector(target)
   
-  // 发送悬停事件到宿主
-  ipcRenderer.sendToHost('element-selector-hover', { selector })
+  // 获取元素信息
+  const elementInfo = getElementInfo(target)
+  
+  // 发送悬停事件到宿主，包含矩形和详细信息
+  ipcRenderer.sendToHost('element-selector-hover', { 
+    selector,
+    rect: {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height
+    },
+    elementInfo
+  })
 }
 
 /**
@@ -164,10 +226,22 @@ function handleClick(event) {
   
   if (hoveredElement) {
     const selector = generateSelector(hoveredElement)
+    const rect = hoveredElement.getBoundingClientRect()
+    const elementInfo = getElementInfo(hoveredElement)
+    
     console.log('[Webview Preload] 元素已选中:', selector)
     
-    // 发送选中事件到宿主
-    ipcRenderer.sendToHost('element-selector-select', { selector })
+    // 发送选中事件到宿主，包含矩形和详细信息
+    ipcRenderer.sendToHost('element-selector-select', { 
+      selector,
+      rect: {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      },
+      elementInfo
+    })
     
     // 停止选择器
     stopElementSelector()
@@ -191,6 +265,130 @@ function handleKeyDown(event) {
     
     // 停止选择器
     stopElementSelector()
+  }
+}
+
+/**
+ * 重新启动元素选择器（完全清空并重新开始）
+ */
+function restartElementSelector() {
+  console.log('[Webview Preload] 重新启动元素选择器，完全清理旧状态')
+  
+  // 移除事件监听器（无论状态如何都尝试移除）
+  document.removeEventListener('mousemove', handleMouseMove, true)
+  document.removeEventListener('click', handleClick, true)
+  document.removeEventListener('keydown', handleKeyDown, true)
+  
+  // 完全移除覆盖层
+  if (overlayDiv) {
+    console.log('[Webview Preload] 移除旧的高亮框')
+    if (overlayDiv.parentNode) {
+      overlayDiv.parentNode.removeChild(overlayDiv)
+    }
+    overlayDiv = null
+  }
+  
+  // 恢复页面滚动
+  document.body.style.overflow = ''
+  
+  // 清空当前元素和状态
+  hoveredElement = null
+  isSelectingElement = false
+  
+  console.log('[Webview Preload] 清理完成，准备重新启动')
+  
+  // 短暂延迟后重新启动
+  setTimeout(() => {
+    startElementSelector()
+  }, 100)
+}
+
+/**
+ * 完全清理选择器（移除所有高亮和状态）
+ */
+function completeCleanupSelector() {
+  console.log('[Webview Preload] 完全清理选择器（移除所有高亮）')
+  
+  // 移除事件监听器
+  document.removeEventListener('mousemove', handleMouseMove, true)
+  document.removeEventListener('click', handleClick, true)
+  document.removeEventListener('keydown', handleKeyDown, true)
+  
+  // 完全移除覆盖层
+  if (overlayDiv) {
+    if (overlayDiv.parentNode) {
+      overlayDiv.parentNode.removeChild(overlayDiv)
+    }
+    overlayDiv = null
+  }
+  
+  // 恢复页面滚动
+  document.body.style.overflow = ''
+  
+  // 清空当前元素和状态
+  hoveredElement = null
+  isSelectingElement = false
+  
+  console.log('[Webview Preload] 完全清理完成')
+}
+
+/**
+ * 导航到父元素或子元素
+ */
+function navigateToElement(direction) {
+  if (!hoveredElement) {
+    console.warn('[Webview Preload] 没有当前元素可导航')
+    return
+  }
+  
+  let newElement = null
+  
+  if (direction === 'parent') {
+    // 导航到父元素
+    newElement = hoveredElement.parentElement
+    if (!newElement || newElement.tagName === 'BODY' || newElement.tagName === 'HTML') {
+      console.warn('[Webview Preload] 已到达顶层元素')
+      return
+    }
+  } else if (direction === 'child') {
+    // 导航到第一个非脚本/样式的子元素
+    const children = Array.from(hoveredElement.children)
+    newElement = children.find(child => 
+      !['SCRIPT', 'STYLE', 'LINK', 'META'].includes(child.tagName)
+    )
+    if (!newElement) {
+      console.warn('[Webview Preload] 没有可用的子元素')
+      return
+    }
+  }
+  
+  if (newElement) {
+    hoveredElement = newElement
+    const selector = generateSelector(newElement)
+    const rect = newElement.getBoundingClientRect()
+    const elementInfo = getElementInfo(newElement)
+    
+    console.log('[Webview Preload] 导航到新元素:', selector)
+    
+    // 更新覆盖层位置
+    if (overlayDiv) {
+      overlayDiv.style.left = rect.left + window.scrollX + 'px'
+      overlayDiv.style.top = rect.top + window.scrollY + 'px'
+      overlayDiv.style.width = rect.width + 'px'
+      overlayDiv.style.height = rect.height + 'px'
+    }
+    
+    // 发送更新事件到宿主
+    ipcRenderer.sendToHost('element-selector-hover', { 
+      selector,
+      rect: {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      },
+      elementInfo
+    })
   }
 }
 
