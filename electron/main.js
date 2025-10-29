@@ -4,12 +4,7 @@ const path = require('path')
 console.log('[Electron Main] ========== Tab Hive 启动 (Webview 架构) ==========')
 
 // 设置 User-Agent
-app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36'
-
-// 禁用 CORS 和安全策略
-app.commandLine.appendSwitch('disable-web-security')
-app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
-app.commandLine.appendSwitch('disable-site-isolation-trials')
+app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 (KHTML, like Gecko) Safari/537.36'
 
 let mainWindow
 
@@ -55,113 +50,6 @@ function createWindow() {
   }
 
   console.log('[Electron Main] ========== 设置 CORS 和 Cookie 处理 ==========')
-
-  // 存储请求的 Origin
-  const requestOrigins = new Map()
-
-  // 禁用所有 CORS 限制,并转发 Cookie
-  mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
-    { urls: ['*://*/*'] },
-    async (details, callback) => {
-      const requestHeaders = { ...details.requestHeaders }
-
-      // 存储请求的 Origin 头
-      if (requestHeaders['Origin'] || requestHeaders['origin']) {
-        const origin = requestHeaders['Origin'] || requestHeaders['origin']
-        requestOrigins.set(details.url, origin)
-
-        // 5秒后清理
-        setTimeout(() => {
-          requestOrigins.delete(details.url)
-        }, 5000)
-      }
-
-      // 添加 Cookie
-      try {
-        const url = new URL(details.url)
-        const cookies = await mainWindow.webContents.session.cookies.get({
-          domain: url.hostname
-        })
-
-        if (cookies.length > 0) {
-          const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ')
-          requestHeaders['Cookie'] = cookieString
-        }
-      } catch (e) {
-        // 忽略错误
-      }
-
-      callback({ requestHeaders })
-    }
-  )
-
-  mainWindow.webContents.session.webRequest.onHeadersReceived(
-    { urls: ['*://*/*'] },
-    (details, callback) => {
-      const responseHeaders = { ...details.responseHeaders }
-
-      // 移除阻止 iframe/webview 加载的 headers
-      delete responseHeaders['x-frame-options']
-      delete responseHeaders['X-Frame-Options']
-      delete responseHeaders['content-security-policy']
-      delete responseHeaders['Content-Security-Policy']
-
-      // 处理 CORS 头
-      const storedOrigin = requestOrigins.get(details.url)
-
-      if (storedOrigin) {
-        responseHeaders['Access-Control-Allow-Origin'] = [storedOrigin]
-        responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
-        responseHeaders['Access-Control-Allow-Headers'] = ['*']
-        responseHeaders['Access-Control-Allow-Credentials'] = ['true']
-        responseHeaders['Access-Control-Expose-Headers'] = ['*']
-        responseHeaders['Vary'] = ['Origin']
-      } else {
-        try {
-          const urlObj = new URL(details.url)
-          const requestOrigin = `${urlObj.protocol}//${urlObj.host}`
-
-          responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin]
-          responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
-          responseHeaders['Access-Control-Allow-Headers'] = ['*']
-          responseHeaders['Access-Control-Allow-Credentials'] = ['true']
-          responseHeaders['Access-Control-Expose-Headers'] = ['*']
-        } catch (e) {
-          responseHeaders['Access-Control-Allow-Origin'] = ['*']
-          responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
-          responseHeaders['Access-Control-Allow-Headers'] = ['*']
-        }
-      }
-
-      // 修改 Set-Cookie 的 SameSite 属性
-      if (responseHeaders['set-cookie']) {
-        responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(cookie => {
-          let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
-          if (!modifiedCookie.includes('SameSite=None')) {
-            modifiedCookie += '; SameSite=None'
-          }
-          if (!modifiedCookie.includes('Secure')) {
-            modifiedCookie += '; Secure'
-          }
-          return modifiedCookie
-        })
-      }
-      if (responseHeaders['Set-Cookie']) {
-        responseHeaders['Set-Cookie'] = responseHeaders['Set-Cookie'].map(cookie => {
-          let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
-          if (!modifiedCookie.includes('SameSite=None')) {
-            modifiedCookie += '; SameSite=None'
-          }
-          if (!modifiedCookie.includes('Secure')) {
-            modifiedCookie += '; Secure'
-          }
-          return modifiedCookie
-        })
-      }
-
-      callback({ responseHeaders })
-    }
-  )
 
   mainWindow.once('ready-to-show', () => {
     console.log('[Electron Main] ✓ 窗口准备完成,显示窗口')
