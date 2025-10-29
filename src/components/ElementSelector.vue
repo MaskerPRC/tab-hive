@@ -3,13 +3,17 @@
   <SelectorToolbar
     :is-active="isActive"
     :selector="hoveredSelector"
+    :selectors="selectedSelectors"
     :element-info="currentElementInfo"
+    :multi-select-mode="multiSelectMode"
     @cancel="cancel"
     @confirm="confirmSelection"
     @update:selector="updateSelectorManually"
+    @update:selectors="updateSelectorsManually"
     @navigate="navigateElement"
     @pause="handlePause"
     @reselect="restartSelection"
+    @toggle-multi-select="toggleMultiSelectMode"
   />
   
   <!-- 高亮显示组件 - 暂时禁用，使用 iframe 内的高亮 -->
@@ -44,6 +48,8 @@ export default {
   emits: ['select', 'cancel'],
   setup(props, { emit }) {
     const hoveredSelector = ref('')
+    const selectedSelectors = ref([]) // 多选模式：存储多个选择器
+    const multiSelectMode = ref(false) // 是否启用多选模式
     const isPaused = ref(false)
     const isElectron = computed(() => window.electron?.isElectron || false)
     const hasExtension = ref(false)
@@ -364,18 +370,39 @@ export default {
      * 确认选择（用户点击确认按钮）
      */
     const confirmSelection = () => {
-      console.log('[Tab Hive] 用户确认选择:', hoveredSelector.value)
+      console.log('[Tab Hive] 用户确认选择')
       
-      if (!hoveredSelector.value) {
-        console.warn('[Tab Hive] 没有选择器可确认')
-        return
+      // 多选模式：返回选择器数组
+      if (multiSelectMode.value) {
+        if (selectedSelectors.value.length === 0) {
+          console.warn('[Tab Hive] 多选模式：没有选择器可确认')
+          return
+        }
+        
+        console.log('[Tab Hive] 多选模式：确认', selectedSelectors.value.length, '个选择器')
+        
+        // 发送多个选择器
+        emit('select', { 
+          selectors: selectedSelectors.value,
+          multiSelect: true
+        })
+      } else {
+        // 单选模式：返回单个选择器
+        if (!hoveredSelector.value) {
+          console.warn('[Tab Hive] 单选模式：没有选择器可确认')
+          return
+        }
+        
+        console.log('[Tab Hive] 单选模式：确认选择器', hoveredSelector.value)
+        
+        // 发送单个选择器（保持向后兼容）
+        emit('select', { 
+          selector: hoveredSelector.value,
+          selectors: [hoveredSelector.value],
+          elementInfo: currentElementInfo.value,
+          multiSelect: false
+        })
       }
-      
-      // 发送选择结果
-      emit('select', { 
-        selector: hoveredSelector.value,
-        elementInfo: currentElementInfo.value 
-      })
       
       // 完全清理 iframe 内的选择器（包括高亮框）
       completeCleanup()
@@ -403,6 +430,29 @@ export default {
     const updateSelectorManually = (selector) => {
       hoveredSelector.value = selector
       // TODO: 验证选择器并更新高亮
+    }
+    
+    /**
+     * 手动更新选择器列表（多选模式）
+     */
+    const updateSelectorsManually = (selectors) => {
+      selectedSelectors.value = selectors
+    }
+    
+    /**
+     * 切换多选模式
+     */
+    const toggleMultiSelectMode = (enabled) => {
+      multiSelectMode.value = enabled
+      if (enabled) {
+        // 进入多选模式，清空当前选择器
+        selectedSelectors.value = []
+        hoveredSelector.value = ''
+      } else {
+        // 退出多选模式，也清空
+        selectedSelectors.value = []
+        hoveredSelector.value = ''
+      }
     }
     
     /**
@@ -611,6 +661,8 @@ export default {
 
     return {
       hoveredSelector,
+      selectedSelectors,
+      multiSelectMode,
       hoveredRects,
       selectedRects,
       currentElementInfo,
@@ -618,6 +670,8 @@ export default {
       cancel,
       confirmSelection,
       updateSelectorManually,
+      updateSelectorsManually,
+      toggleMultiSelectMode,
       navigateElement,
       handlePause,
       restartSelection

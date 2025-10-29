@@ -273,7 +273,10 @@ export default {
       )
       
       // 设置缓冲 webview 加载完成回调
-      const needSelector = !props.isFullscreen && props.item.targetSelector
+      const needSelector = !props.isFullscreen && (
+        (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
+        (props.item.targetSelector && props.item.targetSelector.trim())
+      )
       setupBufferWebview(() => emit('refresh', props.index), needSelector)
     }
 
@@ -329,7 +332,9 @@ export default {
         }
 
             // 应用选择器
-        if (!props.isFullscreen && props.item.targetSelector) {
+            const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
+                                (props.item.targetSelector && props.item.targetSelector.trim())
+            if (!props.isFullscreen && hasSelectors) {
               await applySelector(webview, false)
             }
           },
@@ -352,7 +357,9 @@ export default {
             }
             
             // 应用选择器
-            if (!props.isFullscreen && props.item.targetSelector) {
+            const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
+                                (props.item.targetSelector && props.item.targetSelector.trim())
+            if (!props.isFullscreen && hasSelectors) {
               await applySelector(webview, true)
             }
           }

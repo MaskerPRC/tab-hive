@@ -411,8 +411,13 @@ export default {
     /**
      * 处理元素选择完成
      */
-    const handleElementSelected = ({ selector }) => {
-      console.log('选中元素选择器:', selector)
+    const handleElementSelected = (data) => {
+      const { selector, selectors, multiSelect } = data
+      
+      // 支持多选和单选模式
+      const finalSelectors = multiSelect ? selectors : (selectors || [selector])
+      
+      console.log('选中元素选择器:', multiSelect ? `多选 ${finalSelectors.length} 个` : selector)
       
       if (props.fullscreenIndex !== null && props.websites[props.fullscreenIndex]) {
         const website = props.websites[props.fullscreenIndex]
@@ -432,16 +437,23 @@ export default {
           console.warn('[GridView] 无法获取当前 URL，使用原 URL:', error)
         }
         
-        // 同时更新网站的 URL 和 targetSelector
+        // 同时更新网站的 URL 和选择器
+        const updates = {
+          url: currentUrl,
+          targetSelectors: finalSelectors,
+          targetSelector: finalSelectors.length > 0 ? finalSelectors[0] : '' // 兼容旧版
+        }
+        
         emit('update-website', {
           index: props.fullscreenIndex,
-          updates: {
-            url: currentUrl,
-            targetSelector: selector
-          }
+          updates
         })
         
-        alert(`已设置元素选择器：\n${selector}\n\n网页地址已更新为：${currentUrl}\n\n退出全屏后将自动应用该选择器。`)
+        if (multiSelect) {
+          alert(`已设置 ${finalSelectors.length} 个元素选择器：\n${finalSelectors.join('\n')}\n\n网页地址已更新为：${currentUrl}\n\n退出全屏后将同时显示所有选中的元素。`)
+        } else {
+          alert(`已设置元素选择器：\n${selector}\n\n网页地址已更新为：${currentUrl}\n\n退出全屏后将自动应用该选择器。`)
+        }
       }
       
       isSelectingElement.value = false

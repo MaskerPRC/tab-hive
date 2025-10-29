@@ -72,25 +72,29 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     }
   }
 
-  // 应用选择器到 webview
+  // 应用选择器到 webview（支持多个选择器）
   const applySelector = async (webview, isBuffer = false) => {
-    if (!props.item.targetSelector) return
+    // 支持新旧两种格式
+    const selectors = props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0
+      ? props.item.targetSelectors.filter(s => s && s.trim())
+      : (props.item.targetSelector && props.item.targetSelector.trim() ? [props.item.targetSelector.trim()] : [])
+    
+    if (selectors.length === 0) return
 
-    console.log('[useWebviewSelector] 应用选择器:', props.item.targetSelector)
+    console.log('[useWebviewSelector] 应用选择器:', selectors)
 
     try {
       // 等待一段时间确保页面完全加载
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       const styleId = `tabhive-selector-style-${props.item.id}`
-      const selector = props.item.targetSelector
 
-      // 构造完整的选择器代码（包括样式注入）
+      // 构造完整的选择器代码（支持多个选择器）
       const selectorCode = `
         (function() {
           try {
-            const selector = '${selector.replace(/'/g, "\\'")}';
-            console.log('[Webview Selector] 应用选择器:', selector);
+            const selectors = ${JSON.stringify(selectors)};
+            console.log('[Webview Selector] 应用多个选择器:', selectors);
             
             // 移除旧样式
             const oldStyle = document.getElementById('${styleId}');
@@ -98,68 +102,128 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
               oldStyle.remove();
             }
             
-            // 查找目标元素
-            const targetElement = document.querySelector(selector);
-            if (!targetElement) {
-              console.warn('[Webview Selector] 未找到选择器对应的元素:', selector);
-              return { success: false, error: '未找到元素' };
-            }
-            
-            // 隐藏兄弟元素
-            let current = targetElement;
-            let hiddenCount = 0;
-            
-            while (current && current !== document.body) {
-              const parent = current.parentElement;
-              if (parent) {
-                Array.from(parent.children).forEach(sibling => {
-                  if (sibling !== current && 
-                      !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
-                    sibling.style.display = 'none';
-                    sibling.setAttribute('data-tabhive-hidden', 'true');
-                    hiddenCount++;
-                  }
-                });
+            // 查找所有目标元素
+            const targetElements = [];
+            selectors.forEach(selector => {
+              const elements = document.querySelectorAll(selector);
+              if (elements.length > 0) {
+                targetElements.push(...Array.from(elements));
+                console.log('[Webview Selector] 选择器', selector, '找到', elements.length, '个元素');
+              } else {
+                console.warn('[Webview Selector] 未找到选择器对应的元素:', selector);
               }
-              current = parent;
+            });
+            
+            if (targetElements.length === 0) {
+              console.warn('[Webview Selector] 所有选择器都未找到元素');
+              return { success: false, error: '未找到任何元素' };
             }
             
-            console.log('[Webview Selector] 已隐藏', hiddenCount, '个兄弟元素');
+            console.log('[Webview Selector] 共找到', targetElements.length, '个目标元素');
             
-            // 添加样式
+            // 标记所有目标元素及其祖先
+            const markedElements = new Set();
+            targetElements.forEach(element => {
+              // 标记目标元素本身
+              element.setAttribute('data-tabhive-keep', 'true');
+              markedElements.add(element);
+              
+              // 标记所有祖先元素
+              let current = element.parentElement;
+              while (current && current !== document.body && current !== document.documentElement) {
+                current.setAttribute('data-tabhive-keep', 'true');
+                markedElements.add(current);
+                current = current.parentElement;
+              }
+            });
+            
+            console.log('[Webview Selector] 已标记', markedElements.size, '个元素（包括祖先）');
+            
+            // 隐藏所有未标记的元素
+            let hiddenCount = 0;
+            function hideNonTargetElements(element) {
+              if (!element || !element.children) return;
+              
+              Array.from(element.children).forEach(child => {
+                // 跳过脚本、样式等元素
+                if (['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'HEAD'].includes(child.tagName)) {
+                  return;
+                }
+                
+                // 如果元素未被标记，隐藏它
+                if (!child.hasAttribute('data-tabhive-keep')) {
+                  child.style.display = 'none';
+                  child.setAttribute('data-tabhive-hidden', 'true');
+                  hiddenCount++;
+                } else {
+                  // 如果元素被标记，递归处理其子元素
+                  hideNonTargetElements(child);
+                }
+              });
+            }
+            
+            hideNonTargetElements(document.body);
+            console.log('[Webview Selector] 已隐藏', hiddenCount, '个非目标元素');
+            
+            // 生成CSS样式（多个选择器合并）
+            const combinedSelector = selectors.join(', ');
             const style = document.createElement('style');
             style.id = '${styleId}';
-            style.textContent = \`
-              html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important;
-                width: 100% !important;
-                height: 100% !important;
-              }
-              
-              \${selector} {
-                display: block !important;
-                visibility: visible !important;
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                z-index: 999999 !important;
-                object-fit: contain !important;
-              }
-              
-              \${selector} * {
-                visibility: visible !important;
-              }
-            \`;
+            
+            // 如果只有一个目标元素，应用单选择器样式（固定全屏）
+            if (targetElements.length === 1) {
+              style.textContent = \`
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  overflow: hidden !important;
+                  width: 100% !important;
+                  height: 100% !important;
+                }
+                
+                \${combinedSelector} {
+                  display: block !important;
+                  visibility: visible !important;
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  z-index: 999999 !important;
+                  object-fit: contain !important;
+                }
+                
+                \${combinedSelector} * {
+                  visibility: visible !important;
+                }
+              \`;
+            } else {
+              // 多个目标元素，保持原有布局
+              style.textContent = \`
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  overflow: auto !important;
+                  width: 100% !important;
+                  height: 100% !important;
+                }
+                
+                \${combinedSelector} {
+                  display: block !important;
+                  visibility: visible !important;
+                }
+                
+                \${combinedSelector} * {
+                  visibility: visible !important;
+                }
+              \`;
+            }
             
             document.head.appendChild(style);
             console.log('[Webview Selector] 选择器已应用,隐藏了', hiddenCount, '个元素');
-            return { success: true, hiddenCount: hiddenCount };
+            return { success: true, hiddenCount: hiddenCount, targetCount: targetElements.length };
           } catch (e) {
             console.error('[Webview Selector] 错误:', e);
             return { success: false, error: e.message };
@@ -175,7 +239,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
       }
       
       if (result && result.success) {
-        console.log('[useWebviewSelector] ✓ 选择器应用成功')
+        console.log('[useWebviewSelector] ✓ 选择器应用成功，显示', result.targetCount, '个目标元素')
       }
     } catch (error) {
       console.error('[useWebviewSelector] 应用选择器失败:', error)
@@ -184,7 +248,11 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
   
   // 恢复原始样式（全屏模式）
   const restoreOriginalStyles = async () => {
-    if (!props.item.targetSelector) return
+    // 支持新旧两种格式
+    const hasSelectors = (props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0) ||
+                         (props.item.targetSelector && props.item.targetSelector.trim())
+    
+    if (!hasSelectors) return
     
     console.log('[useWebviewSelector] 恢复原始样式')
     
@@ -200,6 +268,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
                 style.remove();
               }
               
+              // 恢复隐藏的元素
               const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
               let restoredCount = 0;
               hiddenElements.forEach(el => {
@@ -207,6 +276,13 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
                 el.removeAttribute('data-tabhive-hidden');
                 restoredCount++;
               });
+              
+              // 移除标记
+              const markedElements = document.querySelectorAll('[data-tabhive-keep]');
+              markedElements.forEach(el => {
+                el.removeAttribute('data-tabhive-keep');
+              });
+              
               console.log('[Webview Selector] 已恢复', restoredCount, '个元素');
               return { success: true };
             } catch (e) {
@@ -226,12 +302,16 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
   // 监听全屏状态变化，控制选择器切换
   const watchFullscreenToggle = (isFullscreen, refreshOnFullscreenToggle, pauseTimer, resumeTimer) => {
     watch(isFullscreen, async (newVal, oldVal) => {
+      // 支持新旧两种格式
+      const hasSelectors = (props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0) ||
+                           (props.item.targetSelector && props.item.targetSelector.trim())
+      
       if (newVal) {
         console.log('[useWebviewSelector] 进入全屏，暂停自动刷新')
         pauseTimer()
         
         // 如果有选择器且不刷新，恢复完整页面
-        if (props.item.targetSelector && !refreshOnFullscreenToggle && oldVal !== undefined) {
+        if (hasSelectors && !refreshOnFullscreenToggle && oldVal !== undefined) {
           await restoreOriginalStyles()
         }
       } else {
@@ -239,7 +319,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
         resumeTimer()
         
         // 如果有选择器且不刷新，重新应用选择器
-        if (props.item.targetSelector && !refreshOnFullscreenToggle && oldVal !== undefined) {
+        if (hasSelectors && !refreshOnFullscreenToggle && oldVal !== undefined) {
           await new Promise(resolve => setTimeout(resolve, 100))
           if (isElectron.value && webviewRef.value) {
             await applySelector(webviewRef.value, false)
@@ -248,7 +328,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
       }
       
       // 如果配置了刷新，则刷新 webview
-      if (props.item.targetSelector && refreshOnFullscreenToggle && oldVal !== undefined) {
+      if (hasSelectors && refreshOnFullscreenToggle && oldVal !== undefined) {
         if (isElectron.value && webviewRef.value) {
           console.log('[useWebviewSelector] 全屏切换，刷新 webview')
           const currentSrc = webviewRef.value.src

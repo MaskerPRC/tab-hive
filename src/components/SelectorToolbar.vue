@@ -67,10 +67,23 @@
       </div>
     </div>
 
-    <!-- 选择器显示和控制 -->
+      <!-- 选择器显示和控制 -->
     <div class="toolbar-content">
-      <!-- 选择器输入框 -->
-      <div class="selector-input-wrapper">
+      <!-- 多选模式切换 -->
+      <div class="multi-select-toggle">
+        <label class="toggle-option">
+          <input 
+            type="checkbox" 
+            :checked="multiSelectMode"
+            @change="$emit('toggle-multi-select', $event.target.checked)"
+          />
+          <span>多选模式</span>
+          <span class="toggle-hint">（同时保留多个元素）</span>
+        </label>
+      </div>
+
+      <!-- 单选模式：当前选择器 -->
+      <div v-if="!multiSelectMode" class="selector-input-wrapper">
         <label class="input-label">CSS 选择器</label>
         <div class="selector-input-group">
           <input
@@ -92,6 +105,38 @@
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 多选模式：选择器列表 -->
+      <div v-if="multiSelectMode" class="selectors-list-wrapper">
+        <label class="input-label">已选择的元素 ({{ localSelectors.length }})</label>
+        <div class="selectors-list">
+          <div 
+            v-for="(selector, index) in localSelectors" 
+            :key="index"
+            class="selector-list-item"
+          >
+            <span class="selector-index">{{ index + 1 }}</span>
+            <span class="selector-value">{{ selector }}</span>
+            <button
+              class="remove-selector-btn"
+              @click="removeSelector(index)"
+              title="移除"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="current-selection" v-if="localSelector">
+          <label class="input-label">当前选择器</label>
+          <div class="current-selector">{{ localSelector }}</div>
+          <button class="add-selector-btn" @click="addCurrentSelector">
+            ➕ 添加到列表
           </button>
         </div>
       </div>
@@ -197,11 +242,21 @@
           <line x1="12" y1="16" x2="12" y2="12"/>
           <line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
-        <template v-if="!localSelector">
-          点击元素选择 | 按 <kbd>空格</kbd> 选择 | 按 <kbd>ESC</kbd> 取消
+        <template v-if="multiSelectMode">
+          <template v-if="!localSelector">
+            多选模式：点击元素添加到列表 | 按 <kbd>ESC</kbd> 取消
+          </template>
+          <template v-else>
+            点击 <strong>添加到列表</strong> 继续选择 | <strong>确认选择</strong> 保存所有
+          </template>
         </template>
         <template v-else>
-          可继续调整选择 | 点击 <strong>确认选择</strong> 保存 | 按 <kbd>ESC</kbd> 取消
+          <template v-if="!localSelector">
+            点击元素选择 | 按 <kbd>空格</kbd> 选择 | 按 <kbd>ESC</kbd> 取消
+          </template>
+          <template v-else>
+            可继续调整选择 | 点击 <strong>确认选择</strong> 保存 | 按 <kbd>ESC</kbd> 取消
+          </template>
         </template>
       </div>
     </div>
@@ -222,14 +277,23 @@ export default {
       type: String,
       default: ''
     },
+    selectors: {
+      type: Array,
+      default: () => []
+    },
     elementInfo: {
       type: Object,
       default: null
+    },
+    multiSelectMode: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['cancel', 'confirm', 'update:selector', 'navigate', 'pause', 'reselect'],
+  emits: ['cancel', 'confirm', 'update:selector', 'update:selectors', 'navigate', 'pause', 'reselect', 'toggle-multi-select'],
   setup(props, { emit }) {
     const localSelector = ref(props.selector)
+    const localSelectors = ref(props.selectors || [])
     const isHidden = ref(false)
     const showSettings = ref(false)
     const isDragging = ref(false)
@@ -254,10 +318,30 @@ export default {
     watch(() => props.selector, (newVal) => {
       localSelector.value = newVal
     })
+    
+    watch(() => props.selectors, (newVal) => {
+      localSelectors.value = newVal || []
+    }, { deep: true })
 
     const clearSelector = () => {
       localSelector.value = ''
       emit('update:selector', '')
+    }
+    
+    // 添加当前选择器到列表
+    const addCurrentSelector = () => {
+      if (localSelector.value && !localSelectors.value.includes(localSelector.value)) {
+        localSelectors.value.push(localSelector.value)
+        emit('update:selectors', [...localSelectors.value])
+        localSelector.value = '' // 清空当前选择器，准备选择下一个
+        emit('update:selector', '')
+      }
+    }
+    
+    // 移除选择器
+    const removeSelector = (index) => {
+      localSelectors.value.splice(index, 1)
+      emit('update:selectors', [...localSelectors.value])
     }
 
     const toggleVisibility = () => {
@@ -313,11 +397,14 @@ export default {
 
     return {
       localSelector,
+      localSelectors,
       isHidden,
       showSettings,
       position,
       settings,
       clearSelector,
+      addCurrentSelector,
+      removeSelector,
       toggleVisibility,
       startDrag
     }
@@ -652,6 +739,162 @@ export default {
 }
 
 .btn-confirm:active {
+  transform: translateY(0);
+}
+
+/* 多选模式切换 */
+.multi-select-toggle {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+}
+
+.toggle-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e40af;
+  cursor: pointer;
+}
+
+.toggle-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #ff5c00;
+}
+
+.toggle-hint {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: normal;
+}
+
+/* 选择器列表 */
+.selectors-list-wrapper {
+  margin-bottom: 12px;
+}
+
+.selectors-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.selector-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.selector-list-item:last-child {
+  margin-bottom: 0;
+}
+
+.selector-list-item:hover {
+  border-color: #ff5c00;
+  background: #fff7ed;
+}
+
+.selector-index {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  background: #ff5c00;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.selector-value {
+  flex: 1;
+  color: #111827;
+  font-family: 'Monaco', 'Menlo', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-selector-btn {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-selector-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.current-selection {
+  margin-top: 12px;
+}
+
+.current-selector {
+  padding: 10px 12px;
+  background: #fff7ed;
+  border: 1.5px solid #ff5c00;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  color: #111827;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.add-selector-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ff5c00 0%, #ff7a1c 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.2);
+}
+
+.add-selector-btn:hover {
+  background: linear-gradient(135deg, #e65100 0%, #ff6a00 100%);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.add-selector-btn:active {
   transform: translateY(0);
 }
 </style>

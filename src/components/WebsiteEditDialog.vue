@@ -56,16 +56,42 @@
         </div>
         <div class="form-group">
           <label>目标选择器（可选）：</label>
-          <input
-            v-model="localWebsite.targetSelector"
-            type="text"
-            placeholder="例如：#main-content 或 .video-player"
-            class="form-input"
-            @keyup.enter="handleConfirm"
-          />
+          <div class="selector-list">
+            <div 
+              v-for="(selector, index) in localWebsite.targetSelectors"
+              :key="index"
+              class="selector-item"
+            >
+              <input
+                v-model="localWebsite.targetSelectors[index]"
+                type="text"
+                placeholder="例如：#main-content 或 .video-player"
+                class="form-input selector-item-input"
+                @keyup.enter="handleConfirm"
+              />
+              <button
+                type="button"
+                class="btn-remove-selector"
+                @click="removeSelector(index)"
+                title="移除此选择器"
+              >
+                ✕
+              </button>
+            </div>
+            <button
+              type="button"
+              class="btn-add-selector"
+              @click="addSelector"
+              title="添加新选择器"
+            >
+              ➕ 添加选择器
+            </button>
+          </div>
           <div class="selector-hint">
-            💡 Grid模式下只显示匹配此CSS选择器的元素，全屏时显示完整页面<br>
-            留空则始终显示整个页面
+            💡 可以添加多个CSS选择器，Grid模式下只显示匹配的元素，隐藏其他内容<br>
+            • 多个选择器会同时保留所有匹配的元素<br>
+            • 全屏时显示完整页面<br>
+            • 留空则始终显示整个页面
           </div>
         </div>
         <div class="form-group">
@@ -241,6 +267,7 @@ export default {
         url: '',
         deviceType: 'desktop',
         targetSelector: '',
+        targetSelectors: [],
         autoRefreshInterval: 0,
         sessionInstance: 'default',
         padding: 0,
@@ -258,6 +285,7 @@ export default {
       url: '',
       deviceType: 'desktop',
       targetSelector: '',
+      targetSelectors: [],
       autoRefreshInterval: 0,
       sessionInstance: 'default',
       padding: 0,
@@ -314,9 +342,25 @@ export default {
 
     // 监听 website prop 变化，更新本地数据
     watch(() => props.website, (newVal) => {
+      // 处理 targetSelector 到 targetSelectors 的兼容性转换
+      let targetSelectors = []
+      if (newVal.targetSelectors && Array.isArray(newVal.targetSelectors) && newVal.targetSelectors.length > 0) {
+        // 新格式：使用 targetSelectors 数组
+        targetSelectors = newVal.targetSelectors.filter(s => s && s.trim())
+      } else if (newVal.targetSelector && newVal.targetSelector.trim()) {
+        // 旧格式：从 targetSelector 字符串转换
+        targetSelectors = [newVal.targetSelector.trim()]
+      }
+      
+      // 确保至少有一个空输入框
+      if (targetSelectors.length === 0) {
+        targetSelectors = ['']
+      }
+      
       localWebsite.value = { 
         ...newVal,
         // 确保字段有默认值
+        targetSelectors,
         sessionInstance: newVal.sessionInstance || 'default',
         padding: newVal.padding || 0,
         muted: newVal.muted || false,
@@ -371,6 +415,21 @@ export default {
       localWebsite.value.autoRefreshInterval = seconds
     }
 
+    // 添加选择器
+    const addSelector = () => {
+      localWebsite.value.targetSelectors.push('')
+    }
+
+    // 移除选择器
+    const removeSelector = (index) => {
+      if (localWebsite.value.targetSelectors.length > 1) {
+        localWebsite.value.targetSelectors.splice(index, 1)
+      } else {
+        // 至少保留一个空输入框
+        localWebsite.value.targetSelectors = ['']
+      }
+    }
+
     const handleConfirm = () => {
       if (localWebsite.value.title && localWebsite.value.url) {
         let url = localWebsite.value.url.trim()
@@ -388,9 +447,17 @@ export default {
           return
         }
 
+        // 过滤空选择器并保存
+        const targetSelectors = localWebsite.value.targetSelectors
+          .filter(s => s && s.trim())
+          .map(s => s.trim())
+
         emit('confirm', {
           ...localWebsite.value,
-          url
+          url,
+          targetSelectors,
+          // 为了兼容性，同时保留 targetSelector（第一个选择器）
+          targetSelector: targetSelectors.length > 0 ? targetSelectors[0] : ''
         })
       }
     }
@@ -462,7 +529,9 @@ export default {
       handleOverlayMouseDown,
       handleOverlayClick,
       handleCreateNewInstance,
-      handleOpenSessionManager
+      handleOpenSessionManager,
+      addSelector,
+      removeSelector
     }
   }
 }
@@ -923,6 +992,66 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #4338ca;
+}
+
+/* 选择器列表样式 */
+.selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selector-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.selector-item-input {
+  flex: 1;
+}
+
+.btn-remove-selector {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 42px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-selector:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-add-selector {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--primary-color);
+  border: 2px dashed var(--primary-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  margin-top: 4px;
+}
+
+.btn-add-selector:hover {
+  background: var(--primary-light);
+  border-style: solid;
+  transform: translateY(-1px);
 }
 
 /* 响应式设计：在较小屏幕上切换回纵向布局 */
