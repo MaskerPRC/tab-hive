@@ -41,6 +41,44 @@
 
       <!-- 设置和操作按钮 -->
       <div class="actions-section">
+        <!-- 窗口管理区域（仅 Electron 环境） -->
+        <div v-if="isElectron" class="window-management">
+          <div class="section-title">窗口管理</div>
+          
+          <button
+            @click="handleCreateNewWindow"
+            class="sidebar-btn btn-window"
+            title="创建新的 Tab Hive 窗口"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <span>新建窗口</span>
+          </button>
+
+          <div v-if="windowManager.windows.value.length > 1" class="window-list">
+            <div class="window-list-title">所有窗口 ({{ windowManager.windows.value.length }})</div>
+            <button
+              v-for="win in windowManager.windows.value"
+              :key="win.id"
+              @click="handleSwitchWindow(win.id)"
+              class="window-item"
+              :class="{ 'active': win.id === windowManager.currentWindowId.value }"
+              :title="`切换到窗口 ${win.id}`"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              </svg>
+              <span>窗口 {{ win.id }}</span>
+              <span v-if="win.id === windowManager.currentWindowId.value" class="current-badge">当前</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
         <label class="toggle-control" title="显示/隐藏蜂巢标题">
           <span class="toggle-label">显示标题</span>
           <input
@@ -142,6 +180,7 @@ import LayoutDropdown from './LayoutDropdown.vue'
 import UpdateButton from './UpdateButton.vue'
 import { useSharedLayouts } from '../composables/useSharedLayouts'
 import { useLayoutOperations } from '../composables/useLayoutOperations'
+import { useWindowManager } from '../composables/useWindowManager'
 
 export default {
   name: 'ConfigPanel',
@@ -197,6 +236,7 @@ export default {
     // 使用 composables
     const sharedLayouts = useSharedLayouts(isElectron.value)
     const operations = useLayoutOperations(isElectron.value)
+    const windowManager = useWindowManager()
 
     // 点击外部区域关闭下拉菜单
     const handleClickOutside = (event) => {
@@ -363,6 +403,19 @@ export default {
       emit('toggle-global-mute', event.target.checked)
     }
 
+    // 创建新窗口
+    const handleCreateNewWindow = async () => {
+      const result = await windowManager.createNewWindow()
+      if (result.success) {
+        console.log('[ConfigPanel] ✓ 新窗口已创建')
+      }
+    }
+
+    // 切换到指定窗口
+    const handleSwitchWindow = async (windowId) => {
+      await windowManager.switchToWindow(windowId)
+    }
+
     return {
       isElectron,
       showLayoutDropdown,
@@ -388,7 +441,10 @@ export default {
       handleSyncTemplate,
       handleToggleTitles,
       handleToggleRefreshOnFullscreen,
-      handleToggleGlobalMute
+      handleToggleGlobalMute,
+      windowManager,
+      handleCreateNewWindow,
+      handleSwitchWindow
     }
   }
 }
@@ -452,6 +508,101 @@ export default {
   gap: 12px;
   padding-top: 20px;
   border-top: 2px solid #f0f0f0;
+}
+
+/* 窗口管理区域 */
+.window-management {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.section-divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 8px 0;
+}
+
+.btn-window {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-window:hover {
+  background: var(--primary-hover);
+  transform: translateX(2px);
+  box-shadow: 0 4px 8px rgba(255, 92, 0, 0.3);
+}
+
+.btn-window svg {
+  stroke: currentColor;
+}
+
+.window-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.window-list-title {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+
+.window-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+  background: white;
+  color: #666;
+}
+
+.window-item:hover {
+  background: #f8f8f8;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateX(2px);
+}
+
+.window-item.active {
+  background: #fff5f0;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.window-item svg {
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.current-badge {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 2px 6px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
 }
 
 /* 开关控件样式 */

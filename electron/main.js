@@ -9,6 +9,9 @@ console.log('[Electron Main] ========== Tab Hive 启动 (Webview 架构) =======
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 (KHTML, like Gecko) Safari/537.36'
 
 let mainWindow
+// 多窗口管理
+const windows = new Map() // key: windowId, value: BrowserWindow
+let windowIdCounter = 1
 
 // Chrome 扩展管理
 const loadedExtensions = new Map() // 存储已加载的扩展 {id: {name, path, version}}
@@ -27,14 +30,18 @@ let currentDownload = {
   error: null
 }
 
-function createWindow() {
-  console.log('[Electron Main] ========== 创建主窗口 ==========')
+function createWindow(windowId = null, options = {}) {
+  const wid = windowId || windowIdCounter++
+  console.log('[Electron Main] ========== 创建窗口 ==========')
+  console.log('[Electron Main] 窗口 ID:', wid)
 
-  mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+  const window = new BrowserWindow({
+    width: options.width || 1400,
+    height: options.height || 900,
     minWidth: 800,
     minHeight: 600,
+    x: options.x,
+    y: options.y,
     icon: path.join(__dirname, '../public/256x256.ico'),
     webPreferences: {
       nodeIntegration: false,
@@ -43,44 +50,139 @@ function createWindow() {
       webSecurity: false,
       allowRunningInsecureContent: true,
       webviewTag: true, // 启用 webview 标签支持
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      // 为每个窗口创建独立的 session partition
+      partition: `persist:window-${wid}`
     },
     backgroundColor: '#f5f5f5',
     show: false,
-    autoHideMenuBar: true
+    autoHideMenuBar: true,
+    title: `Tab Hive - 窗口 ${wid}`
   })
 
-  console.log('[Electron Main] ✓ 主窗口创建完成')
+  // 将窗口 ID 附加到窗口对象
+  window.windowId = wid
+  
+  // 保存窗口引用
+  windows.set(wid, window)
+  
+  // 如果是第一个窗口，设置为主窗口
+  if (!mainWindow) {
+    mainWindow = window
+  }
 
-  // 加载页面
+  console.log('[Electron Main] ✓ 窗口创建完成')
+
+  // 加载页面，带上窗口 ID
   if (process.env.NODE_ENV === 'development') {
     console.log('[Electron Main] 开发模式,加载 http://localhost:3000')
-    mainWindow.loadURL('http://localhost:3000')
-    mainWindow.webContents.openDevTools()
+    window.loadURL(`http://localhost:3000?windowId=${wid}`)
+    window.webContents.openDevTools()
   } else {
     console.log('[Electron Main] 生产模式,加载本地文件')
     const indexPath = path.join(__dirname, '../dist/index.html')
     console.log('[Electron Main] 文件路径:', indexPath)
-    mainWindow.loadFile(indexPath)
+    window.loadFile(indexPath, { query: { windowId: wid.toString() } })
   }
 
   console.log('[Electron Main] ========== 设置 CORS 和 Cookie 处理 ==========')
 
-  mainWindow.once('ready-to-show', () => {
+  window.once('ready-to-show', () => {
     console.log('[Electron Main] ✓ 窗口准备完成,显示窗口')
-    mainWindow.show()
+    window.show()
   })
 
-  mainWindow.on('closed', () => {
-    console.log('[Electron Main] 窗口已关闭')
-    registeredWebviews.clear()
-    mainWindow = null
+  window.on('closed', () => {
+    console.log('[Electron Main] 窗口已关闭, ID:', wid)
+    windows.delete(wid)
+    
+    // 如果关闭的是主窗口，重新指定主窗口
+    if (window === mainWindow) {
+      mainWindow = windows.values().next().value || null
+    }
   })
 
-  console.log('[Electron Main] ========== 主窗口创建流程完成 ==========')
+  console.log('[Electron Main] ========== 窗口创建流程完成 ==========')
+  
+  return { windowId: wid, window }
 }
 
 // ========== IPC 处理器 ==========
+
+// ========== 窗口管理 ==========
+
+/**
+ * 创建新窗口
+ */
+ipcMain.handle('create-new-window', (event) => {
+  console.log('[窗口管理] 创建新窗口')
+  
+  // 获取当前窗口的位置，新窗口稍微偏移
+  const currentWindow = BrowserWindow.fromWebContents(event.sender)
+  const bounds = currentWindow.getBounds()
+  
+  const result = createWindow(null, {
+    x: bounds.x + 30,
+    y: bounds.y + 30,
+    width: bounds.width,
+    height: bounds.height
+  })
+  
+  console.log('[窗口管理] ✓ 新窗口已创建, ID:', result.windowId)
+  
+  return { 
+    success: true, 
+    windowId: result.windowId,
+    totalWindows: windows.size
+  }
+})
+
+/**
+ * 获取所有窗口列表
+ */
+ipcMain.handle('get-all-windows', () => {
+  const windowList = []
+  windows.forEach((window, windowId) => {
+    windowList.push({
+      id: windowId,
+      title: window.getTitle(),
+      isFocused: window.isFocused()
+    })
+  })
+  
+  console.log('[窗口管理] 获取所有窗口:', windowList.length)
+  return { success: true, windows: windowList }
+})
+
+/**
+ * 聚焦到指定窗口
+ */
+ipcMain.handle('focus-window', (event, windowId) => {
+  console.log('[窗口管理] 聚焦窗口:', windowId)
+  
+  const window = windows.get(windowId)
+  if (window) {
+    if (window.isMinimized()) {
+      window.restore()
+    }
+    window.focus()
+    console.log('[窗口管理] ✓ 窗口已聚焦')
+    return { success: true }
+  }
+  
+  console.warn('[窗口管理] ⚠ 窗口不存在:', windowId)
+  return { success: false, error: '窗口不存在' }
+})
+
+/**
+ * 获取当前窗口 ID
+ */
+ipcMain.handle('get-window-id', (event) => {
+  const window = BrowserWindow.fromWebContents(event.sender)
+  const windowId = window ? window.windowId : 1
+  console.log('[窗口管理] 获取当前窗口 ID:', windowId)
+  return { success: true, windowId }
+})
 
 // Webview 注册
 ipcMain.handle('webview-register', (event, webviewId) => {

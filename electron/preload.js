@@ -93,6 +93,41 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
   
+  // 窗口管理 API
+  window: {
+    /**
+     * 创建新窗口
+     */
+    createNew: () => {
+      console.log('[Preload] createNew')
+      return ipcRenderer.invoke('create-new-window')
+    },
+
+    /**
+     * 获取所有窗口列表
+     */
+    getAll: () => {
+      console.log('[Preload] getAll')
+      return ipcRenderer.invoke('get-all-windows')
+    },
+
+    /**
+     * 聚焦到指定窗口
+     * @param {number} windowId - 窗口ID
+     */
+    focus: (windowId) => {
+      console.log('[Preload] focus:', windowId)
+      return ipcRenderer.invoke('focus-window', windowId)
+    },
+
+    /**
+     * 获取当前窗口 ID
+     */
+    getId: () => {
+      return ipcRenderer.invoke('get-window-id')
+    }
+  },
+
   // Webview 管理 API
   webview: {
     /**

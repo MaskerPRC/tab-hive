@@ -18,6 +18,36 @@
       @retry-download="handleRetryDownload"
     />
 
+    <!-- 视图切换按钮 -->
+    <div v-if="fullscreenIndex === null" class="view-toggle">
+      <button
+        @click="switchView('grid')"
+        class="view-toggle-btn"
+        :class="{ active: currentView === 'grid' }"
+        title="网格视图"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+      <button
+        @click="switchView('canvas')"
+        class="view-toggle-btn"
+        :class="{ active: currentView === 'canvas' }"
+        title="画布视图"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+          <path d="M2 2l7.586 7.586"/>
+          <circle cx="11" cy="11" r="2"/>
+        </svg>
+      </button>
+    </div>
+
     <!-- 左侧检测区域和展开标签 -->
     <div
       v-if="fullscreenIndex === null"
@@ -54,8 +84,9 @@
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
-    <!-- 使用 v-show 而非 v-if 来支持布局后台运行 -->
+    <!-- 网格视图 -->
     <GridView
+      v-if="currentView === 'grid'"
       v-for="layout in layoutManager.layouts.value"
       :key="`layout-${layout.id}`"
       v-show="layout.id === layoutManager.currentLayoutId.value || layout.keepAlive"
@@ -71,6 +102,14 @@
       @copy-website="layout.id === layoutManager.currentLayoutId.value ? handleCopyWebsite : () => {}"
       @remove-website="layout.id === layoutManager.currentLayoutId.value ? handleRemoveWebsite : () => {}"
       @update-website="layout.id === layoutManager.currentLayoutId.value ? handleUpdateWebsite : () => {}"
+    />
+
+    <!-- 画布视图 -->
+    <CanvasView
+      v-if="currentView === 'canvas'"
+      :websites="websites"
+      @add-website="handleAddWebsite"
+      @update-website="handleUpdateWebsite"
     />
 
     <!-- 全局对话框 -->
@@ -105,6 +144,7 @@
 import { ref, watch, onMounted, provide } from 'vue'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
+import CanvasView from './components/CanvasView.vue'
 import Dialog from './components/Dialog.vue'
 import DownloadModal from './components/DownloadModal.vue'
 import ImportModeDialog from './components/ImportModeDialog.vue'
@@ -121,6 +161,7 @@ export default {
   components: {
     ConfigPanel,
     GridView,
+    CanvasView,
     Dialog,
     DownloadModal,
     ImportModeDialog,
@@ -157,6 +198,9 @@ export default {
 
     // Session实例管理对话框显示状态
     const showSessionManager = ref(false)
+
+    // 当前视图：grid 或 canvas
+    const currentView = ref('grid')
 
     // 打开Session实例管理对话框
     const handleManageSessions = () => {
@@ -369,6 +413,12 @@ export default {
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
     })
 
+    // 切换视图
+    const switchView = (view) => {
+      currentView.value = view
+      console.log('[App] 切换到视图:', view)
+    }
+
     // 页面加载时自动显示左侧栏，然后隐藏
     onMounted(() => {
       // 首先尝试从 URL 参数导入布局
@@ -454,7 +504,9 @@ export default {
       renameLayout: layoutManager.renameLayout,
       handleToggleTitles,
       handleToggleRefreshOnFullscreen,
-      handleToggleGlobalMute
+      handleToggleGlobalMute,
+      currentView,
+      switchView
     }
   }
 }
@@ -547,5 +599,49 @@ export default {
 
 .app-container :deep(.config-panel.panel-visible) {
   transform: translateX(0);
+}
+
+/* 视图切换按钮 */
+.view-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 999;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #666;
+}
+
+.view-toggle-btn:hover {
+  background: #f8f9fa;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.view-toggle-btn.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.view-toggle-btn svg {
+  stroke: currentColor;
 }
 </style>

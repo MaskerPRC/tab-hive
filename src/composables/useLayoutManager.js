@@ -1,14 +1,26 @@
 import { ref, watch } from 'vue'
+import { useWindowManager } from './useWindowManager'
 
 /**
  * 布局管理 Composable
  * 提供布局的创建、删除、切换、重命名等功能
  */
 export function useLayoutManager() {
+  // 窗口管理器（用于数据隔离）
+  const windowManager = typeof window !== 'undefined' ? useWindowManager() : null
+  
   // 从 localStorage 加载配置
   const loadFromStorage = () => {
     try {
-      const saved = localStorage.getItem('iframe-all-config')
+      let saved
+      if (windowManager && windowManager.windowStorage) {
+        // 使用窗口独立的存储
+        saved = windowManager.windowStorage.getItem('iframe-all-config')
+      } else {
+        // 降级到普通 localStorage
+        saved = localStorage.getItem('iframe-all-config')
+      }
+      
       if (saved) {
         const config = JSON.parse(saved)
 
@@ -63,7 +75,14 @@ export function useLayoutManager() {
         currentLayoutId: currentLayoutId,
         globalSettings: globalSettings
       }
-      localStorage.setItem('iframe-all-config', JSON.stringify(config))
+      
+      if (windowManager && windowManager.windowStorage) {
+        // 使用窗口独立的存储
+        windowManager.windowStorage.setItem('iframe-all-config', JSON.stringify(config))
+      } else {
+        // 降级到普通 localStorage
+        localStorage.setItem('iframe-all-config', JSON.stringify(config))
+      }
     } catch (e) {
       console.error('保存配置失败:', e)
     }
