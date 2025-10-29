@@ -77,7 +77,8 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
       { width: newWidth, height: newHeight },
       itemPositions.value,
       itemSizes.value,
-      Object.keys(itemPositions.value).length
+      Object.keys(itemPositions.value).length,
+      websites?.value || null
     )
 
     // 对于调整大小，检测是否在缩小（缩小总是允许的，因为可能在解除重叠）
@@ -112,7 +113,9 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
         { width: newWidth, height: newHeight },
         itemPositions.value,
         itemSizes.value,
-        Object.keys(itemPositions.value).length
+        Object.keys(itemPositions.value).length,
+        0,
+        websites?.value || null
       )
 
       console.log('[调整大小] 推开算法完成，更新位置', {

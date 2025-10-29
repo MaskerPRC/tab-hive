@@ -150,6 +150,7 @@ function calculateNewPosition(position, direction, distance) {
  * @param {Object} itemSizes - 所有蜂巢的尺寸映射
  * @param {number} totalItems - 蜂巢总数
  * @param {number} depth - 递归深度（内部使用）
+ * @param {Array} websites - 网站数组（可选，用于过滤空白项）
  * @returns {Object} - 更新后的位置映射
  */
 export function performCollisionPush(
@@ -159,7 +160,8 @@ export function performCollisionPush(
   itemPositions,
   itemSizes,
   totalItems,
-  depth = 0
+  depth = 0,
+  websites = null
 ) {
   console.log(`[碰撞推开] 开始处理 - 索引: ${activeIndex}, 深度: ${depth}`, {
     activePosition,
@@ -190,6 +192,9 @@ export function performCollisionPush(
   // 检查所有其他蜂巢
   for (let i = 0; i < totalItems; i++) {
     if (i === activeIndex) continue
+
+    // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸蜂巢）
+    if (websites && websites[i] && !websites[i].url) continue
 
     const pos = newPositions[i]
     const size = itemSizes[i]
@@ -252,7 +257,8 @@ export function performCollisionPush(
       newPositions,
       itemSizes,
       totalItems,
-      depth + 1
+      depth + 1,
+      websites
     )
 
     // 合并递归结果

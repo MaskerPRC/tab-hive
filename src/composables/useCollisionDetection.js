@@ -23,7 +23,7 @@ export function useCollisionDetection() {
   /**
    * 检测指定索引的元素是否与其他元素碰撞（包含边距）
    */
-  const checkCollisionWithOthers = (index, newPos, newSize, itemPositions, itemSizes, totalItems) => {
+  const checkCollisionWithOthers = (index, newPos, newSize, itemPositions, itemSizes, totalItems, websites = null) => {
     // 扩大检测区域，为rect1添加边距
     const rect1 = {
       x: newPos.x - COLLISION_MARGIN / 2,
@@ -35,6 +35,9 @@ export function useCollisionDetection() {
     // 检测与其他所有元素的碰撞
     for (let i = 0; i < totalItems; i++) {
       if (i === index) continue // 跳过自己
+
+      // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸蜂巢）
+      if (websites && websites[i] && !websites[i].url) continue
 
       const pos = itemPositions[i]
       const size = itemSizes[i]
@@ -60,10 +63,13 @@ export function useCollisionDetection() {
   /**
    * 检测移动是否在远离碰撞（用于允许从重叠状态移出）
    */
-  const isMovingAway = (index, oldPos, newPos, itemPositions, itemSizes, currentSize, totalItems) => {
+  const isMovingAway = (index, oldPos, newPos, itemPositions, itemSizes, currentSize, totalItems, websites = null) => {
     // 检测与所有其他元素的距离是否在增加
     for (let i = 0; i < totalItems; i++) {
       if (i === index) continue
+
+      // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸蜂巢）
+      if (websites && websites[i] && !websites[i].url) continue
 
       const otherPos = itemPositions[i]
       const otherSize = itemSizes[i]

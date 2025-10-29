@@ -5,7 +5,7 @@
 import { ref } from 'vue'
 import { performCollisionPush } from './collisionPushAlgorithm'
 
-export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway) {
+export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway, websites = null) {
   const isDraggingItem = ref(false)
   const dragStartPos = ref({ x: 0, y: 0 })
   const dragStartItemPos = ref({ x: 0, y: 0 })
@@ -79,7 +79,8 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
       currentSize,
       itemPositions.value,
       itemSizes.value,
-      Object.keys(itemPositions.value).length
+      Object.keys(itemPositions.value).length,
+      websites?.value || null
     )
     
     const currentPos = itemPositions.value[currentDragIndex.value]
@@ -90,7 +91,8 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
       itemPositions.value,
       itemSizes.value,
       currentSize,
-      Object.keys(itemPositions.value).length
+      Object.keys(itemPositions.value).length,
+      websites?.value || null
     )
 
     isColliding.value = hasCollision
@@ -115,7 +117,9 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
         currentSize,
         itemPositions.value,
         itemSizes.value,
-        Object.keys(itemPositions.value).length
+        Object.keys(itemPositions.value).length,
+        0,
+        websites?.value || null
       )
 
       console.log('[拖拽] 推开算法完成，更新位置', {

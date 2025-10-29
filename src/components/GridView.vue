@@ -149,9 +149,11 @@ export default {
     const isSelectingElement = ref(false)
     const fullscreenIframe = ref(null)
 
-    // 所有网站列表
+    // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
     const allWebsites = computed(() => {
-      return props.websites || []
+      const sites = props.websites || []
+      // 过滤掉没有 URL 的空白项
+      return sites.filter(site => site && site.url)
     })
 
     // 碰撞检测
@@ -177,7 +179,7 @@ export default {
       isColliding: dragIsColliding,
       startDrag: startDragItem,
       handleDragEnd
-    } = useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway)
+    } = useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway, allWebsites)
 
     // 调整大小
     const {
