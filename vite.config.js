@@ -11,9 +11,9 @@ function zipChromeExtension() {
     closeBundle: async () => {
       const sourceDir = path.resolve('chrome-extension')
       const outputFile = path.resolve('dist/tab-hive-selector-extension.zip')
-      
+
       console.log('📦 正在打包选择器插件...')
-      
+
       // 创建输出流
       const output = fs.createWriteStream(outputFile)
       const archive = archiver('zip', {
@@ -46,7 +46,17 @@ function zipChromeExtension() {
 }
 
 export default defineConfig({
-  plugins: [vue(), zipChromeExtension()],
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          // 将 webview 标签识别为自定义元素，避免Vue警告
+          isCustomElement: (tag) => tag === 'webview'
+        }
+      }
+    }),
+    zipChromeExtension()
+  ],
   base: './', // 使用相对路径，适配Electron
   server: {
     port: 3000,

@@ -30,6 +30,7 @@
       @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
       @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
+      @manage-sessions="handleManageSessions"
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
@@ -65,6 +66,13 @@
       @close="closeImportDialog"
       @select-mode="handleImportModeSelect"
     />
+
+    <!-- Session实例管理对话框 -->
+    <SessionInstanceManager
+      :visible="showSessionManager"
+      :websites="websites"
+      @close="closeSessionManager"
+    />
   </div>
 </template>
 
@@ -75,6 +83,7 @@ import GridView from './components/GridView.vue'
 import Dialog from './components/Dialog.vue'
 import DownloadModal from './components/DownloadModal.vue'
 import ImportModeDialog from './components/ImportModeDialog.vue'
+import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useWebsiteManager } from './composables/useWebsiteManager'
@@ -87,7 +96,8 @@ export default {
     GridView,
     Dialog,
     DownloadModal,
-    ImportModeDialog
+    ImportModeDialog,
+    SessionInstanceManager
   },
   setup() {
     // 使用 composables
@@ -115,6 +125,19 @@ export default {
 
     // 侧边栏显示状态
     const showPanel = ref(false)
+
+    // Session实例管理对话框显示状态
+    const showSessionManager = ref(false)
+
+    // 打开Session实例管理对话框
+    const handleManageSessions = () => {
+      showSessionManager.value = true
+    }
+
+    // 关闭Session实例管理对话框
+    const closeSessionManager = () => {
+      showSessionManager.value = false
+    }
 
     // 关闭下载弹窗
     const closeDownloadModal = () => {
@@ -253,6 +276,7 @@ export default {
       )
     )
     provide('showImportModeDialog', importExport.showImportModeDialog)
+    provide('openSessionManager', handleManageSessions)
 
     // 监听网站添加/删除，自动保存到当前布局
     watch(() => websiteManager.websites.value.length, () => {
@@ -293,6 +317,7 @@ export default {
       showDownloadModal,
       fullscreenIndex,
       showPanel,
+      showSessionManager,
       websites: websiteManager.websites,
       layouts: layoutManager.layouts,
       currentLayoutId: layoutManager.currentLayoutId,
@@ -313,6 +338,8 @@ export default {
       // 方法
       closeDownloadModal,
       handleShowDownloadModal,
+      handleManageSessions,
+      closeSessionManager,
       handleFullscreen,
       exitFullscreen,
       handleMouseMove,

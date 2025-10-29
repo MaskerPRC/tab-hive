@@ -69,6 +69,48 @@
           </div>
         </div>
       </div>
+      
+      <!-- 第三行：Session实例选择 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cookie共享实例：</label>
+          <div class="session-selector">
+            <select
+              v-model="localWebsite.sessionInstance"
+              class="form-input session-select"
+            >
+              <option 
+                v-for="instance in sessionInstances" 
+                :key="instance.id" 
+                :value="instance.id"
+              >
+                {{ instance.name }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn-new-instance"
+              @click="handleCreateNewInstance"
+              title="创建新实例"
+            >
+              ➕ 新建
+            </button>
+            <button
+              type="button"
+              class="btn-manage-instance"
+              @click="handleOpenSessionManager"
+              title="管理所有实例"
+            >
+              ⚙️ 管理
+            </button>
+          </div>
+          <div class="session-hint">
+            💡 相同实例的蜂巢会共享Cookie和存储，不同实例之间完全隔离<br>
+            • 默认共享实例：所有网站共用<br>
+            • 新建实例：可用于多账号登录等场景
+          </div>
+        </div>
+      </div>
       <div class="form-group">
         <label>自动刷新间隔（可选）：</label>
         
@@ -130,7 +172,8 @@
 </template>
 
 <script>
-import { ref, watch, nextTick, computed } from 'vue'
+import { ref, watch, nextTick, computed, inject } from 'vue'
+import { useSessionManager } from '../composables/useSessionManager.js'
 
 export default {
   name: 'WebsiteEditDialog',
@@ -150,7 +193,8 @@ export default {
         url: '',
         deviceType: 'desktop',
         targetSelector: '',
-        autoRefreshInterval: 0
+        autoRefreshInterval: 0,
+        sessionInstance: 'default'
       })
     }
   },
@@ -163,8 +207,14 @@ export default {
       url: '',
       deviceType: 'desktop',
       targetSelector: '',
-      autoRefreshInterval: 0
+      autoRefreshInterval: 0,
+      sessionInstance: 'default'
     })
+
+    // Session管理
+    const { sessionInstances, addSessionInstance } = useSessionManager()
+    const showPrompt = inject('showPrompt')
+    const openSessionManager = inject('openSessionManager')
 
     // 自定义时间值和单位
     const customValue = ref(0)
@@ -210,12 +260,21 @@ export default {
 
     // 监听 website prop 变化，更新本地数据
     watch(() => props.website, (newVal) => {
-      localWebsite.value = { ...newVal }
+      localWebsite.value = { 
+        ...newVal,
+        // 确保 sessionInstance 有默认值
+        sessionInstance: newVal.sessionInstance || 'default'
+      }
       
       // 将秒数转换为合适的单位显示
       const converted = convertSecondsToUnit(newVal.autoRefreshInterval || 0)
       customValue.value = converted.value
       timeUnit.value = converted.unit
+      
+      console.log('[WebsiteEditDialog] 加载网站数据:', {
+        title: localWebsite.value.title,
+        sessionInstance: localWebsite.value.sessionInstance
+      })
     }, { immediate: true, deep: true })
 
     // 监听对话框显示，自动聚焦到标题输入框
@@ -296,19 +355,57 @@ export default {
       mouseDownOnOverlay.value = false
     }
 
+    // 创建新的session实例
+    const handleCreateNewInstance = async () => {
+      // 使用当前蜂巢的名称作为实例的默认命名
+      const defaultName = localWebsite.value.title 
+        ? `${localWebsite.value.title}` 
+        : `共享实例 ${sessionInstances.value.length}`
+      
+      if (!showPrompt) {
+        const name = prompt('请输入新实例名称：', defaultName)
+        if (name && name.trim()) {
+          const newInstance = addSessionInstance(name.trim())
+          localWebsite.value.sessionInstance = newInstance.id
+        }
+        return
+      }
+
+      const name = await showPrompt({
+        title: '创建新的Cookie共享实例',
+        message: '请输入实例名称（例如：账号2、测试环境等）',
+        placeholder: defaultName
+      })
+
+      if (name && name.trim()) {
+        const newInstance = addSessionInstance(name.trim())
+        localWebsite.value.sessionInstance = newInstance.id
+      }
+    }
+
+    // 打开实例管理器
+    const handleOpenSessionManager = () => {
+      if (openSessionManager) {
+        openSessionManager()
+      }
+    }
+
     return {
       titleInput,
       localWebsite,
       customValue,
       timeUnit,
       refreshPresets,
+      sessionInstances,
       selectPreset,
       isPresetActive,
       handleCustomInput,
       handleUnitChange,
       handleConfirm,
       handleOverlayMouseDown,
-      handleOverlayClick
+      handleOverlayClick,
+      handleCreateNewInstance,
+      handleOpenSessionManager
     }
   }
 }
@@ -591,6 +688,69 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #065f46;
+}
+
+.session-selector {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.session-select {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.btn-new-instance {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btn-new-instance:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
+}
+
+.btn-manage-instance {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btn-manage-instance:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.session-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #92400e;
 }
 
 /* 响应式设计：在较小屏幕上切换回纵向布局 */

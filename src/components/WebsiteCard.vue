@@ -18,10 +18,12 @@
       <!-- 主 webview -->
       <webview
         v-if="isElectron"
+        :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
         :ref="setWebviewRef"
         :id="`webview-${item.id}`"
         :data-webview-id="item.id"
         :src="websiteUrl"
+        :partition="partitionName"
         class="website-webview"
         :class="{ 'mobile-view': item.deviceType === 'mobile' }"
         :preload="webviewPreloadPath"
@@ -32,10 +34,12 @@
       <!-- 后台缓冲 webview(双缓冲机制) -->
       <webview
         v-if="isElectron && isBufferLoading"
+        :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
         :ref="setBufferWebviewRef"
         :id="`webview-buffer-${item.id}`"
         :data-webview-id="`buffer-${item.id}`"
         :src="bufferUrl"
+        :partition="partitionName"
         class="website-webview buffer-webview"
         :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
         :preload="webviewPreloadPath"
@@ -111,6 +115,7 @@ import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
 import { useAutoRefresh } from '../composables/useAutoRefresh.js'
 import { useIframeSelector } from '../composables/useIframeSelector.js'
+import { useSessionManager } from '../composables/useSessionManager.js'
 
 export default {
   name: 'WebsiteCard',
@@ -222,6 +227,15 @@ export default {
       getWebsiteUrl: getIframWebsiteUrl
     } = useIframeSelector(props)
     
+    // Session管理
+    const { getPartitionName } = useSessionManager()
+    
+    // 计算partition名称
+    const partitionName = computed(() => {
+      const instanceId = props.item.sessionInstance || 'default'
+      return getPartitionName(instanceId)
+    })
+    
     // 主 webview 加载完成标志
     const mainWebviewReady = ref(false)
 
@@ -277,7 +291,15 @@ export default {
 
       // 监听加载失败
       webview.addEventListener('did-fail-load', (event) => {
-        console.error('[WebsiteCard] Webview 加载失败:', event.errorDescription)
+        console.error('[WebsiteCard] Webview 加载失败:', {
+          errorCode: event.errorCode,
+          errorDescription: event.errorDescription,
+          validatedURL: event.validatedURL,
+          isMainFrame: event.isMainFrame,
+          isBuffer: isBuffer,
+          partition: webview.partition,
+          sessionInstance: props.item.sessionInstance
+        })
       })
     }
 
@@ -434,7 +456,11 @@ export default {
     
     // 双缓冲刷新方法
     const refreshWithDoubleBuffer = () => {
-      console.log('[WebsiteCard] 使用双缓冲刷新:', props.item.title)
+      console.log('[WebsiteCard] 使用双缓冲刷新:', props.item.title, {
+        sessionInstance: props.item.sessionInstance,
+        partition: partitionName.value,
+        url: websiteUrl.value
+      })
       
       if (!isElectron.value) {
         // 非 Electron 环境,简单刷新
@@ -448,6 +474,11 @@ export default {
       // 设置缓冲 URL 并显示缓冲 webview
       bufferUrl.value = websiteUrl.value
       isBufferLoading.value = true
+      
+      console.log('[WebsiteCard] 缓冲webview配置:', {
+        bufferUrl: bufferUrl.value,
+        partition: partitionName.value
+      })
       
       // 监听缓冲 webview 加载完成
       nextTick(() => {
@@ -530,6 +561,21 @@ export default {
     const { remainingTime, resetTimer, pauseTimer, resumeTimer } = useAutoRefresh({
       item: itemRef,
       onRefresh: refreshWithDoubleBuffer
+    })
+
+    // 监听sessionInstance变化，需要刷新webview以应用新的partition
+    watch(() => props.item.sessionInstance, (newVal, oldVal) => {
+      if (oldVal !== undefined && newVal !== oldVal && isElectron.value) {
+        console.log('[WebsiteCard] SessionInstance变化,需要重新创建webview:', {
+          old: oldVal,
+          new: newVal,
+          oldPartition: oldVal ? `persist:${oldVal}` : 'persist:default',
+          newPartition: newVal ? `persist:${newVal}` : 'persist:default'
+        })
+        // webview的partition属性不能动态修改
+        // 通过key属性变化强制Vue重新创建webview元素
+        // key已经包含了sessionInstance，所以会自动触发重新创建
+      }
     })
 
     // 监听全屏状态变化,控制自动刷新暂停/恢复和选择器切换
@@ -625,6 +671,7 @@ export default {
       isElectron,
       webviewPreloadPath,
       websiteUrl,
+      partitionName,
       setWebviewRef,
       setBufferWebviewRef,
       setIframeRef,

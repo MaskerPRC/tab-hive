@@ -23,23 +23,35 @@ export function useDialog() {
 
   /**
    * 显示 prompt 对话框
-   * @param {string} message - 提示消息
-   * @param {string} defaultValue - 默认值
+   * @param {string|Object} messageOrOptions - 提示消息字符串或选项对象
+   * @param {string} defaultValue - 默认值（当第一个参数是字符串时使用）
    * @returns {Promise<string|null>} 用户输入的值或 null
    */
-  const showPrompt = (message, defaultValue = '') => {
-    // Electron 环境下直接返回默认值
-    if (isElectron.value) {
-      return Promise.resolve(defaultValue || '新布局')
+  const showPrompt = (messageOrOptions, defaultValue = '') => {
+    // 支持对象参数和字符串参数两种方式
+    let title, message, placeholder, defaultVal
+    
+    if (typeof messageOrOptions === 'object') {
+      // 对象参数方式
+      title = messageOrOptions.title || '输入'
+      message = messageOrOptions.message || ''
+      placeholder = messageOrOptions.placeholder || ''
+      defaultVal = messageOrOptions.defaultValue || placeholder
+    } else {
+      // 字符串参数方式（向后兼容）
+      title = '输入'
+      message = messageOrOptions
+      placeholder = defaultValue
+      defaultVal = defaultValue
     }
 
-    // 使用自定义对话框
+    // 使用自定义对话框（无论是否在 Electron 环境）
     return new Promise((resolve) => {
       dialogType.value = 'prompt'
-      dialogTitle.value = '输入'
+      dialogTitle.value = title
       dialogMessage.value = message
-      dialogPlaceholder.value = defaultValue
-      dialogDefaultValue.value = defaultValue
+      dialogPlaceholder.value = placeholder
+      dialogDefaultValue.value = defaultVal
       dialogVisible.value = true
       dialogResolve = resolve
     })
@@ -47,19 +59,27 @@ export function useDialog() {
 
   /**
    * 显示 confirm 对话框
-   * @param {string} message - 提示消息
+   * @param {string|Object} messageOrOptions - 提示消息字符串或选项对象
    * @returns {Promise<boolean>} 用户确认结果
    */
-  const showConfirm = (message) => {
-    // Electron 环境下直接返回 true
-    if (isElectron.value) {
-      return Promise.resolve(true)
+  const showConfirm = (messageOrOptions) => {
+    // 支持对象参数和字符串参数两种方式
+    let title, message
+    
+    if (typeof messageOrOptions === 'object') {
+      // 对象参数方式
+      title = messageOrOptions.title || '确认'
+      message = messageOrOptions.message || ''
+    } else {
+      // 字符串参数方式（向后兼容）
+      title = '确认'
+      message = messageOrOptions
     }
 
-    // 使用自定义对话框
+    // 使用自定义对话框（无论是否在 Electron 环境）
     return new Promise((resolve) => {
       dialogType.value = 'confirm'
-      dialogTitle.value = '确认'
+      dialogTitle.value = title
       dialogMessage.value = message
       dialogVisible.value = true
       dialogResolve = resolve

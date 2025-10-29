@@ -134,7 +134,7 @@ export default {
   align-items: flex-start;
   justify-content: center;
   padding-top: 20vh; /* 向下偏移 */
-  z-index: 10000;
+  z-index: 10001; /* 确保在其他对话框之上 */
 }
 
 .dialog-box {

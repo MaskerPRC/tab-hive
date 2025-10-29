@@ -63,6 +63,20 @@
         </label>
 
         <button
+          @click="$emit('manage-sessions')"
+          class="sidebar-btn btn-sessions"
+          title="管理Cookie共享实例"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>实例管理</span>
+        </button>
+
+        <button
           @click="openHelp"
           class="sidebar-btn btn-help"
           title="使用帮助"
@@ -133,7 +147,7 @@ export default {
       default: true
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'manage-sessions'],
   setup(props, { emit }) {
     const showLayoutDropdown = ref(false)
     let hideTimer = null
@@ -228,7 +242,11 @@ export default {
     }
 
     const handleCreateLayout = async () => {
-      const name = await showPrompt('请输入新布局名称：', '新布局')
+      const name = await showPrompt({
+        title: '创建新布局',
+        message: '请输入新布局名称',
+        placeholder: '新布局'
+      })
       if (name && name.trim()) {
         emit('create-layout', name.trim())
         showLayoutDropdown.value = false
@@ -479,6 +497,23 @@ export default {
   font-family: inherit;
   transition: all 0.3s;
   border: none;
+}
+
+.btn-sessions {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.btn-sessions:hover {
+  background: #fff5f0;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateX(2px);
+}
+
+.btn-sessions svg {
+  stroke: currentColor;
 }
 
 .btn-help {

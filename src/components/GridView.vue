@@ -230,7 +230,8 @@ export default {
         url: '',
         deviceType: 'desktop',
         targetSelector: '',
-        autoRefreshInterval: 0
+        autoRefreshInterval: 0,
+        sessionInstance: 'default'
       }
     }
 
@@ -250,7 +251,7 @@ export default {
       }
 
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0 }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0, sessionInstance: 'default' }
     }
 
     /**
@@ -258,7 +259,7 @@ export default {
      */
     const cancelAddWebsite = () => {
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0 }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0, sessionInstance: 'default' }
     }
 
     /**
@@ -305,8 +306,13 @@ export default {
           url: website.url,
           deviceType: website.deviceType || 'desktop',
           targetSelector: website.targetSelector || '',
-          autoRefreshInterval: website.autoRefreshInterval || 0
+          autoRefreshInterval: website.autoRefreshInterval || 0,
+          sessionInstance: website.sessionInstance || 'default'
         }
+        console.log('[GridView] 编辑网站:', {
+          title: website.title,
+          sessionInstance: newWebsite.value.sessionInstance
+        })
       }
     }
 
