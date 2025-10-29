@@ -15,32 +15,41 @@
   >
     <!-- 已有网站显示 -->
     <template v-if="item.url">
-      <!-- 主iframe -->
-      <iframe
-        :ref="setIframeRef"
-        :data-iframe-id="`iframe-${item.id}`"
-        :src="websiteUrl"
-        frameborder="0"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
-        class="website-iframe"
-        :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-        :title="item.title"
-        :allow="'autoplay; fullscreen; picture-in-picture'"
-      ></iframe>
-      
-      <!-- 后台缓冲iframe（双缓冲机制） -->
-      <iframe
-        v-if="isBufferLoading"
-        :ref="setBufferIframeRef"
-        :data-iframe-id="`iframe-buffer-${item.id}`"
-        :src="bufferUrl"
-        frameborder="0"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
-        class="website-iframe buffer-iframe"
-        :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
-        :title="`${item.title} (加载中)`"
-        :allow="'autoplay; fullscreen; picture-in-picture'"
-      ></iframe>
+      <!-- 在浏览器环境中显示 iframe -->
+      <template v-if="!isElectron">
+        <!-- 主iframe -->
+        <iframe
+          :ref="setIframeRef"
+          :data-iframe-id="`iframe-${item.id}`"
+          :src="websiteUrl"
+          frameborder="0"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
+          class="website-iframe"
+          :class="{ 'mobile-view': item.deviceType === 'mobile' }"
+          :title="item.title"
+          :allow="'autoplay; fullscreen; picture-in-picture'"
+        ></iframe>
+        
+        <!-- 后台缓冲iframe（双缓冲机制） -->
+        <iframe
+          v-if="isBufferLoading"
+          :ref="setBufferIframeRef"
+          :data-iframe-id="`iframe-buffer-${item.id}`"
+          :src="bufferUrl"
+          frameborder="0"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
+          class="website-iframe buffer-iframe"
+          :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
+          :title="`${item.title} (加载中)`"
+          :allow="'autoplay; fullscreen; picture-in-picture'"
+        ></iframe>
+      </template>
+
+      <!-- 在 Electron 环境中，WebContentsView 负责渲染内容 -->
+      <!-- 这里只需要占位符，内容由主进程的 WebContentsView 覆盖显示 -->
+      <div v-else class="webcontents-placeholder">
+        <!-- 占位符：WebContentsView 将覆盖此区域 -->
+      </div>
       
       <!-- 拖动手柄和标题区域 -->
       <div class="drag-title-container">
@@ -378,13 +387,52 @@ export default {
 
 <style scoped>
 .grid-item {
-  background: white;
+  /* 在 Electron 中使用透明背景，让 WebContentsView 透过来 */
+  background: transparent;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   cursor: move;
   border: solid 1px #FF5C00;
+  /* 在 Electron 中，让内容区域不拦截事件，只让控制元素可交互 */
+  pointer-events: none;
+}
+
+/* 浏览器环境中使用白色背景 - 提高优先级 */
+html:not(.electron-env) .grid-item,
+body:not(.electron-env) .grid-item {
+  background: white !important;
+}
+
+/* 默认所有子元素不接收事件（让 WebContentsView 可以点击） */
+.grid-item > * {
+  pointer-events: none;
+}
+
+/* 只有控制元素才可以接收事件 */
+.grid-item .drag-title-container,
+.grid-item .drag-title-container *,
+.grid-item .floating-actions,
+.grid-item .floating-actions *,
+.grid-item .resize-handles,
+.grid-item .resize-handles *,
+.grid-item .resize-handle,
+.grid-item .drop-zone,
+.grid-item .drop-hint,
+.grid-item .refresh-timer {
+  pointer-events: auto;
+}
+
+/* 占位符区域不拦截事件 */
+.grid-item .webcontents-placeholder {
+  pointer-events: none;
+}
+
+/* 在浏览器环境（有 iframe）中，iframe 需要接收事件 */
+html:not(.electron-env) .grid-item .website-iframe,
+body:not(.electron-env) .grid-item .website-iframe {
+  pointer-events: auto !important;
 }
 
 .grid-item.draggable:hover {
@@ -445,6 +493,15 @@ export default {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* WebContentsView 占位符 */
+.webcontents-placeholder {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  /* 注意：在 Electron 中，WebContentsView 在独立层，
+     这里的 pointer-events 只影响控制层的事件 */
 }
 
 /* 拖动或调整大小时，禁用iframe的鼠标事件，防止操作中断 */

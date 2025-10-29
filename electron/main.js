@@ -1,48 +1,38 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BaseWindow, WebContentsView, ipcMain, screen } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
-console.log('[Electron Main] ========== 开始加载注入脚本 ==========')
-console.log('[Electron Main] 当前目录:', __dirname)
+console.log('[Electron Main] ========== 启动应用 ==========')
 
-// 读取注入脚本
+// 开发环境热更新支持
 try {
-  console.log('[Electron Main] 1/4 读取 window-open-handler.js...')
-  const windowOpenHandlerPath = path.join(__dirname, 'scripts/window-open-handler.js')
-  console.log('[Electron Main] 路径:', windowOpenHandlerPath)
-  const windowOpenHandlerScript = fs.readFileSync(windowOpenHandlerPath, 'utf8')
-  console.log('[Electron Main] ✓ window-open-handler.js 读取成功 (', windowOpenHandlerScript.length, 'bytes)')
-
-  console.log('[Electron Main] 2/4 读取 iframe-inject.js...')
-  const iframeInjectPath = path.join(__dirname, 'scripts/iframe-inject.js')
-  console.log('[Electron Main] 路径:', iframeInjectPath)
-  const iframeInjectScript = fs.readFileSync(iframeInjectPath, 'utf8')
-  console.log('[Electron Main] ✓ iframe-inject.js 读取成功 (', iframeInjectScript.length, 'bytes)')
-
-  console.log('[Electron Main] 3/4 读取 check-iframe-id.js...')
-  const checkIframeIdPath = path.join(__dirname, 'scripts/check-iframe-id.js')
-  console.log('[Electron Main] 路径:', checkIframeIdPath)
-  const checkIframeIdScript = fs.readFileSync(checkIframeIdPath, 'utf8')
-  console.log('[Electron Main] ✓ check-iframe-id.js 读取成功 (', checkIframeIdScript.length, 'bytes)')
-
-  console.log('[Electron Main] 4/4 读取 execute-in-iframe.js...')
-  const executeInIframePath = path.join(__dirname, 'scripts/execute-in-iframe.js')
-  console.log('[Electron Main] 路径:', executeInIframePath)
-  const executeInIframeScript = fs.readFileSync(executeInIframePath, 'utf8')
-  console.log('[Electron Main] ✓ execute-in-iframe.js 读取成功 (', executeInIframeScript.length, 'bytes)')
-
-  console.log('[Electron Main] ========== 所有脚本加载完成 ==========')
-
-  // 导出脚本供后续使用
-  global.windowOpenHandlerScript = windowOpenHandlerScript
-  global.iframeInjectScript = iframeInjectScript
-  global.checkIframeIdScript = checkIframeIdScript
-  global.executeInIframeScript = executeInIframeScript
-} catch (error) {
-  console.error('[Electron Main] ✗ 脚本读取失败:', error.message)
-  console.error('[Electron Main] 错误详情:', error)
-  process.exit(1)
+  if (process.env.NODE_ENV === 'development') {
+    require('electron-reloader')(module, {
+      debug: true,
+      watchRenderer: true,
+      // 监控 electron 目录和 preload 脚本
+      ignore: ['node_modules/**', 'dist/**', 'release/**', 'src/**']
+    })
+    console.log('[Electron Main] 热更新已启用')
+  }
+} catch (err) {
+  console.log('[Electron Main] 热更新加载失败（可能在生产环境）:', err.message)
 }
+
+// 设置用户数据目录（确保有写权限）
+const userDataPath = path.join(app.getPath('appData'), 'tab-hive')
+if (!fs.existsSync(userDataPath)) {
+  fs.mkdirSync(userDataPath, { recursive: true })
+}
+app.setPath('userData', userDataPath)
+console.log('[Electron Main] 用户数据目录:', userDataPath)
+
+// 设置缓存目录
+const cachePath = path.join(userDataPath, 'Cache')
+if (!fs.existsSync(cachePath)) {
+  fs.mkdirSync(cachePath, { recursive: true })
+}
+console.log('[Electron Main] 缓存目录:', cachePath)
 
 // 设置 User-Agent
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36'
@@ -52,264 +42,586 @@ app.commandLine.appendSwitch('disable-web-security')
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 app.commandLine.appendSwitch('disable-site-isolation-trials')
 
-let mainWindow
+// 设置缓存路径（解决缓存权限问题）
+app.commandLine.appendSwitch('disk-cache-dir', cachePath)
+app.commandLine.appendSwitch('disk-cache-size', '104857600') // 100MB
 
-function createWindow() {
-  console.log('[Electron Main] ========== 开始创建主窗口 ==========')
+// 全局变量
+let mainWindow = null
+let controlView = null // 控制界面的 View
+const websiteViews = new Map() // 存储所有网站的 WebContentsView
 
-  mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    minWidth: 800,
-    minHeight: 600,
-    icon: path.join(__dirname, '../public/256x256.ico'),
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false, // 禁用沙箱以允许访问iframe
-      webSecurity: false, // 禁用web安全策略
-      allowRunningInsecureContent: true,
-      webviewTag: true,
-      preload: path.join(__dirname, 'preload.js')
-    },
-    backgroundColor: '#f5f5f5',
-    show: false,
-    autoHideMenuBar: true // 隐藏菜单栏，但保留原生标题栏
-  })
-
-  console.log('[Electron Main] 主窗口创建完成，准备加载内容')
-
-  // 开发模式加载开发服务器，生产模式加载构建文件
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Electron Main] 开发模式，加载 http://localhost:3000')
-    mainWindow.loadURL('http://localhost:3000')
-    mainWindow.webContents.openDevTools()
-  } else {
-    console.log('[Electron Main] 生产模式，加载本地文件')
-    const indexPath = path.join(__dirname, '../dist/index.html')
-    console.log('[Electron Main] 文件路径:', indexPath)
-    mainWindow.loadFile(indexPath)
+// WebContentsView 管理器
+class WebContentsViewManager {
+  constructor(window, controlView) {
+    this.window = window
+    this.controlView = controlView // 保存控制视图引用
+    this.views = new Map()
+    this.viewOrder = [] // 保持视图的 z-index 顺序
   }
 
-  console.log('[Electron Main] 页面加载已启动')
-
-  // 添加心跳日志，用于检测是否卡死
-  let heartbeatCount = 0
-  const heartbeatInterval = setInterval(() => {
-    heartbeatCount++
-    if (heartbeatCount <= 10) { // 只输出前10次，避免刷屏
-      console.log('[Electron Main] ❤️ 心跳', heartbeatCount, '- 主进程运行正常')
-    }
-    if (heartbeatCount === 10) {
-      console.log('[Electron Main] 心跳日志已达到10次，停止输出（主进程正常）')
-      clearInterval(heartbeatInterval)
-    }
-  }, 2000) // 每2秒一次
-
-
-  // 拦截新窗口打开 - 在macOS全屏时不跳转到新窗口
-  // 策略：创建新窗口但立即关闭，然后通知主页面在iframe中导航
-  mainWindow.webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
-    console.log('[Window Open Guard] 拦截新窗口打开:', { url, frameName, disposition })
-
-    try {
-      // 发送消息到渲染进程，让它在最近点击的iframe中导航
-      const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
-      const scriptToExecute = global.windowOpenHandlerScript.replace('URL_TO_OPEN', escapedUrl)
-      console.log('[Window Open Guard] 准备执行脚本，URL长度:', escapedUrl.length)
-
-      mainWindow.webContents.executeJavaScript(scriptToExecute).then(() => {
-        console.log('[Window Open Guard] ✓ 脚本执行成功')
-      }).catch(err => {
-        console.log('[Window Open Guard] ✗ 执行失败:', err.message)
-      })
-    } catch (error) {
-      console.error('[Window Open Guard] ✗ 处理失败:', error.message)
-    }
-
-    // 阻止打开新窗口
-    return { action: 'deny' }
-  })
-
-  // 监听所有 frame 的创建，用于在 iframe 中注入代码
-  mainWindow.webContents.on('did-frame-navigate', (event, url, httpResponseCode, httpStatusText, isMainFrame, frameProcessId, frameRoutingId) => {
-    if (!isMainFrame) {
-      console.log('[Iframe Inject] ========== iframe 导航完成 ==========')
-      console.log('[Iframe Inject] URL:', url)
-      console.log('[Iframe Inject] HTTP状态:', httpResponseCode, httpStatusText)
-      console.log('[Iframe Inject] PID:', frameProcessId, 'RoutingID:', frameRoutingId)
-
+  /**
+   * 确保控制视图在最上层
+   */
+  ensureControlViewOnTop() {
+    if (this.controlView) {
+      // 移除并重新添加控制视图，使其在最上层
       try {
-        // 查找对应的 frame
-        console.log('[Iframe Inject] 查找对应的frame...')
-        const frame = mainWindow.webContents.mainFrame.framesInSubtree.find(
-          f => f.processId === frameProcessId && f.routingId === frameRoutingId
-        )
-
-        if (frame) {
-          console.log('[Iframe Inject] ✓ 找到frame，准备注入代码')
-          console.log('[Iframe Inject] 注入脚本大小:', global.iframeInjectScript.length, 'bytes')
-
-          // 在 iframe 中注入代码
-          setTimeout(() => {
-            console.log('[Iframe Inject] 开始执行注入...')
-            frame.executeJavaScript(global.iframeInjectScript).then(() => {
-              console.log('[Iframe Inject] ✓ 代码注入成功')
-            }).catch(err => {
-              console.error('[Iframe Inject] ✗ iframe代码注入失败:', err.message)
-              console.error('[Iframe Inject] 错误堆栈:', err.stack)
-            })
-          }, 100)
-        } else {
-          console.warn('[Iframe Inject] ✗ 未找到对应的frame')
-        }
+        this.window.contentView.removeChildView(this.controlView)
+        this.window.contentView.addChildView(this.controlView)
+        console.log('[ViewManager] 控制视图已提升到最上层')
       } catch (error) {
-        console.error('[Iframe Inject] ✗ 处理iframe导航失败:', error.message)
-        console.error('[Iframe Inject] 错误堆栈:', error.stack)
+        console.error('[ViewManager] 提升控制视图失败:', error)
       }
     }
-  })
+  }
 
-  // 监听页面加载完成
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('[Electron Main] 页面加载完成')
-  })
-
-  console.log('[Electron Main] 设置CORS和Cookie处理')
-
-  // 存储请求的 Origin，用于 CORS 响应
-  const requestOrigins = new Map()
-
-  // 禁用所有iframe的CORS限制，并转发 Cookie
-  mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
-    { urls: ['*://*/*'] },
-    async (details, callback) => {
-      // console.log('[CORS] onBeforeSendHeaders:', details.url.substring(0, 100))
-      const requestHeaders = { ...details.requestHeaders }
-
-      // 存储请求的 Origin 头，用于后续的 CORS 响应
-      if (requestHeaders['Origin'] || requestHeaders['origin']) {
-        const origin = requestHeaders['Origin'] || requestHeaders['origin']
-        requestOrigins.set(details.url, origin)
-        // console.log(`[CORS] 存储请求 Origin: ${origin} for ${details.url}`)
-
-        // 5秒后清理，避免内存泄漏
-        setTimeout(() => {
-          requestOrigins.delete(details.url)
-        }, 5000)
-      }
-
-      // 获取当前域名的所有 cookies
-      try {
-        const url = new URL(details.url)
-        const cookies = await mainWindow.webContents.session.cookies.get({
-          domain: url.hostname
-        })
-
-        // 如果有 cookie，添加到请求头中
-        if (cookies.length > 0) {
-          const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ')
-          requestHeaders['Cookie'] = cookieString
-          // console.log(`[Cookie] 为 ${url.hostname} 添加 Cookie:`, cookieString.substring(0, 100))
+  /**
+   * 创建或更新一个网站视图
+   * @param {string} id - 视图ID
+   * @param {object} options - 配置选项
+   * @returns {WebContentsView}
+   */
+  createOrUpdateView(id, options) {
+    console.log(`[ViewManager] 创建/更新视图: ${id}`, options)
+    
+    let view = this.views.get(id)
+    
+    if (!view) {
+      // 创建新视图
+      view = new WebContentsView({
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          webSecurity: false,
+          allowRunningInsecureContent: true,
+          sandbox: false,
+          // 允许跨域请求
+          webviewTag: false
         }
-      } catch (e) {
-        // 忽略错误，继续请求
-      }
+      })
 
-      callback({ requestHeaders })
+      // 设置 CORS 和 Cookie 处理
+      this.setupCorsAndCookies(view)
+
+      // 处理新窗口打开
+      view.webContents.setWindowOpenHandler(({ url }) => {
+        console.log(`[ViewManager] 视图 ${id} 尝试打开新窗口:`, url)
+        // 在当前视图中导航
+        view.webContents.loadURL(url)
+        return { action: 'deny' }
+      })
+
+      this.views.set(id, view)
+      this.viewOrder.push(id)
+      
+      // 先添加 WebContentsView（在底层）
+      this.window.contentView.addChildView(view)
+      
+      // 确保控制视图在最上层
+      this.ensureControlViewOnTop()
+      
+      console.log(`[ViewManager] ✓ 新视图创建完成: ${id}`)
     }
-  )
 
-  mainWindow.webContents.session.webRequest.onHeadersReceived(
-    { urls: ['*://*/*'] },
-    (details, callback) => {
-      const responseHeaders = { ...details.responseHeaders }
+    // 设置视图位置和大小
+    if (options.bounds) {
+      view.setBounds(options.bounds)
+    }
 
-      // 移除阻止iframe加载的headers
-      delete responseHeaders['x-frame-options']
-      delete responseHeaders['X-Frame-Options']
-      delete responseHeaders['content-security-policy']
-      delete responseHeaders['Content-Security-Policy']
+    // 设置视图可见性
+    if (options.visible !== undefined) {
+      view.setVisible(options.visible)
+    }
 
-      // 处理 CORS 头
-      // 如果之前存储了这个请求的 Origin，使用它；否则使用请求URL的 origin
-      const storedOrigin = requestOrigins.get(details.url)
+    // 加载 URL
+    if (options.url && view.webContents.getURL() !== options.url) {
+      console.log(`[ViewManager] 加载 URL: ${options.url}`)
+      view.webContents.loadURL(options.url).catch(err => {
+        console.error(`[ViewManager] 加载 URL 失败:`, err)
+      })
+    }
 
-      if (storedOrigin) {
-        // 有明确的请求 Origin，使用它并允许凭证
-        // console.log(`[CORS] 使用存储的 Origin: ${storedOrigin}`)
-        responseHeaders['Access-Control-Allow-Origin'] = [storedOrigin]
-        responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
-        responseHeaders['Access-Control-Allow-Headers'] = ['*']
-        responseHeaders['Access-Control-Allow-Credentials'] = ['true']
-        responseHeaders['Access-Control-Expose-Headers'] = ['*']
-        responseHeaders['Vary'] = ['Origin']
-      } else {
-        // 没有明确的 Origin（可能是同源请求或导航请求）
-        // 使用请求URL的 origin 并允许凭证
+    return view
+  }
+
+  /**
+   * 设置 CORS 和 Cookie 处理
+   */
+  setupCorsAndCookies(view) {
+    const requestOrigins = new Map()
+
+    view.webContents.session.webRequest.onBeforeSendHeaders(
+      { urls: ['*://*/*'] },
+      async (details, callback) => {
+        const requestHeaders = { ...details.requestHeaders }
+
+        // 存储请求的 Origin 头
+        if (requestHeaders['Origin'] || requestHeaders['origin']) {
+          const origin = requestHeaders['Origin'] || requestHeaders['origin']
+          requestOrigins.set(details.url, origin)
+          
+          setTimeout(() => {
+            requestOrigins.delete(details.url)
+          }, 5000)
+        }
+
+        // 获取并添加 cookies
         try {
-          const urlObj = new URL(details.url)
-          const requestOrigin = `${urlObj.protocol}//${urlObj.host}`
+          const url = new URL(details.url)
+          const cookies = await view.webContents.session.cookies.get({
+            domain: url.hostname
+          })
 
-          // console.log(`[CORS] 使用请求URL的 origin: ${requestOrigin}`)
-          responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin]
+          if (cookies.length > 0) {
+            const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ')
+            requestHeaders['Cookie'] = cookieString
+          }
+        } catch (e) {
+          // 忽略错误
+        }
+
+        callback({ requestHeaders })
+      }
+    )
+
+    view.webContents.session.webRequest.onHeadersReceived(
+      { urls: ['*://*/*'] },
+      (details, callback) => {
+        const responseHeaders = { ...details.responseHeaders }
+
+        // 移除阻止iframe加载的headers
+        delete responseHeaders['x-frame-options']
+        delete responseHeaders['X-Frame-Options']
+        delete responseHeaders['content-security-policy']
+        delete responseHeaders['Content-Security-Policy']
+
+        // 处理 CORS 头
+        const storedOrigin = requestOrigins.get(details.url)
+
+        if (storedOrigin) {
+          responseHeaders['Access-Control-Allow-Origin'] = [storedOrigin]
           responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
           responseHeaders['Access-Control-Allow-Headers'] = ['*']
           responseHeaders['Access-Control-Allow-Credentials'] = ['true']
           responseHeaders['Access-Control-Expose-Headers'] = ['*']
-        } catch (e) {
-          // 如果无法解析 URL，使用宽松设置（但不带凭证以避免冲突）
-          // console.log(`[CORS] URL 解析失败，使用通配符`)
-          responseHeaders['Access-Control-Allow-Origin'] = ['*']
-          responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
-          responseHeaders['Access-Control-Allow-Headers'] = ['*']
+          responseHeaders['Vary'] = ['Origin']
+        } else {
+          try {
+            const urlObj = new URL(details.url)
+            const requestOrigin = `${urlObj.protocol}//${urlObj.host}`
+            responseHeaders['Access-Control-Allow-Origin'] = [requestOrigin]
+            responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
+            responseHeaders['Access-Control-Allow-Headers'] = ['*']
+            responseHeaders['Access-Control-Allow-Credentials'] = ['true']
+            responseHeaders['Access-Control-Expose-Headers'] = ['*']
+          } catch (e) {
+            responseHeaders['Access-Control-Allow-Origin'] = ['*']
+            responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH']
+            responseHeaders['Access-Control-Allow-Headers'] = ['*']
+          }
         }
-      }
 
-      // 修改 Set-Cookie 的 SameSite 属性，使其在 iframe 中也能工作
-      if (responseHeaders['set-cookie']) {
-        responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(cookie => {
-          // 移除 SameSite=Lax 或 SameSite=Strict
-          let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
-          // 添加 SameSite=None 和 Secure（iframe 中必需）
-          if (!modifiedCookie.includes('SameSite=None')) {
-            modifiedCookie += '; SameSite=None'
-          }
-          if (!modifiedCookie.includes('Secure')) {
-            modifiedCookie += '; Secure'
-          }
-          return modifiedCookie
-        })
-      }
-      if (responseHeaders['Set-Cookie']) {
-        responseHeaders['Set-Cookie'] = responseHeaders['Set-Cookie'].map(cookie => {
-          let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
-          if (!modifiedCookie.includes('SameSite=None')) {
-            modifiedCookie += '; SameSite=None'
-          }
-          if (!modifiedCookie.includes('Secure')) {
-            modifiedCookie += '; Secure'
-          }
-          return modifiedCookie
-        })
-      }
+        // 修改 Set-Cookie 的 SameSite 属性
+        if (responseHeaders['set-cookie']) {
+          responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(cookie => {
+            let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
+            if (!modifiedCookie.includes('SameSite=None')) {
+              modifiedCookie += '; SameSite=None'
+            }
+            if (!modifiedCookie.includes('Secure')) {
+              modifiedCookie += '; Secure'
+            }
+            return modifiedCookie
+          })
+        }
+        if (responseHeaders['Set-Cookie']) {
+          responseHeaders['Set-Cookie'] = responseHeaders['Set-Cookie'].map(cookie => {
+            let modifiedCookie = cookie.replace(/;\s*SameSite=(Lax|Strict)/gi, '')
+            if (!modifiedCookie.includes('SameSite=None')) {
+              modifiedCookie += '; SameSite=None'
+            }
+            if (!modifiedCookie.includes('Secure')) {
+              modifiedCookie += '; Secure'
+            }
+            return modifiedCookie
+          })
+        }
 
-      callback({ responseHeaders })
+        callback({ responseHeaders })
+      }
+    )
+  }
+
+  /**
+   * 删除视图
+   */
+  removeView(id) {
+    const view = this.views.get(id)
+    if (view) {
+      console.log(`[ViewManager] 删除视图: ${id}`)
+      this.window.contentView.removeChildView(view)
+      view.webContents.close()
+      this.views.delete(id)
+      this.viewOrder = this.viewOrder.filter(vid => vid !== id)
     }
-  )
+  }
 
-  mainWindow.once('ready-to-show', () => {
-    console.log('[Electron Main] 窗口准备完成，显示窗口')
-    mainWindow.show()
+  /**
+   * 获取视图
+   */
+  getView(id) {
+    return this.views.get(id)
+  }
+
+  /**
+   * 隐藏所有视图除了指定的
+   */
+  hideAllExcept(exceptId) {
+    for (const [id, view] of this.views.entries()) {
+      if (id !== exceptId) {
+        view.setVisible(false)
+      }
+    }
+  }
+
+  /**
+   * 显示所有视图
+   */
+  showAll() {
+    for (const view of this.views.values()) {
+      view.setVisible(true)
+    }
+  }
+
+  /**
+   * 清空所有视图
+   */
+  clear() {
+    for (const [id, view] of this.views.entries()) {
+      this.window.contentView.removeChildView(view)
+      view.webContents.close()
+    }
+    this.views.clear()
+    this.viewOrder = []
+  }
+
+  /**
+   * 刷新视图
+   */
+  refreshView(id) {
+    const view = this.views.get(id)
+    if (view) {
+      console.log(`[ViewManager] 刷新视图: ${id}`)
+      view.webContents.reload()
+    }
+  }
+
+  /**
+   * 在视图中执行 JavaScript
+   */
+  async executeJavaScript(id, code) {
+    const view = this.views.get(id)
+    if (view) {
+      try {
+        return await view.webContents.executeJavaScript(code)
+      } catch (error) {
+        console.error(`[ViewManager] 执行 JavaScript 失败 (${id}):`, error)
+        throw error
+      }
+    }
+    throw new Error(`View not found: ${id}`)
+  }
+}
+
+let viewManager = null
+
+function createWindow() {
+  console.log('[Electron Main] ========== 创建主窗口 ==========')
+
+  // 获取屏幕尺寸
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize
+
+  // 创建 BaseWindow
+  mainWindow = new BaseWindow({
+    width: Math.min(1400, screenWidth),
+    height: Math.min(900, screenHeight),
+    minWidth: 800,
+    minHeight: 600,
+    icon: path.join(__dirname, '../public/256x256.ico'),
+    backgroundColor: '#f5f5f5',
+    show: false,
+    autoHideMenuBar: true
   })
+
+  console.log('[Electron Main] BaseWindow 创建完成')
+
+  // 注意：先不创建视图管理器，等控制视图加载完成后再创建
+
+  // 创建控制界面视图
+  // 注意：控制视图需要在最后添加，以确保在所有 WebContentsView 之上
+  controlView = new WebContentsView({
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      preload: path.join(__dirname, 'preload.js'),
+      // 设置透明背景
+      transparent: true,
+      backgroundThrottling: false
+    }
+  })
+  
+  // 设置 WebContentsView 的背景为透明
+  controlView.setBackgroundColor('#00000000') // 完全透明
+
+  // 注意：WebContentsView 没有 setIgnoreMouseEvents 方法
+  // 我们需要在主窗口级别控制，或者通过 CSS pointer-events
+  console.log('[Electron Main] 控制视图背景已设置为透明')
+
+  // 先不添加控制视图，等待页面加载后再添加
+  // 这样可以确保控制视图始终在最上层
+  
+  // 设置控制视图的大小和位置（全屏覆盖）
+  const bounds = mainWindow.getBounds()
+  controlView.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height })
+
+  // 加载控制界面
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Electron Main] 开发模式，加载 http://localhost:3000')
+    controlView.webContents.loadURL('http://localhost:3000')
+    
+    // 等待页面加载完成后打开 DevTools 和显示窗口
+    controlView.webContents.once('did-finish-load', () => {
+      console.log('[Electron Main] 控制界面加载完成')
+      
+      // 在页面加载完成后添加控制视图（确保在所有 WebContentsView 之上）
+      mainWindow.contentView.addChildView(controlView)
+      console.log('[Electron Main] 控制视图已添加到窗口（最上层）')
+      
+      // 现在创建视图管理器，传入控制视图引用
+      viewManager = new WebContentsViewManager(mainWindow, controlView)
+      console.log('[Electron Main] 视图管理器已创建')
+      
+      controlView.webContents.openDevTools()
+      
+      // 显示窗口
+      if (!mainWindow.isVisible()) {
+        console.log('[Electron Main] 显示窗口')
+        mainWindow.show()
+      }
+    })
+  } else {
+    console.log('[Electron Main] 生产模式，加载本地文件')
+    const indexPath = path.join(__dirname, '../dist/index.html')
+    console.log('[Electron Main] 文件路径:', indexPath)
+    controlView.webContents.loadFile(indexPath)
+    
+    // 生产模式也需要监听加载完成
+    controlView.webContents.once('did-finish-load', () => {
+      console.log('[Electron Main] 控制界面加载完成')
+      
+      // 在页面加载完成后添加控制视图（确保在所有 WebContentsView 之上）
+      mainWindow.contentView.addChildView(controlView)
+      console.log('[Electron Main] 控制视图已添加到窗口（最上层）')
+      
+      // 现在创建视图管理器，传入控制视图引用
+      viewManager = new WebContentsViewManager(mainWindow, controlView)
+      console.log('[Electron Main] 视图管理器已创建')
+      
+      if (!mainWindow.isVisible()) {
+        console.log('[Electron Main] 显示窗口')
+        mainWindow.show()
+      }
+    })
+  }
+
+  // 监听窗口大小变化
+  mainWindow.on('resize', () => {
+    const bounds = mainWindow.getBounds()
+    if (controlView) {
+      controlView.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height })
+    }
+    // 通知渲染进程窗口大小变化
+    if (controlView && controlView.webContents) {
+      controlView.webContents.send('window-resized', bounds)
+    }
+  })
+
+  // BaseWindow 没有 ready-to-show 事件，直接在加载完成后显示
+  // 备用方案：如果 did-finish-load 没有触发，3秒后强制显示
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      console.log('[Electron Main] 超时后强制显示窗口')
+      mainWindow.show()
+    }
+  }, 3000)
 
   mainWindow.on('closed', () => {
     console.log('[Electron Main] 窗口已关闭')
+    if (viewManager) {
+      viewManager.clear()
+    }
     mainWindow = null
+    controlView = null
+    viewManager = null
+  })
+
+  // 监听控制视图的加载失败
+  controlView.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('[Electron Main] 控制界面加载失败:', errorCode, errorDescription)
+    // 即使加载失败也显示窗口，方便调试
+    if (!mainWindow.isVisible()) {
+      mainWindow.show()
+    }
   })
 
   console.log('[Electron Main] ========== 主窗口创建流程完成 ==========')
 }
+
+// IPC 事件处理
+ipcMain.handle('create-website-view', async (event, { id, url, bounds, visible = true }) => {
+  console.log(`[IPC] 创建/更新网站视图:`, { id, url, bounds, visible })
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    viewManager.createOrUpdateView(id, { url, bounds, visible })
+    
+    return { success: true }
+  } catch (error) {
+    console.error('[IPC] 创建视图失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('update-website-view', async (event, { id, bounds, visible, url }) => {
+  console.log(`[IPC] 更新网站视图:`, { id, bounds, visible, url })
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    const view = viewManager.getView(id)
+    if (!view) {
+      throw new Error(`View not found: ${id}`)
+    }
+
+    if (bounds !== undefined) {
+      view.setBounds(bounds)
+    }
+
+    if (visible !== undefined) {
+      view.setVisible(visible)
+    }
+
+    if (url !== undefined && view.webContents.getURL() !== url) {
+      await view.webContents.loadURL(url)
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('[IPC] 更新视图失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('remove-website-view', async (event, { id }) => {
+  console.log(`[IPC] 删除网站视图: ${id}`)
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    viewManager.removeView(id)
+    
+    return { success: true }
+  } catch (error) {
+    console.error('[IPC] 删除视图失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('refresh-website-view', async (event, { id }) => {
+  console.log(`[IPC] 刷新网站视图: ${id}`)
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    viewManager.refreshView(id)
+    
+    return { success: true }
+  } catch (error) {
+    console.error('[IPC] 刷新视图失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('execute-in-view', async (event, { id, code }) => {
+  console.log(`[IPC] 在视图中执行 JavaScript: ${id}`)
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    const result = await viewManager.executeJavaScript(id, code)
+    
+    return { success: true, result }
+  } catch (error) {
+    console.error('[IPC] 执行 JavaScript 失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('hide-all-views-except', async (event, { id }) => {
+  console.log(`[IPC] 隐藏除 ${id} 外的所有视图`)
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    viewManager.hideAllExcept(id)
+    
+    return { success: true }
+  } catch (error) {
+    console.error('[IPC] 隐藏视图失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('show-all-views', async (event) => {
+  console.log(`[IPC] 显示所有视图`)
+  
+  try {
+    if (!viewManager) {
+      throw new Error('ViewManager not initialized')
+    }
+
+    viewManager.showAll()
+    
+    return { success: true }
+  } catch (error) {
+    console.error('[IPC] 显示视图失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('get-window-bounds', async (event) => {
+  if (!mainWindow) {
+    throw new Error('Window not initialized')
+  }
+  return mainWindow.getBounds()
+})
+
+// 注意：我们不再使用 setIgnoreMouseEvents，完全依赖 CSS pointer-events 控制穿透
 
 console.log('[Electron Main] 等待应用就绪...')
 
@@ -319,7 +631,7 @@ app.whenReady().then(() => {
 
   app.on('activate', () => {
     console.log('[Electron Main] activate事件触发')
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (!mainWindow) {
       console.log('[Electron Main] 没有窗口，创建新窗口')
       createWindow()
     }
@@ -328,88 +640,8 @@ app.whenReady().then(() => {
   console.log('[Electron Main] 事件监听器已设置')
 })
 
-// 处理在iframe中执行JavaScript的请求
-ipcMain.handle('execute-in-iframe', async (event, iframeId, code) => {
-  console.log('[IPC Execute] ========== 收到execute-in-iframe请求 ==========')
-  console.log('[IPC Execute] iframe ID:', iframeId)
-  console.log('[IPC Execute] 代码长度:', code.length, 'bytes')
-
-  try {
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      console.error('[IPC Execute] ✗ mainWindow不可用')
-      return { success: false, error: 'Window not available' }
-    }
-
-    console.log('[IPC Execute] mainWindow状态: OK')
-
-    // 首先尝试使用 frame API 直接执行
-    try {
-      console.log('[IPC Execute] 方法1: 尝试使用 frame API 直接执行')
-
-      // 遍历所有 frames 查找目标 iframe
-      const frames = mainWindow.webContents.mainFrame.framesInSubtree
-      console.log('[IPC Execute] 找到', frames.length, '个 frames，开始遍历...')
-
-      let frameIndex = 0
-      for (const frame of frames) {
-        frameIndex++
-        console.log('[IPC Execute] 检查frame', frameIndex + '/' + frames.length)
-
-        try {
-          // 检查是否是目标 iframe
-          console.log('[IPC Execute] 执行check-iframe-id脚本...')
-          const frameIframeId = await frame.executeJavaScript(global.checkIframeIdScript).catch((err) => {
-            console.log('[IPC Execute] check失败:', err.message)
-            return null
-          })
-
-          console.log('[IPC Execute] frame', frameIndex, '的ID:', frameIframeId)
-
-          if (frameIframeId === iframeId) {
-            console.log('[IPC Execute] ✓ 找到目标iframe (frame', frameIndex + ')，直接执行代码')
-            const result = await frame.executeJavaScript(code)
-            console.log('[IPC Execute] ✓ 代码执行成功，结果:', result)
-            return { success: true, result: result }
-          }
-        } catch (e) {
-          // 忽略单个 frame 的错误，继续查找
-          console.log('[IPC Execute] frame', frameIndex, '检查失败:', e.message)
-        }
-      }
-
-      console.log('[IPC Execute] ✗ 未通过 frame API 找到目标 iframe')
-    } catch (e) {
-      console.error('[IPC Execute] ✗ frame API 方法失败:', e.message)
-      console.error('[IPC Execute] 错误堆栈:', e.stack)
-    }
-
-    // 如果 frame API 失败，使用 postMessage 方法
-    console.log('[IPC Execute] 方法2: 使用 postMessage 后备方法')
-
-    console.log('[IPC Execute] 准备脚本替换...')
-    const scriptToExecute = global.executeInIframeScript
-      .replace('IFRAME_ID', iframeId)
-      .replace('CODE_TO_EXECUTE', code.replace(/`/g, '\\`').replace(/\$/g, '\\$'))
-
-    console.log('[IPC Execute] 脚本准备完成，长度:', scriptToExecute.length, 'bytes')
-    console.log('[IPC Execute] 开始执行postMessage脚本...')
-
-    const result = await mainWindow.webContents.executeJavaScript(scriptToExecute)
-
-    console.log('[IPC Execute] ✓ postMessage方法执行完成')
-    console.log('[IPC Execute] 结果:', result)
-    return result
-
-  } catch (error) {
-    console.error('[IPC Execute] ✗ IPC处理错误:', error.message)
-    console.error('[IPC Execute] 错误堆栈:', error.stack)
-    return { success: false, error: error.message }
-  }
-})
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-

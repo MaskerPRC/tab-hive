@@ -91,7 +91,7 @@
 </template>
 
 <script>
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
@@ -102,6 +102,7 @@ import { useItemDrag } from '../composables/useItemDrag'
 import { useItemResize } from '../composables/useItemResize'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useUrlDrop } from '../composables/useUrlDrop'
+import { useWebContentsView } from '../composables/useWebContentsView'
 
 export default {
   name: 'GridView',
@@ -188,8 +189,11 @@ export default {
       handleResizeEnd
     } = useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, allWebsites)
 
+    // 全屏和 WebContentsView 共用的 refs
+    const fullscreenIndexRef = toRef(props, 'fullscreenIndex')
+    const globalSettingsRef = toRef(props, 'globalSettings')
+
     // 全屏
-    const fullscreenIndexRef = computed(() => props.fullscreenIndex)
     const {
       showFullscreenBar,
       handleGridMouseMove,
@@ -207,6 +211,15 @@ export default {
       handleDragLeave,
       handleDrop
     } = useUrlDrop()
+
+    // WebContentsView 管理（仅在 Electron 环境中使用）
+    const {
+      isElectron,
+      createOrUpdateView,
+      removeView,
+      refreshView: refreshWebContentsView,
+      updateAllViewsLayout
+    } = useWebContentsView(allWebsites, fullscreenIndexRef, globalSettingsRef)
 
     /**
      * 判断某个索引的网站是否应该隐藏
@@ -281,15 +294,23 @@ export default {
      * 刷新网站
      */
     const handleRefreshWebsite = (index) => {
-      const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
-      if (iframe) {
-        // 通过重新设置src来刷新iframe
-        const currentSrc = iframe.src
-        iframe.src = 'about:blank'
-        // 使用setTimeout确保浏览器识别到URL变化
-        setTimeout(() => {
-          iframe.src = currentSrc
-        }, 10)
+      const item = props.websites[index]
+      
+      if (isElectron) {
+        // 在 Electron 中刷新 WebContentsView
+        refreshWebContentsView(item)
+      } else {
+        // 在浏览器中刷新 iframe
+        const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
+        if (iframe) {
+          // 通过重新设置src来刷新iframe
+          const currentSrc = iframe.src
+          iframe.src = 'about:blank'
+          // 使用setTimeout确保浏览器识别到URL变化
+          setTimeout(() => {
+            iframe.src = currentSrc
+          }, 10)
+        }
       }
     }
 
@@ -388,37 +409,102 @@ export default {
     }
 
     // 监听网站列表变化，初始化新添加的项目
-    watch(allWebsites, () => {
+    watch(allWebsites, async (newWebsites, oldWebsites) => {
       // 使用 nextTick 确保 DOM 已更新
-      nextTick(() => {
-        initializeGridLayout()
-      })
+      await nextTick()
+      initializeGridLayout()
+
+      // 在 Electron 中更新 WebContentsView
+      if (isElectron) {
+        // 检查是否有删除的网站
+        if (oldWebsites) {
+          const newIds = new Set(newWebsites.map(w => w.id))
+          const removedItems = oldWebsites.filter(w => !newIds.has(w.id))
+          for (const item of removedItems) {
+            await removeView(item)
+          }
+        }
+
+        // 更新所有视图布局
+        setTimeout(() => {
+          updateAllViewsLayout(allWebsites, getItemStyle)
+        }, 100)
+      }
     }, { immediate: false })
 
+    // 监听布局变化（拖拽/调整大小后）
+    watch([itemPositions, itemSizes], () => {
+      if (isElectron && !isDraggingItem.value && !isResizing.value) {
+        // 布局稳定后更新视图
+        setTimeout(() => {
+          updateAllViewsLayout(allWebsites, getItemStyle)
+        }, 50)
+      }
+    }, { deep: true })
+
     // 组件挂载时初始化布局
-    onMounted(() => {
-      nextTick(() => {
-        initializeGridLayout()
-      })
+    onMounted(async () => {
+      await nextTick()
+      initializeGridLayout()
+
+      // 在 Electron 中初始化所有视图
+      if (isElectron) {
+        setTimeout(() => {
+          updateAllViewsLayout(allWebsites, getItemStyle)
+        }, 500)
+      }
 
       // 监听窗口大小变化
-      window.addEventListener('resize', initializeGridLayout)
+      const handleResize = async () => {
+        initializeGridLayout()
+        if (isElectron) {
+          await nextTick()
+          setTimeout(() => {
+            updateAllViewsLayout(allWebsites, getItemStyle)
+          }, 100)
+        }
+      }
+      window.addEventListener('resize', handleResize)
 
       // 监听全局鼠标抬起事件，处理拖拽和调整大小结束
-      document.addEventListener('mouseup', () => {
+      const handleMouseUp = async () => {
         if (isDraggingItem.value) {
           handleDragEnd(emit)
+          if (isElectron) {
+            // 拖拽结束后更新视图布局
+            setTimeout(() => {
+              updateAllViewsLayout(allWebsites, getItemStyle)
+            }, 100)
+          }
         }
         if (isResizing.value) {
           handleResizeEnd(emit)
+          if (isElectron) {
+            // 调整大小结束后更新视图布局
+            setTimeout(() => {
+              updateAllViewsLayout(allWebsites, getItemStyle)
+            }, 100)
+          }
         }
-      })
+      }
+      document.addEventListener('mouseup', handleMouseUp)
+
+      // 保存事件处理器引用以便清理
+      window._gridViewResizeHandler = handleResize
+      window._gridViewMouseUpHandler = handleMouseUp
     })
 
     // 组件卸载时清理事件监听
     onUnmounted(() => {
       cleanupFullscreen()
-      window.removeEventListener('resize', initializeGridLayout)
+      if (window._gridViewResizeHandler) {
+        window.removeEventListener('resize', window._gridViewResizeHandler)
+        delete window._gridViewResizeHandler
+      }
+      if (window._gridViewMouseUpHandler) {
+        document.removeEventListener('mouseup', window._gridViewMouseUpHandler)
+        delete window._gridViewMouseUpHandler
+      }
     })
 
     return {
@@ -473,6 +559,8 @@ export default {
   position: relative;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 和 Edge */
+  /* 透明背景，让 WebContentsView 可以透过来 */
+  background: transparent;
 }
 
 /* 隐藏滚动条 - Chrome, Safari */
@@ -537,11 +625,17 @@ export default {
 .grid-container.free-layout {
   position: relative;
   min-height: 100vh;
+  /* 网格背景（半透明，不影响 WebContentsView 显示） */
   background-image:
     linear-gradient(to right, rgba(255, 92, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 92, 0, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
   background-position: 0 0;
+}
+
+/* 在 Electron 中不显示网格背景，避免影响视觉 */
+.electron-env .grid-container.free-layout {
+  background-image: none;
 }
 
 /* 全局拖动或调整大小时，禁用所有iframe的鼠标事件 */
