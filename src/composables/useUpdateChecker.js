@@ -9,8 +9,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
  */
 export function useUpdateChecker() {
   console.log('[更新检测] useUpdateChecker 初始化...')
-  
-  const currentVersion = ref('0.0.1') // 从 package.json 读取
+
+  // 从构建时注入的版本号获取（通过 vite.config.js 的 define 功能）
+  // @ts-ignore - __APP_VERSION__ 是通过 Vite define 注入的全局变量
+  const currentVersion = ref(__APP_VERSION__ || 'v0.0.1')
   const latestVersion = ref(null)
   const updateAvailable = ref(false)
   const updateInfo = ref(null)
@@ -39,7 +41,7 @@ export function useUpdateChecker() {
   const LAST_CHECK_KEY = 'tab-hive-last-update-check'
 
   let checkInterval = null
-  
+
   console.log('[更新检测] 当前版本:', currentVersion.value)
   console.log('[更新检测] GitHub 仓库:', GITHUB_REPO)
 
@@ -151,7 +153,7 @@ export function useUpdateChecker() {
       if (comparison > 0) {
         console.log('[更新检测] 发现新版本!')
         updateAvailable.value = true
-        
+
         // 重要：只要有新版本，左侧栏就显示更新按钮
         showUpdateButton.value = true
 
@@ -233,7 +235,7 @@ export function useUpdateChecker() {
    */
   const startDownload = async () => {
     console.log('[更新检测] 用户点击立即更新（不记录忽略状态）')
-    
+
     if (!isElectron) {
       // 非 Electron 环境，打开网页
       if (updateInfo.value) {
@@ -290,7 +292,7 @@ export function useUpdateChecker() {
     if (!isElectron) return
 
     console.log('[更新检测] 取消下载')
-    
+
     try {
       await window.electron.update.cancel()
       downloadStatus.value.isDownloading = false
@@ -318,7 +320,7 @@ export function useUpdateChecker() {
 
     try {
       const result = await window.electron.update.openInstaller(filePath)
-      
+
       if (!result.success) {
         console.error('[更新检测] 打开安装文件失败:', result.error)
         downloadStatus.value.error = result.error

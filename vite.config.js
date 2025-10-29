@@ -3,6 +3,15 @@ import vue from '@vitejs/plugin-vue'
 import archiver from 'archiver'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+// 获取当前文件的目录
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// 读取 package.json 获取版本号
+const packageJson = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')
+)
 
 // 打包chrome-extension目录为zip的插件
 function zipChromeExtension() {
@@ -65,6 +74,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true
+  },
+  define: {
+    // 注入版本号到代码中
+    '__APP_VERSION__': JSON.stringify("v" + packageJson.version)
   }
 })
 
