@@ -44,6 +44,7 @@
       @create-layout="handleCreateLayout"
       @delete-layout="handleDeleteLayout"
       @rename-layout="renameLayout"
+      @toggle-keep-alive="handleToggleKeepAlive"
       @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
       @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
@@ -53,18 +54,23 @@
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
+    <!-- 使用 v-show 而非 v-if 来支持布局后台运行 -->
     <GridView
-      :websites="websites"
+      v-for="layout in layoutManager.layouts.value"
+      :key="`layout-${layout.id}`"
+      v-show="layout.id === layoutManager.currentLayoutId.value || layout.keepAlive"
+      :class="{ 'layout-hidden': layout.id !== layoutManager.currentLayoutId.value }"
+      :websites="layout.id === layoutManager.currentLayoutId.value ? websites : layout.websites"
       :rows="2"
       :cols="2"
-      :fullscreenIndex="fullscreenIndex"
+      :fullscreenIndex="layout.id === layoutManager.currentLayoutId.value ? fullscreenIndex : null"
       :globalSettings="layoutManager.globalSettings.value"
-      @fullscreen="handleFullscreen"
+      @fullscreen="layout.id === layoutManager.currentLayoutId.value ? handleFullscreen($event) : null"
       @exitFullscreen="exitFullscreen"
-      @add-website="handleAddWebsite"
-      @copy-website="handleCopyWebsite"
-      @remove-website="handleRemoveWebsite"
-      @update-website="handleUpdateWebsite"
+      @add-website="layout.id === layoutManager.currentLayoutId.value ? handleAddWebsite : () => {}"
+      @copy-website="layout.id === layoutManager.currentLayoutId.value ? handleCopyWebsite : () => {}"
+      @remove-website="layout.id === layoutManager.currentLayoutId.value ? handleRemoveWebsite : () => {}"
+      @update-website="layout.id === layoutManager.currentLayoutId.value ? handleUpdateWebsite : () => {}"
     />
 
     <!-- 全局对话框 -->
@@ -318,6 +324,18 @@ export default {
       }
     }
 
+    // 切换布局后台运行状态
+    const handleToggleKeepAlive = (layoutId) => {
+      const newState = layoutManager.toggleKeepAlive(layoutId)
+      const layout = layoutManager.layouts.value.find(l => l.id === layoutId)
+      if (layout) {
+        const message = newState
+          ? `布局 "${layout.name}" 已开启后台运行\n\n切换到其他布局时，该布局将保持运行状态，不会被卸载。`
+          : `布局 "${layout.name}" 已关闭后台运行\n\n切换到其他布局时，该布局将被卸载以节省资源。`
+        alert(message)
+      }
+    }
+
     // 处理导入模式选择
     const handleImportModeSelect = (mode) => {
       importExport.handleImportMode(
@@ -432,6 +450,7 @@ export default {
       handleSwitchLayout,
       handleCreateLayout,
       handleDeleteLayout,
+      handleToggleKeepAlive,
       renameLayout: layoutManager.renameLayout,
       handleToggleTitles,
       handleToggleRefreshOnFullscreen,
@@ -448,6 +467,18 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+/* 布局后台运行：隐藏非激活布局但保持DOM存在 */
+.layout-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .left-trigger-area {

@@ -58,6 +58,41 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
   
+  // Chrome 扩展管理 API
+  extensions: {
+    /**
+     * 加载扩展
+     * @param {string} extensionPath - 扩展目录路径
+     */
+    load: (extensionPath) => {
+      console.log('[Preload] load-extension:', extensionPath)
+      return ipcRenderer.invoke('load-extension', extensionPath)
+    },
+
+    /**
+     * 卸载扩展
+     * @param {string} extensionId - 扩展ID
+     */
+    unload: (extensionId) => {
+      console.log('[Preload] unload-extension:', extensionId)
+      return ipcRenderer.invoke('unload-extension', extensionId)
+    },
+
+    /**
+     * 获取已加载的扩展列表
+     */
+    getLoaded: () => {
+      return ipcRenderer.invoke('get-loaded-extensions')
+    },
+
+    /**
+     * 选择扩展目录
+     */
+    selectDirectory: () => {
+      return ipcRenderer.invoke('select-extension-directory')
+    }
+  },
+  
   // Webview 管理 API
   webview: {
     /**

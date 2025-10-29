@@ -183,6 +183,7 @@ export function useLayoutManager() {
       id: Date.now(),
       name: name || `布局 ${layouts.value.length + 1}`,
       websites: options.websites || [],
+      keepAlive: options.keepAlive || false, // 是否后台运行
       // 模板链接相关字段
       linkedTemplateId: options.linkedTemplateId || null, // 链接的原始模板ID (original_id)
       importMode: options.importMode || null, // 'realtime' 或 'copy' 或 null
@@ -307,6 +308,21 @@ export function useLayoutManager() {
     }
   }
 
+  /**
+   * 切换布局的后台运行状态
+   * @param {number} layoutId - 布局 ID
+   * @returns {boolean} 新的 keepAlive 状态
+   */
+  const toggleKeepAlive = (layoutId) => {
+    const layout = layouts.value.find(l => l.id === layoutId)
+    if (layout) {
+      layout.keepAlive = !layout.keepAlive
+      console.log(`[LayoutManager] 布局 "${layout.name}" 后台运行: ${layout.keepAlive ? '开启' : '关闭'}`)
+      return layout.keepAlive
+    }
+    return false
+  }
+
   return {
     // 状态
     layouts,
@@ -319,6 +335,7 @@ export function useLayoutManager() {
     createLayout,
     deleteLayout,
     renameLayout,
+    toggleKeepAlive,
     updateGlobalSettings,
     checkTemplateUpdate,
     syncTemplateUpdate,

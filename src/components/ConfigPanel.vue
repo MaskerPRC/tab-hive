@@ -26,6 +26,7 @@
           @confirm-rename="handleConfirmRename"
           @cancel-rename="operations.cancelRename"
           @delete-layout="handleDeleteLayout"
+          @toggle-keep-alive="$emit('toggle-keep-alive', $event)"
           @share-layout="handleShareLayout"
           @sync-template="handleSyncTemplate"
           @switch-to-shared="handleSwitchToShared"
@@ -174,7 +175,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'manage-sessions', 'show-update'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'manage-sessions', 'show-update'],
   setup(props, { emit }) {
     const showLayoutDropdown = ref(false)
     let hideTimer = null

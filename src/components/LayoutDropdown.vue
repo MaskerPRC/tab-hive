@@ -76,6 +76,14 @@
               </div>
               <div class="layout-actions">
                 <button
+                  class="btn-icon btn-freeze"
+                  :class="{ 'btn-freeze-active': layout.keepAlive }"
+                  @click="$emit('toggle-keep-alive', layout.id, $event)"
+                  :title="layout.keepAlive ? '关闭后台运行（切换布局时卸载）' : '开启后台运行（切换布局时保持运行）'"
+                >
+                  <span class="freeze-icon">{{ layout.keepAlive ? '❄️' : '💤' }}</span>
+                </button>
+                <button
                   v-if="layout.importMode === 'realtime'"
                   class="btn-icon btn-sync"
                   :class="{ 'btn-sync-modified': layout.isModified }"
@@ -215,6 +223,7 @@ export default {
     'confirm-rename',
     'cancel-rename',
     'delete-layout',
+    'toggle-keep-alive',
     'share-layout',
     'sync-template',
     'switch-to-shared',
@@ -552,6 +561,33 @@ export default {
 
 .dropdown-item.active .btn-sync-modified:hover {
   background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-freeze {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.btn-freeze:hover {
+  background: rgba(156, 163, 175, 0.1) !important;
+}
+
+.btn-freeze-active {
+  color: #06b6d4;
+}
+
+.btn-freeze-active:hover {
+  background: rgba(6, 182, 212, 0.1) !important;
+}
+
+.dropdown-item.active .btn-freeze:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.freeze-icon {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .search-input {

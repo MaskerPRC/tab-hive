@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, net, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, net, shell, session } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
@@ -9,6 +9,9 @@ console.log('[Electron Main] ========== Tab Hive 启动 (Webview 架构) =======
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 (KHTML, like Gecko) Safari/537.36'
 
 let mainWindow
+
+// Chrome 扩展管理
+const loadedExtensions = new Map() // 存储已加载的扩展 {id: {name, path, version}}
 
 // 存储已注册的 webview
 // key: webviewId, value: { processId, frameId, webContents }
@@ -432,6 +435,101 @@ ipcMain.handle('cancel-download', () => {
   return { success: true }
 })
 
+// ========== Chrome 扩展管理 ==========
+
+/**
+ * 加载 Chrome 扩展
+ */
+async function loadExtension(extensionPath) {
+  try {
+    console.log(`[Extension] 尝试加载扩展: ${extensionPath}`)
+    
+    // 检查路径是否存在
+    if (!fs.existsSync(extensionPath)) {
+      throw new Error(`扩展路径不存在: ${extensionPath}`)
+    }
+
+    // 加载扩展
+    const extension = await session.defaultSession.loadExtension(extensionPath, {
+      allowFileAccess: true
+    })
+    
+    console.log(`[Extension] ✓ 扩展加载成功:`, extension.name, extension.version)
+    
+    // 保存已加载的扩展信息
+    loadedExtensions.set(extension.id, {
+      id: extension.id,
+      name: extension.name,
+      path: extensionPath,
+      version: extension.version
+    })
+    
+    return { success: true, extension: {
+      id: extension.id,
+      name: extension.name,
+      version: extension.version,
+      path: extensionPath
+    }}
+  } catch (error) {
+    console.error(`[Extension] ✗ 扩展加载失败:`, error.message)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * 卸载扩展
+ */
+function unloadExtension(extensionId) {
+  try {
+    console.log(`[Extension] 尝试卸载扩展: ${extensionId}`)
+    session.defaultSession.removeExtension(extensionId)
+    loadedExtensions.delete(extensionId)
+    console.log(`[Extension] ✓ 扩展卸载成功`)
+    return { success: true }
+  } catch (error) {
+    console.error(`[Extension] ✗ 扩展卸载失败:`, error.message)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * 获取所有已加载的扩展
+ */
+function getLoadedExtensions() {
+  return Array.from(loadedExtensions.values())
+}
+
+// IPC: 加载扩展
+ipcMain.handle('load-extension', async (event, extensionPath) => {
+  return await loadExtension(extensionPath)
+})
+
+// IPC: 卸载扩展
+ipcMain.handle('unload-extension', (event, extensionId) => {
+  return unloadExtension(extensionId)
+})
+
+// IPC: 获取已加载的扩展列表
+ipcMain.handle('get-loaded-extensions', () => {
+  return getLoadedExtensions()
+})
+
+// IPC: 选择扩展目录
+ipcMain.handle('select-extension-directory', async () => {
+  const { dialog } = require('electron')
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+    title: '选择Chrome扩展目录',
+    message: '请选择解压后的Chrome扩展文件夹'
+  })
+  
+  if (result.canceled) {
+    return { success: false, canceled: true }
+  }
+  
+  return { success: true, path: result.filePaths[0] }
+})
+
 // ========== 应用生命周期 ==========
 
 console.log('[Electron Main] 等待应用就绪...')
@@ -439,6 +537,18 @@ console.log('[Electron Main] 等待应用就绪...')
 app.whenReady().then(() => {
   console.log('[Electron Main] ========== 应用已就绪 ==========')
   createWindow()
+  
+  // 自动加载预设的扩展（如果存在）
+  const extensionsDir = path.join(__dirname, '../extensions')
+  if (fs.existsSync(extensionsDir)) {
+    console.log('[Extension] 检查预设扩展目录:', extensionsDir)
+    fs.readdirSync(extensionsDir, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .forEach(dirent => {
+        const extPath = path.join(extensionsDir, dirent.name)
+        loadExtension(extPath)
+      })
+  }
 
   app.on('activate', () => {
     console.log('[Electron Main] activate 事件触发')
