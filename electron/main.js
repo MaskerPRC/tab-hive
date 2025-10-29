@@ -616,6 +616,65 @@ ipcMain.handle('get-loaded-extensions', () => {
   return getLoadedExtensions()
 })
 
+// ========== 桌面捕获 ==========
+
+/**
+ * 获取可用的桌面源（窗口和屏幕）
+ */
+ipcMain.handle('get-desktop-sources', async (event, options = {}) => {
+  console.log('[Desktop Capture] 获取桌面源')
+  
+  const { desktopCapturer } = require('electron')
+  
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: options.types || ['window', 'screen'],
+      thumbnailSize: options.thumbnailSize || { width: 320, height: 180 },
+      fetchWindowIcons: options.fetchWindowIcons !== false
+    })
+    
+    console.log('[Desktop Capture] 找到', sources.length, '个源')
+    
+    // 转换源为可序列化的格式
+    const serializedSources = sources.map(source => ({
+      id: source.id,
+      name: source.name,
+      thumbnail: source.thumbnail.toDataURL(),
+      display_id: source.display_id,
+      appIcon: source.appIcon ? source.appIcon.toDataURL() : null
+    }))
+    
+    return { success: true, sources: serializedSources }
+  } catch (error) {
+    console.error('[Desktop Capture] 获取源失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+/**
+ * 创建桌面捕获窗口
+ */
+ipcMain.handle('start-desktop-capture', async (event, sourceId, options = {}) => {
+  console.log('[Desktop Capture] 开始捕获:', sourceId)
+  
+  try {
+    // 发送捕获请求到渲染进程
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (window) {
+      window.webContents.send('desktop-capture-source-selected', {
+        sourceId,
+        options
+      })
+      return { success: true }
+    }
+    
+    return { success: false, error: '窗口不存在' }
+  } catch (error) {
+    console.error('[Desktop Capture] 启动捕获失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
 // IPC: 选择扩展目录
 ipcMain.handle('select-extension-directory', async () => {
   const { dialog } = require('electron')

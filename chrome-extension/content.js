@@ -331,35 +331,198 @@ let selectorHighlight = null;
 let currentHoveredElement = null;
 
 /**
- * 生成CSS选择器
+ * 检测字符串是否包含乱码字符
  */
-function generateCssSelector(element) {
+function hasGarbledCharacters(str) {
+  if (!str || typeof str !== 'string') return false;
+  
+  const garbledPatterns = [
+    /[^\w\s-]{5,}/, // 大量连续符号
+    // eslint-disable-next-line no-control-regex
+    /[\x00-\x1F\x7F-\x9F]/, // 控制字符
+    /[\uE000-\uF8FF]{3,}/, // Unicode私有区域
+    /[\uFFFD]{2,}/, // 替代字符
+    /[a-z0-9]{32,}/i, // 长哈希值
+    /[A-Za-z0-9+/]{20,}={0,2}/, // base64字符串
+    /[_-]{5,}/ // 过多下划线或连字符
+  ];
+  
+  return garbledPatterns.some(pattern => pattern.test(str));
+}
+
+/**
+ * 计算选择器质量分数
+ */
+function calculateSelectorQuality(selector) {
+  if (!selector) return 0;
+  
+  let score = 50;
+  
+  if (selector.includes('#')) score += 30;
+  
+  const classes = selector.match(/\.([a-zA-Z][a-zA-Z0-9-]*)/g);
+  if (classes && classes.length > 0) {
+    score += 20;
+    const avgLength = classes.reduce((sum, c) => sum + c.length, 0) / classes.length;
+    if (avgLength < 15) score += 10;
+  }
+  
+  const semanticKeywords = ['header', 'footer', 'nav', 'main', 'content', 'container', 'wrapper', 'section', 'article'];
+  const lowerSelector = selector.toLowerCase();
+  if (semanticKeywords.some(keyword => lowerSelector.includes(keyword))) {
+    score += 10;
+  }
+  
+  const complexity = (selector.match(/[>+~\s]/g) || []).length;
+  if (complexity > 5) score -= complexity * 2;
+  
+  if (/\d{3,}/.test(selector)) score -= 15;
+  
+  return Math.max(0, Math.min(100, score));
+}
+
+/**
+ * 生成元素的多个候选选择器
+ */
+function generateSelectorCandidates(element) {
+  if (!element) return [];
+  
+  const candidates = [];
+  
   try {
-    // 简单的选择器生成逻辑
-    if (element.id) {
-      return `#${element.id}`;
+    // 候选1: ID选择器（验证无乱码）
+    if (element.id && !hasGarbledCharacters(element.id)) {
+      candidates.push({ selector: `#${element.id}`, element: element });
     }
     
+    // 候选2: 标签 + 第一个有效类名
     if (element.className && typeof element.className === 'string') {
-      const classes = element.className.trim().split(/\s+/).filter(c => c && !c.startsWith('tabhive-'));
+      const classes = element.className.trim().split(/\s+/)
+        .filter(c => c && !c.startsWith('tabhive-') && !hasGarbledCharacters(c));
+      
       if (classes.length > 0) {
-        return `${element.tagName.toLowerCase()}.${classes[0]}`;
+        candidates.push({ 
+          selector: `${element.tagName.toLowerCase()}.${classes[0]}`, 
+          element: element 
+        });
+      }
+      
+      if (classes.length > 1) {
+        candidates.push({ 
+          selector: `${element.tagName.toLowerCase()}.${classes.slice(0, 2).join('.')}`, 
+          element: element 
+        });
       }
     }
     
-    // 使用nth-child
-    const parent = element.parentElement;
-    if (parent) {
-      const siblings = Array.from(parent.children);
-      const index = siblings.indexOf(element) + 1;
-      const parentSelector = parent.tagName.toLowerCase();
-      return `${parentSelector} > ${element.tagName.toLowerCase()}:nth-child(${index})`;
+    // 候选3: 标签 + 有效属性
+    const validAttrs = ['data-testid', 'data-id', 'role', 'name', 'type'];
+    for (const attr of validAttrs) {
+      const value = element.getAttribute(attr);
+      if (value && !hasGarbledCharacters(value)) {
+        candidates.push({ 
+          selector: `${element.tagName.toLowerCase()}[${attr}="${value}"]`, 
+          element: element 
+        });
+      }
     }
     
-    return element.tagName.toLowerCase();
+    // 候选4: 尝试使用父元素（如果当前元素的选择器质量低）
+    const parent = element.parentElement;
+    if (parent && parent.tagName !== 'BODY' && parent.tagName !== 'HTML') {
+      // 检查父元素是否有更好的选择器
+      if (parent.id && !hasGarbledCharacters(parent.id)) {
+        const siblings = Array.from(parent.children);
+        const index = siblings.indexOf(element) + 1;
+        candidates.push({ 
+          selector: `#${parent.id} > ${element.tagName.toLowerCase()}:nth-child(${index})`, 
+          element: element 
+        });
+      } else if (parent.className && typeof parent.className === 'string') {
+        const parentClasses = parent.className.trim().split(/\s+/)
+          .filter(c => c && !hasGarbledCharacters(c));
+        if (parentClasses.length > 0) {
+          const siblings = Array.from(parent.children);
+          const index = siblings.indexOf(element) + 1;
+          candidates.push({ 
+            selector: `.${parentClasses[0]} > ${element.tagName.toLowerCase()}:nth-child(${index})`, 
+            element: element 
+          });
+        }
+      }
+      
+      // 如果所有候选都很差，尝试使用父元素
+      if (candidates.length === 0 || candidates.every(c => calculateSelectorQuality(c.selector) < 30)) {
+        console.log('[Tab Hive] 当前元素选择器质量低，尝试父元素');
+        const parentCandidates = generateSelectorCandidates(parent);
+        // 只取父元素的最佳选择器
+        if (parentCandidates.length > 0) {
+          const bestParent = parentCandidates.sort((a, b) => 
+            calculateSelectorQuality(b.selector) - calculateSelectorQuality(a.selector)
+          )[0];
+          candidates.push({ selector: bestParent.selector, element: parent });
+        }
+      }
+    }
+    
+    // 候选5: 简单标签名（作为最后的选择）
+    if (candidates.length === 0) {
+      candidates.push({ selector: element.tagName.toLowerCase(), element: element });
+    }
+    
+  } catch (error) {
+    console.error('[Tab Hive] 生成候选选择器失败:', error);
+  }
+  
+  return candidates;
+}
+
+/**
+ * 选择最佳选择器
+ */
+function selectBestSelector(candidates) {
+  if (!candidates || candidates.length === 0) return null;
+  
+  // 按质量分数排序
+  const scored = candidates.map(c => ({
+    ...c,
+    score: calculateSelectorQuality(c.selector)
+  }));
+  
+  scored.sort((a, b) => b.score - a.score);
+  
+  console.log('[Tab Hive] 选择器候选列表:', scored.map(s => `${s.selector} (分数: ${s.score})`).join(', '));
+  
+  return scored[0];
+}
+
+/**
+ * 生成CSS选择器（优化版本，自动过滤乱码并选择父元素）
+ */
+function generateCssSelector(element) {
+  try {
+    if (!element) return '';
+    
+    // 生成多个候选选择器
+    const candidates = generateSelectorCandidates(element);
+    
+    if (candidates.length === 0) {
+      return element.tagName ? element.tagName.toLowerCase() : '';
+    }
+    
+    // 选择最佳选择器
+    const best = selectBestSelector(candidates);
+    
+    // 如果最佳选择器使用了不同的元素（比如父元素），更新 currentHoveredElement
+    if (best.element !== element) {
+      console.log('[Tab Hive] 选择器质量优化：使用', best.element.tagName, '代替', element.tagName);
+      currentHoveredElement = best.element;
+    }
+    
+    return best.selector;
   } catch (error) {
     console.error('[Tab Hive] 生成选择器失败:', error);
-    return element.tagName.toLowerCase();
+    return element.tagName ? element.tagName.toLowerCase() : '';
   }
 }
 

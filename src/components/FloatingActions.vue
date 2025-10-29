@@ -20,6 +20,12 @@
       v-html="ICONS.copy"
     />
     <button
+      class="btn-action btn-script"
+      @click="$emit('open-script-panel')"
+      title="脚本执行器"
+      v-html="ICONS.code"
+    />
+    <button
       class="btn-action btn-edit"
       @click="$emit('edit')"
       title="编辑链接"
@@ -51,7 +57,7 @@ export default {
       default: false
     }
   },
-  emits: ['refresh', 'toggle-mute', 'copy', 'edit', 'fullscreen', 'remove'],
+  emits: ['refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove'],
   setup() {
     return {
       ICONS
@@ -142,6 +148,14 @@ export default {
 
 .btn-mute.muted:hover {
   background: rgba(244, 67, 54, 0.9) !important;
+}
+
+.btn-script {
+  background: rgba(103, 58, 183, 0.7) !important;
+}
+
+.btn-script:hover {
+  background: rgba(103, 58, 183, 0.9) !important;
 }
 </style>
 

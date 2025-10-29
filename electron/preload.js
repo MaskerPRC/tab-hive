@@ -167,13 +167,43 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // 桌面捕获 API
+  desktopCapture: {
+    /**
+     * 获取桌面源列表（窗口和屏幕）
+     * @param {Object} options - 选项
+     */
+    getSources: (options) => {
+      console.log('[Preload] getSources:', options)
+      return ipcRenderer.invoke('get-desktop-sources', options)
+    },
+
+    /**
+     * 开始捕获指定的桌面源
+     * @param {string} sourceId - 源ID
+     * @param {Object} options - 选项
+     */
+    startCapture: (sourceId, options) => {
+      console.log('[Preload] startCapture:', sourceId, options)
+      return ipcRenderer.invoke('start-desktop-capture', sourceId, options)
+    },
+
+    /**
+     * 监听桌面捕获源选择事件
+     */
+    onSourceSelected: (callback) => {
+      ipcRenderer.on('desktop-capture-source-selected', (event, data) => callback(data))
+    }
+  },
+
   // 事件监听
   on: (channel, callback) => {
     const validChannels = [
       'refresh-webview-from-main',
       'update-download-progress',
       'update-download-complete',
-      'update-download-error'
+      'update-download-error',
+      'desktop-capture-source-selected'
     ]
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args))
