@@ -341,14 +341,29 @@ export default {
         return
       }
 
-      // 获取全屏iframe
-      const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-      if (iframeElements[props.fullscreenIndex]) {
-        fullscreenIframe.value = iframeElements[props.fullscreenIndex]
-        isSelectingElement.value = true
-        console.log('开始元素选择模式')
+      // 根据环境获取全屏 webview 或 iframe
+      const isElectron = window.electron?.isElectron
+      
+      if (isElectron) {
+        // Electron 环境：查找 webview
+        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
+        if (webviewElements[props.fullscreenIndex]) {
+          fullscreenIframe.value = webviewElements[props.fullscreenIndex]
+          isSelectingElement.value = true
+          console.log('[Tab Hive] 开始元素选择模式 (webview)')
+        } else {
+          console.error('[Tab Hive] 未找到全屏 webview')
+        }
       } else {
-        console.error('未找到全屏iframe')
+        // 浏览器环境：查找 iframe
+        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
+        if (iframeElements[props.fullscreenIndex]) {
+          fullscreenIframe.value = iframeElements[props.fullscreenIndex]
+          isSelectingElement.value = true
+          console.log('[Tab Hive] 开始元素选择模式 (iframe)')
+        } else {
+          console.error('[Tab Hive] 未找到全屏 iframe')
+        }
       }
     }
 

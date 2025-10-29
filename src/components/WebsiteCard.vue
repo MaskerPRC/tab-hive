@@ -15,30 +15,44 @@
   >
     <!-- 已有网站显示 -->
     <template v-if="item.url">
-      <!-- 主iframe -->
+      <!-- 主 webview -->
+      <webview
+        v-if="isElectron"
+        :ref="setWebviewRef"
+        :id="`webview-${item.id}`"
+        :data-webview-id="item.id"
+        :src="websiteUrl"
+        class="website-webview"
+        :class="{ 'mobile-view': item.deviceType === 'mobile' }"
+        :preload="webviewPreloadPath"
+        allowpopups
+        webpreferences="allowRunningInsecureContent"
+      ></webview>
+
+      <!-- 后台缓冲 webview(双缓冲机制) -->
+      <webview
+        v-if="isElectron && isBufferLoading"
+        :ref="setBufferWebviewRef"
+        :id="`webview-buffer-${item.id}`"
+        :data-webview-id="`buffer-${item.id}`"
+        :src="bufferUrl"
+        class="website-webview buffer-webview"
+        :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
+        :preload="webviewPreloadPath"
+        allowpopups
+        webpreferences="allowRunningInsecureContent"
+      ></webview>
+
+      <!-- 非 Electron 环境使用 iframe -->
       <iframe
+        v-if="!isElectron"
         :ref="setIframeRef"
-        :data-iframe-id="`iframe-${item.id}`"
         :src="websiteUrl"
         frameborder="0"
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
         class="website-iframe"
         :class="{ 'mobile-view': item.deviceType === 'mobile' }"
         :title="item.title"
-        :allow="'autoplay; fullscreen; picture-in-picture'"
-      ></iframe>
-      
-      <!-- 后台缓冲iframe（双缓冲机制） -->
-      <iframe
-        v-if="isBufferLoading"
-        :ref="setBufferIframeRef"
-        :data-iframe-id="`iframe-buffer-${item.id}`"
-        :src="bufferUrl"
-        frameborder="0"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
-        class="website-iframe buffer-iframe"
-        :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
-        :title="`${item.title} (加载中)`"
         :allow="'autoplay; fullscreen; picture-in-picture'"
       ></iframe>
       
@@ -90,13 +104,13 @@
 </template>
 
 <script>
-import { computed, toRef, ref, nextTick, watch } from 'vue'
+import { computed, toRef, ref, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import FloatingActions from './FloatingActions.vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
-import { useIframeSelector } from '../composables/useIframeSelector.js'
 import { useAutoRefresh } from '../composables/useAutoRefresh.js'
+import { useIframeSelector } from '../composables/useIframeSelector.js'
 
 export default {
   name: 'WebsiteCard',
@@ -166,140 +180,349 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start'],
   setup(props, { emit }) {
+    // 检测是否在 Electron 环境
+    const isElectron = computed(() => {
+      return window.electron && window.electron.isElectron
+    })
+
+    // Webview preload 脚本路径
+    const webviewPreloadPath = computed(() => {
+      // 从 electron API 获取预先计算好的路径
+      return window.electron?.webviewPreloadPath || ''
+    })
+
     // 双缓冲相关状态
     const isBufferLoading = ref(false)
     const isBufferReady = ref(false)
     const bufferUrl = ref('')
-    const bufferIframeRef = ref(null)
-    const mainIframeKey = ref(0)
+    const bufferWebviewRef = ref(null)
+    const webviewRef = ref(null)
+    const iframeRef = ref(null)
     
-    // 设置缓冲iframe引用
-    const setBufferIframeRef = (el) => {
-      bufferIframeRef.value = el
+    // 设置 webview 引用
+    const setWebviewRef = (el) => {
+      webviewRef.value = el
+      if (el) {
+        setupWebviewEvents(el, false)
+      }
     }
     
-    // 主iframe加载完成标志
-    const mainIframeReady = ref(false)
-    
-    // 使用iframe选择器composable
+    // 设置缓冲 webview 引用
+    const setBufferWebviewRef = (el) => {
+      bufferWebviewRef.value = el
+      if (el) {
+        setupWebviewEvents(el, true)
+      }
+    }
+
+    // 使用 iframe 选择器 composable (用于非 Electron 环境)
     const {
-      isElectron,
       setIframeRef,
-      getWebsiteUrl,
-      applySelector,
-      iframeRef,
-      setOnMainIframeReady
+      applySelector: applyIframeSelector,
+      getWebsiteUrl: getIframWebsiteUrl
     } = useIframeSelector(props)
     
-    // 设置主iframe准备就绪回调
-    setOnMainIframeReady(() => {
-      mainIframeReady.value = true
+    // 主 webview 加载完成标志
+    const mainWebviewReady = ref(false)
+
+    // 计算网站 URL
+    const websiteUrl = computed(() => {
+      if (!props.item.url) return ''
+      
+      let url = props.item.url
+      
+      // Electron 环境下,为 webview 添加 ID 参数
+      if (isElectron.value) {
+        const separator = url.includes('?') ? '&' : '?'
+        url = `${url}${separator}__webview_id__=${props.item.id}`
+      } else {
+        // 非 Electron 环境,使用 iframe URL 处理
+        url = getIframWebsiteUrl()
+      }
+      
+      return url
     })
 
-    // 计算网站URL
-    const websiteUrl = computed(() => getWebsiteUrl())
+    // 设置 webview 事件监听
+    const setupWebviewEvents = (webview, isBuffer) => {
+      console.log('[WebsiteCard] 设置 webview 事件监听:', isBuffer ? 'buffer' : 'main')
+
+      // 监听加载完成
+      webview.addEventListener('did-finish-load', () => {
+        console.log('[WebsiteCard] Webview 加载完成:', isBuffer ? 'buffer' : 'main')
+        
+        if (!isBuffer) {
+          mainWebviewReady.value = true
+        }
+
+        // 应用选择器(如果需要)
+        if (!props.isFullscreen && props.item.targetSelector) {
+          applySelector(webview, isBuffer)
+        }
+      })
+
+      // 监听新窗口打开
+      webview.addEventListener('ipc-message', (event) => {
+        if (event.channel === 'webview-open-url') {
+          console.log('[WebsiteCard] Webview 尝试打开新窗口:', event.args[0])
+          // 在当前 webview 中导航
+          const { url } = event.args[0]
+          if (url) {
+            webview.src = url
+          }
+        } else if (event.channel === 'webview-ready') {
+          console.log('[WebsiteCard] Webview 已准备就绪:', event.args[0])
+        }
+      })
+
+      // 监听加载失败
+      webview.addEventListener('did-fail-load', (event) => {
+        console.error('[WebsiteCard] Webview 加载失败:', event.errorDescription)
+      })
+    }
+
+    // 应用选择器到 webview
+    const applySelector = async (webview, isBuffer) => {
+      if (!props.item.targetSelector) return
+
+      console.log('[WebsiteCard] 应用选择器:', props.item.targetSelector)
+
+      try {
+        // 等待一段时间确保页面完全加载
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        const styleId = `tabhive-selector-style-${props.item.id}`
+        const selector = props.item.targetSelector
+
+        // 构造完整的选择器代码（包括样式注入）
+        const selectorCode = `
+          (function() {
+            try {
+              const selector = '${selector.replace(/'/g, "\\'")}';
+              console.log('[Webview Selector] 应用选择器:', selector);
+              
+              // 移除旧样式
+              const oldStyle = document.getElementById('${styleId}');
+              if (oldStyle) {
+                oldStyle.remove();
+              }
+              
+              // 查找目标元素
+              const targetElement = document.querySelector(selector);
+              if (!targetElement) {
+                console.warn('[Webview Selector] 未找到选择器对应的元素:', selector);
+                return { success: false, error: '未找到元素' };
+              }
+              
+              // 隐藏兄弟元素
+              let current = targetElement;
+              let hiddenCount = 0;
+              
+              while (current && current !== document.body) {
+                const parent = current.parentElement;
+                if (parent) {
+                  Array.from(parent.children).forEach(sibling => {
+                    if (sibling !== current && 
+                        !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
+                      sibling.style.display = 'none';
+                      sibling.setAttribute('data-tabhive-hidden', 'true');
+                      hiddenCount++;
+                    }
+                  });
+                }
+                current = parent;
+              }
+              
+              console.log('[Webview Selector] 已隐藏', hiddenCount, '个兄弟元素');
+              
+              // 添加样式
+              const style = document.createElement('style');
+              style.id = '${styleId}';
+              style.textContent = \`
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  overflow: hidden !important;
+                  width: 100% !important;
+                  height: 100% !important;
+                }
+                
+                \${selector} {
+                  display: block !important;
+                  visibility: visible !important;
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  z-index: 999999 !important;
+                  object-fit: contain !important;
+                }
+                
+                \${selector} * {
+                  visibility: visible !important;
+                }
+              \`;
+              
+              document.head.appendChild(style);
+              console.log('[Webview Selector] 选择器已应用,隐藏了', hiddenCount, '个元素');
+              return { success: true, hiddenCount: hiddenCount };
+            } catch (e) {
+              console.error('[Webview Selector] 错误:', e);
+              return { success: false, error: e.message };
+            }
+          })();
+        `
+
+        // 执行选择器代码
+        const result = await webview.executeJavaScript(selectorCode)
+
+        if (isBuffer) {
+          console.log('[WebsiteCard] 缓冲 webview 选择器应用完成')
+        }
+        
+        if (result && result.success) {
+          console.log('[WebsiteCard] ✓ 选择器应用成功')
+        }
+      } catch (error) {
+        console.error('[WebsiteCard] 应用选择器失败:', error)
+      }
+    }
+    
+    // 恢复原始样式（全屏模式）
+    const restoreOriginalStyles = async () => {
+      if (!props.item.targetSelector) return
+      
+      console.log('[WebsiteCard] 恢复原始样式')
+      
+      if (isElectron.value && webviewRef.value) {
+        try {
+          const styleId = `tabhive-selector-style-${props.item.id}`
+          
+          const code = `
+            (function() {
+              try {
+                const style = document.getElementById('${styleId}');
+                if (style) {
+                  style.remove();
+                }
+                
+                const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+                let restoredCount = 0;
+                hiddenElements.forEach(el => {
+                  el.style.display = '';
+                  el.removeAttribute('data-tabhive-hidden');
+                  restoredCount++;
+                });
+                console.log('[Webview Selector] 已恢复', restoredCount, '个元素');
+                return { success: true };
+              } catch (e) {
+                console.error('[Webview Selector] 恢复失败:', e);
+                return { success: false, error: e.message };
+              }
+            })();
+          `
+          
+          await webviewRef.value.executeJavaScript(code)
+        } catch (error) {
+          console.error('[WebsiteCard] 恢复样式失败:', error)
+        }
+      }
+    }
     
     // 双缓冲刷新方法
     const refreshWithDoubleBuffer = () => {
-      console.log('[Tab Hive] 使用双缓冲刷新:', props.item.title)
+      console.log('[WebsiteCard] 使用双缓冲刷新:', props.item.title)
       
+      if (!isElectron.value) {
+        // 非 Electron 环境,简单刷新
+        emit('refresh', props.index)
+        return
+      }
+
       // 重置状态
       isBufferReady.value = false
       
-      // 设置缓冲URL并显示缓冲iframe（使用原URL，通过key强制重新加载）
+      // 设置缓冲 URL 并显示缓冲 webview
       bufferUrl.value = websiteUrl.value
       isBufferLoading.value = true
       
-      // 监听缓冲iframe加载完成
+      // 监听缓冲 webview 加载完成
       nextTick(() => {
-        if (bufferIframeRef.value) {
+        if (bufferWebviewRef.value) {
           const handleBufferLoad = async () => {
-            console.log('[Tab Hive] 缓冲iframe加载完成')
+            console.log('[WebsiteCard] 缓冲 webview 加载完成')
             
             // 判断是否需要应用选择器
             const needSelector = !props.isFullscreen && props.item.targetSelector
             
             if (needSelector) {
-              // 选择器类型：需要等待选择器应用完成后再替换
-              console.log('[Tab Hive] 选择器类型页面，等待应用选择器到缓冲iframe')
-              
-              // 等待页面DOM准备好
-              await new Promise(resolve => setTimeout(resolve, 1000))
-              
-              try {
-                // 应用选择器到缓冲iframe，等待真正完成
-                const success = await applySelector(bufferIframeRef.value, props.item)
-                
-                if (success) {
-                  // 再等待一小段时间确保选择器完全应用（元素隐藏完成）
-                  console.log('[Tab Hive] 选择器应用成功，等待DOM更新')
-                  await new Promise(resolve => setTimeout(resolve, 100))
-                  console.log('[Tab Hive] 选择器应用完成，缓冲准备就绪')
-                } else {
-                  console.warn('[Tab Hive] 选择器应用失败，仍然显示缓冲iframe')
-                }
-              } catch (error) {
-                console.error('[Tab Hive] 选择器应用出错:', error)
-              }
-            } else {
-              // 普通类型：加载完成后可以直接替换
-              console.log('[Tab Hive] 普通类型页面，缓冲准备就绪')
+              console.log('[WebsiteCard] 选择器类型页面,等待应用选择器')
+              await new Promise(resolve => setTimeout(resolve, 1500))
             }
             
-            // 缓冲iframe准备完成，显示在前面
-            console.log('[Tab Hive] 显示缓冲iframe')
+            // 缓冲 webview 准备完成,显示在前面
+            console.log('[WebsiteCard] 显示缓冲 webview')
             isBufferReady.value = true
             
-            // 立即刷新主iframe（在后台进行）
-            console.log('[Tab Hive] 刷新主iframe')
-            mainIframeReady.value = false
+            // 立即刷新主 webview(在后台进行)
+            console.log('[WebsiteCard] 刷新主 webview')
+            mainWebviewReady.value = false
             emit('refresh', props.index)
             
-            // 等待主iframe加载完成（监听load事件）
-            if (iframeRef.value) {
-              const waitForMainIframe = () => {
+            // 等待主 webview 加载完成
+            if (webviewRef.value) {
+              const waitForMainWebview = () => {
                 return new Promise((resolve) => {
                   const checkReady = () => {
-                    if (mainIframeReady.value) {
-                      console.log('[Tab Hive] 主iframe已准备就绪，移除缓冲iframe')
+                    if (mainWebviewReady.value) {
+                      console.log('[WebsiteCard] 主 webview 已准备就绪,移除缓冲 webview')
                       resolve()
                     } else {
                       setTimeout(checkReady, 100)
                     }
                   }
                   
-                  // 开始检查，最多等待5秒
                   checkReady()
+                  
+                  // 最多等待 5 秒
                   setTimeout(() => {
-                    console.log('[Tab Hive] 等待主iframe超时，移除缓冲iframe')
+                    console.log('[WebsiteCard] 等待主 webview 超时,移除缓冲 webview')
                     resolve()
                   }, 5000)
                 })
               }
               
-              await waitForMainIframe()
+              await waitForMainWebview()
             } else {
-              // 如果没有主iframe引用，等待固定时间
               await new Promise(resolve => setTimeout(resolve, 2000))
             }
             
-            // 移除缓冲iframe
+            // 移除缓冲 webview
             isBufferLoading.value = false
             isBufferReady.value = false
             bufferUrl.value = ''
-            mainIframeKey.value++
-            console.log('[Tab Hive] 双缓冲刷新完成')
+            console.log('[WebsiteCard] 双缓冲刷新完成')
           }
           
-          bufferIframeRef.value.addEventListener('load', handleBufferLoad, { once: true })
+          bufferWebviewRef.value.addEventListener('did-finish-load', handleBufferLoad, { once: true })
         }
       })
     }
 
     // 手动刷新处理
     const handleManualRefresh = () => {
-      console.log('[Tab Hive] 手动刷新')
-      refreshWithDoubleBuffer()
+      console.log('[WebsiteCard] 手动刷新')
+      
+      if (isElectron.value && webviewRef.value) {
+        // 使用双缓冲刷新
+        refreshWithDoubleBuffer()
+      } else if (iframeRef.value) {
+        // iframe 刷新
+        emit('refresh', props.index)
+      }
     }
     
     // 使用自动刷新功能
@@ -309,16 +532,39 @@ export default {
       onRefresh: refreshWithDoubleBuffer
     })
 
-    // 监听全屏状态变化，控制自动刷新暂停/恢复
-    watch(() => props.isFullscreen, (isFullscreen) => {
-      if (isFullscreen) {
-        // 进入全屏，暂停自动刷新
-        console.log('[Tab Hive] 进入全屏，暂停自动刷新')
+    // 监听全屏状态变化,控制自动刷新暂停/恢复和选择器切换
+    watch(() => props.isFullscreen, async (newVal, oldVal) => {
+      if (newVal) {
+        console.log('[WebsiteCard] 进入全屏,暂停自动刷新')
         pauseTimer()
+        
+        // 如果有选择器且不刷新,恢复完整页面
+        if (props.item.targetSelector && !props.refreshOnFullscreenToggle && oldVal !== undefined) {
+          await restoreOriginalStyles()
+        }
       } else {
-        // 退出全屏，恢复自动刷新
-        console.log('[Tab Hive] 退出全屏，恢复自动刷新')
+        console.log('[WebsiteCard] 退出全屏,恢复自动刷新')
         resumeTimer()
+        
+        // 如果有选择器且不刷新,重新应用选择器
+        if (props.item.targetSelector && !props.refreshOnFullscreenToggle && oldVal !== undefined) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          if (isElectron.value && webviewRef.value) {
+            await applySelector(webviewRef.value, false)
+          }
+        }
+      }
+      
+      // 如果配置了刷新,则刷新 webview
+      if (props.item.targetSelector && props.refreshOnFullscreenToggle && oldVal !== undefined) {
+        if (isElectron.value && webviewRef.value) {
+          console.log('[WebsiteCard] 全屏切换,刷新 webview')
+          const currentSrc = webviewRef.value.src
+          webviewRef.value.src = ''
+          setTimeout(() => {
+            webviewRef.value.src = currentSrc
+          }, 10)
+        }
       }
     })
 
@@ -331,9 +577,7 @@ export default {
       const mins = Math.floor((seconds % 3600) / 60)
       const secs = seconds % 60
       
-      // 根据时间长度选择最合适的显示格式
       if (days > 0) {
-        // 显示天和小时
         if (hours > 0) {
           return `${days}天${hours}时`
         }
@@ -341,7 +585,6 @@ export default {
       }
       
       if (hours > 0) {
-        // 显示小时和分钟
         if (mins > 0) {
           return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
         }
@@ -349,17 +592,41 @@ export default {
       }
       
       if (mins > 0) {
-        // 显示分钟和秒
         return `${mins}:${secs.toString().padStart(2, '0')}`
       }
       
-      // 只显示秒
       return `${secs}s`
     }
 
+    // 组件挂载时设置事件监听
+    onMounted(() => {
+      // 如果是 Electron 环境,监听主进程的刷新事件
+      if (isElectron.value && window.electron) {
+        window.electron.on('refresh-webview-from-main', (webviewId) => {
+          if (webviewId === props.item.id) {
+            console.log('[WebsiteCard] 收到主进程刷新命令')
+            handleManualRefresh()
+          }
+        })
+      }
+    })
+
+    // 组件卸载时清理
+    onBeforeUnmount(() => {
+      // 取消注册 webview
+      if (isElectron.value && window.electron && props.item.id) {
+        window.electron.webview.unregister(props.item.id).catch(err => {
+          console.error('[WebsiteCard] 取消注册失败:', err)
+        })
+      }
+    })
+
     return {
-      websiteUrl,
       isElectron,
+      webviewPreloadPath,
+      websiteUrl,
+      setWebviewRef,
+      setBufferWebviewRef,
       setIframeRef,
       remainingTime,
       formatTime,
@@ -367,9 +634,7 @@ export default {
       isBufferLoading,
       isBufferReady,
       bufferUrl,
-      setBufferIframeRef,
       refreshWithDoubleBuffer,
-      mainIframeKey,
       handleManualRefresh
     }
   }
@@ -397,7 +662,6 @@ export default {
   transition: none !important;
 }
 
-/* 拖动时保持正在拖动的元素可交互 */
 .grid-item.dragging {
   z-index: 9999 !important;
 }
@@ -441,18 +705,29 @@ export default {
   box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
 }
 
+/* Webview 样式 */
+.website-webview {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Iframe 样式(非 Electron 环境) */
 .website-iframe {
   width: 100%;
   height: 100%;
   border: none;
 }
 
-/* 拖动或调整大小时，禁用iframe的鼠标事件，防止操作中断 */
+/* 拖动或调整大小时,禁用 webview/iframe 的鼠标事件 */
+.grid-item.dragging .website-webview,
+.grid-item.resizing .website-webview,
 .grid-item.dragging .website-iframe,
 .grid-item.resizing .website-iframe {
   pointer-events: none;
 }
 
+.website-webview.mobile-view,
 .website-iframe.mobile-view {
   max-width: 375px;
   margin: 0 auto;
@@ -590,8 +865,8 @@ export default {
   opacity: 0.3;
 }
 
-/* 双缓冲iframe样式 */
-.buffer-iframe {
+/* 双缓冲 webview 样式 */
+.buffer-webview {
   position: absolute;
   top: 0;
   left: 0;
@@ -600,10 +875,9 @@ export default {
   visibility: hidden;
   z-index: -1;
   opacity: 0;
-  /* 不使用过渡动画，立即显示 */
 }
 
-.buffer-iframe.buffer-ready {
+.buffer-webview.buffer-ready {
   visibility: visible;
   z-index: 10;
   opacity: 1;

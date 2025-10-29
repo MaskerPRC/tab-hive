@@ -78,32 +78,75 @@ export default {
     }
 
     /**
-     * 启动元素选择器（Electron和浏览器使用相同方式）
+     * 启动元素选择器（支持 webview 和 iframe）
      */
     const startSelector = () => {
-      if (!props.targetIframe || !props.targetIframe.contentWindow) {
-        console.error('[Tab Hive] iframe不可用')
+      if (!props.targetIframe) {
+        console.error('[Tab Hive] target 不可用')
         emit('cancel')
         return
       }
 
-      const env = isElectron.value ? 'Electron' : '浏览器'
-      console.log(`[Tab Hive] ${env}环境 - 通过postMessage启动元素选择器`)
-
       const reqId = ++requestId
 
-      // 向iframe发送启动选择器的消息（Electron和Chrome扩展相同）
-      props.targetIframe.contentWindow.postMessage({
-        source: 'tab-hive',
-        action: 'startElementSelector',
-        requestId: reqId
-      }, '*')
-
-      console.log('[Tab Hive] 已发送启动元素选择器消息')
+      if (isElectron.value) {
+        // Electron 环境：使用 webview API
+        console.log('[Tab Hive] Electron 环境 - 使用 webview.send 启动元素选择器')
+        
+        // Webview 使用 send 方法发送消息
+        if (typeof props.targetIframe.send === 'function') {
+          props.targetIframe.send('start-element-selector', {
+            requestId: reqId
+          })
+          console.log('[Tab Hive] 已通过 webview.send 发送启动消息')
+        } else {
+          console.error('[Tab Hive] webview.send 方法不可用')
+          emit('cancel')
+        }
+      } else {
+        // 浏览器环境：使用 postMessage
+        if (!props.targetIframe.contentWindow) {
+          console.error('[Tab Hive] iframe.contentWindow 不可用')
+          emit('cancel')
+          return
+        }
+        
+        console.log('[Tab Hive] 浏览器环境 - 通过 postMessage 启动元素选择器')
+        props.targetIframe.contentWindow.postMessage({
+          source: 'tab-hive',
+          action: 'startElementSelector',
+          requestId: reqId
+        }, '*')
+        console.log('[Tab Hive] 已发送启动元素选择器消息')
+      }
     }
 
     /**
-     * 处理来自iframe的消息
+     * 处理来自 webview 的 IPC 消息
+     */
+    const handleWebviewMessage = (event) => {
+      console.log('[Tab Hive] 🔔 webview ipc-message 事件:', event.channel, event.args)
+      
+      const channel = event.channel
+      const data = event.args && event.args[0]
+      
+      if (!data) return
+      
+      if (channel === 'element-selector-hover') {
+        hoveredSelector.value = data.selector || ''
+        console.log('[Tab Hive] Webview - 更新悬停选择器:', data.selector)
+      } else if (channel === 'element-selector-select') {
+        console.log('[Tab Hive] ✅ Webview - 接收到选中的元素:', data.selector)
+        emit('select', { selector: data.selector })
+        hoveredSelector.value = ''
+      } else if (channel === 'element-selector-cancel') {
+        console.log('[Tab Hive] Webview - 用户取消了元素选择')
+        cancel()
+      }
+    }
+
+    /**
+     * 处理来自 iframe 的 postMessage 消息
      */
     const handleMessage = (event) => {
       console.log('[Tab Hive] 🔔 message事件触发, source:', event.data?.source, 'data:', event.data)
@@ -175,7 +218,11 @@ export default {
      */
     const initialize = async () => {
       if (isElectron.value) {
-        // Electron环境直接启动
+        // Electron 环境：添加 webview IPC 消息监听
+        if (props.targetIframe && typeof props.targetIframe.addEventListener === 'function') {
+          props.targetIframe.addEventListener('ipc-message', handleWebviewMessage)
+          console.log('[Tab Hive] 已添加 webview IPC 消息监听器')
+        }
         startSelector()
       } else {
         // 浏览器环境先检测扩展
@@ -195,14 +242,29 @@ export default {
      * 清理
      */
     const cleanup = () => {
-      if (props.targetIframe && props.targetIframe.contentWindow) {
-        // 发送停止选择器消息
-        console.log('[Tab Hive] 发送停止选择器消息到iframe')
-        props.targetIframe.contentWindow.postMessage({
-          source: 'tab-hive',
-          action: 'stopElementSelector',
-          requestId: ++requestId
-        }, '*')
+      if (isElectron.value) {
+        // Electron 环境：移除 webview 监听器并发送停止消息
+        if (props.targetIframe) {
+          if (typeof props.targetIframe.removeEventListener === 'function') {
+            props.targetIframe.removeEventListener('ipc-message', handleWebviewMessage)
+            console.log('[Tab Hive] 已移除 webview IPC 消息监听器')
+          }
+          
+          if (typeof props.targetIframe.send === 'function') {
+            props.targetIframe.send('stop-element-selector', {})
+            console.log('[Tab Hive] 已发送停止选择器消息到 webview')
+          }
+        }
+      } else {
+        // 浏览器环境：发送停止消息到 iframe
+        if (props.targetIframe && props.targetIframe.contentWindow) {
+          console.log('[Tab Hive] 发送停止选择器消息到 iframe')
+          props.targetIframe.contentWindow.postMessage({
+            source: 'tab-hive',
+            action: 'stopElementSelector',
+            requestId: ++requestId
+          }, '*')
+        }
       }
       hoveredSelector.value = ''
     }
