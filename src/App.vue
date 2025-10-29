@@ -9,9 +9,13 @@
       :currentVersion="currentVersion"
       :latestVersion="latestVersion"
       :updateInfo="updateInfo"
+      :downloadStatus="downloadStatus"
       @close="handleCloseUpdateNotification"
       @ignore="handleIgnoreUpdate"
-      @update="handleOpenUpdatePage"
+      @update="handleStartDownload"
+      @install="handleInstallUpdate"
+      @cancel-download="handleCancelDownload"
+      @retry-download="handleRetryDownload"
     />
 
     <!-- 左侧检测区域和展开标签 -->
@@ -170,8 +174,20 @@ export default {
       updateChecker.ignoreUpdate()
     }
 
-    const handleOpenUpdatePage = () => {
-      updateChecker.openUpdatePage()
+    const handleStartDownload = () => {
+      updateChecker.startDownload()
+    }
+
+    const handleInstallUpdate = (filePath) => {
+      updateChecker.openInstaller(filePath)
+    }
+
+    const handleCancelDownload = () => {
+      updateChecker.cancelDownload()
+    }
+
+    const handleRetryDownload = () => {
+      updateChecker.retryDownload()
     }
 
     // 关闭下载弹窗
@@ -363,6 +379,7 @@ export default {
       currentVersion: updateChecker.currentVersion,
       latestVersion: updateChecker.latestVersion,
       updateInfo: updateChecker.updateInfo,
+      downloadStatus: updateChecker.downloadStatus,
       // 对话框
       dialogVisible: dialog.dialogVisible,
       dialogType: dialog.dialogType,
@@ -384,7 +401,10 @@ export default {
       handleShowUpdate,
       handleCloseUpdateNotification,
       handleIgnoreUpdate,
-      handleOpenUpdatePage,
+      handleStartDownload,
+      handleInstallUpdate,
+      handleCancelDownload,
+      handleRetryDownload,
       handleFullscreen,
       exitFullscreen,
       handleMouseMove,

@@ -20,22 +20,90 @@
           </button>
         </div>
 
-        <div v-if="updateInfo?.body" class="update-details">
+        <div v-if="updateInfo?.body && !isDownloading && !downloadCompleted" class="update-details">
           <h4>更新内容：</h4>
           <div class="release-notes" v-html="formatReleaseNotes(updateInfo.body)"></div>
         </div>
 
+        <!-- 下载进度 -->
+        <div v-if="isDownloading" class="download-progress">
+          <h4>正在下载更新...</h4>
+          <div class="progress-bar-container">
+            <div class="progress-bar" :style="{ width: Math.min(downloadProgress, 100) + '%' }"></div>
+          </div>
+          <div class="progress-text" v-if="totalBytes > 0">
+            {{ formatBytes(downloadedBytes) }} / {{ formatBytes(totalBytes) }}
+            ({{ Math.min(downloadProgress, 100).toFixed(1) }}%)
+          </div>
+          <div class="progress-text" v-else>
+            {{ formatBytes(downloadedBytes) }} 已下载
+          </div>
+        </div>
+
+        <!-- 下载完成 -->
+        <div v-if="downloadCompleted" class="download-completed">
+          <div class="completed-icon">✓</div>
+          <h4>下载完成！</h4>
+          <p>更新包已准备就绪，点击下方按钮安装</p>
+        </div>
+
+        <!-- 下载失败 -->
+        <div v-if="downloadError" class="download-error">
+          <div class="error-icon">✗</div>
+          <h4>下载失败</h4>
+          <p>{{ downloadError }}</p>
+        </div>
+
         <div class="update-actions">
-          <button class="btn-primary" @click="handleUpdate">
+          <button 
+            v-if="!isDownloading && !downloadCompleted && !downloadError"
+            class="btn-primary" 
+            @click="handleUpdate"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            立即更新
+            立即下载更新
           </button>
-          <button class="btn-secondary" @click="handleIgnore">
-            稍后提醒
+
+          <button 
+            v-if="isDownloading"
+            class="btn-secondary" 
+            @click="handleCancelDownload"
+          >
+            取消下载
+          </button>
+
+          <button 
+            v-if="downloadCompleted"
+            class="btn-primary btn-install" 
+            @click="handleInstall"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            安装并重启
+          </button>
+
+          <button 
+            v-if="downloadError"
+            class="btn-primary" 
+            @click="handleRetryDownload"
+          >
+            重试下载
+          </button>
+
+          <button 
+            v-if="!isDownloading"
+            class="btn-secondary" 
+            @click="handleIgnore"
+          >
+            {{ downloadCompleted || downloadError ? '关闭' : '稍后提醒' }}
           </button>
         </div>
       </div>
@@ -44,6 +112,8 @@
 </template>
 
 <script>
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+
 export default {
   name: 'UpdateNotification',
   props: {
@@ -62,20 +132,59 @@ export default {
     updateInfo: {
       type: Object,
       default: null
+    },
+    downloadStatus: {
+      type: Object,
+      default: null
     }
   },
-  emits: ['close', 'ignore', 'update'],
-  methods: {
-    handleClose() {
-      this.$emit('close')
-    },
-    handleIgnore() {
-      this.$emit('ignore')
-    },
-    handleUpdate() {
-      this.$emit('update')
-    },
-    formatReleaseNotes(body) {
+  emits: ['close', 'ignore', 'update', 'install', 'cancel-download', 'retry-download'],
+  setup(props, { emit }) {
+    const isDownloading = ref(false)
+    const downloadProgress = ref(0)
+    const downloadedBytes = ref(0)
+    const totalBytes = ref(0)
+    const downloadCompleted = ref(false)
+    const downloadError = ref(null)
+    const installerPath = ref(null)
+
+    // 检查是否在 Electron 环境中
+    const isElectron = typeof window !== 'undefined' && window.electron !== undefined
+
+    const handleClose = () => {
+      emit('close')
+    }
+
+    const handleIgnore = () => {
+      emit('ignore')
+    }
+
+    const handleUpdate = () => {
+      emit('update')
+    }
+
+    const handleInstall = () => {
+      emit('install', installerPath.value)
+    }
+
+    const handleCancelDownload = () => {
+      emit('cancel-download')
+    }
+
+    const handleRetryDownload = () => {
+      downloadError.value = null
+      emit('retry-download')
+    }
+
+    const formatBytes = (bytes) => {
+      if (bytes === 0) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    }
+
+    const formatReleaseNotes = (body) => {
       if (!body) return ''
 
       // 简单的 Markdown 转换
@@ -89,6 +198,81 @@ export default {
         .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
         .replace(/\n/g, '<br>')
         .substring(0, 500) + (body.length > 500 ? '...' : '')
+    }
+
+    // 监听下载状态
+    watch(() => props.downloadStatus, (status) => {
+      if (status) {
+        isDownloading.value = status.isDownloading
+        downloadProgress.value = status.progress
+        downloadedBytes.value = status.downloaded
+        totalBytes.value = status.total
+        downloadCompleted.value = status.completed
+        downloadError.value = status.error
+        if (status.savePath) {
+          installerPath.value = status.savePath
+        }
+      }
+    }, { deep: true, immediate: true })
+
+    // 监听 Electron 的下载事件
+    const setupElectronListeners = () => {
+      if (!isElectron) return
+
+      // 下载进度
+      window.electron.on('update-download-progress', (data) => {
+        isDownloading.value = true
+        downloadedBytes.value = data.downloaded
+        totalBytes.value = data.total
+        downloadProgress.value = data.progress
+      })
+
+      // 下载完成
+      window.electron.on('update-download-complete', (data) => {
+        isDownloading.value = false
+        downloadCompleted.value = true
+        installerPath.value = data.savePath
+      })
+
+      // 下载失败
+      window.electron.on('update-download-error', (data) => {
+        isDownloading.value = false
+        downloadError.value = data.error
+      })
+    }
+
+    const cleanupElectronListeners = () => {
+      if (!isElectron) return
+      // 清理事件监听器
+      window.electron.off('update-download-progress')
+      window.electron.off('update-download-complete')
+      window.electron.off('update-download-error')
+    }
+
+    onMounted(() => {
+      setupElectronListeners()
+    })
+
+    onUnmounted(() => {
+      cleanupElectronListeners()
+    })
+
+    return {
+      isDownloading,
+      downloadProgress,
+      downloadedBytes,
+      totalBytes,
+      downloadCompleted,
+      downloadError,
+      installerPath,
+      handleClose,
+      handleIgnore,
+      handleUpdate,
+      handleInstall,
+      handleCancelDownload,
+      handleRetryDownload,
+      formatBytes,
+      formatReleaseNotes
     }
   }
 }
@@ -291,6 +475,187 @@ export default {
 
 .update-details::-webkit-scrollbar-thumb:hover {
   background: #999;
+}
+
+/* 下载进度 */
+.download-progress {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.download-progress h4 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff5c00 0%, #ff7a33 100%);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 下载完成 */
+.download-completed {
+  padding: 30px 20px;
+  text-align: center;
+  background: #f0fdf4;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.completed-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 16px;
+  background: #22c55e;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+  animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.download-completed h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.download-completed p {
+  margin: 0;
+  font-size: 14px;
+  color: #16a34a;
+}
+
+/* 下载失败 */
+.download-error {
+  padding: 30px 20px;
+  text-align: center;
+  background: #fef2f2;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.error-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 16px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.download-error h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.download-error p {
+  margin: 0;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+/* 安装按钮特殊样式 */
+.btn-install {
+  background: #22c55e;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.btn-install:hover {
+  background: #16a34a;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
 }
 
 /* 背景遮罩 */

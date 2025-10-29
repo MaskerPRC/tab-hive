@@ -21,6 +21,43 @@ contextBridge.exposeInMainWorld('electron', {
   version: process.versions.electron,
   webviewPreloadPath: getWebviewPreloadPath(),
   
+  // 更新下载 API
+  update: {
+    /**
+     * 下载更新文件
+     * @param {string} downloadUrl - 下载链接
+     * @param {string} fileName - 文件名
+     */
+    download: (downloadUrl, fileName) => {
+      console.log('[Preload] download:', downloadUrl, fileName)
+      return ipcRenderer.invoke('download-update', downloadUrl, fileName)
+    },
+
+    /**
+     * 获取下载状态
+     */
+    getStatus: () => {
+      return ipcRenderer.invoke('get-download-status')
+    },
+
+    /**
+     * 打开安装文件
+     * @param {string} filePath - 安装文件路径
+     */
+    openInstaller: (filePath) => {
+      console.log('[Preload] openInstaller:', filePath)
+      return ipcRenderer.invoke('open-installer', filePath)
+    },
+
+    /**
+     * 取消下载
+     */
+    cancel: () => {
+      console.log('[Preload] cancel download')
+      return ipcRenderer.invoke('cancel-download')
+    }
+  },
+  
   // Webview 管理 API
   webview: {
     /**
@@ -62,7 +99,12 @@ contextBridge.exposeInMainWorld('electron', {
 
   // 事件监听
   on: (channel, callback) => {
-    const validChannels = ['refresh-webview-from-main']
+    const validChannels = [
+      'refresh-webview-from-main',
+      'update-download-progress',
+      'update-download-complete',
+      'update-download-error'
+    ]
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args))
     }
@@ -70,7 +112,12 @@ contextBridge.exposeInMainWorld('electron', {
 
   // 移除事件监听
   off: (channel, callback) => {
-    const validChannels = ['refresh-webview-from-main']
+    const validChannels = [
+      'refresh-webview-from-main',
+      'update-download-progress',
+      'update-download-complete',
+      'update-download-error'
+    ]
     if (validChannels.includes(channel)) {
       ipcRenderer.removeListener(channel, callback)
     }
