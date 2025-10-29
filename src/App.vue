@@ -3,6 +3,17 @@
     <!-- 下载插件/客户端提醒弹窗 -->
     <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
 
+    <!-- 更新通知 -->
+    <UpdateNotification
+      :visible="showUpdateNotification"
+      :currentVersion="currentVersion"
+      :latestVersion="latestVersion"
+      :updateInfo="updateInfo"
+      @close="handleCloseUpdateNotification"
+      @ignore="handleIgnoreUpdate"
+      @update="handleOpenUpdatePage"
+    />
+
     <!-- 左侧检测区域和展开标签 -->
     <div
       v-if="fullscreenIndex === null"
@@ -23,6 +34,7 @@
       :currentLayoutId="currentLayoutId"
       :showTitles="layoutManager.globalSettings.value.showTitles"
       :refreshOnFullscreenToggle="layoutManager.globalSettings.value.refreshOnFullscreenToggle"
+      :showUpdateButton="showUpdateButton"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
       @delete-layout="handleDeleteLayout"
@@ -31,6 +43,7 @@
       @toggle-titles="handleToggleTitles"
       @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
       @manage-sessions="handleManageSessions"
+      @show-update="handleShowUpdate"
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
@@ -84,10 +97,12 @@ import Dialog from './components/Dialog.vue'
 import DownloadModal from './components/DownloadModal.vue'
 import ImportModeDialog from './components/ImportModeDialog.vue'
 import SessionInstanceManager from './components/SessionInstanceManager.vue'
+import UpdateNotification from './components/UpdateNotification.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useWebsiteManager } from './composables/useWebsiteManager'
 import { useImportExport } from './composables/useImportExport'
+import { useUpdateChecker } from './composables/useUpdateChecker'
 
 export default {
   name: 'App',
@@ -97,13 +112,15 @@ export default {
     Dialog,
     DownloadModal,
     ImportModeDialog,
-    SessionInstanceManager
+    SessionInstanceManager,
+    UpdateNotification
   },
   setup() {
     // 使用 composables
     const dialog = useDialog()
     const layoutManager = useLayoutManager()
     const importExport = useImportExport()
+    const updateChecker = useUpdateChecker()
 
     // 初始化网站管理器
     const websiteManager = useWebsiteManager(layoutManager.currentLayout.value.websites)
@@ -137,6 +154,24 @@ export default {
     // 关闭Session实例管理对话框
     const closeSessionManager = () => {
       showSessionManager.value = false
+    }
+
+    // 显示更新通知（从按钮点击）
+    const handleShowUpdate = () => {
+      updateChecker.showNotificationFromButton()
+    }
+
+    // 更新检测相关处理函数
+    const handleCloseUpdateNotification = () => {
+      updateChecker.closeNotification()
+    }
+
+    const handleIgnoreUpdate = () => {
+      updateChecker.ignoreUpdate()
+    }
+
+    const handleOpenUpdatePage = () => {
+      updateChecker.openUpdatePage()
     }
 
     // 关闭下载弹窗
@@ -322,6 +357,12 @@ export default {
       layouts: layoutManager.layouts,
       currentLayoutId: layoutManager.currentLayoutId,
       layoutManager,
+      // 更新检测状态
+      showUpdateNotification: updateChecker.showUpdateNotification,
+      showUpdateButton: updateChecker.showUpdateButton,
+      currentVersion: updateChecker.currentVersion,
+      latestVersion: updateChecker.latestVersion,
+      updateInfo: updateChecker.updateInfo,
       // 对话框
       dialogVisible: dialog.dialogVisible,
       dialogType: dialog.dialogType,
@@ -340,6 +381,10 @@ export default {
       handleShowDownloadModal,
       handleManageSessions,
       closeSessionManager,
+      handleShowUpdate,
+      handleCloseUpdateNotification,
+      handleIgnoreUpdate,
+      handleOpenUpdatePage,
       handleFullscreen,
       exitFullscreen,
       handleMouseMove,

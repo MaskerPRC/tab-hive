@@ -110,6 +110,12 @@
           </svg>
           <span>清除配置</span>
         </button>
+
+        <!-- 更新按钮 -->
+        <UpdateButton
+          :visible="showUpdateButton"
+          @click="$emit('show-update')"
+        />
       </div>
     </div>
 
@@ -121,13 +127,15 @@
 <script>
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import LayoutDropdown from './LayoutDropdown.vue'
+import UpdateButton from './UpdateButton.vue'
 import { useSharedLayouts } from '../composables/useSharedLayouts'
 import { useLayoutOperations } from '../composables/useLayoutOperations'
 
 export default {
   name: 'ConfigPanel',
   components: {
-    LayoutDropdown
+    LayoutDropdown,
+    UpdateButton
   },
   props: {
     layouts: {
@@ -145,9 +153,13 @@ export default {
     refreshOnFullscreenToggle: {
       type: Boolean,
       default: true
+    },
+    showUpdateButton: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'manage-sessions'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'manage-sessions', 'show-update'],
   setup(props, { emit }) {
     const showLayoutDropdown = ref(false)
     let hideTimer = null
