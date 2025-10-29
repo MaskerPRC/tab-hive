@@ -1,0 +1,23 @@
+{
+  "verbose": true,
+  "ignore": [
+    "node_modules/**",
+    "dist/**",
+    "release/**",
+    "src/**",
+    ".git/**",
+    "server/**",
+    "*.md",
+    "*.log"
+  ],
+  "watch": [
+    "electron/**/*.js",
+    "electron/**/*.json"
+  ],
+  "ext": "js,json",
+  "exec": "electron .",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
+

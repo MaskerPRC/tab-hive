@@ -137,7 +137,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-COPY . .
+COPY .. .
 RUN npm run build
 
 EXPOSE 3101
@@ -348,5 +348,5 @@ pm2 start tab-hive
 
 - [布局分享功能说明](./SHARE_FEATURE.md)
 - [后端 API 文档](./server/README.md)
-- [Electron 桌面应用](./ELECTRON.md)
+- [Electron 桌面应用](ELECTRON.md)
 

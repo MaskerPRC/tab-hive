@@ -93,7 +93,7 @@ npm run electron:dev
 npm run electron:build
 ```
 
-详细说明请查看 [ELECTRON.md](./ELECTRON.md)
+详细说明请查看 [ELECTRON.md](ELECTRON.md)
 
 ### 为什么要使用桌面客户端？
 
@@ -175,7 +175,7 @@ npm run dev
    - ✅ 浏览次数统计
    - ✅ 自动保存到本地
 
-详细说明请查看 [SHARE_FEATURE.md](./SHARE_FEATURE.md)
+详细说明请查看 [SHARE_FEATURE.md](SHARE_FEATURE.md)
 
 ### URL 参数导入功能 🆕
 
@@ -199,7 +199,7 @@ Tab Hive 现在支持通过 URL 参数直接导入网站集合！
 http://localhost:3000/?urls=https://twitter.com,https://facebook.com,https://instagram.com&layoutName=社交媒体&rows=2&cols=2
 ```
 
-详细说明请查看 [URL_IMPORT.md](./URL_IMPORT.md)
+详细说明请查看 [URL_IMPORT.md](URL_IMPORT.md)
 
 ### CSS选择器全屏功能 🆕
 
@@ -243,8 +243,8 @@ Bilibili:     .bilibili-player
 ```
 
 详细说明请查看：
-- [SELECTOR_FEATURE.md](./SELECTOR_FEATURE.md) - 功能详细说明
-- [chrome-extension/INSTALL.md](./chrome-extension/INSTALL.md) - Chrome扩展安装指南
+- [SELECTOR_FEATURE.md](SELECTOR_FEATURE.md) - 功能详细说明
+- [chrome-extension/INSTALL.md](../chrome-extension/INSTALL.md) - Chrome扩展安装指南
 
 ## iframe 反检测功能 🆕
 
@@ -271,7 +271,7 @@ Bilibili:     .bilibili-player
 - ✅ 无需任何额外配置
 - ✅ 兼容性最佳
 
-**详细说明请查看：[IFRAME_ANTI_DETECTION.md](./IFRAME_ANTI_DETECTION.md)**
+**详细说明请查看：[IFRAME_ANTI_DETECTION.md](IFRAME_ANTI_DETECTION.md)**
 
 ## 注意事项
 

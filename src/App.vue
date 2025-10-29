@@ -221,7 +221,7 @@ export default {
       }
 
       const result = layoutManager.deleteLayout(layoutId)
-      
+
       // 如果删除的是当前布局，切换到第一个布局
       if (typeof result === 'number') {
         handleSwitchLayout(result)
@@ -242,13 +242,13 @@ export default {
     // 提供给子组件使用
     provide('showPrompt', dialog.showPrompt)
     provide('showConfirm', dialog.showConfirm)
-    provide('checkTemplateUpdate', (layoutId) => 
+    provide('checkTemplateUpdate', (layoutId) =>
       layoutManager.checkTemplateUpdate(layoutId, dialog.isElectron.value)
     )
-    provide('syncTemplateUpdate', (layoutId) => 
+    provide('syncTemplateUpdate', (layoutId) =>
       layoutManager.syncTemplateUpdate(
-        layoutId, 
-        dialog.isElectron.value, 
+        layoutId,
+        dialog.isElectron.value,
         (websites) => websiteManager.setWebsites(websites)
       )
     )

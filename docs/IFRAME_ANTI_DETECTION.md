@@ -279,7 +279,7 @@ A: 在个人使用范围内是合法的。但请：
 
 ## 📚 相关文档
 
-- [Chrome 扩展安装指南](chrome-extension/INSTALL.md)
+- [Chrome 扩展安装指南](../chrome-extension/INSTALL.md)
 - [Electron 桌面客户端说明](ELECTRON.md)
 - [CSS 选择器全屏功能](SELECTOR_FEATURE.md)
 - [项目主 README](README.md)

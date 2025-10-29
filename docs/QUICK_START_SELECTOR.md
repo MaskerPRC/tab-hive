@@ -229,9 +229,9 @@ document.querySelectorAll('body > *').forEach(e => {
 
 ## 下一步
 
-- 📖 阅读完整文档：[SELECTOR_FEATURE.md](./SELECTOR_FEATURE.md)
-- 🔧 Chrome扩展详细安装：[chrome-extension/INSTALL.md](./chrome-extension/INSTALL.md)
-- 🐝 探索更多Tab Hive功能：[README.md](./README.md)
+- 📖 阅读完整文档：[SELECTOR_FEATURE.md](SELECTOR_FEATURE.md)
+- 🔧 Chrome扩展详细安装：[chrome-extension/INSTALL.md](../chrome-extension/INSTALL.md)
+- 🐝 探索更多Tab Hive功能：[README.md](README.md)
 
 ## 反馈
 

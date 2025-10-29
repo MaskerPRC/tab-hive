@@ -113,7 +113,7 @@ A: 未签名的应用可能被标记。可以申请代码签名证书，或提�
 
 ## 下一步
 
-- 查看 [ELECTRON.md](./ELECTRON.md) 了解详细配置
-- 查看 [README.md](./README.md) 了解项目功能
+- 查看 [ELECTRON.md](ELECTRON.md) 了解详细配置
+- 查看 [README.md](README.md) 了解项目功能
 - 提交 Issue 报告问题或建议功能
 

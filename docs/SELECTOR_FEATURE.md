@@ -49,7 +49,7 @@ Electron版本通过IPC通信直接操作iframe内容，**无需安装任何扩�
 4. 选择项目中的 chrome-extension 文件夹
 ```
 
-详细说明请查看：[chrome-extension/INSTALL.md](chrome-extension/INSTALL.md)
+详细说明请查看：[chrome-extension/INSTALL.md](../chrome-extension/INSTALL.md)
 
 ## 使用示例
 
