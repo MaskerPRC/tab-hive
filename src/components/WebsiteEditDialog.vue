@@ -28,7 +28,7 @@
         </div>
       </div>
       
-      <!-- 第二行：设备类型和目标选择器 -->
+      <!-- 第二行：设备类型、目标选择器和静音选项 -->
       <div class="form-row">
         <div class="form-group">
           <label>设备类型：</label>
@@ -68,9 +68,39 @@
             留空则始终显示整个页面
           </div>
         </div>
+        <div class="form-group">
+          <label>音频设置：</label>
+          <div class="audio-control">
+            <label class="audio-option" :class="{ active: localWebsite.muted }">
+              <input
+                type="checkbox"
+                v-model="localWebsite.muted"
+              />
+              <span>🔇 静音此网页</span>
+            </label>
+          </div>
+          <div class="audio-hint">
+            💡 开启后该网页将不会播放任何声音
+          </div>
+        </div>
+        <div class="form-group">
+          <label>视觉设置：</label>
+          <div class="visual-control">
+            <label class="visual-option" :class="{ active: localWebsite.darkMode }">
+              <input
+                type="checkbox"
+                v-model="localWebsite.darkMode"
+              />
+              <span>🌙 暗色主题</span>
+            </label>
+          </div>
+          <div class="visual-hint">
+            💡 为网页强制应用暗色主题，适合夜间浏览
+          </div>
+        </div>
       </div>
       
-      <!-- 第三行：Session实例选择 -->
+      <!-- 第三行：Session实例选择和内边距配置 -->
       <div class="form-row">
         <div class="form-group">
           <label>Cookie共享实例：</label>
@@ -108,6 +138,24 @@
             💡 相同实例的蜂巢会共享Cookie和存储，不同实例之间完全隔离<br>
             • 默认共享实例：所有网站共用<br>
             • 新建实例：可用于多账号登录等场景
+          </div>
+        </div>
+        <div class="form-group">
+          <label>内边距配置（可选）：</label>
+          <input
+            v-model.number="localWebsite.padding"
+            type="number"
+            min="0"
+            max="50"
+            step="1"
+            placeholder="0"
+            class="form-input"
+            @keyup.enter="handleConfirm"
+          />
+          <div class="padding-hint">
+            💡 调整网页内容与卡片边缘的距离（单位：像素）<br>
+            • 默认为 0（无内边距）<br>
+            • 建议范围：0-50px
           </div>
         </div>
       </div>
@@ -186,7 +234,7 @@ export default {
       type: Number,
       default: null
     },
-    website: {
+      website: {
       type: Object,
       default: () => ({
         title: '',
@@ -194,7 +242,10 @@ export default {
         deviceType: 'desktop',
         targetSelector: '',
         autoRefreshInterval: 0,
-        sessionInstance: 'default'
+        sessionInstance: 'default',
+        padding: 0,
+        muted: false,
+        darkMode: false
       })
     }
   },
@@ -208,7 +259,10 @@ export default {
       deviceType: 'desktop',
       targetSelector: '',
       autoRefreshInterval: 0,
-      sessionInstance: 'default'
+      sessionInstance: 'default',
+      padding: 0,
+      muted: false,
+      darkMode: false
     })
 
     // Session管理
@@ -262,8 +316,11 @@ export default {
     watch(() => props.website, (newVal) => {
       localWebsite.value = { 
         ...newVal,
-        // 确保 sessionInstance 有默认值
-        sessionInstance: newVal.sessionInstance || 'default'
+        // 确保字段有默认值
+        sessionInstance: newVal.sessionInstance || 'default',
+        padding: newVal.padding || 0,
+        muted: newVal.muted || false,
+        darkMode: newVal.darkMode || false
       }
       
       // 将秒数转换为合适的单位显示
@@ -751,6 +808,121 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #92400e;
+}
+
+.padding-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #ede9fe;
+  border-left: 3px solid #8b5cf6;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #5b21b6;
+}
+
+.audio-control {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.audio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.audio-option:hover {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.audio-option.active {
+  border-color: #ef4444;
+  background: #ef4444;
+  color: white;
+}
+
+.audio-option input[type="checkbox"] {
+  display: none;
+}
+
+.audio-option span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audio-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #991b1b;
+}
+
+.visual-control {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.visual-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.visual-option:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.visual-option.active {
+  border-color: #6366f1;
+  background: #6366f1;
+  color: white;
+}
+
+.visual-option input[type="checkbox"] {
+  display: none;
+}
+
+.visual-option span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.visual-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #eef2ff;
+  border-left: 3px solid #6366f1;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4338ca;
 }
 
 /* 响应式设计：在较小屏幕上切换回纵向布局 */

@@ -38,6 +38,7 @@
       :currentLayoutId="currentLayoutId"
       :showTitles="layoutManager.globalSettings.value.showTitles"
       :refreshOnFullscreenToggle="layoutManager.globalSettings.value.refreshOnFullscreenToggle"
+      :globalMuted="layoutManager.globalSettings.value.globalMuted"
       :showUpdateButton="showUpdateButton"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
@@ -46,6 +47,7 @@
       @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
       @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
+      @toggle-global-mute="handleToggleGlobalMute"
       @manage-sessions="handleManageSessions"
       @show-update="handleShowUpdate"
       @mouseenter="showPanel = true"
@@ -275,6 +277,20 @@ export default {
       layoutManager.updateGlobalSettings({ refreshOnFullscreenToggle })
     }
 
+    // 切换全局静音
+    const handleToggleGlobalMute = (globalMuted) => {
+      layoutManager.updateGlobalSettings({ globalMuted })
+      // 应用到所有网站
+      if (globalMuted) {
+        // 静音所有网站
+        websiteManager.websites.value.forEach((website, index) => {
+          if (!website.muted) {
+            websiteManager.updateWebsite({ index, updates: { muted: true } })
+          }
+        })
+      }
+    }
+
     // 切换布局
     const handleSwitchLayout = (layoutId) => {
       const websites = layoutManager.switchLayout(layoutId)
@@ -418,7 +434,8 @@ export default {
       handleDeleteLayout,
       renameLayout: layoutManager.renameLayout,
       handleToggleTitles,
-      handleToggleRefreshOnFullscreen
+      handleToggleRefreshOnFullscreen,
+      handleToggleGlobalMute
     }
   }
 }

@@ -84,6 +84,8 @@
         @edit="handleEditWebsite"
         @fullscreen="$emit('fullscreen', index)"
         @remove="handleRemoveWebsite"
+        @toggle-mute="handleToggleMute"
+        @update-url="handleUpdateUrl"
         @resize-start="startResize($event, index, $event)"
       />
     </div>
@@ -281,6 +283,34 @@ export default {
     }
 
     /**
+     * 切换网站静音状态
+     */
+    const handleToggleMute = (index) => {
+      const website = props.websites[index]
+      if (website) {
+        emit('update-website', {
+          index,
+          updates: {
+            muted: !website.muted
+          }
+        })
+      }
+    }
+
+    /**
+     * 更新网站URL
+     */
+    const handleUpdateUrl = (index, newUrl) => {
+      console.log('[GridView] 更新网站 URL:', { index, newUrl })
+      emit('update-website', {
+        index,
+        updates: {
+          url: newUrl
+        }
+      })
+    }
+
+    /**
      * 刷新网站
      */
     const handleRefreshWebsite = (index) => {
@@ -309,7 +339,10 @@ export default {
           deviceType: website.deviceType || 'desktop',
           targetSelector: website.targetSelector || '',
           autoRefreshInterval: website.autoRefreshInterval || 0,
-          sessionInstance: website.sessionInstance || 'default'
+          sessionInstance: website.sessionInstance || 'default',
+          padding: website.padding || 0,
+          muted: website.muted || false,
+          darkMode: website.darkMode || false
         }
         console.log('[GridView] 编辑网站:', {
           title: website.title,
@@ -384,17 +417,31 @@ export default {
       if (props.fullscreenIndex !== null && props.websites[props.fullscreenIndex]) {
         const website = props.websites[props.fullscreenIndex]
         
-        // 更新网站的targetSelector
+        // 尝试获取当前 webview/iframe 的 URL
+        let currentUrl = website.url
+        try {
+          // 查找当前全屏的 webview
+          const webview = document.querySelector(`#webview-${website.id}`)
+          if (webview && window.electron?.isElectron) {
+            const url = webview.getURL()
+            // 移除 __webview_id__ 参数
+            currentUrl = url.replace(/[?&]__webview_id__=[^&]+/, '').replace(/\?$/, '')
+            console.log('[GridView] 获取当前 URL:', currentUrl)
+          }
+        } catch (error) {
+          console.warn('[GridView] 无法获取当前 URL，使用原 URL:', error)
+        }
+        
+        // 同时更新网站的 URL 和 targetSelector
         emit('update-website', {
           index: props.fullscreenIndex,
-          title: website.title,
-          url: website.url,
-          deviceType: website.deviceType || 'desktop',
-          targetSelector: selector,
-          autoRefreshInterval: website.autoRefreshInterval || 0
+          updates: {
+            url: currentUrl,
+            targetSelector: selector
+          }
         })
         
-        alert(`已设置元素选择器：\n${selector}\n\n退出全屏后将自动应用该选择器。`)
+        alert(`已设置元素选择器：\n${selector}\n\n网页地址已更新为：${currentUrl}\n\n退出全屏后将自动应用该选择器。`)
       }
       
       isSelectingElement.value = false
@@ -467,6 +514,8 @@ export default {
       handleCopyWebsite,
       handleRemoveWebsite,
       handleRefreshWebsite,
+      handleToggleMute,
+      handleUpdateUrl,
       handleEditWebsite,
       handleGridMouseMove,
       handleFullscreenBarLeave,

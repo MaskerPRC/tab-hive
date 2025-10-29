@@ -11,7 +11,8 @@
       'resizing': isResizing && isCurrentResize,
       'colliding': isColliding && (isCurrentDrag || isCurrentResize)
     }"
-    :style="itemStyle"
+    :style="computedItemStyle"
+    :data-padding="item.padding || null"
   >
     <!-- 已有网站显示 -->
     <template v-if="item.url">
@@ -83,7 +84,9 @@
       <!-- 非全屏模式下的浮动按钮 -->
       <FloatingActions
         v-if="!isFullscreen"
+        :muted="item.muted || false"
         @refresh="handleManualRefresh"
+        @toggle-mute="handleToggleMute"
         @copy="$emit('copy', index)"
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
@@ -102,6 +105,17 @@
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
         </svg>
         <span class="timer-text">{{ formatTime(remainingTime) }}</span>
+      </div>
+      
+      <!-- URL变化提示按钮 -->
+      <div v-if="showUrlChangeHint && !isFullscreen" class="url-change-hint">
+        <button class="btn-use-current-url" @click="handleUseCurrentUrl" title="使用当前显示的网页地址">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span>使用此网页</span>
+        </button>
       </div>
     </template>
   </div>
@@ -183,7 +197,7 @@ export default {
       default: true
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url'],
   setup(props, { emit }) {
     // 检测是否在 Electron 环境
     const isElectron = computed(() => {
@@ -203,12 +217,18 @@ export default {
     const bufferWebviewRef = ref(null)
     const webviewRef = ref(null)
     const iframeRef = ref(null)
+    const currentUrl = ref('')
+    const showUrlChangeHint = ref(false)
     
     // 设置 webview 引用
     const setWebviewRef = (el) => {
       webviewRef.value = el
       if (el) {
         setupWebviewEvents(el, false)
+        // 在 webview 准备好后应用静音状态
+        el.addEventListener('dom-ready', () => {
+          applyMuteState(el)
+        }, { once: true })
       }
     }
     
@@ -262,16 +282,34 @@ export default {
       console.log('[WebsiteCard] 设置 webview 事件监听:', isBuffer ? 'buffer' : 'main')
 
       // 监听加载完成
-      webview.addEventListener('did-finish-load', () => {
+      webview.addEventListener('did-finish-load', async () => {
         console.log('[WebsiteCard] Webview 加载完成:', isBuffer ? 'buffer' : 'main')
         
         if (!isBuffer) {
           mainWebviewReady.value = true
         }
 
+        // 应用暗色主题(如果需要)
+        if (props.item.darkMode) {
+          await applyDarkMode(webview)
+        }
+
         // 应用选择器(如果需要)
         if (!props.isFullscreen && props.item.targetSelector) {
-          applySelector(webview, isBuffer)
+          await applySelector(webview, isBuffer)
+        }
+      })
+
+      // 监听导航变化
+      webview.addEventListener('did-navigate', (event) => {
+        if (!isBuffer) {
+          checkUrlChange(event.url)
+        }
+      })
+
+      webview.addEventListener('did-navigate-in-page', (event) => {
+        if (!isBuffer) {
+          checkUrlChange(event.url)
         }
       })
 
@@ -301,6 +339,72 @@ export default {
           sessionInstance: props.item.sessionInstance
         })
       })
+    }
+
+    // 应用暗色主题
+    const applyDarkMode = async (webview) => {
+      if (!props.item.darkMode) return
+
+      console.log('[WebsiteCard] 应用暗色主题')
+
+      try {
+        // 等待一段时间确保页面完全加载
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        const darkModeStyleId = `tabhive-darkmode-style-${props.item.id}`
+
+        const darkModeCode = `
+          (function() {
+            try {
+              console.log('[Webview DarkMode] 应用暗色主题');
+              
+              // 移除旧样式
+              const oldStyle = document.getElementById('${darkModeStyleId}');
+              if (oldStyle) {
+                oldStyle.remove();
+              }
+              
+              // 添加暗色主题样式
+              const style = document.createElement('style');
+              style.id = '${darkModeStyleId}';
+              style.textContent = \`
+                html {
+                  filter: invert(0.9) hue-rotate(180deg) !important;
+                  background-color: #1a1a1a !important;
+                }
+                
+                img, video, iframe, [style*="background-image"] {
+                  filter: invert(1) hue-rotate(180deg) !important;
+                }
+                
+                * {
+                  scrollbar-color: #555 #222 !important;
+                }
+                
+                *::-webkit-scrollbar {
+                  background-color: #222 !important;
+                }
+                
+                *::-webkit-scrollbar-thumb {
+                  background-color: #555 !important;
+                }
+              \`;
+              
+              document.head.appendChild(style);
+              console.log('[Webview DarkMode] 暗色主题已应用');
+              return { success: true };
+            } catch (e) {
+              console.error('[Webview DarkMode] 错误:', e);
+              return { success: false, error: e.message };
+            }
+          })();
+        `
+
+        await webview.executeJavaScript(darkModeCode)
+        console.log('[WebsiteCard] ✓ 暗色主题应用成功')
+      } catch (error) {
+        console.error('[WebsiteCard] 应用暗色主题失败:', error)
+      }
     }
 
     // 应用选择器到 webview
@@ -556,6 +660,83 @@ export default {
       }
     }
     
+    // 切换静音状态
+    const handleToggleMute = () => {
+      console.log('[WebsiteCard] 切换静音状态')
+      emit('toggle-mute', props.index)
+    }
+    
+    // 监听静音状态变化，应用到 webview
+    watch(() => props.item.muted, (newMuted) => {
+      if (isElectron.value && webviewRef.value) {
+        try {
+          webviewRef.value.setAudioMuted(newMuted || false)
+          console.log('[WebsiteCard] 设置静音状态:', newMuted)
+        } catch (error) {
+          console.error('[WebsiteCard] 设置静音失败:', error)
+        }
+      }
+    }, { immediate: true })
+    
+    // webview 加载完成后也应用静音状态
+    const applyMuteState = (webview) => {
+      if (!webview) return
+      try {
+        const muted = props.item.muted || false
+        webview.setAudioMuted(muted)
+        console.log('[WebsiteCard] 应用静音状态:', muted)
+      } catch (error) {
+        console.error('[WebsiteCard] 应用静音状态失败:', error)
+      }
+    }
+
+    // 检查URL是否变化
+    const checkUrlChange = (url) => {
+      if (!url) return
+      
+      // 移除 __webview_id__ 参数
+      const cleanUrl = url.split('?')[0] + (url.includes('?') && !url.includes('__webview_id__') ? '?' + url.split('?')[1] : '')
+      const configUrl = props.item.url.split('?')[0]
+      
+      currentUrl.value = cleanUrl
+      
+      // 检查域名是否相同
+      try {
+        const current = new URL(cleanUrl)
+        const config = new URL(props.item.url)
+        
+        // 如果主域名不同，或路径不同，显示提示
+        if (current.hostname !== config.hostname || current.pathname !== config.pathname) {
+          showUrlChangeHint.value = true
+          console.log('[WebsiteCard] URL 已变化:', {
+            current: cleanUrl,
+            config: props.item.url
+          })
+        } else {
+          showUrlChangeHint.value = false
+        }
+      } catch (error) {
+        console.error('[WebsiteCard] URL 解析失败:', error)
+      }
+    }
+
+    // 使用当前URL
+    const handleUseCurrentUrl = () => {
+      if (currentUrl.value && isElectron.value && webviewRef.value) {
+        try {
+          const url = webviewRef.value.getURL()
+          // 移除 __webview_id__ 参数
+          const cleanUrl = url.replace(/[?&]__webview_id__=[^&]+/, '').replace(/\?$/, '')
+          
+          console.log('[WebsiteCard] 使用当前 URL:', cleanUrl)
+          emit('update-url', props.index, cleanUrl)
+          showUrlChangeHint.value = false
+        } catch (error) {
+          console.error('[WebsiteCard] 获取 URL 失败:', error)
+        }
+      }
+    }
+    
     // 使用自动刷新功能
     const itemRef = toRef(props, 'item')
     const { remainingTime, resetTimer, pauseTimer, resumeTimer } = useAutoRefresh({
@@ -612,6 +793,15 @@ export default {
           }, 10)
         }
       }
+    })
+
+    // 计算包含内边距的样式
+    const computedItemStyle = computed(() => {
+      const style = { ...props.itemStyle }
+      if (props.item.padding && props.item.padding > 0) {
+        style['--item-padding'] = `${props.item.padding}px`
+      }
+      return style
     })
 
     // 格式化倒计时显示
@@ -682,7 +872,11 @@ export default {
       isBufferReady,
       bufferUrl,
       refreshWithDoubleBuffer,
-      handleManualRefresh
+      handleManualRefresh,
+      handleToggleMute,
+      computedItemStyle,
+      showUrlChangeHint,
+      handleUseCurrentUrl
     }
   }
 }
@@ -764,6 +958,14 @@ export default {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* 内边距支持 */
+.grid-item[data-padding] .website-webview,
+.grid-item[data-padding] .website-iframe {
+  width: calc(100% - var(--item-padding) * 2);
+  height: calc(100% - var(--item-padding) * 2);
+  margin: var(--item-padding);
 }
 
 /* 拖动或调整大小时,禁用 webview/iframe 的鼠标事件 */
@@ -910,6 +1112,52 @@ export default {
 .grid-item.dragging .refresh-timer,
 .grid-item.resizing .refresh-timer {
   opacity: 0.3;
+}
+
+/* URL 变化提示按钮 */
+.url-change-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.grid-item:hover .url-change-hint {
+  opacity: 1;
+}
+
+.btn-use-current-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-use-current-url:hover {
+  background: rgba(37, 99, 235, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-use-current-url svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-use-current-url span {
+  line-height: 1;
 }
 
 /* 双缓冲 webview 样式 */

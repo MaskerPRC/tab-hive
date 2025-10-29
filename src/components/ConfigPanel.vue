@@ -62,6 +62,17 @@
           <span class="toggle-slider"></span>
         </label>
 
+        <label class="toggle-control" title="全局静音/取消静音所有网页">
+          <span class="toggle-label">全局静音</span>
+          <input
+            type="checkbox"
+            :checked="globalMuted"
+            @change="handleToggleGlobalMute"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-slider"></span>
+        </label>
+
         <button
           @click="$emit('manage-sessions')"
           class="sidebar-btn btn-sessions"
@@ -154,12 +165,16 @@ export default {
       type: Boolean,
       default: true
     },
+    globalMuted: {
+      type: Boolean,
+      default: false
+    },
     showUpdateButton: {
       type: Boolean,
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'manage-sessions', 'show-update'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'manage-sessions', 'show-update'],
   setup(props, { emit }) {
     const showLayoutDropdown = ref(false)
     let hideTimer = null
@@ -342,6 +357,11 @@ export default {
       emit('toggle-refresh-on-fullscreen', event.target.checked)
     }
 
+    // 切换全局静音
+    const handleToggleGlobalMute = (event) => {
+      emit('toggle-global-mute', event.target.checked)
+    }
+
     return {
       isElectron,
       showLayoutDropdown,
@@ -366,7 +386,8 @@ export default {
       handleShareLayout,
       handleSyncTemplate,
       handleToggleTitles,
-      handleToggleRefreshOnFullscreen
+      handleToggleRefreshOnFullscreen,
+      handleToggleGlobalMute
     }
   }
 }

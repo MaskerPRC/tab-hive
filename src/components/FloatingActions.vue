@@ -7,6 +7,13 @@
       v-html="ICONS.refresh"
     />
     <button
+      class="btn-action btn-mute"
+      :class="{ 'muted': muted }"
+      @click="$emit('toggle-mute')"
+      :title="muted ? '取消静音' : '静音'"
+      v-html="muted ? ICONS.volumeOff : ICONS.volumeOn"
+    />
+    <button
       class="btn-action btn-copy"
       @click="$emit('copy')"
       title="复制蜂巢"
@@ -38,7 +45,13 @@ import { ICONS } from './icons.js'
 
 export default {
   name: 'FloatingActions',
-  emits: ['refresh', 'copy', 'edit', 'fullscreen', 'remove'],
+  props: {
+    muted: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['refresh', 'toggle-mute', 'copy', 'edit', 'fullscreen', 'remove'],
   setup() {
     return {
       ICONS
@@ -113,6 +126,22 @@ export default {
 
 .btn-edit:hover {
   background: rgba(33, 150, 243, 0.9) !important;
+}
+
+.btn-mute {
+  background: rgba(255, 152, 0, 0.7) !important;
+}
+
+.btn-mute:hover {
+  background: rgba(255, 152, 0, 0.9) !important;
+}
+
+.btn-mute.muted {
+  background: rgba(244, 67, 54, 0.7) !important;
+}
+
+.btn-mute.muted:hover {
+  background: rgba(244, 67, 54, 0.9) !important;
 }
 </style>
 
