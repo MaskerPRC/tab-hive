@@ -5,13 +5,11 @@ console.log('[Preload] Preload script 开始加载 (Webview 架构)...')
 
 // 计算 webview preload 路径
 const getWebviewPreloadPath = () => {
-  if (process.env.NODE_ENV === 'development') {
-    // 开发模式
-    return path.join(__dirname, 'webview-preload.js')
-  } else {
-    // 生产模式
-    return path.join(__dirname, 'webview-preload.js')
-  }
+  // 无论开发还是生产模式，都使用 __dirname
+  // electron-builder 会将 electron 目录打包到应用中
+  const preloadPath = path.join(__dirname, 'webview-preload.js')
+  console.log('[Preload] Webview preload 路径:', preloadPath)
+  return preloadPath
 }
 
 // 暴露安全的 API 到渲染进程
