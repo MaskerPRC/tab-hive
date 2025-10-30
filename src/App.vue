@@ -85,24 +85,25 @@
       @mouseleave="handlePanelLeave"
     />
     <!-- 网格视图 -->
-    <GridView
-      v-if="currentView === 'grid'"
-      v-for="layout in layoutManager.layouts.value"
-      :key="`layout-${layout.id}`"
-      v-show="layout.id === layoutManager.currentLayoutId.value || layout.keepAlive"
-      :class="{ 'layout-hidden': layout.id !== layoutManager.currentLayoutId.value }"
-      :websites="layout.id === layoutManager.currentLayoutId.value ? websites : layout.websites"
-      :rows="2"
-      :cols="2"
-      :fullscreenIndex="layout.id === layoutManager.currentLayoutId.value ? fullscreenIndex : null"
-      :globalSettings="layoutManager.globalSettings.value"
-      @fullscreen="layout.id === layoutManager.currentLayoutId.value ? handleFullscreen($event) : null"
-      @exitFullscreen="exitFullscreen"
-      @add-website="(data) => layout.id === layoutManager.currentLayoutId.value ? handleAddWebsite(data) : null"
-      @copy-website="(index) => layout.id === layoutManager.currentLayoutId.value ? handleCopyWebsite(index) : null"
-      @remove-website="(index) => layout.id === layoutManager.currentLayoutId.value ? handleRemoveWebsite(index) : null"
-      @update-website="(data) => layout.id === layoutManager.currentLayoutId.value ? handleUpdateWebsite(data) : null"
-    />
+    <template v-if="currentView === 'grid'">
+      <template v-for="layout in layouts" :key="`layout-${layout.id}`">
+        <GridView
+          v-if="layout.id === currentLayoutId || layout.keepAlive"
+          :class="{ 'layout-hidden': layout.id !== currentLayoutId }"
+          :websites="layout.id === currentLayoutId ? websites : layout.websites"
+          :rows="2"
+          :cols="2"
+          :fullscreenIndex="layout.id === currentLayoutId ? fullscreenIndex : null"
+          :globalSettings="layoutManager.globalSettings.value"
+          @fullscreen="layout.id === currentLayoutId ? handleFullscreen($event) : null"
+          @exitFullscreen="exitFullscreen"
+          @add-website="(data) => layout.id === currentLayoutId ? handleAddWebsite(data) : null"
+          @copy-website="(index) => layout.id === currentLayoutId ? handleCopyWebsite(index) : null"
+          @remove-website="(index) => layout.id === currentLayoutId ? handleRemoveWebsite(index) : null"
+          @update-website="(data) => layout.id === currentLayoutId ? handleUpdateWebsite(data) : null"
+        />
+      </template>
+    </template>
 
     <!-- 画布视图 -->
     <CanvasView
