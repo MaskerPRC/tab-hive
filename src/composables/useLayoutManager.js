@@ -70,21 +70,31 @@ export function useLayoutManager() {
   // 保存配置到 localStorage
   const saveToStorage = (layouts, currentLayoutId, globalSettings) => {
     try {
+      console.log('[useLayoutManager] ========== 保存到存储 ==========')
+      console.log('[useLayoutManager] 布局数量:', layouts.length)
+      console.log('[useLayoutManager] 当前布局ID:', currentLayoutId)
+      console.log('[useLayoutManager] 全局设置:', globalSettings)
+      
       const config = {
         layouts: layouts,
         currentLayoutId: currentLayoutId,
         globalSettings: globalSettings
       }
       
+      console.log('[useLayoutManager] 完整配置:', config)
+      
       if (windowManager && windowManager.windowStorage) {
         // 使用窗口独立的存储
+        console.log('[useLayoutManager] 使用窗口独立存储')
         windowManager.windowStorage.setItem('iframe-all-config', JSON.stringify(config))
       } else {
         // 降级到普通 localStorage
+        console.log('[useLayoutManager] 使用普通 localStorage')
         localStorage.setItem('iframe-all-config', JSON.stringify(config))
       }
+      console.log('[useLayoutManager] ========== 存储保存完成 ==========')
     } catch (e) {
-      console.error('保存配置失败:', e)
+      console.error('[useLayoutManager] 保存配置失败:', e)
     }
   }
 
@@ -186,8 +196,11 @@ export function useLayoutManager() {
         size: site.size ? { ...site.size } : undefined
       }))
 
-      console.log('保存布局:', layout.name, '网站数量:', layout.websites.length)
+      console.log('[useLayoutManager] 保存布局:', layout.name, '网站数量:', layout.websites.length)
+      console.log('[useLayoutManager] 布局ID:', layout.id)
+      console.log('[useLayoutManager] 保存的网站列表:', layout.websites)
       saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
+      console.log('[useLayoutManager] 保存到存储完成')
     }
   }
 

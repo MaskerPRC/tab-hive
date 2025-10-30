@@ -57,6 +57,7 @@
         'free-layout': true,
         'is-dragging': isDraggingItem || isResizing
       }"
+      :data-websites-count="allWebsites.length"
     >
       <WebsiteCard
         v-for="(item, index) in allWebsites"
@@ -144,6 +145,7 @@ export default {
       url: '',
       deviceType: 'desktop',
       targetSelector: '',
+      targetSelectors: [],
       autoRefreshInterval: 0
     })
 
@@ -153,9 +155,16 @@ export default {
 
     // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
     const allWebsites = computed(() => {
+      console.log('[GridView] ========== allWebsites 计算开始 ==========')
+      console.log('[GridView] props.websites:', props.websites)
       const sites = props.websites || []
+      console.log('[GridView] sites 数量:', sites.length)
       // 过滤掉没有 URL 的空白项
-      return sites.filter(site => site && site.url)
+      const filtered = sites.filter(site => site && site.url)
+      console.log('[GridView] 过滤后的网站数量:', filtered.length)
+      console.log('[GridView] 过滤后的网站列表:', filtered)
+      console.log('[GridView] ========== allWebsites 计算结束 ==========')
+      return filtered
     })
 
     // 碰撞检测
@@ -243,19 +252,26 @@ export default {
      * 确认添加网站
      */
     const confirmAddWebsite = (websiteData) => {
+      console.log('[GridView] ========== 确认添加/更新网站 ==========')
+      console.log('[GridView] editingSlot:', editingSlot.value)
+      console.log('[GridView] websiteData:', websiteData)
+      
       // 如果是编辑模式
       if (editingSlot.value !== -1 && editingSlot.value !== null) {
+        console.log('[GridView] 模式：编辑现有网站')
         emit('update-website', {
           index: editingSlot.value,
           ...websiteData
         })
       } else {
         // 添加模式
+        console.log('[GridView] 模式：添加新网站')
         emit('add-website', websiteData)
       }
 
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0, sessionInstance: 'default' }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default' }
+      console.log('[GridView] ========== 添加/更新流程完成 ==========')
     }
 
     /**
@@ -263,7 +279,7 @@ export default {
      */
     const cancelAddWebsite = () => {
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', autoRefreshInterval: 0, sessionInstance: 'default' }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default' }
     }
 
     /**
@@ -314,14 +330,32 @@ export default {
      * 刷新网站
      */
     const handleRefreshWebsite = (index) => {
+      console.log('[GridView] ========== handleRefreshWebsite 被调用 ==========')
+      console.log('[GridView] 刷新网站索引:', index)
+      
+      // 处理 iframe 刷新
       const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
       if (iframe) {
+        console.log('[GridView] 刷新 iframe')
         // 通过重新设置src来刷新iframe
         const currentSrc = iframe.src
         iframe.src = 'about:blank'
         // 使用setTimeout确保浏览器识别到URL变化
         setTimeout(() => {
           iframe.src = currentSrc
+        }, 10)
+      }
+      
+      // 处理 webview 刷新
+      const webview = document.querySelector(`.grid-item:nth-child(${index + 1}) webview:not(.buffer-webview)`)
+      if (webview) {
+        console.log('[GridView] 刷新 webview')
+        // 通过重新设置src来刷新webview
+        const currentSrc = webview.src
+        webview.src = ''
+        // 使用setTimeout确保浏览器识别到URL变化
+        setTimeout(() => {
+          webview.src = currentSrc
         }, 10)
       }
     }
@@ -338,6 +372,7 @@ export default {
           url: website.url,
           deviceType: website.deviceType || 'desktop',
           targetSelector: website.targetSelector || '',
+          targetSelectors: website.targetSelectors || [],
           autoRefreshInterval: website.autoRefreshInterval || 0,
           sessionInstance: website.sessionInstance || 'default',
           padding: website.padding || 0,
@@ -346,7 +381,8 @@ export default {
         }
         console.log('[GridView] 编辑网站:', {
           title: website.title,
-          sessionInstance: newWebsite.value.sessionInstance
+          sessionInstance: newWebsite.value.sessionInstance,
+          targetSelectors: newWebsite.value.targetSelectors
         })
       }
     }
@@ -444,6 +480,13 @@ export default {
           targetSelector: finalSelectors.length > 0 ? finalSelectors[0] : '' // 兼容旧版
         }
         
+        console.log('[GridView] ========== 准备发送 update-website 事件 ==========')
+        console.log('[GridView] updates 对象:', updates)
+        console.log('[GridView] 完整事件数据:', {
+          index: props.fullscreenIndex,
+          updates
+        })
+        
         emit('update-website', {
           index: props.fullscreenIndex,
           updates
@@ -479,6 +522,10 @@ export default {
 
     // 组件挂载时初始化布局
     onMounted(() => {
+      console.log('[GridView] ========== 组件挂载 ==========')
+      console.log('[GridView] 初始网站数量:', props.websites.length)
+      console.log('[GridView] 初始网站列表:', props.websites)
+      
       nextTick(() => {
         initializeGridLayout()
       })
@@ -495,6 +542,22 @@ export default {
           handleResizeEnd(emit)
         }
       })
+    })
+    
+    // 监视 props.websites 变化
+    watch(() => props.websites, (newWebsites, oldWebsites) => {
+      console.log('[GridView] ========== props.websites 发生变化 ==========')
+      console.log('[GridView] 旧网站数量:', oldWebsites?.length || 0)
+      console.log('[GridView] 新网站数量:', newWebsites?.length || 0)
+      console.log('[GridView] 新网站列表:', newWebsites)
+    }, { deep: true })
+    
+    // 监视 allWebsites 变化
+    watch(allWebsites, (newValue, oldValue) => {
+      console.log('[GridView] ========== allWebsites 发生变化 ==========')
+      console.log('[GridView] 旧数量:', oldValue?.length || 0)
+      console.log('[GridView] 新数量:', newValue?.length || 0)
+      console.log('[GridView] 过滤后的网站列表:', newValue)
     })
 
     // 组件卸载时清理事件监听

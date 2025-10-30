@@ -6,6 +6,11 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSessionManager } from './useSessionManager.js'
 
+// 全局存储：已设置过事件监听器的 webview 集合
+const setupWebviewsSet = new Set()
+// 全局存储：每个 webview 的最新 callbacks
+const webviewCallbacksMap = new WeakMap()
+
 export function useWebview(props, emit) {
   // 检测是否在 Electron 环境
   const isElectron = computed(() => {
@@ -33,9 +38,12 @@ export function useWebview(props, emit) {
 
   // 设置 webview 引用
   const setWebviewRef = (el) => {
-    webviewRef.value = el
-    if (el) {
-      setupWebviewEvents(el)
+    // 只在 webview 实例改变时才更新
+    if (webviewRef.value !== el) {
+      webviewRef.value = el
+      if (el) {
+        setupWebviewEvents(el)
+      }
     }
   }
 
@@ -46,29 +54,57 @@ export function useWebview(props, emit) {
 
   // 设置 webview 事件监听
   const setupWebviewEvents = (webview, callbacks = {}) => {
-    console.log('[useWebview] 设置 webview 事件监听')
+    console.log('[useWebview] ========== setupWebviewEvents 被调用 ==========')
+    console.log('[useWebview] webview 元素:', webview?.id)
+    console.log('[useWebview] 是否已设置过:', setupWebviewsSet.has(webview))
+    console.log('[useWebview] callbacks.onLoad 存在:', !!callbacks.onLoad)
+    
+    // 总是更新 callbacks（即使已经设置过事件监听器）
+    webviewCallbacksMap.set(webview, callbacks)
+    console.log('[useWebview] 已更新 callbacks 到 WeakMap')
+    
+    // 防止重复设置事件监听器
+    if (setupWebviewsSet.has(webview)) {
+      console.log('[useWebview] 已设置过事件监听器，但已更新 callbacks，跳过重复设置')
+      return
+    }
+    
+    console.log('[useWebview] 首次设置 webview 事件监听')
+    setupWebviewsSet.add(webview)
 
     // 监听加载完成
     webview.addEventListener('did-finish-load', async () => {
       console.log('[useWebview] Webview 加载完成')
+      console.log('[useWebview] 当前 webview ID:', webview?.id)
+      
+      // 从 WeakMap 获取最新的 callbacks
+      const latestCallbacks = webviewCallbacksMap.get(webview) || {}
+      console.log('[useWebview] 最新的 callbacks.onLoad 存在:', !!latestCallbacks.onLoad)
+      
       mainWebviewReady.value = true
 
       // 触发加载完成回调
-      if (callbacks.onLoad) {
-        await callbacks.onLoad(webview)
+      if (latestCallbacks.onLoad) {
+        console.log('[useWebview] 调用最新的 onLoad 回调')
+        await latestCallbacks.onLoad(webview)
+        console.log('[useWebview] onLoad 回调执行完成')
+      } else {
+        console.log('[useWebview] ⚠️ 没有 onLoad 回调')
       }
     })
 
     // 监听导航变化
     webview.addEventListener('did-navigate', (event) => {
-      if (callbacks.onNavigate) {
-        callbacks.onNavigate(event.url)
+      const latestCallbacks = webviewCallbacksMap.get(webview) || {}
+      if (latestCallbacks.onNavigate) {
+        latestCallbacks.onNavigate(event.url)
       }
     })
 
     webview.addEventListener('did-navigate-in-page', (event) => {
-      if (callbacks.onNavigate) {
-        callbacks.onNavigate(event.url)
+      const latestCallbacks = webviewCallbacksMap.get(webview) || {}
+      if (latestCallbacks.onNavigate) {
+        latestCallbacks.onNavigate(event.url)
       }
     })
 
@@ -156,6 +192,11 @@ export function useWebview(props, emit) {
 
   // 组件卸载时清理
   onBeforeUnmount(() => {
+    // 清理事件监听器跟踪
+    if (webviewRef.value) {
+      setupWebviewsSet.delete(webviewRef.value)
+    }
+    
     if (isElectron.value && window.electron && props.item.id) {
       window.electron.webview.unregister(props.item.id).catch(err => {
         console.error('[useWebview] 取消注册失败:', err)

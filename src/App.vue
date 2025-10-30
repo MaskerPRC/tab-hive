@@ -98,10 +98,10 @@
       :globalSettings="layoutManager.globalSettings.value"
       @fullscreen="layout.id === layoutManager.currentLayoutId.value ? handleFullscreen($event) : null"
       @exitFullscreen="exitFullscreen"
-      @add-website="layout.id === layoutManager.currentLayoutId.value ? handleAddWebsite : () => {}"
-      @copy-website="layout.id === layoutManager.currentLayoutId.value ? handleCopyWebsite : () => {}"
-      @remove-website="layout.id === layoutManager.currentLayoutId.value ? handleRemoveWebsite : () => {}"
-      @update-website="layout.id === layoutManager.currentLayoutId.value ? handleUpdateWebsite : () => {}"
+      @add-website="(data) => layout.id === layoutManager.currentLayoutId.value ? handleAddWebsite(data) : null"
+      @copy-website="(index) => layout.id === layoutManager.currentLayoutId.value ? handleCopyWebsite(index) : null"
+      @remove-website="(index) => layout.id === layoutManager.currentLayoutId.value ? handleRemoveWebsite(index) : null"
+      @update-website="(data) => layout.id === layoutManager.currentLayoutId.value ? handleUpdateWebsite(data) : null"
     />
 
     <!-- 画布视图 -->
@@ -300,7 +300,10 @@ export default {
     }
 
     const handleAddWebsite = (websiteData) => {
+      console.log('[App] 准备添加网站，数据:', websiteData)
       websiteManager.addWebsite(websiteData)
+      console.log('[App] 添加网站后，当前网站列表:', websiteManager.websites.value)
+      console.log('[App] 当前布局ID:', layoutManager.currentLayoutId.value)
     }
 
     const handleCopyWebsite = (index) => {
@@ -312,6 +315,9 @@ export default {
     }
 
     const handleUpdateWebsite = (params) => {
+      console.log('[App] ========== handleUpdateWebsite 被调用 ==========')
+      console.log('[App] 接收到的参数:', params)
+      console.log('[App] 参数的键:', Object.keys(params))
       websiteManager.updateWebsite(params)
       // 立即触发保存
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
@@ -409,8 +415,12 @@ export default {
 
     // 监听网站添加/删除，自动保存到当前布局
     watch(() => websiteManager.websites.value.length, () => {
-      console.log('网站数量变化，触发保存')
+      console.log('[App] ========== 网站数量变化 ==========')
+      console.log('[App] 新数量:', websiteManager.websites.value.length)
+      console.log('[App] 网站列表:', websiteManager.websites.value)
+      console.log('[App] 准备保存到布局:', layoutManager.currentLayoutId.value)
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
+      console.log('[App] 保存完成')
     })
 
     // 切换视图

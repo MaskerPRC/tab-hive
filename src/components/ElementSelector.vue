@@ -15,7 +15,7 @@
     @reselect="restartSelection"
     @toggle-multi-select="toggleMultiSelectMode"
   />
-  
+
   <!-- 高亮显示组件 - 暂时禁用，使用 iframe 内的高亮 -->
   <!-- <ElementHighlighter
     :disabled="!isActive || isPaused"
@@ -57,16 +57,16 @@ export default {
     let keydownListener = null
     let spaceKeyListener = null
     let requestId = 0
-    
+
     // 当前悬停和选中的元素信息
     const hoveredRects = ref([])
     const selectedRects = ref([])
     const currentElementInfo = ref(null)
-    
+
     // 元素路径导航
     const elementPath = ref([])
     const pathIndex = ref(0)
-    
+
     // 鼠标位置记录
     const mousePosition = reactive({ x: 0, y: 0 })
 
@@ -99,7 +99,7 @@ export default {
         }
 
         window.addEventListener('message', handler)
-        
+
         console.log('[Tab Hive] 发送ping消息检测扩展')
         window.postMessage({
           source: 'tab-hive',
@@ -123,7 +123,7 @@ export default {
       if (isElectron.value) {
         // Electron 环境：使用 webview API
         console.log('[Tab Hive] Electron 环境 - 使用 webview.send 启动元素选择器')
-        
+
         // Webview 使用 send 方法发送消息
         if (typeof props.targetIframe.send === 'function') {
           props.targetIframe.send('start-element-selector', {
@@ -141,7 +141,7 @@ export default {
           emit('cancel')
           return
         }
-        
+
         console.log('[Tab Hive] 浏览器环境 - 通过 postMessage 启动元素选择器')
         props.targetIframe.contentWindow.postMessage({
           source: 'tab-hive',
@@ -156,16 +156,14 @@ export default {
      * 处理来自 webview 的 IPC 消息
      */
     const handleWebviewMessage = (event) => {
-      console.log('[Tab Hive] 🔔 webview ipc-message 事件:', event.channel, event.args)
-      
       const channel = event.channel
       const data = event.args && event.args[0]
-      
+
       if (!data) return
-      
+
       if (channel === 'element-selector-hover') {
         hoveredSelector.value = data.selector || ''
-        
+
         // 更新高亮矩形
         if (data.rect) {
           hoveredRects.value = [{
@@ -175,16 +173,16 @@ export default {
             height: data.rect.height || 0
           }]
         }
-        
+
         // 更新元素信息
         if (data.elementInfo) {
           currentElementInfo.value = data.elementInfo
         }
-        
+
         console.log('[Tab Hive] Webview - 更新悬停选择器:', data.selector)
       } else if (channel === 'element-selector-select') {
         console.log('[Tab Hive] ✅ Webview - 接收到选中的元素:', data.selector)
-        
+
         // 更新选中的元素高亮（不立即发送select事件）
         if (data.rect) {
           selectedRects.value = [{
@@ -195,11 +193,11 @@ export default {
             isActive: true
           }]
         }
-        
+
         // 保存选择器和元素信息，等待用户确认
         hoveredSelector.value = data.selector
         currentElementInfo.value = data.elementInfo
-        
+
         // 停止webview内的交互式选择，但保持工具栏显示
         stopInteractiveSelection()
       } else if (channel === 'element-selector-cancel') {
@@ -213,9 +211,9 @@ export default {
      */
     const handleMessage = (event) => {
       console.log('[Tab Hive] 🔔 message事件触发, source:', event.data?.source, 'data:', event.data)
-      
+
       if (!event.data) return
-      
+
       // 调试：记录所有消息
       if (event.data.source === 'tab-hive-extension' || event.data.source === 'tab-hive-electron') {
         console.log('[Tab Hive] 📨 收到消息:', event.data)
@@ -228,7 +226,7 @@ export default {
 
         if (action === 'elementHovered') {
           hoveredSelector.value = selector || ''
-          
+
           // 更新高亮矩形
           if (rect) {
             hoveredRects.value = [{
@@ -238,14 +236,14 @@ export default {
               height: rect.height || 0
             }]
           }
-          
+
           // 更新元素信息
           if (elementInfo) {
             currentElementInfo.value = elementInfo
           }
         } else if (action === 'elementSelected') {
           console.log('[Tab Hive] 接收到选中的元素:', selector)
-          
+
           // 更新选中的元素高亮（不立即发送select事件）
           if (rect) {
             selectedRects.value = [{
@@ -256,11 +254,11 @@ export default {
               isActive: true
             }]
           }
-          
+
           // 保存选择器和元素信息，等待用户确认
           hoveredSelector.value = selector
           currentElementInfo.value = elementInfo
-          
+
           // 停止iframe内的交互式选择，但保持工具栏显示
           stopInteractiveSelection()
         } else if (action === 'elementSelectorCancelled') {
@@ -276,7 +274,7 @@ export default {
 
         if (action === 'elementHovered') {
           hoveredSelector.value = selector || ''
-          
+
           // 更新高亮矩形
           if (rect) {
             hoveredRects.value = [{
@@ -286,16 +284,16 @@ export default {
               height: rect.height || 0
             }]
           }
-          
+
           // 更新元素信息
           if (elementInfo) {
             currentElementInfo.value = elementInfo
           }
-          
+
           console.log('[Tab Hive] 更新悬停选择器:', selector)
         } else if (action === 'elementSelected') {
           console.log('[Tab Hive] ✅ 接收到选中的元素:', selector)
-          
+
           // 更新选中的元素高亮（不立即发送select事件）
           if (rect) {
             selectedRects.value = [{
@@ -306,11 +304,11 @@ export default {
               isActive: true
             }]
           }
-          
+
           // 保存选择器和元素信息，等待用户确认
           hoveredSelector.value = selector
           currentElementInfo.value = elementInfo
-          
+
           // 停止iframe内的交互式选择，但保持工具栏显示
           stopInteractiveSelection()
         } else if (action === 'elementSelectorCancelled') {
@@ -330,7 +328,7 @@ export default {
         cancel()
       }
     }
-    
+
     /**
      * 处理空格键选择
      */
@@ -338,7 +336,7 @@ export default {
       if (event.code === 'Space' && props.isActive && !isPaused.value && !event.repeat) {
         event.preventDefault()
         event.stopPropagation()
-        
+
         // 触发在当前鼠标位置选择元素
         console.log('[Tab Hive] 空格键触发选择')
         // TODO: 实现空格键选择逻辑
@@ -350,7 +348,7 @@ export default {
      */
     const stopInteractiveSelection = () => {
       console.log('[Tab Hive] 停止iframe内的交互式选择')
-      
+
       if (isElectron.value) {
         if (props.targetIframe && typeof props.targetIframe.send === 'function') {
           props.targetIframe.send('stop-element-selector', {})
@@ -365,24 +363,24 @@ export default {
         }
       }
     }
-    
+
     /**
      * 确认选择（用户点击确认按钮）
      */
     const confirmSelection = () => {
       console.log('[Tab Hive] 用户确认选择')
-      
+
       // 多选模式：返回选择器数组
       if (multiSelectMode.value) {
         if (selectedSelectors.value.length === 0) {
           console.warn('[Tab Hive] 多选模式：没有选择器可确认')
           return
         }
-        
+
         console.log('[Tab Hive] 多选模式：确认', selectedSelectors.value.length, '个选择器')
-        
+
         // 发送多个选择器
-        emit('select', { 
+        emit('select', {
           selectors: selectedSelectors.value,
           multiSelect: true
         })
@@ -392,38 +390,38 @@ export default {
           console.warn('[Tab Hive] 单选模式：没有选择器可确认')
           return
         }
-        
+
         console.log('[Tab Hive] 单选模式：确认选择器', hoveredSelector.value)
-        
+
         // 发送单个选择器（保持向后兼容）
-        emit('select', { 
+        emit('select', {
           selector: hoveredSelector.value,
           selectors: [hoveredSelector.value],
           elementInfo: currentElementInfo.value,
           multiSelect: false
         })
       }
-      
+
       // 完全清理 iframe 内的选择器（包括高亮框）
       completeCleanup()
-      
+
       // 触发关闭
       emit('cancel')
     }
-    
+
     /**
      * 取消选择（用户主动取消，如按ESC键或点击取消按钮）
      */
     const cancel = () => {
       console.log('[Tab Hive] 用户取消元素选择器')
-      
+
       // 完全清理 iframe 内的选择器（包括高亮框）
       completeCleanup()
-      
+
       // 然后触发取消事件
       emit('cancel')
     }
-    
+
     /**
      * 手动更新选择器
      */
@@ -431,14 +429,14 @@ export default {
       hoveredSelector.value = selector
       // TODO: 验证选择器并更新高亮
     }
-    
+
     /**
      * 手动更新选择器列表（多选模式）
      */
     const updateSelectorsManually = (selectors) => {
       selectedSelectors.value = selectors
     }
-    
+
     /**
      * 切换多选模式
      */
@@ -454,13 +452,13 @@ export default {
         hoveredSelector.value = ''
       }
     }
-    
+
     /**
      * 导航到父/子元素
      */
     const navigateElement = (direction) => {
       console.log('[Tab Hive] 导航元素:', direction)
-      
+
       if (isElectron.value) {
         if (props.targetIframe && typeof props.targetIframe.send === 'function') {
           props.targetIframe.send('navigate-element', { direction })
@@ -475,28 +473,28 @@ export default {
         }
       }
     }
-    
+
     /**
      * 暂停/恢复选择器交互
      */
     const handlePause = (paused) => {
       isPaused.value = paused
     }
-    
+
     /**
      * 重新开始选择（清空当前选择并重新启动交互）
      */
     const restartSelection = () => {
       console.log('[Tab Hive] 重新开始元素选择')
-      
+
       // 立即清空前端状态和高亮显示
       hoveredSelector.value = ''
       hoveredRects.value = []
       selectedRects.value = []
       currentElementInfo.value = null
-      
+
       console.log('[Tab Hive] 前端状态已清空')
-      
+
       // 向 iframe/webview 发送清空并重新启动的消息
       if (isElectron.value) {
         if (props.targetIframe && typeof props.targetIframe.send === 'function') {
@@ -531,7 +529,7 @@ export default {
       } else {
         // 浏览器环境先检测扩展
         hasExtension.value = await detectExtension()
-        
+
         if (!hasExtension.value) {
           alert('未检测到Tab Hive Chrome扩展。\n\n请安装Chrome扩展以使用元素选择器功能。\n\n扩展位置: chrome-extension文件夹')
           emit('cancel')
@@ -547,13 +545,13 @@ export default {
      */
     const cleanup = () => {
       console.log('[Tab Hive] 开始清理选择器状态和监听器（保留高亮）')
-      
+
       // 清理前端状态
       hoveredSelector.value = ''
       hoveredRects.value = []
       selectedRects.value = []
       currentElementInfo.value = null
-      
+
       if (isElectron.value) {
         // Electron 环境：移除 webview 监听器并发送停止消息
         if (props.targetIframe) {
@@ -561,7 +559,7 @@ export default {
             props.targetIframe.removeEventListener('ipc-message', handleWebviewMessage)
             console.log('[Tab Hive] 已移除 webview IPC 消息监听器')
           }
-          
+
           if (typeof props.targetIframe.send === 'function') {
             props.targetIframe.send('stop-element-selector', {})
             console.log('[Tab Hive] 已发送停止选择器消息到 webview')
@@ -578,29 +576,29 @@ export default {
           }, '*')
         }
       }
-      
+
       console.log('[Tab Hive] 选择器清理完成')
     }
-    
+
     /**
      * 完全清理（移除所有高亮和状态）
      */
     const completeCleanup = () => {
       console.log('[Tab Hive] 开始完全清理选择器（包括高亮框）')
-      
+
       // 清理前端状态
       hoveredSelector.value = ''
       hoveredRects.value = []
       selectedRects.value = []
       currentElementInfo.value = null
-      
+
       if (isElectron.value) {
         // Electron 环境：发送完全清理消息
         if (props.targetIframe) {
           if (typeof props.targetIframe.removeEventListener === 'function') {
             props.targetIframe.removeEventListener('ipc-message', handleWebviewMessage)
           }
-          
+
           if (typeof props.targetIframe.send === 'function') {
             props.targetIframe.send('cleanup-element-selector', {})
             console.log('[Tab Hive] 已发送完全清理消息到 webview')
@@ -617,7 +615,7 @@ export default {
           console.log('[Tab Hive] 已发送完全清理消息到 iframe')
         }
       }
-      
+
       console.log('[Tab Hive] 完全清理完成')
     }
 
@@ -639,11 +637,11 @@ export default {
       messageListener = handleMessage
       keydownListener = handleKeyDown
       spaceKeyListener = handleSpaceKey
-      
+
       window.addEventListener('message', messageListener)
       document.addEventListener('keydown', keydownListener)
       document.addEventListener('keydown', spaceKeyListener)
-      
+
       console.log('[Tab Hive] 消息监听器已添加到window')
     })
 

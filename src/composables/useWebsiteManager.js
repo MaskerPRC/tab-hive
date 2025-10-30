@@ -17,6 +17,10 @@ export function useWebsiteManager(initialWebsites = []) {
    * @param {Object} websiteData - 网站数据
    */
   const addWebsite = (websiteData) => {
+    console.log('[useWebsiteManager] ========== 开始添加网站 ==========')
+    console.log('[useWebsiteManager] 接收到的网站数据:', websiteData)
+    console.log('[useWebsiteManager] 当前网站数量:', websites.value.length)
+    
     const defaultWidth = 400
     const defaultHeight = 300
     const spacing = 20
@@ -38,7 +42,7 @@ export function useWebsiteManager(initialWebsites = []) {
     const newX = 20
     const newY = websites.value.length === 0 ? 20 : maxY + spacing
 
-    websites.value.push({
+    const newWebsite = {
       id: Date.now(),
       url: websiteData.url,
       title: websiteData.title,
@@ -48,7 +52,16 @@ export function useWebsiteManager(initialWebsites = []) {
       sessionInstance: websiteData.sessionInstance || 'default', // Session实例ID
       position: websiteData.position || { x: newX, y: newY },
       size: websiteData.size || { width: defaultWidth, height: defaultHeight }
-    })
+    }
+    
+    console.log('[useWebsiteManager] 计算的位置:', { x: newX, y: newY })
+    console.log('[useWebsiteManager] 创建的新网站对象:', newWebsite)
+    
+    websites.value.push(newWebsite)
+    
+    console.log('[useWebsiteManager] 添加后网站总数:', websites.value.length)
+    console.log('[useWebsiteManager] 最新的网站列表:', websites.value)
+    console.log('[useWebsiteManager] ========== 添加网站完成 ==========')
   }
 
   /**
@@ -113,22 +126,53 @@ export function useWebsiteManager(initialWebsites = []) {
    * @param {Object} params.position - 位置
    * @param {Object} params.size - 大小
    */
-  const updateWebsite = ({ index, title, url, deviceType, targetSelector, autoRefreshInterval, sessionInstance, position, size }) => {
+  const updateWebsite = (params) => {
+    console.log('[useWebsiteManager] ========== updateWebsite 被调用 ==========')
+    console.log('[useWebsiteManager] 接收到的完整参数对象:', params)
+    console.log('[useWebsiteManager] 参数的键:', Object.keys(params))
+    
+    // 支持两种参数格式：
+    // 1. 扁平格式: { index, title, url, deviceType, targetSelector, ... }
+    // 2. 嵌套格式: { index, updates: { title, url, ... } }
+    const { index, updates } = params
+    const data = updates || params // 如果有 updates 字段，使用 updates；否则使用整个 params
+    
+    console.log('[useWebsiteManager] 解析后的 index:', index)
+    console.log('[useWebsiteManager] 解析后的 data:', data)
+    
     if (websites.value[index]) {
+      console.log('[useWebsiteManager] 更新前的网站数据:', websites.value[index])
+      
+      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size } = data
+      
       if (title !== undefined) websites.value[index].title = title
-      if (url !== undefined) websites.value[index].url = url
+      if (url !== undefined) {
+        console.log('[useWebsiteManager] 更新 URL:', url)
+        websites.value[index].url = url
+      }
       if (deviceType !== undefined) websites.value[index].deviceType = deviceType
-      if (targetSelector !== undefined) websites.value[index].targetSelector = targetSelector
+      if (targetSelector !== undefined) {
+        console.log('[useWebsiteManager] 更新 targetSelector:', targetSelector)
+        websites.value[index].targetSelector = targetSelector
+      }
+      if (targetSelectors !== undefined) {
+        console.log('[useWebsiteManager] 更新 targetSelectors:', targetSelectors)
+        websites.value[index].targetSelectors = targetSelectors
+      }
       if (autoRefreshInterval !== undefined) websites.value[index].autoRefreshInterval = autoRefreshInterval
       if (sessionInstance !== undefined) websites.value[index].sessionInstance = sessionInstance
       if (position !== undefined) {
         websites.value[index].position = { ...position }
-        console.log('更新位置:', websites.value[index].title, position)
+        console.log('[useWebsiteManager] 更新位置:', websites.value[index].title, position)
       }
       if (size !== undefined) {
         websites.value[index].size = { ...size }
-        console.log('更新大小:', websites.value[index].title, size)
+        console.log('[useWebsiteManager] 更新大小:', websites.value[index].title, size)
       }
+      
+      console.log('[useWebsiteManager] 更新后的网站数据:', websites.value[index])
+    } else {
+      console.error('[useWebsiteManager] 无效的索引:', index)
     }
   }
 

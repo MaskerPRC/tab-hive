@@ -200,6 +200,13 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url'],
   setup(props, { emit }) {
+    console.log('[WebsiteCard] ========== 组件初始化 ==========')
+    console.log('[WebsiteCard] 网站标题:', props.item.title)
+    console.log('[WebsiteCard] 网站URL:', props.item.url)
+    console.log('[WebsiteCard] 网站ID:', props.item.id)
+    console.log('[WebsiteCard] 索引:', props.index)
+    console.log('[WebsiteCard] 完整item:', props.item)
+    
     // ==================== Webview/Iframe 管理 ====================
     const {
       isElectron,
@@ -316,54 +323,91 @@ export default {
 
     // ==================== 事件处理 ====================
     
+    // 跟踪已设置的主 webview
+    let lastMainWebview = null
+    
     // 设置 webview 引用（带事件监听）
     const setWebviewRef = (el) => {
-      setWebviewRefBase(el)
+      console.log('[WebsiteCard] ========== setWebviewRef 被调用 ==========')
+      console.log('[WebsiteCard] 新的 webview 元素:', el?.id)
+      console.log('[WebsiteCard] 上次的 webview 元素:', lastMainWebview?.id)
+      console.log('[WebsiteCard] 是否为新元素:', lastMainWebview !== el)
+      
+      // 更新 webview ref
+      if (lastMainWebview !== el) {
+        console.log('[WebsiteCard] webview 元素已改变')
+        lastMainWebview = el
+        setWebviewRefBase(el)
+      }
+      
+      // 每次都设置/更新 webview 事件回调（即使元素没变，callbacks 也可能需要更新）
       if (el) {
+        console.log('[WebsiteCard] 设置/更新 webview 事件回调')
         // 设置 webview 事件监听，传入回调
         setupWebviewEvents(el, {
-          onLoad: async (webview) => {
-            // 应用静音状态
-            applyMuteState(webview)
-            
-            // 应用暗色主题
-        if (props.item.darkMode) {
-          await applyDarkMode(webview)
-        }
-
-            // 应用选择器
-            const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
-                                (props.item.targetSelector && props.item.targetSelector.trim())
-            if (!props.isFullscreen && hasSelectors) {
-              await applySelector(webview, false)
-            }
-          },
-          onNavigate: (url) => {
-            checkUrlChange(url)
+            onLoad: async (webview) => {
+              console.log('[WebsiteCard] ========== onLoad 回调被调用 ==========')
+              console.log('[WebsiteCard] webview ID:', props.item.id)
+              console.log('[WebsiteCard] isFullscreen:', props.isFullscreen)
+              console.log('[WebsiteCard] targetSelector:', props.item.targetSelector)
+              console.log('[WebsiteCard] targetSelectors:', props.item.targetSelectors)
+              
+              // 应用静音状态
+              applyMuteState(webview)
+              
+              // 应用暗色主题
+          if (props.item.darkMode) {
+            await applyDarkMode(webview)
           }
-        })
+
+              // 应用选择器
+              const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
+                                  (props.item.targetSelector && props.item.targetSelector.trim())
+              console.log('[WebsiteCard] hasSelectors:', hasSelectors)
+              console.log('[WebsiteCard] 是否应用选择器:', !props.isFullscreen && hasSelectors)
+              
+              if (!props.isFullscreen && hasSelectors) {
+                console.log('[WebsiteCard] 开始应用选择器')
+                await applySelector(webview, false)
+                console.log('[WebsiteCard] 选择器应用完成')
+              } else {
+                console.log('[WebsiteCard] 跳过应用选择器，原因:', 
+                  props.isFullscreen ? '处于全屏状态' : '没有选择器')
+              }
+            },
+            onNavigate: (url) => {
+              checkUrlChange(url)
+            }
+          })
       }
     }
 
+    // 跟踪已设置的缓冲 webview
+    let lastBufferWebview = null
+    
     // 设置缓冲 webview 引用（带事件监听）
     const setBufferWebviewRef = (el) => {
-      setBufferWebviewRefBase(el)
-      if (el) {
-        setupWebviewEvents(el, {
-          onLoad: async (webview) => {
-    // 应用暗色主题
-            if (props.item.darkMode) {
-              await applyDarkMode(webview)
+      // 只在 webview 实例改变时才设置事件监听器
+      if (lastBufferWebview !== el) {
+        lastBufferWebview = el
+        setBufferWebviewRefBase(el)
+        if (el) {
+          setupWebviewEvents(el, {
+            onLoad: async (webview) => {
+      // 应用暗色主题
+              if (props.item.darkMode) {
+                await applyDarkMode(webview)
+              }
+              
+              // 应用选择器
+              const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
+                                  (props.item.targetSelector && props.item.targetSelector.trim())
+              if (!props.isFullscreen && hasSelectors) {
+                await applySelector(webview, true)
+              }
             }
-            
-            // 应用选择器
-            const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
-                                (props.item.targetSelector && props.item.targetSelector.trim())
-            if (!props.isFullscreen && hasSelectors) {
-              await applySelector(webview, true)
-            }
-          }
-        })
+          })
+        }
       }
     }
 
