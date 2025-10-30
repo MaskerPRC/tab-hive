@@ -278,10 +278,46 @@ export default {
       // 如果是编辑模式
       if (editingSlot.value !== -1 && editingSlot.value !== null) {
         console.log('[GridView] 模式：编辑现有网站')
+        
+        // 检查是否需要刷新（选择器或暗色模式变化）
+        const oldWebsite = props.websites[editingSlot.value]
+        let needsRefresh = false
+        
+        if (oldWebsite) {
+          // 检查暗色模式是否变化
+          if (websiteData.darkMode !== oldWebsite.darkMode) {
+            console.log('[GridView] 暗色模式已变化，需要刷新')
+            needsRefresh = true
+          }
+          
+          // 检查选择器是否变化
+          const oldSelectors = oldWebsite.targetSelectors || (oldWebsite.targetSelector ? [oldWebsite.targetSelector] : [])
+          const newSelectors = websiteData.targetSelectors || []
+          
+          // 比较选择器数组
+          if (oldSelectors.length !== newSelectors.length ||
+              !oldSelectors.every((sel, idx) => sel === newSelectors[idx])) {
+            console.log('[GridView] 选择器已变化，需要刷新')
+            console.log('[GridView] 旧选择器:', oldSelectors)
+            console.log('[GridView] 新选择器:', newSelectors)
+            needsRefresh = true
+          }
+        }
+        
+        const websiteIndex = editingSlot.value
+        
         emit('update-website', {
-          index: editingSlot.value,
+          index: websiteIndex,
           ...websiteData
         })
+        
+        // 如果需要刷新，延迟一小段时间后自动刷新
+        if (needsRefresh) {
+          console.log('[GridView] 将在更新后自动刷新网站')
+          setTimeout(() => {
+            handleRefreshWebsite(websiteIndex)
+          }, 100)
+        }
       } else {
         // 添加模式
         console.log('[GridView] 模式：添加新网站')
