@@ -70,6 +70,9 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
 
     const currentPos = itemPositions.value[currentDragIndex.value] || { x: 0, y: 0 }
 
+    // 使用实际的网站数量而不是位置映射的键数量
+    const actualTotalItems = websites?.value?.length || 0
+
     // 检测碰撞
     const hasCollision = checkCollisionWithOthers(
       currentDragIndex.value,
@@ -77,7 +80,7 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
       { width: newWidth, height: newHeight },
       itemPositions.value,
       itemSizes.value,
-      Object.keys(itemPositions.value).length,
+      actualTotalItems,
       websites?.value || null
     )
 
@@ -113,7 +116,7 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
         { width: newWidth, height: newHeight },
         itemPositions.value,
         itemSizes.value,
-        Object.keys(itemPositions.value).length,
+        actualTotalItems,
         0,
         websites?.value || null
       )

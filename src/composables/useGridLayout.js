@@ -33,6 +33,20 @@ export function useGridLayout(websites) {
     // 计算每行可以放置多少个项目
     const itemsPerRow = Math.max(1, Math.floor(containerWidth / (defaultItemWidth + spacing)))
 
+    // 清理已删除网站的位置和尺寸数据
+    // 获取当前有效的索引集合
+    const validIndices = new Set(websites.value.map((_, index) => index))
+    
+    // 删除无效的索引
+    Object.keys(itemPositions.value).forEach(key => {
+      const index = parseInt(key)
+      if (!validIndices.has(index)) {
+        delete itemPositions.value[index]
+        delete itemSizes.value[index]
+        console.log(`[布局清理] 删除无效索引: ${index}`)
+      }
+    })
+
     // 为每个项目计算初始位置和大小
     websites.value.forEach((item, index) => {
       // 优先从数据中加载位置和大小
@@ -56,6 +70,8 @@ export function useGridLayout(websites) {
         itemSizes.value[index] = { width: defaultItemWidth, height: defaultItemHeight }
       }
     })
+    
+    console.log('[布局初始化] 当前位置映射:', Object.keys(itemPositions.value).length, '项')
   }
 
   /**
