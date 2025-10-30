@@ -4,6 +4,8 @@ const fs = require('fs')
 const os = require('os')
 
 console.log('[Electron Main] ========== Tab Hive 启动 (Webview 架构) ==========')
+console.log('[Electron Main] 用户数据目录:', app.getPath('userData'))
+console.log('[Electron Main] 应用名称:', app.getName())
 
 // 设置 User-Agent
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 (KHTML, like Gecko) Safari/537.36'

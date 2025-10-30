@@ -9,7 +9,14 @@ export function useLayoutManager() {
   const loadFromStorage = () => {
     try {
       const saved = localStorage.getItem('iframe-all-config')
+      
+      // 🔍 调试信息：显示所有 localStorage 的键
+      console.log('[布局管理] 当前 localStorage 中的所有键:', Object.keys(localStorage))
+      console.log('[布局管理] 查找配置键: iframe-all-config')
+      console.log('[布局管理] 配置是否存在:', !!saved)
+      
       if (saved) {
+        console.log('[布局管理] ✓ 找到配置，大小:', saved.length, '字符')
         const config = JSON.parse(saved)
 
         // 如果是旧格式（单个配置），转换为新格式（多布局）
