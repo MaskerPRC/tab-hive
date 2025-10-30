@@ -225,7 +225,7 @@
 
       <!-- 确认按钮 -->
       <button
-        v-if="localSelector"
+        v-if="localSelector || (multiSelectMode && localSelectors.length > 0)"
         class="btn-confirm"
         @click="$emit('confirm')"
       >

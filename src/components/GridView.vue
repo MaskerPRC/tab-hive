@@ -18,6 +18,7 @@
     <ElementSelector
       :is-active="isSelectingElement"
       :target-iframe="fullscreenIframe"
+      :current-website="currentFullscreenWebsite"
       @select="handleElementSelected"
       @cancel="cancelElementSelection"
     />
@@ -165,6 +166,23 @@ export default {
       console.log('[GridView] 过滤后的网站列表:', filtered)
       console.log('[GridView] ========== allWebsites 计算结束 ==========')
       return filtered
+    })
+
+    // 当前全屏网站配置
+    const currentFullscreenWebsite = computed(() => {
+      console.log('[GridView] currentFullscreenWebsite 计算:', {
+        fullscreenIndex: props.fullscreenIndex,
+        websitesLength: props.websites?.length,
+        targetWebsite: props.websites?.[props.fullscreenIndex]
+      })
+      
+      if (props.fullscreenIndex !== null && props.websites[props.fullscreenIndex]) {
+        const website = props.websites[props.fullscreenIndex]
+        console.log('[GridView] 返回全屏网站配置:', website)
+        return website
+      }
+      console.log('[GridView] 返回 null（无全屏网站）')
+      return null
     })
 
     // 碰撞检测
@@ -568,6 +586,7 @@ export default {
 
     return {
       allWebsites,
+      currentFullscreenWebsite,
       isHidden,
       getItemStyle,
       editingSlot,

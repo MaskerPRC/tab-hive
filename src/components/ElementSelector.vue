@@ -43,6 +43,10 @@ export default {
     targetIframe: {
       type: Object,
       default: null
+    },
+    currentWebsite: {
+      type: Object,
+      default: null
     }
   },
   emits: ['select', 'cancel'],
@@ -487,13 +491,16 @@ export default {
     const restartSelection = () => {
       console.log('[Tab Hive] 重新开始元素选择')
 
+      // 重新初始化选择器状态（基于当前蜂巢配置）
+      initializeSelectorState()
+
       // 立即清空前端状态和高亮显示
       hoveredSelector.value = ''
       hoveredRects.value = []
       selectedRects.value = []
       currentElementInfo.value = null
 
-      console.log('[Tab Hive] 前端状态已清空')
+      console.log('[Tab Hive] 前端状态已清空并重新初始化')
 
       // 向 iframe/webview 发送清空并重新启动的消息
       if (isElectron.value) {
@@ -619,17 +626,70 @@ export default {
       console.log('[Tab Hive] 完全清理完成')
     }
 
+    // 初始化选择器状态（根据当前蜂巢配置）
+    const initializeSelectorState = () => {
+      console.log('[Tab Hive] initializeSelectorState 被调用')
+      console.log('[Tab Hive] props.currentWebsite:', props.currentWebsite)
+      console.log('[Tab Hive] props.isActive:', props.isActive)
+      
+      if (!props.currentWebsite) {
+        console.log('[Tab Hive] 没有当前蜂巢配置，使用默认状态')
+        return
+      }
+
+      console.log('[Tab Hive] 初始化选择器状态，当前蜂巢配置:', props.currentWebsite)
+
+      // 获取当前蜂巢的选择器配置
+      const targetSelectors = props.currentWebsite.targetSelectors && Array.isArray(props.currentWebsite.targetSelectors) && props.currentWebsite.targetSelectors.length > 0
+        ? props.currentWebsite.targetSelectors.filter(s => s && s.trim())
+        : (props.currentWebsite.targetSelector && props.currentWebsite.targetSelector.trim() ? [props.currentWebsite.targetSelector.trim()] : [])
+
+      console.log('[Tab Hive] 解析的选择器配置:', targetSelectors)
+
+      if (targetSelectors.length > 0) {
+        // 预填充选择器
+        selectedSelectors.value = [...targetSelectors]
+        
+        if (targetSelectors.length === 1) {
+          // 只有一个选择器，使用单选模式
+          multiSelectMode.value = false
+          hoveredSelector.value = targetSelectors[0]
+          console.log('[Tab Hive] 单选模式，预填充选择器:', targetSelectors[0])
+        } else {
+          // 多个选择器，使用多选模式
+          multiSelectMode.value = true
+          console.log('[Tab Hive] 多选模式，预填充选择器:', selectedSelectors.value)
+        }
+      } else {
+        // 没有配置，使用默认状态
+        selectedSelectors.value = []
+        multiSelectMode.value = false
+        hoveredSelector.value = ''
+        console.log('[Tab Hive] 使用默认状态（无预配置选择器）')
+      }
+    }
+
     // 监听isActive变化
     watch(() => props.isActive, (newVal, oldVal) => {
       console.log('[Tab Hive] isActive变化:', oldVal, '->', newVal)
       if (newVal && !oldVal) {
-        // 从false变为true，初始化
+        // 从false变为true，先初始化选择器状态，再初始化
+        initializeSelectorState()
         initialize()
       } else if (!newVal && oldVal) {
         // 从true变为false，清理
         cleanup()
       }
     })
+
+    // 监听当前蜂巢配置变化
+    watch(() => props.currentWebsite, (newVal, oldVal) => {
+      console.log('[Tab Hive] currentWebsite变化:', oldVal, '->', newVal)
+      if (props.isActive && newVal) {
+        // 如果选择器处于活跃状态且蜂巢配置发生变化，重新初始化状态
+        initializeSelectorState()
+      }
+    }, { deep: true })
 
     // 生命周期
     onMounted(() => {
