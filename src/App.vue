@@ -19,7 +19,7 @@
     />
 
     <!-- 视图切换按钮 -->
-    <div v-if="fullscreenIndex === null" class="view-toggle">
+    <div v-if="false" class="view-toggle">
       <button
         @click="switchView('grid')"
         class="view-toggle-btn"
