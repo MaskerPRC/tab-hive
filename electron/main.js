@@ -35,6 +35,21 @@ function createWindow(windowId = null, options = {}) {
   console.log('[Electron Main] ========== 创建窗口 ==========')
   console.log('[Electron Main] 窗口 ID:', wid)
 
+  const webPreferences = {
+    nodeIntegration: false,
+    contextIsolation: true,
+    sandbox: false,
+    webSecurity: false,
+    allowRunningInsecureContent: true,
+    webviewTag: true, // 启用 webview 标签支持
+    preload: path.join(__dirname, 'preload.js')
+  }
+
+  // 第一个窗口使用默认 session（向后兼容），其他窗口使用独立的 partition
+  if (wid !== 1) {
+    webPreferences.partition = `persist:window-${wid}`
+  }
+
   const window = new BrowserWindow({
     width: options.width || 1400,
     height: options.height || 900,
@@ -43,17 +58,7 @@ function createWindow(windowId = null, options = {}) {
     x: options.x,
     y: options.y,
     icon: path.join(__dirname, '../public/256x256.ico'),
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false,
-      webSecurity: false,
-      allowRunningInsecureContent: true,
-      webviewTag: true, // 启用 webview 标签支持
-      preload: path.join(__dirname, 'preload.js'),
-      // 为每个窗口创建独立的 session partition
-      partition: `persist:window-${wid}`
-    },
+    webPreferences: webPreferences,
     backgroundColor: '#f5f5f5',
     show: false,
     autoHideMenuBar: true,
@@ -62,10 +67,10 @@ function createWindow(windowId = null, options = {}) {
 
   // 将窗口 ID 附加到窗口对象
   window.windowId = wid
-  
+
   // 保存窗口引用
   windows.set(wid, window)
-  
+
   // 如果是第一个窗口，设置为主窗口
   if (!mainWindow) {
     mainWindow = window
@@ -95,7 +100,7 @@ function createWindow(windowId = null, options = {}) {
   window.on('closed', () => {
     console.log('[Electron Main] 窗口已关闭, ID:', wid)
     windows.delete(wid)
-    
+
     // 如果关闭的是主窗口，重新指定主窗口
     if (window === mainWindow) {
       mainWindow = windows.values().next().value || null
@@ -103,7 +108,7 @@ function createWindow(windowId = null, options = {}) {
   })
 
   console.log('[Electron Main] ========== 窗口创建流程完成 ==========')
-  
+
   return { windowId: wid, window }
 }
 
@@ -116,22 +121,22 @@ function createWindow(windowId = null, options = {}) {
  */
 ipcMain.handle('create-new-window', (event) => {
   console.log('[窗口管理] 创建新窗口')
-  
+
   // 获取当前窗口的位置，新窗口稍微偏移
   const currentWindow = BrowserWindow.fromWebContents(event.sender)
   const bounds = currentWindow.getBounds()
-  
+
   const result = createWindow(null, {
     x: bounds.x + 30,
     y: bounds.y + 30,
     width: bounds.width,
     height: bounds.height
   })
-  
+
   console.log('[窗口管理] ✓ 新窗口已创建, ID:', result.windowId)
-  
-  return { 
-    success: true, 
+
+  return {
+    success: true,
     windowId: result.windowId,
     totalWindows: windows.size
   }
@@ -149,7 +154,7 @@ ipcMain.handle('get-all-windows', () => {
       isFocused: window.isFocused()
     })
   })
-  
+
   console.log('[窗口管理] 获取所有窗口:', windowList.length)
   return { success: true, windows: windowList }
 })
@@ -159,7 +164,7 @@ ipcMain.handle('get-all-windows', () => {
  */
 ipcMain.handle('focus-window', (event, windowId) => {
   console.log('[窗口管理] 聚焦窗口:', windowId)
-  
+
   const window = windows.get(windowId)
   if (window) {
     if (window.isMinimized()) {
@@ -169,7 +174,7 @@ ipcMain.handle('focus-window', (event, windowId) => {
     console.log('[窗口管理] ✓ 窗口已聚焦')
     return { success: true }
   }
-  
+
   console.warn('[窗口管理] ⚠ 窗口不存在:', windowId)
   return { success: false, error: '窗口不存在' }
 })
@@ -322,7 +327,7 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
         const totalSize = parseInt(Array.isArray(contentLength) ? contentLength[0] : contentLength, 10)
         currentDownload.totalBytes = totalSize
         console.log('[更新下载] 文件大小:', (currentDownload.totalBytes / 1024 / 1024).toFixed(2), 'MB')
-        
+
         // 立即发送初始状态
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('update-download-progress', {
@@ -341,10 +346,10 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
 
         // 发送进度更新到渲染进程（节流，避免过于频繁）
         if (mainWindow && !mainWindow.isDestroyed()) {
-          const progress = currentDownload.totalBytes > 0 
-            ? (currentDownload.downloadedBytes / currentDownload.totalBytes) * 100 
+          const progress = currentDownload.totalBytes > 0
+            ? (currentDownload.downloadedBytes / currentDownload.totalBytes) * 100
             : 0
-          
+
           mainWindow.webContents.send('update-download-progress', {
             downloaded: currentDownload.downloadedBytes,
             total: currentDownload.totalBytes,
@@ -358,9 +363,9 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
         console.log('[更新下载] ✓ 下载完成')
         console.log('[更新下载] 保存路径:', savePath)
         console.log('[更新下载] 已下载:', currentDownload.downloadedBytes, 'bytes')
-        
+
         currentDownload.status = 'completed'
-        
+
         // 通知渲染进程下载完成
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('update-download-complete', {
@@ -382,7 +387,7 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
         }
       })
     }
-    
+
     // 使用 Electron 的 net 模块下载
     const request = net.request(downloadUrl)
     const fileStream = fs.createWriteStream(savePath)
@@ -390,7 +395,7 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
     request.on('response', (response) => {
       console.log('[更新下载] 响应状态码:', response.statusCode)
       console.log('[更新下载] 响应头:', response.headers)
-      
+
       // 处理重定向
       if (response.statusCode === 301 || response.statusCode === 302 || response.statusCode === 307 || response.statusCode === 308) {
         const redirectUrl = response.headers.location
@@ -398,15 +403,15 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
           const redirectUrlStr = Array.isArray(redirectUrl) ? redirectUrl[0] : redirectUrl
           console.log('[更新下载] 重定向到:', redirectUrlStr)
           fileStream.close()
-          
+
           // 重新发起请求到重定向的地址
           const redirectRequest = net.request(redirectUrlStr)
           const redirectFileStream = fs.createWriteStream(savePath)
-          
+
           redirectRequest.on('response', (redirectResponse) => {
             handleDownloadResponse(redirectResponse, redirectFileStream)
           })
-          
+
           redirectRequest.on('error', (error) => {
             console.error('[更新下载] ✗ 重定向请求失败:', error.message)
             currentDownload.status = 'failed'
@@ -418,12 +423,12 @@ ipcMain.handle('download-update', async (event, downloadUrl, fileName) => {
               })
             }
           })
-          
+
           redirectRequest.end()
           return
         }
       }
-      
+
       if (response.statusCode !== 200) {
         currentDownload.status = 'failed'
         currentDownload.error = `HTTP ${response.statusCode}`
@@ -469,8 +474,8 @@ ipcMain.handle('get-download-status', () => {
       status: currentDownload.status,
       downloaded: currentDownload.downloadedBytes,
       total: currentDownload.totalBytes,
-      progress: currentDownload.totalBytes > 0 
-        ? (currentDownload.downloadedBytes / currentDownload.totalBytes) * 100 
+      progress: currentDownload.totalBytes > 0
+        ? (currentDownload.downloadedBytes / currentDownload.totalBytes) * 100
         : 0,
       savePath: currentDownload.savePath,
       error: currentDownload.error
@@ -483,7 +488,7 @@ ipcMain.handle('get-download-status', () => {
  */
 ipcMain.handle('open-installer', async (event, filePath) => {
   console.log('[更新下载] 打开安装文件:', filePath)
-  
+
   try {
     if (!fs.existsSync(filePath)) {
       console.error('[更新下载] ✗ 文件不存在:', filePath)
@@ -492,14 +497,14 @@ ipcMain.handle('open-installer', async (event, filePath) => {
 
     // 使用 shell.openPath 打开安装文件
     const result = await shell.openPath(filePath)
-    
+
     if (result) {
       console.error('[更新下载] ✗ 打开失败:', result)
       return { success: false, error: result }
     }
 
     console.log('[更新下载] ✓ 安装文件已打开')
-    
+
     // 等待一会儿后退出应用（让用户安装新版本）
     setTimeout(() => {
       console.log('[更新下载] 退出应用以便安装')
@@ -518,11 +523,11 @@ ipcMain.handle('open-installer', async (event, filePath) => {
  */
 ipcMain.handle('cancel-download', () => {
   console.log('[更新下载] 取消下载')
-  
+
   if (currentDownload.status === 'downloading') {
     currentDownload.status = 'idle'
     currentDownload.error = '用户取消'
-    
+
     // 删除未完成的文件
     if (currentDownload.savePath && fs.existsSync(currentDownload.savePath)) {
       try {
@@ -533,7 +538,7 @@ ipcMain.handle('cancel-download', () => {
       }
     }
   }
-  
+
   return { success: true }
 })
 
@@ -545,7 +550,7 @@ ipcMain.handle('cancel-download', () => {
 async function loadExtension(extensionPath) {
   try {
     console.log(`[Extension] 尝试加载扩展: ${extensionPath}`)
-    
+
     // 检查路径是否存在
     if (!fs.existsSync(extensionPath)) {
       throw new Error(`扩展路径不存在: ${extensionPath}`)
@@ -555,9 +560,9 @@ async function loadExtension(extensionPath) {
     const extension = await session.defaultSession.loadExtension(extensionPath, {
       allowFileAccess: true
     })
-    
+
     console.log(`[Extension] ✓ 扩展加载成功:`, extension.name, extension.version)
-    
+
     // 保存已加载的扩展信息
     loadedExtensions.set(extension.id, {
       id: extension.id,
@@ -565,7 +570,7 @@ async function loadExtension(extensionPath) {
       path: extensionPath,
       version: extension.version
     })
-    
+
     return { success: true, extension: {
       id: extension.id,
       name: extension.name,
@@ -623,18 +628,18 @@ ipcMain.handle('get-loaded-extensions', () => {
  */
 ipcMain.handle('get-desktop-sources', async (event, options = {}) => {
   console.log('[Desktop Capture] 获取桌面源')
-  
+
   const { desktopCapturer } = require('electron')
-  
+
   try {
     const sources = await desktopCapturer.getSources({
       types: options.types || ['window', 'screen'],
       thumbnailSize: options.thumbnailSize || { width: 320, height: 180 },
       fetchWindowIcons: options.fetchWindowIcons !== false
     })
-    
+
     console.log('[Desktop Capture] 找到', sources.length, '个源')
-    
+
     // 转换源为可序列化的格式
     const serializedSources = sources.map(source => ({
       id: source.id,
@@ -643,7 +648,7 @@ ipcMain.handle('get-desktop-sources', async (event, options = {}) => {
       display_id: source.display_id,
       appIcon: source.appIcon ? source.appIcon.toDataURL() : null
     }))
-    
+
     return { success: true, sources: serializedSources }
   } catch (error) {
     console.error('[Desktop Capture] 获取源失败:', error)
@@ -656,7 +661,7 @@ ipcMain.handle('get-desktop-sources', async (event, options = {}) => {
  */
 ipcMain.handle('start-desktop-capture', async (event, sourceId, options = {}) => {
   console.log('[Desktop Capture] 开始捕获:', sourceId)
-  
+
   try {
     // 发送捕获请求到渲染进程
     const window = BrowserWindow.fromWebContents(event.sender)
@@ -667,7 +672,7 @@ ipcMain.handle('start-desktop-capture', async (event, sourceId, options = {}) =>
       })
       return { success: true }
     }
-    
+
     return { success: false, error: '窗口不存在' }
   } catch (error) {
     console.error('[Desktop Capture] 启动捕获失败:', error)
@@ -683,11 +688,11 @@ ipcMain.handle('select-extension-directory', async () => {
     title: '选择Chrome扩展目录',
     message: '请选择解压后的Chrome扩展文件夹'
   })
-  
+
   if (result.canceled) {
     return { success: false, canceled: true }
   }
-  
+
   return { success: true, path: result.filePaths[0] }
 })
 
@@ -698,7 +703,7 @@ console.log('[Electron Main] 等待应用就绪...')
 app.whenReady().then(() => {
   console.log('[Electron Main] ========== 应用已就绪 ==========')
   createWindow()
-  
+
   // 自动加载预设的扩展（如果存在）
   const extensionsDir = path.join(__dirname, '../extensions')
   if (fs.existsSync(extensionsDir)) {
