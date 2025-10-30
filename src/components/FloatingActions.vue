@@ -20,6 +20,7 @@
       v-html="ICONS.copy"
     />
     <button
+      v-if="false"
       class="btn-action btn-script"
       @click="$emit('open-script-panel')"
       title="脚本执行器"
