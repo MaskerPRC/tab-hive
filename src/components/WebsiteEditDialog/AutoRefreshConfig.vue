@@ -195,8 +195,9 @@ export default {
 }
 
 .refresh-input {
-  flex: 1;
-  min-width: 0;
+  flex: 0 1 120px;
+  min-width: 80px;
+  max-width: 150px;
 }
 
 .unit-select {

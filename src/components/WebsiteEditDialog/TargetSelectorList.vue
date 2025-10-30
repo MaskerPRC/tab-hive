@@ -110,6 +110,29 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* 自定义滚动条样式 */
+.selector-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.selector-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.selector-list::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.selector-list::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 .selector-item {

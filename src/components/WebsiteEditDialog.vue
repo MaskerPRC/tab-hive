@@ -3,51 +3,67 @@
     <div class="edit-website-dialog" @mousedown.stop>
       <h3>{{ editingIndex === -1 ? '添加网站' : '编辑网站' }}</h3>
       
-      <!-- 第一行：网站名称和网站地址 -->
-      <WebsiteBasicInfo
-        v-model:title="localWebsite.title"
-        v-model:url="localWebsite.url"
-        :auto-focus="show"
-        @enter="handleConfirm"
-      />
-      
-      <!-- 第二行：设备类型、目标选择器和静音选项 -->
-      <div class="form-row">
-        <DeviceTypeSelector
-          v-model="localWebsite.deviceType"
-        />
-        
-        <TargetSelectorList
-          v-model="localWebsite.targetSelectors"
-          @enter="handleConfirm"
-        />
-        
-        <AudioVisualSettings
-          v-model:muted="localWebsite.muted"
-          v-model:dark-mode="localWebsite.darkMode"
-        />
-      </div>
-      
-      <!-- 第三行：Session实例选择和内边距配置 -->
-      <div class="form-row">
-        <SessionInstanceSelector
-          v-model="localWebsite.sessionInstance"
-          :session-instances="sessionInstances"
-          @create-instance="handleCreateNewInstance"
-          @manage-instances="handleOpenSessionManager"
-        />
-        
-        <PaddingConfig
-          v-model="localWebsite.padding"
+      <!-- 核心信息区：网站名称和网站地址 -->
+      <div class="section-core">
+        <WebsiteBasicInfo
+          v-model:title="localWebsite.title"
+          v-model:url="localWebsite.url"
+          :auto-focus="show"
           @enter="handleConfirm"
         />
       </div>
       
-      <!-- 自动刷新间隔 -->
-      <AutoRefreshConfig
-        v-model="localWebsite.autoRefreshInterval"
-        @enter="handleConfirm"
-      />
+      <!-- 常用设置区：设备类型、静音、暗黑模式 -->
+      <div class="section-common">
+        <div class="section-title">⚙️ 常用设置</div>
+        <div class="form-row common-settings">
+          <DeviceTypeSelector
+            v-model="localWebsite.deviceType"
+          />
+          <AudioVisualSettings
+            v-model:muted="localWebsite.muted"
+            v-model:dark-mode="localWebsite.darkMode"
+          />
+        </div>
+      </div>
+      
+      <!-- 可选配置区：Session实例和内边距 -->
+      <div class="section-optional">
+        <div class="section-title">🔧 可选配置</div>
+        <div class="form-row optional-settings">
+          <SessionInstanceSelector
+            v-model="localWebsite.sessionInstance"
+            :session-instances="sessionInstances"
+            @create-instance="handleCreateNewInstance"
+            @manage-instances="handleOpenSessionManager"
+          />
+          <PaddingConfig
+            v-model="localWebsite.padding"
+            @enter="handleConfirm"
+          />
+        </div>
+      </div>
+      
+      <!-- 进阶功能区：目标选择器和自动刷新（可折叠） -->
+      <div class="section-advanced">
+        <div 
+          class="section-title collapsible" 
+          @click="showAdvanced = !showAdvanced"
+        >
+          <span>📦 进阶功能</span>
+          <span class="collapse-icon">{{ showAdvanced ? '▼' : '▶' }}</span>
+        </div>
+        <div v-show="showAdvanced" class="advanced-content">
+          <TargetSelectorList
+            v-model="localWebsite.targetSelectors"
+            @enter="handleConfirm"
+          />
+          <AutoRefreshConfig
+            v-model="localWebsite.autoRefreshInterval"
+            @enter="handleConfirm"
+          />
+        </div>
+      </div>
       
       <!-- 操作按钮 -->
       <div class="form-actions">
@@ -59,7 +75,7 @@
 </template>
 
 <script>
-import { inject } from 'vue'
+import { inject, ref } from 'vue'
 import { useSessionManager } from '../composables/useSessionManager.js'
 import { useWebsiteForm } from '../composables/useWebsiteForm.js'
 import { useOverlayClick } from '../composables/useOverlayClick.js'
@@ -109,6 +125,9 @@ export default {
   },
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
+    // 进阶功能折叠状态
+    const showAdvanced = ref(false)
+    
     // Session管理
     const { sessionInstances, addSessionInstance } = useSessionManager()
     const showPrompt = inject('showPrompt')
@@ -163,6 +182,7 @@ export default {
     }
 
     return {
+      showAdvanced,
       localWebsite,
       sessionInstances,
       handleConfirm,
@@ -254,15 +274,81 @@ export default {
   text-align: center;
 }
 
+/* 分区样式 */
+.section-core {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.section-common,
+.section-optional,
+.section-advanced {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title.collapsible {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.section-title.collapsible:hover {
+  background: rgba(255, 92, 0, 0.05);
+}
+
+.collapse-icon {
+  font-size: 12px;
+  color: var(--primary-color);
+  transition: transform 0.3s;
+}
+
+.advanced-content {
+  margin-top: 12px;
+}
+
 .form-row {
   display: flex;
   gap: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .form-row > * {
   flex: 1;
   margin-bottom: 0;
+}
+
+/* 常用设置行 - 设备类型占更多空间 */
+.form-row.common-settings > :first-child {
+  flex: 1.5;
+}
+
+.form-row.common-settings > :last-child {
+  flex: 1;
+}
+
+/* 可选配置行 - 均分空间 */
+.form-row.optional-settings > * {
+  flex: 1;
 }
 
 .form-actions {
@@ -308,6 +394,7 @@ export default {
 @media (max-width: 900px) {
   .edit-website-dialog {
     max-width: 600px;
+    padding: 24px;
   }
   
   .form-row {
@@ -316,7 +403,17 @@ export default {
   }
   
   .form-row > * {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+  }
+  
+  .form-row > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  .section-common,
+  .section-optional,
+  .section-advanced {
+    padding: 12px;
   }
 }
 </style>

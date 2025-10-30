@@ -48,6 +48,7 @@ export default {
 
 .form-input {
   width: 100%;
+  max-width: 150px;
   padding: 12px 15px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;

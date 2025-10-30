@@ -82,6 +82,8 @@ export default {
   background: white;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .device-option:hover {
