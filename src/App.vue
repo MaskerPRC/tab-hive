@@ -81,6 +81,7 @@
       @toggle-global-mute="handleToggleGlobalMute"
       @manage-sessions="handleManageSessions"
       @show-update="handleShowUpdate"
+      @clear-config="handleClearConfig"
       @mouseenter="showPanel = true"
       @mouseleave="handlePanelLeave"
     />
@@ -413,6 +414,11 @@ export default {
           handleCreateLayout(layoutData.name, layoutData)
         }
       )
+    }
+
+    // 处理清除配置
+    const handleClearConfig = () => {
+      layoutManager.clearConfig()
     }
 
     // 提供给子组件使用

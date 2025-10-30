@@ -49,6 +49,10 @@ export function useWindowManager() {
    */
   const getWindowStorageKey = (key) => {
     const wid = currentWindowId.value || 1
+    // 第一个窗口使用原来的名称，保持向后兼容性
+    if (wid === 1) {
+      return key
+    }
     return `window-${wid}-${key}`
   }
 

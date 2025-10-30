@@ -344,7 +344,8 @@ export default {
 
     const clearConfig = async () => {
       if (await showConfirm('确定要清除所有配置吗？这将删除所有网站和布局设置。')) {
-        localStorage.removeItem('iframe-all-config')
+        // 使用布局管理器的清除功能，确保正确处理多窗口情况
+        emit('clear-config')
         window.location.reload()
       }
     }

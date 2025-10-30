@@ -16,6 +16,12 @@ export function useLayoutManager() {
       if (windowManager && windowManager.windowStorage) {
         // 使用窗口独立的存储
         saved = windowManager.windowStorage.getItem('iframe-all-config')
+        
+        // 如果是第一个窗口且没有找到数据，尝试从原来的名称加载（向后兼容）
+        if (!saved && windowManager.currentWindowId.value === 1) {
+          saved = localStorage.getItem('iframe-all-config')
+          console.log('[useLayoutManager] 第一个窗口尝试从原始名称加载配置')
+        }
       } else {
         // 降级到普通 localStorage
         saved = localStorage.getItem('iframe-all-config')
@@ -87,6 +93,12 @@ export function useLayoutManager() {
         // 使用窗口独立的存储
         console.log('[useLayoutManager] 使用窗口独立存储')
         windowManager.windowStorage.setItem('iframe-all-config', JSON.stringify(config))
+        
+        // 如果是第一个窗口，同时保存到原来的名称（向后兼容）
+        if (windowManager.currentWindowId.value === 1) {
+          localStorage.setItem('iframe-all-config', JSON.stringify(config))
+          console.log('[useLayoutManager] 第一个窗口同时保存到原始名称')
+        }
       } else {
         // 降级到普通 localStorage
         console.log('[useLayoutManager] 使用普通 localStorage')
@@ -355,6 +367,30 @@ export function useLayoutManager() {
     return false
   }
 
+  /**
+   * 清除所有配置
+   */
+  const clearConfig = () => {
+    try {
+      if (windowManager && windowManager.windowStorage) {
+        // 使用窗口独立的存储清除
+        windowManager.windowStorage.removeItem('iframe-all-config')
+        
+        // 如果是第一个窗口，同时清除原来的名称
+        if (windowManager.currentWindowId.value === 1) {
+          localStorage.removeItem('iframe-all-config')
+          console.log('[useLayoutManager] 第一个窗口同时清除原始名称')
+        }
+      } else {
+        // 降级到普通 localStorage
+        localStorage.removeItem('iframe-all-config')
+      }
+      console.log('[useLayoutManager] 配置已清除')
+    } catch (e) {
+      console.error('[useLayoutManager] 清除配置失败:', e)
+    }
+  }
+
   return {
     // 状态
     layouts,
@@ -371,7 +407,8 @@ export function useLayoutManager() {
     updateGlobalSettings,
     checkTemplateUpdate,
     syncTemplateUpdate,
-    saveToStorage
+    saveToStorage,
+    clearConfig
   }
 }
 
