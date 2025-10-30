@@ -143,7 +143,10 @@ export default {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   min-width: 400px;
   max-width: 500px;
+  max-height: 80vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   animation: dialog-in 0.2s ease-out;
 }
 
@@ -173,6 +176,33 @@ export default {
 
 .dialog-body {
   padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
+}
+
+.dialog-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dialog-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dialog-body::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.dialog-body::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 .dialog-body p {
@@ -204,6 +234,7 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .dialog-footer button {

@@ -119,15 +119,32 @@ export default {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   text-align: center;
   animation: fadeInScale 0.3s ease-out;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
-  /* 隐藏滚动条 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
 }
 
 .electron-warning-modal::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  width: 6px;
+}
+
+.electron-warning-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.electron-warning-modal::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.electron-warning-modal::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 @keyframes fadeInScale {

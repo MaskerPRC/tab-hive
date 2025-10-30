@@ -118,8 +118,34 @@ export default {
   padding: 32px;
   max-width: 500px;
   width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideIn 0.3s ease-out;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
+}
+
+.import-dialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.import-dialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.import-dialog::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.import-dialog::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 @keyframes slideIn {

@@ -469,13 +469,35 @@ export default {
 .manager-dialog {
   position: relative;
   width: 700px;
-  max-height: 80vh;
+  max-height: 85vh;
   background: white;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+}
+
+.manager-dialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.manager-dialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.manager-dialog::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.manager-dialog::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 .manager-header {
@@ -636,6 +658,32 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
+}
+
+.credentials-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.credentials-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.credentials-list::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.credentials-list::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 .empty-state {

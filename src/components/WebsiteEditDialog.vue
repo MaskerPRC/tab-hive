@@ -206,8 +206,34 @@ export default {
   padding: 32px;
   max-width: 1000px;
   width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: 10px;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
+}
+
+.edit-website-dialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.edit-website-dialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.edit-website-dialog::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.edit-website-dialog::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 @keyframes slideUp {

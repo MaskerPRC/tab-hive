@@ -246,10 +246,34 @@ export default {
   padding: 32px;
   max-width: 700px;
   width: 90%;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
+}
+
+.session-manager-dialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.session-manager-dialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.session-manager-dialog::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.session-manager-dialog::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 @keyframes slideUp {
@@ -305,6 +329,30 @@ export default {
   margin-bottom: 24px;
   max-height: 400px;
   overflow-y: auto;
+  /* 自定义滚动条样式 - 保持圆角效果 */
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C00 transparent;
+  padding-right: 8px; /* 为滚动条留出空间 */
+  margin-right: -8px; /* 抵消右边距 */
+}
+
+.instances-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.instances-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.instances-list::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.instances-list::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 .instance-item {
