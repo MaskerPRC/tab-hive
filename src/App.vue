@@ -345,6 +345,13 @@ export default {
             websiteManager.updateWebsite({ index, updates: { muted: true } })
           }
         })
+      } else {
+        // 解除所有网站的静音
+        websiteManager.websites.value.forEach((website, index) => {
+          if (website.muted) {
+            websiteManager.updateWebsite({ index, updates: { muted: false } })
+          }
+        })
       }
     }
 
@@ -352,6 +359,16 @@ export default {
     const handleSwitchLayout = (layoutId) => {
       const websites = layoutManager.switchLayout(layoutId)
       websiteManager.setWebsites(websites)
+      
+      // 如果全局静音已开启，应用到新布局的所有网站
+      if (layoutManager.globalSettings.value.globalMuted) {
+        console.log('[App] 全局静音已开启，应用到新布局的所有网站')
+        websiteManager.websites.value.forEach((website, index) => {
+          if (!website.muted) {
+            websiteManager.updateWebsite({ index, updates: { muted: true } })
+          }
+        })
+      }
     }
 
     // 创建新布局

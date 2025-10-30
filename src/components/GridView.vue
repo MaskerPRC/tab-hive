@@ -77,6 +77,7 @@
         :is-colliding="dragIsColliding || resizeIsColliding"
         :show-title="globalSettings?.showTitles"
         :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
+        :global-muted="globalSettings?.globalMuted"
         @drag-start="startDrag($event, index)"
         @drag-over="handleDragOver"
         @drag-leave="handleDragLeave"

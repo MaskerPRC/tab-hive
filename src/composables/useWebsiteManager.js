@@ -123,6 +123,7 @@ export function useWebsiteManager(initialWebsites = []) {
    * @param {string} params.targetSelector - 目标选择器
    * @param {number} params.autoRefreshInterval - 自动刷新间隔（秒）
    * @param {string} params.sessionInstance - Session实例ID
+   * @param {boolean} params.muted - 静音状态
    * @param {Object} params.position - 位置
    * @param {Object} params.size - 大小
    */
@@ -143,7 +144,7 @@ export function useWebsiteManager(initialWebsites = []) {
     if (websites.value[index]) {
       console.log('[useWebsiteManager] 更新前的网站数据:', websites.value[index])
       
-      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size } = data
+      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted } = data
       
       if (title !== undefined) websites.value[index].title = title
       if (url !== undefined) {
@@ -161,6 +162,10 @@ export function useWebsiteManager(initialWebsites = []) {
       }
       if (autoRefreshInterval !== undefined) websites.value[index].autoRefreshInterval = autoRefreshInterval
       if (sessionInstance !== undefined) websites.value[index].sessionInstance = sessionInstance
+      if (muted !== undefined) {
+        console.log('[useWebsiteManager] 更新 muted:', muted)
+        websites.value[index].muted = muted
+      }
       if (position !== undefined) {
         websites.value[index].position = { ...position }
         console.log('[useWebsiteManager] 更新位置:', websites.value[index].title, position)

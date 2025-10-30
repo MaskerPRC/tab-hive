@@ -196,6 +196,10 @@ export default {
     refreshOnFullscreenToggle: {
       type: Boolean,
       default: true
+    },
+    globalMuted: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url'],
