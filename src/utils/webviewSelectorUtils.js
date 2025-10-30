@@ -160,24 +160,26 @@ export function applyWebviewSelector(selectors, styleId) {
     // 如果只有一个目标元素，应用单选择器样式（固定全屏）
     if (targetElements.length === 1) {
       style.textContent = `
-        * {
+        html, body {
           margin: 0 !important;
           padding: 0 !important;
-        }
-        
-        html, body {
+          overflow: hidden !important;
           width: 100% !important;
           height: 100% !important;
-          background: #f0f0f0 !important;
         }
         
         ${combinedSelector} {
           display: block !important;
           visibility: visible !important;
-          width: 100% !important;
-          height: 100% !important;
-          background: white !important;
-          box-sizing: border-box !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          z-index: 999999 !important;
+          object-fit: contain !important;
         }
         
         ${combinedSelector} * {
