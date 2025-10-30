@@ -1,6 +1,6 @@
 <template>
   <div class="layout-dropdown" @mouseleave="handleDropdownLeave">
-    <button class="layout-btn" @click="toggleDropdown" title="切换布局">
+    <button class="layout-btn" @click="toggleDropdown" :title="$t('layout.switchLayout')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="7" height="7"/>
         <rect x="14" y="3" width="7" height="7"/>
@@ -21,22 +21,22 @@
           :class="{ active: activeTab === 'my' }"
           @click="activeTab = 'my'"
         >
-          我的布局
+          {{ $t('layout.myLayouts') }}
         </button>
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'shared' }"
           @click="handleSwitchToShared"
         >
-          共享布局
+          {{ $t('layout.sharedLayouts') }}
         </button>
       </div>
 
       <!-- 我的布局 -->
       <div v-if="activeTab === 'my'" class="tab-content">
         <div class="dropdown-header">
-          <span>布局列表</span>
-          <button class="btn-new-layout" @click="$emit('create-layout')" title="新建布局">
+          <span>{{ $t('layout.layoutList') }}</span>
+          <button class="btn-new-layout" @click="$emit('create-layout')" :title="$t('layout.newLayout')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
@@ -68,18 +68,18 @@
               <div class="layout-item-content">
                 <span class="layout-item-name">
                   {{ layout.name }}
-                  <span v-if="layout.importMode === 'realtime' && !layout.isModified" class="realtime-badge" title="实时同步">🔗</span>
-                  <span v-if="layout.isModified" class="modified-badge" title="已修改（同步更新时会覆盖改动）">✏️</span>
+                  <span v-if="layout.importMode === 'realtime' && !layout.isModified" class="realtime-badge" :title="$t('layout.realtimeSync')">🔗</span>
+                  <span v-if="layout.isModified" class="modified-badge" :title="$t('layout.modified')">✏️</span>
                   <span v-if="layout.templateVersion" class="version-text">v{{ layout.templateVersion }}</span>
                 </span>
-                <span class="layout-info">({{ layout.websites.length }}个网站)</span>
+                <span class="layout-info">({{ layout.websites.length }}{{ $t('layout.websites') }})</span>
               </div>
               <div class="layout-actions">
                 <button
                   class="btn-icon btn-freeze"
                   :class="{ 'btn-freeze-active': layout.keepAlive }"
                   @click="$emit('toggle-keep-alive', layout.id, $event)"
-                  :title="layout.keepAlive ? '关闭后台运行（切换布局时卸载）' : '开启后台运行（切换布局时保持运行）'"
+                  :title="layout.keepAlive ? $t('layout.disableKeepAlive') : $t('layout.enableKeepAlive')"
                 >
                   <span class="freeze-icon">{{ layout.keepAlive ? '❄️' : '💤' }}</span>
                 </button>
@@ -88,7 +88,7 @@
                   class="btn-icon btn-sync"
                   :class="{ 'btn-sync-modified': layout.isModified }"
                   @click="$emit('sync-template', layout, $event)"
-                  :title="layout.isModified ? '检查并同步更新（将覆盖你的改动）' : '检查并同步更新'"
+                  :title="layout.isModified ? $t('layout.syncUpdateModified') : $t('layout.syncUpdate')"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="23 4 23 10 17 10"/>
@@ -99,7 +99,7 @@
                 <button
                   class="btn-icon btn-share"
                   @click="$emit('share-layout', layout, $event)"
-                  title="分享布局"
+                  :title="$t('layout.shareLayout')"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="18" cy="5" r="3"/>
@@ -112,7 +112,7 @@
                 <button
                   class="btn-icon btn-rename"
                   @click="$emit('start-rename', layout.id, $event)"
-                  title="重命名"
+                  :title="$t('layout.renameLayout')"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -123,7 +123,7 @@
                   v-if="layouts.length > 1"
                   class="btn-icon btn-delete"
                   @click="$emit('delete-layout', layout.id, $event)"
-                  title="删除"
+                  :title="$t('layout.deleteLayout')"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
@@ -143,16 +143,16 @@
             :value="searchQuery"
             type="text"
             class="search-input"
-            placeholder="搜索共享布局..."
+            :placeholder="$t('layout.searchPlaceholder')"
             @input="handleSearchInput"
           />
         </div>
         <div class="dropdown-list">
           <div v-if="loadingShared" class="loading-message">
-            加载中...
+            {{ $t('layout.loadingShared') }}
           </div>
           <div v-else-if="sharedLayouts.length === 0" class="empty-message">
-            暂无共享布局
+            {{ $t('layout.noSharedLayouts') }}
           </div>
           <div
             v-else
@@ -163,7 +163,7 @@
           >
             <span class="layout-item-name">{{ layout.layout_name }}</span>
             <span class="layout-info">
-              ({{ layout.website_count }}个网站)
+              ({{ layout.website_count }}{{ $t('layout.websites') }})
               <span class="views-count">👁 {{ layout.views }}</span>
               <span class="version-badge">v{{ layout.version }}</span>
             </span>
@@ -175,6 +175,8 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'LayoutDropdown',
   props: {

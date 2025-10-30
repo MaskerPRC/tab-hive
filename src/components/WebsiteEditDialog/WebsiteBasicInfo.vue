@@ -1,24 +1,24 @@
 <template>
   <div class="form-row">
     <div class="form-group">
-      <label>网站名称：</label>
+      <label>{{ $t('websiteBasicInfo.name') }}</label>
       <input
         :value="title"
         @input="$emit('update:title', $event.target.value)"
         type="text"
-        placeholder="例如：Google"
+        :placeholder="$t('websiteBasicInfo.namePlaceholder')"
         class="form-input"
         @keyup.enter="$emit('enter')"
         ref="titleInput"
       />
     </div>
     <div class="form-group">
-      <label>网站地址：</label>
+      <label>{{ $t('websiteBasicInfo.url') }}</label>
       <input
         :value="url"
         @input="$emit('update:url', $event.target.value)"
         type="text"
-        placeholder="例如：bbc.com 或 https://bbc.com"
+        :placeholder="$t('websiteBasicInfo.urlPlaceholder')"
         class="form-input"
         @keyup.enter="$emit('enter')"
       />
@@ -28,6 +28,7 @@
 
 <script>
 import { ref, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'WebsiteBasicInfo',

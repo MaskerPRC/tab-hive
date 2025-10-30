@@ -1,6 +1,6 @@
 <template>
   <div class="form-group">
-    <label>自动刷新间隔（可选）：</label>
+    <label>{{ $t('autoRefresh.title') }}</label>
     
     <!-- 常用预设 -->
     <div class="refresh-presets">
@@ -18,7 +18,7 @@
     
     <!-- 自定义配置 -->
     <div class="refresh-custom">
-      <div class="custom-label">自定义：</div>
+      <div class="custom-label">{{ $t('autoRefresh.custom') }}</div>
       <div class="refresh-interval-selector">
         <input
           :value="customValue"
@@ -35,26 +35,23 @@
           @change="handleUnitChange($event.target.value)"
           class="form-input unit-select"
         >
-          <option value="seconds">秒</option>
-          <option value="minutes">分钟</option>
-          <option value="hours">小时</option>
-          <option value="days">天</option>
+          <option value="seconds">{{ $t('autoRefresh.seconds') }}</option>
+          <option value="minutes">{{ $t('autoRefresh.minutes') }}</option>
+          <option value="hours">{{ $t('autoRefresh.hours') }}</option>
+          <option value="days">{{ $t('autoRefresh.days') }}</option>
         </select>
       </div>
     </div>
     
     <div class="refresh-hint">
-      💡 设置iframe自动刷新的时间间隔<br>
-      • 点击预设快速选择，或自定义时间和单位<br>
-      • 设置为 0 表示不自动刷新<br>
-      • 建议最小值：30秒（避免频繁刷新影响性能）<br>
-      • 适用场景：实时监控、数据大屏等需要定期更新的页面
+      {{ $t('autoRefresh.hint') }}
     </div>
   </div>
 </template>
 
 <script>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRefreshInterval } from '../../composables/useRefreshInterval.js'
 
 export default {
@@ -67,14 +64,33 @@ export default {
   },
   emits: ['update:modelValue', 'enter'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const {
-      presets,
+      presets: rawPresets,
       customValue,
       timeUnit,
       convertSecondsToUnit,
       convertToSeconds,
       isPresetActive
     } = useRefreshInterval(props.modelValue)
+    
+    // 翻译预设标签
+    const presets = computed(() => {
+      const presetTranslations = {
+        0: t('autoRefreshPresets.noRefresh'),
+        30: t('autoRefreshPresets.thirtySeconds'),
+        60: t('autoRefreshPresets.oneMinute'),
+        300: t('autoRefreshPresets.fiveMinutes'),
+        1800: t('autoRefreshPresets.thirtyMinutes'),
+        3600: t('autoRefreshPresets.oneHour'),
+        86400: t('autoRefreshPresets.oneDay')
+      }
+      
+      return rawPresets.map(preset => ({
+        ...preset,
+        label: presetTranslations[preset.value] || preset.label
+      }))
+    })
 
     // 监听外部值变化
     watch(() => props.modelValue, (newVal) => {

@@ -1,6 +1,6 @@
 <template>
   <div class="form-group">
-    <label>目标选择器（可选）：</label>
+    <label>{{ $t('targetSelector.title') }}</label>
     <div class="selector-list">
       <div 
         v-for="(selector, index) in modelValue"
@@ -11,7 +11,7 @@
           :value="selector"
           @input="updateSelector(index, $event.target.value)"
           type="text"
-          placeholder="例如：#main-content 或 .video-player"
+          :placeholder="$t('targetSelector.placeholder')"
           class="form-input selector-item-input"
           @keyup.enter="$emit('enter')"
         />
@@ -19,7 +19,7 @@
           type="button"
           class="btn-remove-selector"
           @click="removeSelector(index)"
-          title="移除此选择器"
+          :title="$t('targetSelector.removeSelector')"
         >
           ✕
         </button>
@@ -28,21 +28,20 @@
         type="button"
         class="btn-add-selector"
         @click="addSelector"
-        title="添加新选择器"
+        :title="$t('targetSelector.addSelector')"
       >
-        ➕ 添加选择器
+        {{ $t('targetSelector.addSelector') }}
       </button>
     </div>
     <div class="selector-hint">
-      💡 可以添加多个CSS选择器，Grid模式下只显示匹配的元素，隐藏其他内容<br>
-      • 多个选择器会同时保留所有匹配的元素<br>
-      • 全屏时显示完整页面<br>
-      • 留空则始终显示整个页面
+      {{ $t('targetSelector.hint') }}
     </div>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'TargetSelectorList',
   props: {
@@ -53,6 +52,7 @@ export default {
   },
   emits: ['update:modelValue', 'enter'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const updateSelector = (index, value) => {
       const newSelectors = [...props.modelValue]
       newSelectors[index] = value

@@ -2,7 +2,7 @@
   <div class="settings-container">
     <!-- 音频设置 -->
     <div class="form-group">
-      <label>音频设置：</label>
+      <label>{{ $t('audioVisual.audioSettings') }}</label>
       <div class="audio-control">
         <label class="audio-option" :class="{ active: muted }">
           <input
@@ -10,17 +10,17 @@
             :checked="muted"
             @change="$emit('update:muted', $event.target.checked)"
           />
-          <span>🔇 静音此网页</span>
+          <span>{{ $t('audioVisual.muted') }}</span>
         </label>
       </div>
       <div class="audio-hint">
-        💡 开启后该网页将不会播放任何声音
+        {{ $t('audioVisual.mutedHint') }}
       </div>
     </div>
 
     <!-- 视觉设置 -->
     <div class="form-group">
-      <label>视觉设置：</label>
+      <label>{{ $t('audioVisual.visualSettings') }}</label>
       <div class="visual-control">
         <label class="visual-option" :class="{ active: darkMode }">
           <input
@@ -28,17 +28,19 @@
             :checked="darkMode"
             @change="$emit('update:darkMode', $event.target.checked)"
           />
-          <span>🌙 暗色主题</span>
+          <span>{{ $t('audioVisual.darkMode') }}</span>
         </label>
       </div>
       <div class="visual-hint">
-        💡 为网页强制应用暗色主题，适合夜间浏览
+        {{ $t('audioVisual.darkModeHint') }}
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'AudioVisualSettings',
   props: {

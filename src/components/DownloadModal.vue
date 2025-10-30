@@ -3,69 +3,64 @@
     <div class="electron-warning-modal">
       <div class="warning-header">
         <div class="warning-icon">⚠️</div>
-        <h2>需要安装插件才能正常使用</h2>
+        <h2>{{ $t('downloadModal.title') }}</h2>
       </div>
-      <p class="warning-message">
-        本应用需要在特定环境中运行才能加载 iframe 网页。<br/>
-        请选择下列方式之一安装后使用：
+      <p class="warning-message" v-html="$t('downloadModal.message')">
       </p>
       <div class="warning-actions">
         <div class="download-options">
           <div class="plugins-group">
             <div class="plugins-container">
               <div class="plugin-item">
-                <h3>🔌 CORS 解除插件（推荐）</h3>
-                <p class="option-desc">解除网站 iframe 限制，适用于 Chrome、Edge 等浏览器</p>
+                <h3>{{ $t('downloadModal.corsPlugin.title') }}</h3>
+                <p class="option-desc">{{ $t('downloadModal.corsPlugin.description') }}</p>
                 <a
                   href="/0.1.2_0.zip"
                   download="Allow X-Frame-Options.zip"
                   class="download-button primary"
                 >
-                  📥 下载 CORS 解除插件
+                  {{ $t('downloadModal.corsPlugin.download') }}
                 </a>
-                <p class="install-hint">
-                  下载后请解压，然后在浏览器中加载解压后的文件夹
+                <p class="install-hint" v-html="$t('downloadModal.corsPlugin.installHint')">
                 </p>
               </div>
               <div class="plugin-item">
-                <h3>🎯 选择器插件（可选）</h3>
-                <p class="option-desc">支持使用 CSS 选择器定位并全屏显示网页特定元素</p>
+                <h3>{{ $t('downloadModal.selectorPlugin.title') }}</h3>
+                <p class="option-desc">{{ $t('downloadModal.selectorPlugin.description') }}</p>
                 <a
                   href="/tab-hive-selector-extension.zip"
                   download="Tab-Hive-Selector-Extension.zip"
                   class="download-button primary"
                 >
-                  📥 下载选择器插件
+                  {{ $t('downloadModal.selectorPlugin.download') }}
                 </a>
-                <p class="install-hint">
-                  配合 CORS 插件使用，可聚焦于视频播放器、文章内容等特定区域<br/>
-                  在编辑网站时填写"目标选择器"字段（如 <code>#player</code>）
+                <p class="install-hint" v-html="$t('downloadModal.selectorPlugin.installHint')">
                 </p>
               </div>
             </div>
             <div class="tutorial-section">
               <a href="https://zhuanlan.zhihu.com/p/16585597394" target="_blank" class="tutorial-link">
-                📖 查看详细安装教程
+                {{ $t('downloadModal.tutorial') }}
               </a>
             </div>
           </div>
-          <div class="divider">或</div>
+          <div class="divider">{{ $t('downloadModal.or') }}</div>
           <div class="option-section desktop-section">
             <div class="desktop-info">
-              <h3>💻 桌面应用程序</h3>
-              <p class="option-desc">独立运行，功能完整，无需安装插件</p>
+              <h3>{{ $t('downloadModal.desktopApp.title') }}</h3>
+              <p class="option-desc">{{ $t('downloadModal.desktopApp.description') }}</p>
             </div>
             <a
               href="https://github.com/MaskerPRC/tab-hive/releases"
               target="_blank"
               class="download-button secondary"
             >
-              📥 下载桌面应用
+              {{ $t('downloadModal.desktopApp.download') }}
             </a>
           </div>
         </div>
         <button @click="handleClose" class="dismiss-button">
-          我知道了（暂时继续浏览）
+          {{ $t('downloadModal.dismiss') }}
         </button>
       </div>
     </div>
@@ -73,6 +68,8 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'DownloadModal',
   props: {
@@ -83,6 +80,8 @@ export default {
   },
   emits: ['close'],
   setup(props, { emit }) {
+    const { t } = useI18n()
+    
     const handleClose = () => {
       emit('close')
     }

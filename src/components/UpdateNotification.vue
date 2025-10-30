@@ -5,14 +5,14 @@
         <div class="update-header">
           <div class="update-icon">🎉</div>
           <div class="update-title">
-            <h3>发现新版本</h3>
+            <h3>{{ $t('updateNotification.title') }}</h3>
             <p class="version-info">
-              当前版本: <span class="current">{{ currentVersion }}</span>
+              {{ $t('updateNotification.currentVersion') }} <span class="current">{{ currentVersion }}</span>
               →
-              最新版本: <span class="latest">{{ latestVersion }}</span>
+              {{ $t('updateNotification.latestVersion') }} <span class="latest">{{ latestVersion }}</span>
             </p>
           </div>
-          <button class="close-btn" @click="handleClose" title="关闭">
+          <button class="close-btn" @click="handleClose" :title="$t('updateNotification.close')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -21,13 +21,13 @@
         </div>
 
         <div v-if="updateInfo?.body && !isDownloading && !downloadCompleted" class="update-details">
-          <h4>更新内容：</h4>
+          <h4>{{ $t('updateNotification.updateContent') }}</h4>
           <div class="release-notes" v-html="formatReleaseNotes(updateInfo.body)"></div>
         </div>
 
         <!-- 下载进度 -->
         <div v-if="isDownloading" class="download-progress">
-          <h4>正在下载更新...</h4>
+          <h4>{{ $t('updateNotification.downloading') }}</h4>
           <div class="progress-bar-container">
             <div class="progress-bar" :style="{ width: Math.min(downloadProgress, 100) + '%' }"></div>
           </div>
@@ -36,21 +36,21 @@
             ({{ Math.min(downloadProgress, 100).toFixed(1) }}%)
           </div>
           <div class="progress-text" v-else>
-            {{ formatBytes(downloadedBytes) }} 已下载
+            {{ formatBytes(downloadedBytes) }} {{ $t('updateNotification.downloaded') }}
           </div>
         </div>
 
         <!-- 下载完成 -->
         <div v-if="downloadCompleted" class="download-completed">
           <div class="completed-icon">✓</div>
-          <h4>下载完成！</h4>
-          <p>更新包已准备就绪，点击下方按钮安装</p>
+          <h4>{{ $t('updateNotification.downloadCompleted') }}</h4>
+          <p>{{ $t('updateNotification.downloadCompletedMessage') }}</p>
         </div>
 
         <!-- 下载失败 -->
         <div v-if="downloadError" class="download-error">
           <div class="error-icon">✗</div>
-          <h4>下载失败</h4>
+          <h4>{{ $t('updateNotification.downloadFailed') }}</h4>
           <p>{{ downloadError }}</p>
         </div>
 
@@ -65,7 +65,7 @@
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            立即下载更新
+            {{ $t('updateNotification.downloadNow') }}
           </button>
 
           <button 
@@ -73,7 +73,7 @@
             class="btn-secondary" 
             @click="handleCancelDownload"
           >
-            取消下载
+            {{ $t('updateNotification.cancelDownload') }}
           </button>
 
           <button 
@@ -87,7 +87,7 @@
               <line x1="12" y1="18" x2="12" y2="12"></line>
               <line x1="9" y1="15" x2="15" y2="15"></line>
             </svg>
-            安装并重启
+            {{ $t('updateNotification.installAndRestart') }}
           </button>
 
           <button 
@@ -95,7 +95,7 @@
             class="btn-primary" 
             @click="handleRetryDownload"
           >
-            重试下载
+            {{ $t('updateNotification.retryDownload') }}
           </button>
 
           <button 
@@ -103,7 +103,7 @@
             class="btn-secondary" 
             @click="handleIgnore"
           >
-            {{ downloadCompleted || downloadError ? '关闭' : '稍后提醒' }}
+            {{ downloadCompleted || downloadError ? $t('updateNotification.close') : $t('updateNotification.later') }}
           </button>
         </div>
       </div>
@@ -113,6 +113,7 @@
 
 <script>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'UpdateNotification',
@@ -140,6 +141,7 @@ export default {
   },
   emits: ['close', 'ignore', 'update', 'install', 'cancel-download', 'retry-download'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const isDownloading = ref(false)
     const downloadProgress = ref(0)
     const downloadedBytes = ref(0)

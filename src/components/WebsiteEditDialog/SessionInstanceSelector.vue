@@ -1,6 +1,6 @@
 <template>
   <div class="form-group">
-    <label>Cookie共享实例：</label>
+    <label>{{ $t('sessionInstance.title') }}</label>
     <div class="session-selector">
       <select
         :value="modelValue"
@@ -19,28 +19,28 @@
         type="button"
         class="btn-new-instance"
         @click="$emit('create-instance')"
-        title="创建新实例"
+        :title="$t('sessionInstance.createHint')"
       >
-        ➕ 新建
+        {{ $t('sessionInstance.create') }}
       </button>
       <button
         type="button"
         class="btn-manage-instance"
         @click="$emit('manage-instances')"
-        title="管理所有实例"
+        :title="$t('sessionInstance.manageHint')"
       >
-        ⚙️ 管理
+        {{ $t('sessionInstance.manage') }}
       </button>
     </div>
     <div class="session-hint">
-      💡 相同实例的蜂巢会共享Cookie和存储，不同实例之间完全隔离<br>
-      • 默认共享实例：所有网站共用<br>
-      • 新建实例：可用于多账号登录等场景
+      {{ $t('sessionInstance.hint') }}
     </div>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'SessionInstanceSelector',
   props: {

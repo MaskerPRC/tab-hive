@@ -7,13 +7,13 @@
     <button
       class="btn-selector"
       @click="$emit('selectElement')"
-      title="选择元素"
+      :title="$t('fullscreenBar.selectElement')"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
         <path d="M13 13l6 6"/>
       </svg>
-      <span>选择元素</span>
+      <span>{{ $t('fullscreenBar.selectElement') }}</span>
     </button>
     <button
       class="btn-exit-fullscreen"
@@ -22,12 +22,14 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
       </svg>
-      <span>退出全屏</span>
+      <span>{{ $t('fullscreenBar.exitFullscreen') }}</span>
     </button>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'FullscreenBar',
   props: {
@@ -36,7 +38,11 @@ export default {
       required: true
     }
   },
-  emits: ['exit', 'leave', 'selectElement']
+  emits: ['exit', 'leave', 'selectElement'],
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  }
 }
 </script>
 

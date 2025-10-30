@@ -13,7 +13,7 @@
     <div
       class="drag-handle"
       @mousedown="startDrag"
-      title="拖动移动面板"
+      :title="$t('selectorToolbar.dragHandle')"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="9" cy="5" r="1"/>
@@ -31,13 +31,13 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 3L5 7l4 4M15 3l4 4-4 4M12 3v18"/>
         </svg>
-        <span>元素选择器</span>
+        <span>{{ $t('selectorToolbar.title') }}</span>
       </div>
       <div class="toolbar-actions">
         <button 
           class="toolbar-btn"
           @click="toggleVisibility"
-          :title="isHidden ? '显示高亮' : '隐藏高亮'"
+          :title="isHidden ? $t('selectorToolbar.showHighlight') : $t('selectorToolbar.hideHighlight')"
         >
           <svg v-if="isHidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
@@ -52,13 +52,13 @@
           v-if="selector"
           class="toolbar-btn toolbar-btn-confirm"
           @click="$emit('confirm')"
-          title="确认选择"
+          :title="$t('selectorToolbar.confirm')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </button>
-        <button class="toolbar-btn" @click="$emit('cancel')" title="取消选择">
+        <button class="toolbar-btn" @click="$emit('cancel')" :title="$t('selectorToolbar.cancel')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -77,20 +77,20 @@
             :checked="multiSelectMode"
             @change="$emit('toggle-multi-select', $event.target.checked)"
           />
-          <span>多选模式</span>
-          <span class="toggle-hint">（同时保留多个元素）</span>
+          <span>{{ $t('selectorToolbar.multiSelectMode') }}</span>
+          <span class="toggle-hint">{{ $t('selectorToolbar.multiSelectHint') }}</span>
         </label>
       </div>
 
       <!-- 单选模式：当前选择器 -->
       <div v-if="!multiSelectMode" class="selector-input-wrapper">
-        <label class="input-label">CSS 选择器</label>
+        <label class="input-label">{{ $t('selectorToolbar.cssSelector') }}</label>
         <div class="selector-input-group">
           <input
             v-model="localSelector"
             type="text"
             class="selector-input"
-            placeholder="点击页面元素选择..."
+            :placeholder="$t('selectorToolbar.placeholder')"
             @input="$emit('update:selector', localSelector)"
             @focus="$emit('pause', true)"
             @blur="$emit('pause', false)"
@@ -99,7 +99,7 @@
             v-if="localSelector"
             class="clear-btn"
             @click="clearSelector"
-            title="清除选择器"
+            :title="$t('selectorToolbar.clear')"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -111,7 +111,7 @@
 
       <!-- 多选模式：选择器列表 -->
       <div v-if="multiSelectMode" class="selectors-list-wrapper">
-        <label class="input-label">已选择的元素 ({{ localSelectors.length }})</label>
+        <label class="input-label">{{ $t('selectorToolbar.selectedElements') }} ({{ localSelectors.length }})</label>
         <div class="selectors-list">
           <div 
             v-for="(selector, index) in localSelectors" 
@@ -123,7 +123,7 @@
             <button
               class="remove-selector-btn"
               @click="removeSelector(index)"
-              title="移除"
+              :title="$t('common.remove')"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -133,72 +133,72 @@
           </div>
         </div>
         <div class="current-selection" v-if="localSelector">
-          <label class="input-label">当前选择器</label>
+          <label class="input-label">{{ $t('selectorToolbar.currentSelector') }}</label>
           <div class="current-selector">{{ localSelector }}</div>
           <button class="add-selector-btn" @click="addCurrentSelector">
-            ➕ 添加到列表
+            ➕ {{ $t('selectorToolbar.addToList') }}
           </button>
         </div>
       </div>
 
       <!-- 元素导航 -->
       <div v-if="localSelector" class="element-navigation">
-        <button class="nav-btn" @click="$emit('navigate', 'parent')" title="选择父元素">
+        <button class="nav-btn" @click="$emit('navigate', 'parent')" :title="$t('selectorToolbar.selectParent')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="18 15 12 9 6 15"/>
           </svg>
-          父元素
+          {{ $t('selectorToolbar.parentElement') }}
         </button>
-        <button class="nav-btn" @click="$emit('navigate', 'child')" title="选择子元素">
+        <button class="nav-btn" @click="$emit('navigate', 'child')" :title="$t('selectorToolbar.selectChild')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"/>
           </svg>
-          子元素
+          {{ $t('selectorToolbar.childElement') }}
         </button>
         <button 
           class="nav-btn nav-btn-reselect" 
           @click="$emit('reselect')"
-          title="重新选择元素"
+          :title="$t('selectorToolbar.reselect')"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="23 4 23 10 17 10"/>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
           </svg>
-          重选
+          {{ $t('selectorToolbar.reselectShort') }}
         </button>
         <button 
           class="nav-btn settings-btn" 
           @click="showSettings = !showSettings"
           :class="{ active: showSettings }"
-          title="选择器设置"
+          :title="$t('selectorToolbar.settings')"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
             <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
           </svg>
-          设置
+          {{ $t('common.settings') }}
         </button>
       </div>
 
       <!-- 选择器设置面板 -->
       <div v-if="showSettings && localSelector" class="settings-panel">
-        <h4 class="settings-title">选择器生成规则</h4>
+        <h4 class="settings-title">{{ $t('selectorToolbar.selectorRules') }}</h4>
         <div class="settings-options">
           <label class="setting-option">
             <input v-model="settings.includeId" type="checkbox" />
-            <span>包含元素 ID</span>
+            <span>{{ $t('selectorToolbar.includeId') }}</span>
           </label>
           <label class="setting-option">
             <input v-model="settings.includeClass" type="checkbox" />
-            <span>包含 Class</span>
+            <span>{{ $t('selectorToolbar.includeClass') }}</span>
           </label>
           <label class="setting-option">
             <input v-model="settings.includeTag" type="checkbox" />
-            <span>包含标签名</span>
+            <span>{{ $t('selectorToolbar.includeTag') }}</span>
           </label>
           <label class="setting-option">
             <input v-model="settings.includeAttributes" type="checkbox" />
-            <span>包含属性</span>
+            <span>{{ $t('selectorToolbar.includeAttributes') }}</span>
           </label>
         </div>
       </div>
@@ -206,19 +206,19 @@
       <!-- 元素信息 -->
       <div v-if="elementInfo" class="element-info">
         <div class="info-row">
-          <span class="info-label">标签:</span>
+          <span class="info-label">{{ $t('selectorToolbar.tag') }}:</span>
           <span class="info-value">{{ elementInfo.tagName }}</span>
         </div>
         <div v-if="elementInfo.id" class="info-row">
-          <span class="info-label">ID:</span>
+          <span class="info-label">{{ $t('selectorToolbar.id') }}:</span>
           <span class="info-value">{{ elementInfo.id }}</span>
         </div>
         <div v-if="elementInfo.className" class="info-row">
-          <span class="info-label">Class:</span>
+          <span class="info-label">{{ $t('selectorToolbar.class') }}:</span>
           <span class="info-value">{{ elementInfo.className }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">尺寸:</span>
+          <span class="info-label">{{ $t('selectorToolbar.size') }}:</span>
           <span class="info-value">{{ elementInfo.width }} × {{ elementInfo.height }}</span>
         </div>
       </div>
@@ -232,7 +232,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        确认选择
+        {{ $t('selectorToolbar.confirmSelection') }}
       </button>
 
       <!-- 提示信息 -->
@@ -244,18 +244,18 @@
         </svg>
         <template v-if="multiSelectMode">
           <template v-if="!localSelector">
-            多选模式：点击元素添加到列表 | 按 <kbd>ESC</kbd> 取消
+            {{ $t('selectorToolbar.multiSelectModeHint') }}
           </template>
           <template v-else>
-            点击 <strong>添加到列表</strong> 继续选择 | <strong>确认选择</strong> 保存所有
+            {{ $t('selectorToolbar.multiSelectModeSelected', { count: localSelectors.length }) }}
           </template>
         </template>
         <template v-else>
           <template v-if="!localSelector">
-            点击元素选择 | 按 <kbd>空格</kbd> 选择 | 按 <kbd>ESC</kbd> 取消
+            {{ $t('selectorToolbar.singleSelectModeHint') }}
           </template>
           <template v-else>
-            可继续调整选择 | 点击 <strong>确认选择</strong> 保存 | 按 <kbd>ESC</kbd> 取消
+            {{ $t('selectorToolbar.confirmSelectionHint') }}
           </template>
         </template>
       </div>
@@ -265,6 +265,7 @@
 
 <script>
 import { ref, watch, onMounted, onUnmounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'SelectorToolbar',
@@ -292,6 +293,7 @@ export default {
   },
   emits: ['cancel', 'confirm', 'update:selector', 'update:selectors', 'navigate', 'pause', 'reselect', 'toggle-multi-select'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const localSelector = ref(props.selector)
     const localSelectors = ref(props.selectors || [])
     const isHidden = ref(false)

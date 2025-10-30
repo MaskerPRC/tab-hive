@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="edit-website-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="edit-website-dialog" @mousedown.stop>
-      <h3>{{ editingIndex === -1 ? '添加网站' : '编辑网站' }}</h3>
+      <h3>{{ editingIndex === -1 ? $t('websiteEdit.addWebsite') : $t('websiteEdit.editWebsite') }}</h3>
       
       <!-- 核心信息区：网站名称和网站地址 -->
       <div class="section-core">
@@ -17,13 +17,13 @@
           
           <!-- 快捷添加按钮（仅在添加新网站时显示） -->
           <div v-if="editingIndex === -1" class="quick-add-wrapper">
-            <span class="quick-add-title">快速开始：</span>
+            <span class="quick-add-title">{{ $t('websiteEdit.quickStart') }}</span>
             <div class="quick-add-buttons">
               <button 
                 class="quick-add-btn"
                 @click="quickAddBaidu"
                 type="button"
-                title="快捷添加百度"
+                :title="$t('websiteEdit.quickAddBaidu')"
               >
                 <span>百</span>
               </button>
@@ -31,7 +31,7 @@
                 class="quick-add-btn"
                 @click="quickAddGoogle"
                 type="button"
-                title="快捷添加谷歌"
+                :title="$t('websiteEdit.quickAddGoogle')"
               >
                 <span>谷</span>
               </button>
@@ -42,7 +42,7 @@
       
       <!-- 常用设置区：设备类型、静音、暗黑模式 -->
       <div class="section-common">
-        <div class="section-title">⚙️ 常用设置</div>
+        <div class="section-title">{{ $t('websiteEdit.commonSettings') }}</div>
         <div class="form-row common-settings">
           <DeviceTypeSelector
             v-model="localWebsite.deviceType"
@@ -56,7 +56,7 @@
       
       <!-- 可选配置区：Session实例和内边距 -->
       <div class="section-optional">
-        <div class="section-title">🔧 可选配置</div>
+        <div class="section-title">{{ $t('websiteEdit.optionalSettings') }}</div>
         <div class="form-row optional-settings">
           <SessionInstanceSelector
             v-model="localWebsite.sessionInstance"
@@ -78,7 +78,7 @@
           @click="showAdvanced = !showAdvanced"
         >
           <span class="collapse-icon">{{ showAdvanced ? '▼' : '▶' }}</span>
-          <span>📦 进阶功能</span>
+          <span>{{ $t('websiteEdit.advancedSettings') }}</span>
         </div>
         <div v-show="showAdvanced" class="advanced-content">
           <TargetSelectorList
@@ -94,8 +94,8 @@
       
       <!-- 操作按钮 -->
       <div class="form-actions">
-        <button class="btn-confirm" @click="handleConfirm">确定</button>
-        <button class="btn-cancel" @click="$emit('cancel')">取消</button>
+        <button class="btn-confirm" @click="handleConfirm">{{ $t('common.confirm') }}</button>
+        <button class="btn-cancel" @click="$emit('cancel')">{{ $t('common.cancel') }}</button>
       </div>
     </div>
   </div>
@@ -103,6 +103,7 @@
 
 <script>
 import { inject, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSessionManager } from '../composables/useSessionManager.js'
 import { useWebsiteForm } from '../composables/useWebsiteForm.js'
 import { useOverlayClick } from '../composables/useOverlayClick.js'
@@ -152,6 +153,8 @@ export default {
   },
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
+    const { t } = useI18n()
+    
     // 进阶功能折叠状态
     const showAdvanced = ref(false)
 
@@ -198,12 +201,12 @@ export default {
     // 创建新的session实例
     const handleCreateNewInstance = async () => {
       // 使用当前蜂巢的名称作为实例的默认命名
-      const defaultName = localWebsite.value.title 
+        const defaultName = localWebsite.value.title 
         ? `${localWebsite.value.title}` 
-        : `共享实例 ${sessionInstances.value.length}`
+        : `${t('sessionInstance.defaultInstanceName')} ${sessionInstances.value.length}`
       
       if (!showPrompt) {
-        const name = prompt('请输入新实例名称：', defaultName)
+        const name = prompt(t('sessionInstance.createNewInstanceMessage'), defaultName)
         if (name && name.trim()) {
           const newInstance = addSessionInstance(name.trim())
           localWebsite.value.sessionInstance = newInstance.id
@@ -212,8 +215,8 @@ export default {
       }
 
       const name = await showPrompt({
-        title: '创建新的Cookie共享实例',
-        message: '请输入实例名称（例如：账号2、测试环境等）',
+        title: t('sessionInstance.createNewInstance'),
+        message: t('sessionInstance.createNewInstanceMessage'),
         placeholder: defaultName
       })
 
@@ -232,7 +235,7 @@ export default {
 
     // 快捷添加百度
     const quickAddBaidu = () => {
-      localWebsite.value.title = '百度'
+      localWebsite.value.title = t('websiteEdit.baidu')
       localWebsite.value.url = 'https://www.baidu.com'
       // 自动提交
       handleConfirm()
@@ -240,7 +243,7 @@ export default {
 
     // 快捷添加谷歌
     const quickAddGoogle = () => {
-      localWebsite.value.title = '谷歌'
+      localWebsite.value.title = t('websiteEdit.google')
       localWebsite.value.url = 'https://www.google.com'
       // 自动提交
       handleConfirm()

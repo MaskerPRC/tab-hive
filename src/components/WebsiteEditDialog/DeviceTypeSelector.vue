@@ -1,6 +1,6 @@
 <template>
   <div class="form-group">
-    <label>设备类型：</label>
+    <label>{{ $t('deviceType.title') }}</label>
     <div class="device-type-selector">
       <label class="device-option" :class="{ active: modelValue === 'desktop' }">
         <input
@@ -9,7 +9,7 @@
           :checked="modelValue === 'desktop'"
           @change="$emit('update:modelValue', 'desktop')"
         />
-        <span>🖥️ PC版</span>
+        <span>{{ $t('deviceType.desktop') }}</span>
       </label>
       <label class="device-option" :class="{ active: modelValue === 'mobile' }">
         <input
@@ -18,16 +18,18 @@
           :checked="modelValue === 'mobile'"
           @change="$emit('update:modelValue', 'mobile')"
         />
-        <span>📱 手机版</span>
+        <span>{{ $t('deviceType.mobile') }}</span>
       </label>
     </div>
     <div class="device-hint" v-if="modelValue === 'mobile'">
-      💡 手机版会自动将域名转换为移动版（如 www.xxx.com → m.xxx.com）并限制视口宽度为 375px
+      {{ $t('deviceType.mobileHint') }}
     </div>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'DeviceTypeSelector',
   props: {

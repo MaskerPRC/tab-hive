@@ -43,44 +43,60 @@
       <div class="actions-section">
         <!-- 窗口管理区域（仅 Electron 环境） -->
         <div v-if="isElectron" class="window-management">
-          <div class="section-title">窗口管理</div>
+          <div class="section-title">{{ $t('configPanel.windowManagement') }}</div>
           
           <button
             @click="handleCreateNewWindow"
             class="sidebar-btn btn-window"
-            title="创建新的 Tab Hive 窗口"
+            :title="$t('configPanel.createNewWindowHint')"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
-            <span>新建窗口</span>
+            <span>{{ $t('configPanel.createNewWindow') }}</span>
           </button>
 
           <div v-if="windowManager.windows.value.length > 1" class="window-list">
-            <div class="window-list-title">所有窗口 ({{ windowManager.windows.value.length }})</div>
+            <div class="window-list-title">{{ $t('configPanel.allWindows') }} ({{ windowManager.windows.value.length }})</div>
             <button
               v-for="win in windowManager.windows.value"
               :key="win.id"
               @click="handleSwitchWindow(win.id)"
               class="window-item"
               :class="{ 'active': win.id === windowManager.currentWindowId.value }"
-              :title="`切换到窗口 ${win.id}`"
+              :title="`${$t('configPanel.switchToWindow')} ${win.id}`"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               </svg>
-              <span>窗口 {{ win.id }}</span>
-              <span v-if="win.id === windowManager.currentWindowId.value" class="current-badge">当前</span>
+              <span>{{ $t('configPanel.window') }} {{ win.id }}</span>
+              <span v-if="win.id === windowManager.currentWindowId.value" class="current-badge">{{ $t('configPanel.current') }}</span>
             </button>
           </div>
         </div>
 
         <div class="section-divider"></div>
 
-        <label class="toggle-control" title="显示/隐藏蜂巢标题">
-          <span class="toggle-label">显示标题</span>
+        <!-- 语言选择 -->
+        <div class="language-selector">
+          <label class="language-label">{{ $t('configPanel.language') }}:</label>
+          <select 
+            :value="currentLocale" 
+            @change="handleLanguageChange($event.target.value)"
+            class="language-select"
+            :title="$t('configPanel.languageHint')"
+          >
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <label class="toggle-control" :title="$t('configPanel.showTitlesHint')">
+          <span class="toggle-label">{{ $t('configPanel.showTitles') }}</span>
           <input
             type="checkbox"
             :checked="showTitles"
@@ -90,8 +106,8 @@
           <span class="toggle-slider"></span>
         </label>
 
-        <label class="toggle-control" title="选择器类型的蜂巢，全屏切换时是否刷新网页">
-          <span class="toggle-label">全屏切换刷新</span>
+        <label class="toggle-control" :title="$t('configPanel.refreshOnFullscreenToggleHint')">
+          <span class="toggle-label">{{ $t('configPanel.refreshOnFullscreenToggle') }}</span>
           <input
             type="checkbox"
             :checked="refreshOnFullscreenToggle"
@@ -101,8 +117,8 @@
           <span class="toggle-slider"></span>
         </label>
 
-        <label class="toggle-control" title="全局静音/取消静音所有网页">
-          <span class="toggle-label">全局静音</span>
+        <label class="toggle-control" :title="$t('configPanel.globalMutedHint')">
+          <span class="toggle-label">{{ $t('configPanel.globalMuted') }}</span>
           <input
             type="checkbox"
             :checked="globalMuted"
@@ -115,7 +131,7 @@
         <button
           @click="$emit('manage-sessions')"
           class="sidebar-btn btn-sessions"
-          title="管理Cookie共享实例"
+          :title="$t('configPanel.instanceManagementHint')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"/>
@@ -123,42 +139,42 @@
             <rect x="14" y="14" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/>
           </svg>
-          <span>实例管理</span>
+          <span>{{ $t('configPanel.instanceManagement') }}</span>
         </button>
 
         <button
           @click="openHelp"
           class="sidebar-btn btn-help"
-          title="使用帮助"
+          :title="$t('configPanel.helpHint')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <span>使用帮助</span>
+          <span>{{ $t('configPanel.help') }}</span>
         </button>
 
         <button
           v-if="!isElectron"
           class="sidebar-btn btn-download"
           @click="$emit('show-download-modal')"
-          title="下载桌面客户端或插件"
+          :title="$t('configPanel.downloadPluginHint')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          <span>下载插件</span>
+          <span>{{ $t('configPanel.downloadPlugin') }}</span>
         </button>
 
-        <button class="sidebar-btn btn-clear" @click="clearConfig" title="清除所有配置">
+        <button class="sidebar-btn btn-clear" @click="clearConfig" :title="$t('configPanel.clearConfigHint')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
-          <span>清除配置</span>
+          <span>{{ $t('configPanel.clearConfig') }}</span>
         </button>
 
         <!-- 更新按钮 -->
@@ -176,6 +192,8 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { setLocale } from '../i18n/index.js'
 import LayoutDropdown from './LayoutDropdown.vue'
 import UpdateButton from './UpdateButton.vue'
 import { useSharedLayouts } from '../composables/useSharedLayouts'
@@ -216,7 +234,9 @@ export default {
   },
   emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'manage-sessions', 'show-update'],
   setup(props, { emit }) {
+    const { t, locale } = useI18n()
     const showLayoutDropdown = ref(false)
+    const currentLocale = computed(() => locale.value)
     let hideTimer = null
 
     // 从父组件注入对话框方法
@@ -297,7 +317,7 @@ export default {
 
     const currentLayoutName = () => {
       const layout = props.layouts.find(l => l.id === props.currentLayoutId)
-      return layout ? layout.name : '未命名'
+      return layout ? layout.name : t('configPanel.unnamed')
     }
 
     const toggleLayoutDropdown = () => {
@@ -311,9 +331,9 @@ export default {
 
     const handleCreateLayout = async () => {
       const name = await showPrompt({
-        title: '创建新布局',
-        message: '请输入新布局名称',
-        placeholder: '新布局'
+        title: t('configPanel.layoutDropdown.createLayout'),
+        message: t('configPanel.layoutDropdown.createLayoutMessage'),
+        placeholder: t('configPanel.layoutDropdown.createLayoutPlaceholder')
       })
       if (name && name.trim()) {
         emit('create-layout', name.trim())
@@ -324,7 +344,7 @@ export default {
     const handleDeleteLayout = async (layoutId, event) => {
       event.stopPropagation()
       const layout = props.layouts.find(l => l.id === layoutId)
-      if (layout && await showConfirm(`确定要删除布局 "${layout.name}" 吗？`)) {
+      if (layout && await showConfirm(t('configPanel.layoutDropdown.deleteLayout', { name: layout.name }))) {
         emit('delete-layout', layoutId)
       }
     }
@@ -343,11 +363,17 @@ export default {
     }
 
     const clearConfig = async () => {
-      if (await showConfirm('确定要清除所有配置吗？这将删除所有网站和布局设置。')) {
+      if (await showConfirm(t('configPanel.layoutDropdown.clearConfig'))) {
         // 使用布局管理器的清除功能，确保正确处理多窗口情况
         emit('clear-config')
         window.location.reload()
       }
+    }
+
+    const handleLanguageChange = (locale) => {
+      setLocale(locale)
+      // 可选：刷新页面以确保所有组件都更新
+      // window.location.reload()
     }
 
     // 打开帮助页面（确保在顶层窗口中打开）
@@ -445,7 +471,9 @@ export default {
       handleToggleGlobalMute,
       windowManager,
       handleCreateNewWindow,
-      handleSwitchWindow
+      handleSwitchWindow,
+      handleLanguageChange,
+      currentLocale
     }
   }
 }
@@ -531,6 +559,54 @@ export default {
   height: 1px;
   background: #e0e0e0;
   margin: 8px 0;
+}
+
+/* 语言选择器样式 */
+.language-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8f8f8;
+  transition: background 0.3s;
+}
+
+.language-selector:hover {
+  background: #fff5f0;
+}
+
+.language-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.language-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  outline: none;
+  font-family: inherit;
+}
+
+.language-select:hover {
+  border-color: var(--primary-color);
+  background: #fff5f0;
+}
+
+.language-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.1);
 }
 
 .btn-window {

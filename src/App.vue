@@ -24,7 +24,7 @@
         @click="switchView('grid')"
         class="view-toggle-btn"
         :class="{ active: currentView === 'grid' }"
-        title="网格视图"
+        :title="$t('other.gridView')"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7"/>
@@ -37,7 +37,7 @@
         @click="switchView('canvas')"
         class="view-toggle-btn"
         :class="{ active: currentView === 'canvas' }"
-        title="画布视图"
+        :title="$t('other.canvasView')"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 19l7-7 3 3-7 7-3-3z"/>
@@ -144,6 +144,7 @@
 
 <script>
 import { ref, watch, onMounted, provide } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
 import CanvasView from './components/CanvasView.vue'
@@ -171,6 +172,8 @@ export default {
     UpdateNotification
   },
   setup() {
+    const { t } = useI18n()
+    
     // 使用 composables
     const dialog = useDialog()
     const layoutManager = useLayoutManager()
@@ -381,7 +384,7 @@ export default {
     // 删除布局
     const handleDeleteLayout = (layoutId) => {
       if (layoutManager.layouts.value.length <= 1) {
-        alert('至少需要保留一个布局')
+        alert(t('layout.atLeastOne'))
         return
       }
 
@@ -399,8 +402,8 @@ export default {
       const layout = layoutManager.layouts.value.find(l => l.id === layoutId)
       if (layout) {
         const message = newState
-          ? `布局 "${layout.name}" 已开启后台运行\n\n切换到其他布局时，该布局将保持运行状态，不会被卸载。`
-          : `布局 "${layout.name}" 已关闭后台运行\n\n切换到其他布局时，该布局将被卸载以节省资源。`
+          ? t('layout.keepAliveEnabled', { name: layout.name })
+          : t('layout.keepAliveDisabled', { name: layout.name })
         alert(message)
       }
     }
@@ -470,7 +473,7 @@ export default {
         // 如果成功导入了布局，显示提示
         if (importedLayout) {
           setTimeout(() => {
-            alert('已成功从 URL 参数导入布局！')
+            alert(t('layout.urlImportSuccess'))
           }, 500)
         }
 

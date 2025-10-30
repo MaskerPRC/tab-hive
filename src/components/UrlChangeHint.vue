@@ -1,16 +1,18 @@
 <template>
   <div v-if="show" class="url-change-hint">
-    <button class="btn-use-current-url" @click="handleClick" title="使用当前显示的网页地址">
+    <button class="btn-use-current-url" @click="handleClick"       :title="$t('urlChangeHint.useCurrentUrl')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
       </svg>
-      <span>使用此网页</span>
+      <span>{{ $t('urlChangeHint.useThisPage') }}</span>
     </button>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'UrlChangeHint',
   props: {
@@ -21,6 +23,8 @@ export default {
   },
   emits: ['use-current-url'],
   setup(props, { emit }) {
+    const { t } = useI18n()
+    
     const handleClick = () => {
       emit('use-current-url')
     }

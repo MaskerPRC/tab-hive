@@ -1,36 +1,37 @@
 <template>
   <div v-if="visible" class="import-dialog-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="import-dialog" @mousedown.stop>
-      <h3>选择导入模式</h3>
-      <p class="dialog-desc">你想如何导入这个布局？</p>
+      <h3>{{ $t('importMode.title') }}</h3>
+      <p class="dialog-desc">{{ $t('importMode.description') }}</p>
 
       <div class="import-options">
         <div class="import-option" @click="handleSelectMode('realtime')">
           <div class="option-icon">🔗</div>
           <div class="option-content">
-            <h4>实时同步导入</h4>
-            <p>保持与原模板同步，当作者更新模板时可手动同步更新</p>
-            <span class="option-note">⚠️ 如果你修改了布局，同步更新时会覆盖你的改动</span>
+            <h4>{{ $t('importMode.realtimeSync.title') }}</h4>
+            <p>{{ $t('importMode.realtimeSync.description') }}</p>
+            <span class="option-note">{{ $t('importMode.realtimeSync.note') }}</span>
           </div>
         </div>
 
         <div class="import-option" @click="handleSelectMode('copy')">
           <div class="option-icon">📋</div>
           <div class="option-content">
-            <h4>拷贝导入</h4>
-            <p>创建一个独立的副本，可以自由修改</p>
-            <span class="option-note">💡 不受原模板更新影响</span>
+            <h4>{{ $t('importMode.copy.title') }}</h4>
+            <p>{{ $t('importMode.copy.description') }}</p>
+            <span class="option-note">{{ $t('importMode.copy.note') }}</span>
           </div>
         </div>
       </div>
 
-      <button class="cancel-btn" @click="handleClose">取消</button>
+      <button class="cancel-btn" @click="handleClose">{{ $t('importMode.cancel') }}</button>
     </div>
   </div>
 </template>
 
 <script>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'ImportModeDialog',

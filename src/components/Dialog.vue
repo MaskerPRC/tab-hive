@@ -3,7 +3,7 @@
     <div v-if="visible" class="dialog-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
       <div class="dialog-box" @click.stop @mousedown.stop>
         <div class="dialog-header">
-          <h3>{{ title }}</h3>
+          <h3>{{ title || $t('dialog.title') }}</h3>
         </div>
         <div class="dialog-body">
           <p v-if="message">{{ message }}</p>
@@ -19,8 +19,8 @@
           />
         </div>
         <div class="dialog-footer">
-          <button class="btn-cancel" @click="handleCancel">取消</button>
-          <button class="btn-confirm" @click="handleConfirm">确定</button>
+          <button class="btn-cancel" @click="handleCancel">{{ $t('common.cancel') }}</button>
+          <button class="btn-confirm" @click="handleConfirm">{{ $t('common.confirm') }}</button>
         </div>
       </div>
     </div>
@@ -29,6 +29,7 @@
 
 <script>
 import { ref, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'Dialog',
@@ -44,7 +45,7 @@ export default {
     },
     title: {
       type: String,
-      default: '提示'
+      default: ''
     },
     message: {
       type: String,
@@ -61,6 +62,7 @@ export default {
   },
   emits: ['confirm', 'cancel', 'update:visible'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const inputValue = ref('')
     const inputRef = ref(null)
     const mouseDownOnOverlay = ref(false)

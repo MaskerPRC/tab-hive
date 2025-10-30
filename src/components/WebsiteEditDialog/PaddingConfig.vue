@@ -1,6 +1,6 @@
 <template>
   <div class="form-group">
-    <label>内边距配置（可选）：</label>
+    <label>{{ $t('padding.title') }}</label>
     <input
       :value="modelValue"
       @input="$emit('update:modelValue', Number($event.target.value))"
@@ -13,14 +13,14 @@
       @keyup.enter="$emit('enter')"
     />
     <div class="padding-hint">
-      💡 调整网页内容与卡片边缘的距离（单位：像素）<br>
-      • 默认为 0（无内边距）<br>
-      • 建议范围：0-50px
+      {{ $t('padding.hint') }}
     </div>
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
+
 export default {
   name: 'PaddingConfig',
   props: {

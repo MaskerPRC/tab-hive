@@ -3,51 +3,52 @@
     <button
       class="btn-action btn-refresh"
       @click="$emit('refresh')"
-      title="刷新页面"
+      :title="$t('floatingActions.refresh')"
       v-html="ICONS.refresh"
     />
     <button
       class="btn-action btn-mute"
       :class="{ 'muted': muted }"
       @click="$emit('toggle-mute')"
-      :title="muted ? '取消静音' : '静音'"
+      :title="muted ? $t('floatingActions.unmute') : $t('floatingActions.mute')"
       v-html="muted ? ICONS.volumeOff : ICONS.volumeOn"
     />
     <button
       class="btn-action btn-copy"
       @click="$emit('copy')"
-      title="复制蜂巢"
+      :title="$t('floatingActions.copy')"
       v-html="ICONS.copy"
     />
     <button
       v-if="false"
       class="btn-action btn-script"
       @click="$emit('open-script-panel')"
-      title="脚本执行器"
+      :title="$t('floatingActions.script')"
       v-html="ICONS.code"
     />
     <button
       class="btn-action btn-edit"
       @click="$emit('edit')"
-      title="编辑链接"
+      :title="$t('floatingActions.edit')"
       v-html="ICONS.edit"
     />
     <button
       class="btn-action"
       @click="$emit('fullscreen')"
-      title="全屏查看"
+      :title="$t('floatingActions.fullscreen')"
       v-html="ICONS.fullscreen"
     />
     <button
       class="btn-action btn-remove"
       @click="$emit('remove')"
-      title="删除网站"
+      :title="$t('floatingActions.remove')"
       v-html="ICONS.remove"
     />
   </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import { ICONS } from './icons.js'
 
 export default {
@@ -60,8 +61,10 @@ export default {
   },
   emits: ['refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove'],
   setup() {
+    const { t } = useI18n()
     return {
-      ICONS
+      ICONS,
+      t
     }
   }
 }

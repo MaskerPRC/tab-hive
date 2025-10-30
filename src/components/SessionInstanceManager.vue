@@ -1,7 +1,7 @@
 <template>
   <div v-if="visible" class="session-manager-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="session-manager-dialog" @mousedown.stop>
-      <h3>Cookie共享实例管理</h3>
+      <h3>{{ $t('sessionInstanceManager.title') }}</h3>
       
       <div class="info-box">
         <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -9,9 +9,9 @@
           <path d="M12 16v-4M12 8h.01"/>
         </svg>
         <div class="info-text">
-          <strong>什么是Cookie共享实例？</strong><br>
-          同一实例的蜂巢会共享Cookie、LocalStorage等存储。不同实例之间完全隔离。<br>
-          <strong>使用场景：</strong>多账号登录、测试环境隔离等。
+          <strong>{{ $t('sessionInstanceManager.whatIs') }}</strong><br>
+          {{ $t('sessionInstanceManager.description') }}<br>
+          <strong>{{ $t('sessionInstanceManager.useCases') }}</strong>{{ $t('sessionInstanceManager.useCasesDesc') }}
         </div>
       </div>
 
@@ -26,7 +26,7 @@
             <div class="instance-header">
               <span class="instance-name">{{ instance.name }}</span>
               <span class="usage-badge" v-if="websites">
-                {{ getUsageCount(instance.id) }} 个蜂巢
+                {{ getUsageCount(instance.id) }} {{ $t('sessionInstanceManager.usageCount') }}
               </span>
             </div>
             <div class="instance-description" v-if="instance.description">
@@ -39,7 +39,7 @@
               v-if="instance.id !== 'default'"
               class="btn-icon"
               @click="handleRename(instance)"
-              title="重命名"
+              :title="$t('sessionInstanceManager.rename')"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -51,7 +51,7 @@
               class="btn-icon btn-delete"
               @click="handleDelete(instance)"
               :disabled="getUsageCount(instance.id) > 0"
-              :title="getUsageCount(instance.id) > 0 ? '有蜂巢正在使用此实例，无法删除' : '删除'"
+              :title="getUsageCount(instance.id) > 0 ? $t('sessionInstanceManager.deleteDisabled') : $t('sessionInstanceManager.delete')"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"/>
@@ -68,9 +68,9 @@
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          <span>新建实例</span>
+          <span>{{ $t('sessionInstanceManager.create') }}</span>
         </button>
-        <button class="btn-close" @click="$emit('close')">关闭</button>
+        <button class="btn-close" @click="$emit('close')">{{ $t('sessionInstanceManager.close') }}</button>
       </div>
     </div>
   </div>
@@ -78,6 +78,7 @@
 
 <script>
 import { ref, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSessionManager } from '../composables/useSessionManager.js'
 
 export default {
@@ -94,6 +95,7 @@ export default {
   },
   emits: ['close'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const { 
       sessionInstances, 
       addSessionInstance, 
@@ -128,10 +130,10 @@ export default {
 
     const handleAdd = async () => {
       // 默认命名为 "实例1"、"实例2" 等
-      const defaultName = `实例${sessionInstances.value.length}`
+      const defaultName = `${t('sessionInstance.defaultInstanceName')}${sessionInstances.value.length}`
       
       if (!showPrompt) {
-        const name = prompt('请输入新实例名称：', defaultName)
+        const name = prompt(t('sessionInstance.createNewInstanceMessage'), defaultName)
         if (name && name.trim()) {
           addSessionInstance(name.trim())
         }
@@ -139,8 +141,8 @@ export default {
       }
 
       const name = await showPrompt({
-        title: '创建新的Cookie共享实例',
-        message: '请输入实例名称（例如：账号2、测试环境等）',
+        title: t('sessionInstance.createNewInstance'),
+        message: t('sessionInstance.createNewInstanceMessage'),
         placeholder: defaultName
       })
 
@@ -151,7 +153,7 @@ export default {
 
     const handleRename = async (instance) => {
       if (!showPrompt) {
-        const newName = prompt('请输入新名称：', instance.name)
+        const newName = prompt(t('sessionInstance.inputPlaceholder'), instance.name)
         if (newName && newName.trim() && newName !== instance.name) {
           renameSessionInstance(instance.id, newName.trim())
         }
@@ -159,8 +161,8 @@ export default {
       }
 
       const newName = await showPrompt({
-        title: '重命名实例',
-        message: '请输入新的实例名称',
+        title: t('sessionInstanceManager.rename'),
+        message: t('sessionInstance.inputPlaceholder'),
         defaultValue: instance.name
       })
 
@@ -174,27 +176,24 @@ export default {
       
       if (usageCount > 0) {
         if (!showConfirm) {
-          alert(`此实例正被 ${usageCount} 个蜂巢使用，无法删除`)
+          alert(t('sessionInstanceManager.deleteDisabled'))
         } else {
           await showConfirm({
-            title: '无法删除',
-            message: `此实例正被 ${usageCount} 个蜂巢使用，无法删除。\n请先将这些蜂巢切换到其他实例。`
+            title: t('common.warning'),
+            message: t('sessionInstanceManager.deleteDisabled') + `\n${t('common.hint')}`
           })
         }
         return
       }
 
       if (!showConfirm) {
-        if (confirm(`确定要删除实例 "${instance.name}" 吗？`)) {
+        if (confirm(t('sessionInstanceManager.deleteConfirm', { name: instance.name }))) {
           deleteSessionInstance(instance.id)
         }
         return
       }
 
-      const confirmed = await showConfirm({
-        title: '确认删除',
-        message: `确定要删除实例 "${instance.name}" 吗？此操作不可恢复。`
-      })
+      const confirmed = await showConfirm(t('sessionInstanceManager.deleteConfirm', { name: instance.name }))
 
       if (confirmed) {
         deleteSessionInstance(instance.id)
