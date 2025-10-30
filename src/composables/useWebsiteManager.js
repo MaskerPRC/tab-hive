@@ -124,6 +124,8 @@ export function useWebsiteManager(initialWebsites = []) {
    * @param {number} params.autoRefreshInterval - 自动刷新间隔（秒）
    * @param {string} params.sessionInstance - Session实例ID
    * @param {boolean} params.muted - 静音状态
+   * @param {boolean} params.darkMode - 暗色模式
+   * @param {number} params.padding - 内边距
    * @param {Object} params.position - 位置
    * @param {Object} params.size - 大小
    */
@@ -144,7 +146,7 @@ export function useWebsiteManager(initialWebsites = []) {
     if (websites.value[index]) {
       console.log('[useWebsiteManager] 更新前的网站数据:', websites.value[index])
       
-      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted } = data
+      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding } = data
       
       if (title !== undefined) websites.value[index].title = title
       if (url !== undefined) {
@@ -165,6 +167,14 @@ export function useWebsiteManager(initialWebsites = []) {
       if (muted !== undefined) {
         console.log('[useWebsiteManager] 更新 muted:', muted)
         websites.value[index].muted = muted
+      }
+      if (darkMode !== undefined) {
+        console.log('[useWebsiteManager] 更新 darkMode:', darkMode)
+        websites.value[index].darkMode = darkMode
+      }
+      if (padding !== undefined) {
+        console.log('[useWebsiteManager] 更新 padding:', padding)
+        websites.value[index].padding = padding
       }
       if (position !== undefined) {
         websites.value[index].position = { ...position }
