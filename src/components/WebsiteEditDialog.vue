@@ -5,12 +5,39 @@
       
       <!-- 核心信息区：网站名称和网站地址 -->
       <div class="section-core">
-        <WebsiteBasicInfo
-          v-model:title="localWebsite.title"
-          v-model:url="localWebsite.url"
-          :auto-focus="show"
-          @enter="handleConfirm"
-        />
+        <div class="core-content-wrapper">
+          <div class="basic-info-wrapper">
+            <WebsiteBasicInfo
+              v-model:title="localWebsite.title"
+              v-model:url="localWebsite.url"
+              :auto-focus="show"
+              @enter="handleConfirm"
+            />
+          </div>
+          
+          <!-- 快捷添加按钮（仅在添加新网站时显示） -->
+          <div v-if="editingIndex === -1" class="quick-add-wrapper">
+            <span class="quick-add-title">快速开始：</span>
+            <div class="quick-add-buttons">
+              <button 
+                class="quick-add-btn"
+                @click="quickAddBaidu"
+                type="button"
+                title="快捷添加百度"
+              >
+                <span>百</span>
+              </button>
+              <button 
+                class="quick-add-btn"
+                @click="quickAddGoogle"
+                type="button"
+                title="快捷添加谷歌"
+              >
+                <span>谷</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- 常用设置区：设备类型、静音、暗黑模式 -->
@@ -75,7 +102,7 @@
 </template>
 
 <script>
-import { inject, ref } from 'vue'
+import { inject, ref, watch } from 'vue'
 import { useSessionManager } from '../composables/useSessionManager.js'
 import { useWebsiteForm } from '../composables/useWebsiteForm.js'
 import { useOverlayClick } from '../composables/useOverlayClick.js'
@@ -127,6 +154,28 @@ export default {
   setup(props, { emit }) {
     // 进阶功能折叠状态
     const showAdvanced = ref(false)
+
+    // 检查是否配置了进阶功能
+    const hasAdvancedConfig = (website) => {
+      // 检查是否配置了选择器（不为空数组）
+      const hasSelectors = website.targetSelectors && 
+                          Array.isArray(website.targetSelectors) && 
+                          website.targetSelectors.length > 0
+      
+      // 检查是否配置了自动刷新（不为默认值0）
+      const hasAutoRefresh = website.autoRefreshInterval && 
+                            website.autoRefreshInterval !== 0
+      
+      return hasSelectors || hasAutoRefresh
+    }
+
+    // 当对话框打开时，根据是否配置了进阶功能来决定展开状态
+    watch(() => props.show, (newShow) => {
+      if (newShow) {
+        // 对话框打开时，检查当前网站是否配置了进阶功能
+        showAdvanced.value = hasAdvancedConfig(props.website)
+      }
+    })
     
     // Session管理
     const { sessionInstances, addSessionInstance } = useSessionManager()
@@ -181,6 +230,22 @@ export default {
       }
     }
 
+    // 快捷添加百度
+    const quickAddBaidu = () => {
+      localWebsite.value.title = '百度'
+      localWebsite.value.url = 'https://www.baidu.com'
+      // 自动提交
+      handleConfirm()
+    }
+
+    // 快捷添加谷歌
+    const quickAddGoogle = () => {
+      localWebsite.value.title = '谷歌'
+      localWebsite.value.url = 'https://www.google.com'
+      // 自动提交
+      handleConfirm()
+    }
+
     return {
       showAdvanced,
       localWebsite,
@@ -189,7 +254,9 @@ export default {
       handleOverlayMouseDown,
       handleOverlayClick,
       handleCreateNewInstance,
-      handleOpenSessionManager
+      handleOpenSessionManager,
+      quickAddBaidu,
+      quickAddGoogle
     }
   }
 }
@@ -271,6 +338,67 @@ export default {
   margin: 0 0 24px 0;
   font-size: 24px;
   text-align: center;
+}
+
+/* 核心信息区布局 */
+.core-content-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.basic-info-wrapper {
+  flex: 1;
+}
+
+/* 快捷添加区域 */
+.quick-add-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.quick-add-title {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 快捷添加按钮 */
+.quick-add-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.quick-add-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #FF5C00;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-add-btn:hover {
+  background: #e64e00;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.5);
+}
+
+.quick-add-btn:active {
+  transform: scale(0.95);
 }
 
 /* 分区样式 */
@@ -414,6 +542,15 @@ export default {
   .section-optional,
   .section-advanced {
     padding: 12px;
+  }
+  
+  .core-content-wrapper {
+    flex-direction: column;
+  }
+  
+  .quick-add-wrapper {
+    justify-content: center;
+    padding-bottom: 0;
   }
 }
 </style>
