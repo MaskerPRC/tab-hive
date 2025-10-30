@@ -50,8 +50,8 @@
           class="section-title collapsible" 
           @click="showAdvanced = !showAdvanced"
         >
-          <span>📦 进阶功能</span>
           <span class="collapse-icon">{{ showAdvanced ? '▼' : '▶' }}</span>
+          <span>📦 进阶功能</span>
         </div>
         <div v-show="showAdvanced" class="advanced-content">
           <TargetSelectorList
@@ -228,13 +228,12 @@ export default {
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
+  scrollbar-gutter: stable; /* 预留滚动条空间，避免内容展开时布局跳动 */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
   /* 自定义滚动条样式 - 保持圆角效果 */
   scrollbar-width: 10px;
   scrollbar-color: #FF5C00 transparent;
-  padding-right: 8px; /* 为滚动条留出空间 */
-  margin-right: -8px; /* 抵消右边距 */
 }
 
 .edit-website-dialog::-webkit-scrollbar {
@@ -305,7 +304,6 @@ export default {
   cursor: pointer;
   user-select: none;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
   border-radius: 6px;
@@ -317,9 +315,11 @@ export default {
 }
 
 .collapse-icon {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--primary-color);
   transition: transform 0.3s;
+  margin-right: 6px;
+  font-weight: bold;
 }
 
 .advanced-content {
