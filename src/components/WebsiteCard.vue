@@ -9,10 +9,11 @@
       'draggable': true,
       'dragging': isDragging && isCurrentDrag,
       'resizing': isResizing && isCurrentResize,
-      'colliding': isColliding && (isCurrentDrag || isCurrentResize)
+      'colliding': isColliding && (isCurrentDrag || isCurrentResize),
+      'dark-mode': item.darkMode
     }"
     :style="computedItemStyle"
-    :data-padding="item.padding || null"
+    :data-padding="!isFullscreen && item.padding && item.padding > 0 ? item.padding : null"
   >
     <!-- 已有网站显示 -->
     <template v-if="item.url">
@@ -319,7 +320,8 @@ export default {
     // 计算包含内边距的样式
     const computedItemStyle = computed(() => {
       const style = { ...props.itemStyle }
-      if (props.item.padding && props.item.padding > 0) {
+      // 全屏模式下不应用内边距
+      if (!props.isFullscreen && props.item.padding && props.item.padding > 0) {
         style['--item-padding'] = `${props.item.padding}px`
       }
       return style
@@ -488,6 +490,11 @@ export default {
   position: relative;
   cursor: move;
   border: solid 1px #FF5C00;
+}
+
+/* 暗色模式下的背景 */
+.grid-item.dark-mode {
+  background: #1a1a1a;
 }
 
 .grid-item.draggable:hover {

@@ -101,7 +101,7 @@ export default {
         targetSelectors: [],
         autoRefreshInterval: 0,
         sessionInstance: 'default',
-        padding: 0,
+        padding: 10,
         muted: false,
         darkMode: false
       })

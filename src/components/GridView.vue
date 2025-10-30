@@ -430,7 +430,7 @@ export default {
           targetSelectors: website.targetSelectors || [],
           autoRefreshInterval: website.autoRefreshInterval || 0,
           sessionInstance: website.sessionInstance || 'default',
-          padding: website.padding || 0,
+          padding: website.padding !== undefined ? website.padding : 10,
           muted: website.muted || false,
           darkMode: website.darkMode || false
         }

@@ -14,7 +14,7 @@ export function useWebsiteForm(props, emit) {
     targetSelectors: [],
     autoRefreshInterval: 0,
     sessionInstance: 'default',
-    padding: 0,
+    padding: 10,
     muted: false,
     darkMode: false
   })
@@ -51,7 +51,9 @@ export function useWebsiteForm(props, emit) {
       ...newVal,
       targetSelectors,
       sessionInstance: newVal.sessionInstance || 'default',
-      padding: newVal.padding || 0,
+      // 只在编辑模式且原有值为 undefined 时才设置默认值 10
+      // 如果是旧数据（没有 padding 属性），保留为 undefined，不设置默认值
+      padding: 'padding' in newVal ? newVal.padding : (props.editingIndex === -1 ? 10 : 0),
       muted: newVal.muted || false,
       darkMode: newVal.darkMode || false
     }
