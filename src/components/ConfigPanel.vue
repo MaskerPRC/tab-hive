@@ -88,8 +88,16 @@
             class="language-select"
             :title="$t('configPanel.languageHint')"
           >
-            <option value="zh">中文</option>
-            <option value="en">English</option>
+            <option value="zh">🇨🇳 中文</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="bn">🇧🇩 বাংলা</option>
+            <option value="hi">🇮🇳 हिन्दी</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="pt">🇧🇷 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="de">🇩🇪 Deutsch</option>
           </select>
         </div>
 
