@@ -792,7 +792,8 @@ ipcMain.handle('proxy:set-session-proxy', async (event, partition, hiveId, proxy
       // 清除代理
       console.log(`[Proxy] 清除代理 - partition: ${partition}, hiveId: ${hiveId}`)
       const webviewSession = session.fromPartition(partition)
-      await webviewSession.setProxy({ proxyRules: 'DIRECT' })
+      // 使用空对象完全清除代理设置，而不是使用 'DIRECT'
+      await webviewSession.setProxy({})
       await proxyManager.stopProxyForHive(hiveId)
       console.log(`[Proxy] 代理已清除`)
       return { success: true }

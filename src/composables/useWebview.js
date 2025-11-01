@@ -49,8 +49,9 @@ export function useWebview(props, emit) {
     const partition = partitionName.value
     const hiveId = props.item.id
 
-    if (proxyId) {
-      try {
+    try {
+      if (proxyId) {
+        // 设置代理
         console.log(`[useWebview] 首次为蜂巢 ${hiveId} 设置代理 ${proxyId}`)
         const result = await window.electron.proxy.setSessionProxy(partition, hiveId, proxyId)
         if (result.success) {
@@ -61,12 +62,23 @@ export function useWebview(props, emit) {
           console.error(`[useWebview] 代理设置失败: ${result.error}`)
           return false
         }
-      } catch (error) {
-        console.error('[useWebview] 设置代理时出错:', error)
-        return false
+      } else {
+        // 清除代理
+        console.log(`[useWebview] 清除蜂巢 ${hiveId} 的代理设置`)
+        const result = await window.electron.proxy.setSessionProxy(partition, hiveId, null)
+        if (result.success) {
+          console.log(`[useWebview] 代理清除成功`)
+          proxySetupDone.value = true
+          return true
+        } else {
+          console.error(`[useWebview] 代理清除失败: ${result.error}`)
+          return false
+        }
       }
+    } catch (error) {
+      console.error('[useWebview] 设置/清除代理时出错:', error)
+      return false
     }
-    return true  // 没有代理需要设置
   }
 
   // 设置 webview 引用
