@@ -47,9 +47,12 @@
       <!-- 捕获选项区 -->
       <div class="section-options">
         <div class="section-title">捕获选项</div>
-        <div class="form-group">
-          <label>
-            <input type="checkbox" v-model="localConfig.desktopCaptureOptions.fitScreen" />
+        <div class="options-control">
+          <label class="option-button" :class="{ active: localConfig.desktopCaptureOptions.fitScreen }">
+            <input
+              type="checkbox"
+              v-model="localConfig.desktopCaptureOptions.fitScreen"
+            />
             <span>适应屏幕大小</span>
           </label>
         </div>
@@ -59,7 +62,7 @@
       <div class="section-display">
         <div class="section-title">显示设置</div>
         <div class="form-row">
-          <div class="form-group">
+          <div class="form-group padding-control">
             <label for="desktop-capture-padding">内边距</label>
             <input
               id="desktop-capture-padding"
@@ -70,11 +73,15 @@
               class="form-input"
               @keyup.enter="handleConfirm"
             />
-            <span class="input-unit">px</span>
           </div>
-          <div class="form-group">
-            <label>
-              <input type="checkbox" v-model="localConfig.muted" />
+          <div class="form-group muted-control">
+            <label for="desktop-capture-muted">静音</label>
+            <label class="option-button" :class="{ active: localConfig.muted }">
+              <input
+                type="checkbox"
+                id="desktop-capture-muted"
+                v-model="localConfig.muted"
+              />
               <span>静音</span>
             </label>
           </div>
@@ -122,7 +129,6 @@ export default {
         title: '',
         desktopCaptureSourceId: null,
         desktopCaptureOptions: {
-          autoRefresh: false,
           fitScreen: false
         },
         padding: 10,
@@ -137,7 +143,6 @@ export default {
       title: '',
       desktopCaptureSourceId: null,
       desktopCaptureOptions: {
-        autoRefresh: false,
         fitScreen: false
       },
       padding: 10,
@@ -160,7 +165,6 @@ export default {
           title: newVal.title || '',
           desktopCaptureSourceId: newVal.desktopCaptureSourceId || null,
           desktopCaptureOptions: {
-            autoRefresh: false, // 已移除自动刷新功能
             fitScreen: newVal.desktopCaptureOptions?.fitScreen || false // 默认false
           },
           padding: newVal.padding !== undefined ? newVal.padding : 10,
@@ -212,7 +216,6 @@ export default {
         if (!localConfig.value.desktopCaptureOptions) {
           localConfig.value.desktopCaptureOptions = {}
         }
-        // autoRefresh 已移除，不再处理
         localConfig.value.desktopCaptureOptions.fitScreen = options.fitScreen || false
       }
       
@@ -236,7 +239,6 @@ export default {
         url: '', // 桌面捕获不需要URL
         desktopCaptureSourceId: localConfig.value.desktopCaptureSourceId,
         desktopCaptureOptions: {
-          autoRefresh: false, // 已移除自动刷新功能
           fitScreen: localConfig.value.desktopCaptureOptions?.fitScreen || false
         },
         padding: localConfig.value.padding || 10,
@@ -295,6 +297,28 @@ export default {
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
+  /* 自定义滚动条 */
+  scrollbar-width: 10px;
+  scrollbar-color: #FF5C00 transparent;
+}
+
+.edit-desktop-capture-dialog::-webkit-scrollbar {
+  width: 10px;
+}
+
+.edit-desktop-capture-dialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.edit-desktop-capture-dialog::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 5px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.edit-desktop-capture-dialog::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 @keyframes slideUp {
@@ -355,6 +379,52 @@ export default {
   width: 16px;
   height: 16px;
   cursor: pointer;
+  accent-color: #FF5C00;
+}
+
+/* 选项按钮样式（整个按钮作为勾选框） */
+.options-control {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.option-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  user-select: none;
+}
+
+.option-button:hover {
+  border-color: #FF5C00;
+  background: #fff5f0;
+  color: #FF5C00;
+}
+
+.option-button.active {
+  border-color: #FF5C00;
+  background: #FF5C00;
+  color: white;
+}
+
+.option-button input[type="checkbox"] {
+  display: none;
+}
+
+.option-button span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .form-input {
@@ -380,10 +450,29 @@ export default {
   flex: 1;
 }
 
+.muted-control {
+  display: flex;
+  flex-direction: column;
+}
+
+.muted-control > label:first-child {
+  margin-bottom: 8px;
+}
+
+.padding-control {
+  display: flex;
+  flex-direction: column;
+}
+
+.padding-control .form-input {
+  width: 120px;
+  margin-bottom: 4px;
+}
+
 .input-unit {
-  margin-left: 8px;
-  font-size: 14px;
-  color: #666;
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
 }
 
 /* 桌面源选择区域 */
@@ -401,6 +490,11 @@ export default {
   background: white;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
+  transition: border-color 0.3s;
+}
+
+.source-preview:hover {
+  border-color: #FF5C00;
 }
 
 .source-preview img {
@@ -428,17 +522,19 @@ export default {
 
 .btn-change-source {
   padding: 8px 16px;
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: #fff5f0;
+  color: #FF5C00;
+  border: 1px solid #FF5C00;
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
+  font-weight: 500;
 }
 
 .btn-change-source:hover {
-  background: #e5e7eb;
+  background: #FF5C00;
+  color: white;
 }
 
 .no-source {

@@ -40,7 +40,6 @@ export default {
     options: {
       type: Object,
       default: () => ({
-        autoRefresh: false,
         fitScreen: false
       })
     }

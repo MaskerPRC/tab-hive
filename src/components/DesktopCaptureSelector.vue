@@ -53,13 +53,6 @@
       </div>
 
       <div class="selector-footer">
-        <div class="capture-options">
-          <label>
-            <input type="checkbox" v-model="captureOptions.fitScreen" />
-            适应屏幕大小
-          </label>
-        </div>
-        
         <div class="action-buttons">
           <button @click="confirmCapture" :disabled="!selectedSource" class="btn-confirm">
             开始捕获
@@ -91,10 +84,7 @@ export default {
     const error = ref('')
     const activeTab = ref('screen')
     const selectedSource = ref(null)
-    const captureOptions = ref({
-      autoRefresh: false,
-      fitScreen: false
-    })
+    const captureOptions = ref({})
 
     const filteredSources = computed(() => {
       return sources.value.filter(source => {
@@ -218,7 +208,7 @@ export default {
 
 .selector-header {
   padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #FF5C00 0%, #ff7a1c 100%);
   color: white;
   display: flex;
   justify-content: space-between;
@@ -266,13 +256,13 @@ export default {
 }
 
 .tab-btn:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(255, 92, 0, 0.1);
 }
 
 .tab-btn.active {
   background: white;
-  border-bottom-color: #667eea;
-  color: #667eea;
+  border-bottom-color: #FF5C00;
+  color: #FF5C00;
 }
 
 .selector-content {
@@ -280,6 +270,28 @@ export default {
   padding: 24px;
   overflow-y: auto;
   min-height: 400px;
+  /* 自定义滚动条 */
+  scrollbar-width: 10px;
+  scrollbar-color: #FF5C00 transparent;
+}
+
+.selector-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.selector-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.selector-content::-webkit-scrollbar-thumb {
+  background: #FF5C00;
+  border-radius: 5px;
+  transition: background 0.3s ease;
+  margin: 2px;
+}
+
+.selector-content::-webkit-scrollbar-thumb:hover {
+  background: #e64e00;
 }
 
 .loading-state,
@@ -296,7 +308,7 @@ export default {
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #FF5C00;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -310,7 +322,7 @@ export default {
 .btn-retry {
   margin-top: 16px;
   padding: 10px 24px;
-  background: #667eea;
+  background: #FF5C00;
   color: white;
   border: none;
   border-radius: 8px;
@@ -320,7 +332,7 @@ export default {
 }
 
 .btn-retry:hover {
-  background: #5568d3;
+  background: #e64e00;
 }
 
 .sources-grid {
@@ -339,15 +351,15 @@ export default {
 }
 
 .source-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border-color: #FF5C00;
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.2);
   transform: translateY(-2px);
 }
 
 .source-item.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  border-color: #FF5C00;
+  background: #fff5f0;
+  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.2);
 }
 
 .source-thumbnail {
@@ -399,7 +411,7 @@ export default {
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
@@ -422,6 +434,7 @@ export default {
   width: 16px;
   height: 16px;
   cursor: pointer;
+  accent-color: #FF5C00;
 }
 
 .action-buttons {
@@ -441,13 +454,13 @@ export default {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #FF5C00 0%, #ff7a1c 100%);
   color: white;
 }
 
 .btn-confirm:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.4);
 }
 
 .btn-confirm:disabled {
