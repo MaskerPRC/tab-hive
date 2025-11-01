@@ -30,7 +30,9 @@ const sessionInstances = ref(loadSessionInstances())
 // 保存到localStorage
 const saveSessionInstances = () => {
   try {
-    localStorage.setItem('tab-hive-session-instances', JSON.stringify(sessionInstances.value))
+    // 过滤掉隐藏的实例，它们会自动重建
+    const instancesForSave = sessionInstances.value.filter(inst => !inst.hidden)
+    localStorage.setItem('tab-hive-session-instances', JSON.stringify(instancesForSave))
   } catch (e) {
     console.error('保存session实例失败:', e)
   }

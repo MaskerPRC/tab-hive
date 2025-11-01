@@ -48,6 +48,7 @@
       :show="editingSlot !== null && editingDialogType === 'website'"
       :editing-index="editingSlot"
       :website="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : newWebsite"
+      :websites="websites"
       @confirm="confirmAddWebsite"
       @cancel="cancelAddWebsite"
     />

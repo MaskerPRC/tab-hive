@@ -6,13 +6,14 @@
         :value="modelValue"
         @change="$emit('update:modelValue', $event.target.value)"
         class="form-input session-select"
+        :disabled="isHiddenInstance"
       >
         <option 
-          v-for="instance in sessionInstances" 
+          v-for="instance in displayInstances" 
           :key="instance.id" 
           :value="instance.id"
         >
-          {{ instance.name }}
+          {{ instance.name }}{{ instance.hidden ? ' (代理专用)' : '' }}
         </option>
       </select>
       <button
@@ -20,6 +21,7 @@
         class="btn-new-instance"
         @click="$emit('create-instance')"
         :title="$t('sessionInstance.createHint')"
+        :disabled="isHiddenInstance"
       >
         {{ $t('sessionInstance.create') }}
       </button>
@@ -28,17 +30,26 @@
         class="btn-manage-instance"
         @click="$emit('manage-instances')"
         :title="$t('sessionInstance.manageHint')"
+        :disabled="isHiddenInstance"
       >
         {{ $t('sessionInstance.manage') }}
       </button>
     </div>
-    <div class="session-hint">
+    <div v-if="isHiddenInstance" class="session-hint disabled-hint">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M15 9l-6 6m0-6l6 6"/>
+      </svg>
+      正在使用代理专用会话，如需更改请先取消代理设置
+    </div>
+    <div v-else class="session-hint">
       {{ $t('sessionInstance.hint') }}
     </div>
   </div>
 </template>
 
 <script>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 export default {
@@ -53,7 +64,33 @@ export default {
       required: true
     }
   },
-  emits: ['update:modelValue', 'create-instance', 'manage-instances']
+  emits: ['update:modelValue', 'create-instance', 'manage-instances'],
+  setup(props) {
+    // 过滤出可见的 session 实例
+    const visibleInstances = computed(() => {
+      return props.sessionInstances.filter(inst => !inst.hidden)
+    })
+    
+    // 检查当前值是否是隐藏实例
+    const isHiddenInstance = computed(() => {
+      const currentInstance = props.sessionInstances.find(inst => inst.id === props.modelValue)
+      return currentInstance && currentInstance.hidden
+    })
+    
+    // 如果当前选中的是隐藏实例，也要显示它
+    const displayInstances = computed(() => {
+      if (isHiddenInstance.value) {
+        const currentInstance = props.sessionInstances.find(inst => inst.id === props.modelValue)
+        return [currentInstance, ...visibleInstances.value]
+      }
+      return visibleInstances.value
+    })
+    
+    return {
+      displayInstances,
+      isHiddenInstance
+    }
+  }
 }
 </script>
 
@@ -110,10 +147,15 @@ export default {
   white-space: nowrap;
 }
 
-.btn-new-instance:hover {
+.btn-new-instance:hover:not(:disabled) {
   background: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
+}
+
+.btn-new-instance:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-manage-instance {
@@ -130,10 +172,15 @@ export default {
   white-space: nowrap;
 }
 
-.btn-manage-instance:hover {
+.btn-manage-instance:hover:not(:disabled) {
   background: #4f46e5;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-manage-instance:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .session-hint {
@@ -145,6 +192,26 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #92400e;
+}
+
+.session-hint.disabled-hint {
+  background: #fee;
+  border-left-color: #ef4444;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-hint.disabled-hint svg {
+  flex-shrink: 0;
+  stroke: #ef4444;
+}
+
+.form-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 </style>
 

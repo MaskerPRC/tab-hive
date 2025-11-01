@@ -25,6 +25,16 @@
         </svg>
       </button>
     </div>
+    <!-- 代理与 Session 实例关系提示 -->
+    <div v-if="modelValue" class="proxy-tip">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+      <span class="info-tip">
+        将为此网站创建独立的代理会话，不会影响其他网站
+      </span>
+    </div>
   </div>
 </template>
 
@@ -143,5 +153,32 @@ export default {
 
 .manage-btn svg {
   stroke: currentColor;
+}
+
+/* 代理提示样式 */
+.proxy-tip {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff5f0;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.proxy-tip svg {
+  flex-shrink: 0;
+  stroke: #10b981;
+}
+
+.info-tip {
+  color: #666;
+}
+
+.warning-tip {
+  color: #ff5c00;
+  font-weight: 500;
 }
 </style>

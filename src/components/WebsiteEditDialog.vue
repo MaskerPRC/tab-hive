@@ -178,6 +178,11 @@ export default {
         darkMode: false,
         requireModifierForActions: false
       })
+    },
+    // 所有网站列表，用于检查代理冲突
+    websites: {
+      type: Array,
+      default: () => []
     }
   },
   emits: ['confirm', 'cancel'],
@@ -229,6 +234,38 @@ export default {
     // 弹窗交互
     const { handleOverlayMouseDown, handleOverlayClick } = useOverlayClick(() => {
       emit('cancel')
+    })
+
+    // 监听代理设置变化
+    watch(() => localWebsite.value.proxyId, (newProxyId, oldProxyId) => {
+      if (newProxyId && newProxyId !== oldProxyId) {
+        // 当设置了代理时，自动创建或切换到专属的隐藏 session 实例
+        const proxySessionId = `proxy-${props.website.id || Date.now()}-${newProxyId}`
+        
+        // 检查是否已经存在该隐藏实例
+        const existingInstance = sessionInstances.value.find(inst => inst.id === proxySessionId)
+        
+        if (!existingInstance) {
+          // 创建隐藏的 session 实例
+          const hiddenInstance = {
+            id: proxySessionId,
+            name: `代理专用 (${localWebsite.value.title || '未命名'})`,
+            description: '为代理设置自动创建的隐藏实例',
+            hidden: true, // 标记为隐藏
+            createdAt: new Date().toISOString()
+          }
+          sessionInstances.value.push(hiddenInstance)
+        }
+        
+        // 自动切换到该 session 实例
+        localWebsite.value.sessionInstance = proxySessionId
+      } else if (!newProxyId && oldProxyId) {
+        // 当清除代理时，切换回默认 session 实例
+        const currentSessionId = localWebsite.value.sessionInstance
+        if (currentSessionId && currentSessionId.startsWith('proxy-')) {
+          localWebsite.value.sessionInstance = 'default'
+        }
+      }
     })
 
     // 确认提交
