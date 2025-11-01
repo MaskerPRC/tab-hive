@@ -44,8 +44,9 @@ export function useWebsiteManager(initialWebsites = []) {
 
     const newWebsite = {
       id: Date.now(),
-      url: websiteData.url,
+      url: websiteData.url || '',
       title: websiteData.title,
+      type: websiteData.type || 'website', // 'website' 或 'desktop-capture'
       deviceType: websiteData.deviceType || 'desktop',
       targetSelector: websiteData.targetSelector || '',
       targetSelectors: websiteData.targetSelectors || [],
@@ -56,7 +57,13 @@ export function useWebsiteManager(initialWebsites = []) {
       darkMode: websiteData.darkMode || false,
       requireModifierForActions: websiteData.requireModifierForActions || false,
       position: websiteData.position || { x: newX, y: newY },
-      size: websiteData.size || { width: defaultWidth, height: defaultHeight }
+      size: websiteData.size || { width: defaultWidth, height: defaultHeight },
+      // 桌面捕获相关配置
+      desktopCaptureSourceId: websiteData.desktopCaptureSourceId || null,
+      desktopCaptureOptions: websiteData.desktopCaptureOptions || {
+        autoRefresh: false,
+        fitScreen: true
+      }
     }
     
     console.log('[useWebsiteManager] 计算的位置:', { x: newX, y: newY })
@@ -104,8 +111,9 @@ export function useWebsiteManager(initialWebsites = []) {
     // 创建复制的网站
     const copiedSite = {
       id: Date.now(),
-      url: sourceSite.url,
+      url: sourceSite.url || '',
       title: `${sourceSite.title} - 副本`,
+      type: sourceSite.type || 'website',
       deviceType: sourceSite.deviceType || 'desktop',
       targetSelector: sourceSite.targetSelector || '',
       targetSelectors: sourceSite.targetSelectors || [],
@@ -116,7 +124,13 @@ export function useWebsiteManager(initialWebsites = []) {
       darkMode: sourceSite.darkMode || false,
       requireModifierForActions: sourceSite.requireModifierForActions || false,
       position: { x: newX, y: newY },
-      size: { ...sourceSite.size }
+      size: { ...sourceSite.size },
+      // 复制桌面捕获配置
+      desktopCaptureSourceId: sourceSite.desktopCaptureSourceId || null,
+      desktopCaptureOptions: sourceSite.desktopCaptureOptions ? { ...sourceSite.desktopCaptureOptions } : {
+        autoRefresh: false,
+        fitScreen: true
+      }
     }
 
     websites.value.push(copiedSite)
@@ -156,14 +170,17 @@ export function useWebsiteManager(initialWebsites = []) {
     if (websites.value[index]) {
       console.log('[useWebsiteManager] 更新前的网站数据:', websites.value[index])
       
-      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding, requireModifierForActions } = data
+      const { title, url, type, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding, requireModifierForActions, desktopCaptureSourceId, desktopCaptureOptions } = data
       
       if (title !== undefined) websites.value[index].title = title
       if (url !== undefined) {
         console.log('[useWebsiteManager] 更新 URL:', url)
         websites.value[index].url = url
       }
+      if (type !== undefined) websites.value[index].type = type
       if (deviceType !== undefined) websites.value[index].deviceType = deviceType
+      if (desktopCaptureSourceId !== undefined) websites.value[index].desktopCaptureSourceId = desktopCaptureSourceId
+      if (desktopCaptureOptions !== undefined) websites.value[index].desktopCaptureOptions = desktopCaptureOptions
       if (targetSelector !== undefined) {
         console.log('[useWebsiteManager] 更新 targetSelector:', targetSelector)
         websites.value[index].targetSelector = targetSelector

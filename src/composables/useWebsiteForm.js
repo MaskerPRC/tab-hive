@@ -9,6 +9,7 @@ export function useWebsiteForm(props, emit) {
   const localWebsite = ref({
     title: '',
     url: '',
+    type: 'website', // 'website' 或 'desktop-capture'
     deviceType: 'desktop',
     targetSelector: '',
     targetSelectors: [],
@@ -17,7 +18,13 @@ export function useWebsiteForm(props, emit) {
     padding: 10,
     muted: false,
     darkMode: false,
-    requireModifierForActions: false
+    requireModifierForActions: false,
+    // 桌面捕获相关
+    desktopCaptureSourceId: null,
+    desktopCaptureOptions: {
+      autoRefresh: false,
+      fitScreen: true
+    }
   })
 
   /**
@@ -70,6 +77,23 @@ export function useWebsiteForm(props, emit) {
    * 验证并提交表单
    */
   const handleConfirm = () => {
+    // 桌面捕获类型不需要验证URL
+    if (localWebsite.value.type === 'desktop-capture') {
+      if (!localWebsite.value.title || !localWebsite.value.desktopCaptureSourceId) {
+        alert('请填写标题并选择桌面源')
+        return false
+      }
+      
+      emit('confirm', {
+        ...localWebsite.value,
+        url: '', // 桌面捕获不需要URL
+        targetSelectors: [],
+        targetSelector: ''
+      })
+      return true
+    }
+    
+    // 普通网站类型需要验证URL
     if (!localWebsite.value.title || !localWebsite.value.url) {
       return false
     }

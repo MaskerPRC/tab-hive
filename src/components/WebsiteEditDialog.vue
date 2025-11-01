@@ -35,6 +35,15 @@
               >
                 <span>谷</span>
               </button>
+              <button 
+                class="quick-add-btn desktop-capture-btn"
+                @click="showDesktopCaptureSelector = true"
+                type="button"
+                title="添加桌面捕获"
+                :disabled="!isElectron"
+              >
+                <span>🖥️</span>
+              </button>
             </div>
           </div>
         </div>
@@ -99,11 +108,18 @@
         <button class="btn-cancel" @click="$emit('cancel')">{{ $t('common.cancel') }}</button>
       </div>
     </div>
+    
+    <!-- 桌面捕获选择器 -->
+    <DesktopCaptureSelector
+      :visible="showDesktopCaptureSelector"
+      @close="showDesktopCaptureSelector = false"
+      @select="handleDesktopCaptureSelect"
+    />
   </div>
 </template>
 
 <script>
-import { inject, ref, watch } from 'vue'
+import { inject, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSessionManager } from '../composables/useSessionManager.js'
 import { useWebsiteForm } from '../composables/useWebsiteForm.js'
@@ -115,6 +131,7 @@ import AudioVisualSettings from './WebsiteEditDialog/AudioVisualSettings.vue'
 import SessionInstanceSelector from './WebsiteEditDialog/SessionInstanceSelector.vue'
 import PaddingConfig from './WebsiteEditDialog/PaddingConfig.vue'
 import AutoRefreshConfig from './WebsiteEditDialog/AutoRefreshConfig.vue'
+import DesktopCaptureSelector from './DesktopCaptureSelector.vue'
 
 export default {
   name: 'WebsiteEditDialog',
@@ -125,7 +142,8 @@ export default {
     AudioVisualSettings,
     SessionInstanceSelector,
     PaddingConfig,
-    AutoRefreshConfig
+    AutoRefreshConfig,
+    DesktopCaptureSelector
   },
   props: {
     show: {
@@ -156,6 +174,14 @@ export default {
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    
+    // 检查是否是 Electron 环境
+    const isElectron = computed(() => {
+      return window.electron?.isElectron || false
+    })
+    
+    // 桌面捕获选择器显示状态
+    const showDesktopCaptureSelector = ref(false)
     
     // 进阶功能折叠状态
     const showAdvanced = ref(false)
@@ -250,9 +276,32 @@ export default {
       // 自动提交
       handleConfirm()
     }
+    
+    // 处理桌面捕获选择
+    const handleDesktopCaptureSelect = ({ source, options }) => {
+      console.log('[WebsiteEditDialog] 选择桌面捕获源:', source, options)
+      
+      // 设置桌面捕获相关数据
+      localWebsite.value.type = 'desktop-capture'
+      localWebsite.value.title = source.name || '桌面捕获'
+      localWebsite.value.url = '' // 桌面捕获不需要URL
+      localWebsite.value.desktopCaptureSourceId = source.id
+      localWebsite.value.desktopCaptureOptions = {
+        autoRefresh: options.autoRefresh || false,
+        fitScreen: options.fitScreen !== false // 默认true
+      }
+      
+      // 关闭选择器
+      showDesktopCaptureSelector.value = false
+      
+      // 自动提交
+      handleConfirm()
+    }
 
     return {
+      isElectron,
       showAdvanced,
+      showDesktopCaptureSelector,
       localWebsite,
       sessionInstances,
       handleConfirm,
@@ -261,7 +310,8 @@ export default {
       handleCreateNewInstance,
       handleOpenSessionManager,
       quickAddBaidu,
-      quickAddGoogle
+      quickAddGoogle,
+      handleDesktopCaptureSelect
     }
   }
 }
@@ -404,6 +454,17 @@ export default {
 
 .quick-add-btn:active {
   transform: scale(0.95);
+}
+
+.quick-add-btn.desktop-capture-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #ccc;
+}
+
+.quick-add-btn.desktop-capture-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* 分区样式 */

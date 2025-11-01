@@ -4,7 +4,7 @@
     :class="{
       'fullscreen': isFullscreen,
       'hidden': isHidden,
-      'empty-slot': !item.url,
+      'empty-slot': !item.url && item.type !== 'desktop-capture',
       'drag-over': isDragOver && isExternalDragging,
       'draggable': true,
       'dragging': isDragging && isCurrentDrag,
@@ -18,51 +18,62 @@
     :data-padding="!isFullscreen && item.padding && item.padding > 0 ? item.padding : null"
   >
     <!-- 已有网站显示 -->
-    <template v-if="item.url">
-      <!-- 主 webview -->
-      <webview
-        v-if="isElectron"
-        :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
-        :ref="setWebviewRef"
-        :id="`webview-${item.id}`"
-        :data-webview-id="item.id"
-        :src="websiteUrl"
-        :partition="partitionName"
-        class="website-webview"
-        :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-        :preload="webviewPreloadPath"
-        allowpopups
-        webpreferences="allowRunningInsecureContent"
-      ></webview>
+    <template v-if="item.url || item.type === 'desktop-capture'">
+      <!-- 桌面捕获类型 -->
+      <DesktopCaptureView
+        v-if="item.type === 'desktop-capture'"
+        :source-id="item.desktopCaptureSourceId"
+        :options="item.desktopCaptureOptions || { autoRefresh: false, fitScreen: true }"
+        class="desktop-capture-view"
+      />
+      
+      <!-- 普通网站类型 -->
+      <template v-else>
+        <!-- 主 webview -->
+        <webview
+          v-if="isElectron"
+          :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
+          :ref="setWebviewRef"
+          :id="`webview-${item.id}`"
+          :data-webview-id="item.id"
+          :src="websiteUrl"
+          :partition="partitionName"
+          class="website-webview"
+          :class="{ 'mobile-view': item.deviceType === 'mobile' }"
+          :preload="webviewPreloadPath"
+          allowpopups
+          webpreferences="allowRunningInsecureContent"
+        ></webview>
 
-      <!-- 后台缓冲 webview(双缓冲机制) -->
-      <webview
-        v-if="isElectron && isBufferLoading"
-        :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
-        :ref="setBufferWebviewRef"
-        :id="`webview-buffer-${item.id}`"
-        :data-webview-id="`buffer-${item.id}`"
-        :src="bufferUrl"
-        :partition="partitionName"
-        class="website-webview buffer-webview"
-        :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
-        :preload="webviewPreloadPath"
-        allowpopups
-        webpreferences="allowRunningInsecureContent"
-      ></webview>
+        <!-- 后台缓冲 webview(双缓冲机制) -->
+        <webview
+          v-if="isElectron && isBufferLoading"
+          :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
+          :ref="setBufferWebviewRef"
+          :id="`webview-buffer-${item.id}`"
+          :data-webview-id="`buffer-${item.id}`"
+          :src="bufferUrl"
+          :partition="partitionName"
+          class="website-webview buffer-webview"
+          :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
+          :preload="webviewPreloadPath"
+          allowpopups
+          webpreferences="allowRunningInsecureContent"
+        ></webview>
 
-      <!-- 非 Electron 环境使用 iframe -->
-      <iframe
-        v-if="!isElectron"
-        :ref="setIframeRef"
-        :src="websiteUrl"
-        frameborder="0"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
-        class="website-iframe"
-        :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-        :title="item.title"
-        :allow="'autoplay; fullscreen; picture-in-picture'"
-      ></iframe>
+        <!-- 非 Electron 环境使用 iframe -->
+        <iframe
+          v-if="!isElectron"
+          :ref="setIframeRef"
+          :src="websiteUrl"
+          frameborder="0"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
+          class="website-iframe"
+          :class="{ 'mobile-view': item.deviceType === 'mobile' }"
+          :title="item.title"
+          :allow="'autoplay; fullscreen; picture-in-picture'"
+        ></iframe>
+      </template>
       
       <!-- 拖动手柄和标题区域 -->
       <div class="drag-title-container">
@@ -84,7 +95,7 @@
         @drop="$emit('drop', $event, index)"
       />
       
-      <!-- 非全屏模式下的浮动按钮 -->
+      <!-- 非全屏模式下的浮动按钮（桌面捕获类型也显示，但不支持某些操作） -->
       <FloatingActions
         v-if="!isFullscreen"
         :muted="item.muted || false"
@@ -97,21 +108,22 @@
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
       />
+      <!-- 桌面捕获类型禁用刷新（因为不支持） -->
 
       <!-- 调整大小手柄 -->
       <ResizeHandles
         @resize-start="(event, direction) => $emit('resize-start', event, index, direction)"
       />
       
-      <!-- 自动刷新倒计时显示 -->
+      <!-- 自动刷新倒计时显示（桌面捕获类型不支持） -->
       <RefreshTimer
-        v-if="item.autoRefreshInterval > 0"
+        v-if="item.type !== 'desktop-capture' && item.autoRefreshInterval > 0"
         :remaining-time="remainingTime"
       />
       
-      <!-- URL变化提示按钮 -->
+      <!-- URL变化提示按钮（桌面捕获类型不支持） -->
       <UrlChangeHint
-        v-if="!isFullscreen"
+        v-if="item.type !== 'desktop-capture' && !isFullscreen"
         :show="showUrlChangeHint"
         @use-current-url="handleUseCurrentUrl"
       />
@@ -127,6 +139,7 @@ import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
 import RefreshTimer from './RefreshTimer.vue'
 import UrlChangeHint from './UrlChangeHint.vue'
+import DesktopCaptureView from './DesktopCaptureView.vue'
 import { useAutoRefresh } from '../composables/useAutoRefresh.js'
 import { useIframeSelector } from '../composables/useIframeSelector.js'
 import { useWebview } from '../composables/useWebview.js'
@@ -143,7 +156,8 @@ export default {
     ResizeHandles,
     DropZone,
     RefreshTimer,
-    UrlChangeHint
+    UrlChangeHint,
+    DesktopCaptureView
   },
   props: {
     item: {
@@ -305,6 +319,11 @@ export default {
 
     // 计算网站 URL
     const websiteUrl = computed(() => {
+      // 桌面捕获类型不需要URL
+      if (props.item.type === 'desktop-capture') {
+        return ''
+      }
+      
       if (!props.item.url) return ''
       
       let url = props.item.url
@@ -423,6 +442,11 @@ export default {
 
     // 手动刷新
     const handleManualRefresh = () => {
+      // 桌面捕获类型不支持刷新
+      if (props.item.type === 'desktop-capture') {
+        return
+      }
+      
       console.log('[WebsiteCard] 手动刷新')
       
       if (isElectron.value && webviewRef.value) {
@@ -631,7 +655,8 @@ export default {
 
 /* 内边距支持 */
 .grid-item[data-padding] .website-webview,
-.grid-item[data-padding] .website-iframe {
+.grid-item[data-padding] .website-iframe,
+.grid-item[data-padding] .desktop-capture-view {
   width: calc(100% - var(--item-padding) * 2);
   height: calc(100% - var(--item-padding) * 2);
   margin: var(--item-padding);

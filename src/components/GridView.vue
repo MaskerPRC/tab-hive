@@ -166,8 +166,8 @@ export default {
       console.log('[GridView] props.websites:', props.websites)
       const sites = props.websites || []
       console.log('[GridView] sites 数量:', sites.length)
-      // 过滤掉没有 URL 的空白项
-      const filtered = sites.filter(site => site && site.url)
+      // 过滤掉没有 URL 且不是桌面捕获类型的空白项
+      const filtered = sites.filter(site => site && (site.url || site.type === 'desktop-capture'))
       console.log('[GridView] 过滤后的网站数量:', filtered.length)
       console.log('[GridView] 过滤后的网站列表:', filtered)
       console.log('[GridView] ========== allWebsites 计算结束 ==========')
