@@ -41,7 +41,7 @@ export default {
       type: Object,
       default: () => ({
         autoRefresh: false,
-        fitScreen: true
+        fitScreen: false
       })
     }
   },
@@ -51,10 +51,8 @@ export default {
     const loading = ref(true)
     const error = ref('')
     const stream = ref(null)
-    const refreshInterval = ref(null)
     
-    const autoRefresh = computed(() => props.options?.autoRefresh || false)
-    const fitScreen = computed(() => props.options?.fitScreen !== false) // 默认true
+    const fitScreen = computed(() => props.options?.fitScreen || false) // 默认false
     
     // 开始捕获
     const startCapture = async () => {
@@ -111,12 +109,6 @@ export default {
     
     // 停止捕获
     const stopCapture = () => {
-      // 停止刷新
-      if (refreshInterval.value) {
-        clearInterval(refreshInterval.value)
-        refreshInterval.value = null
-      }
-      
       // 停止媒体流
       if (stream.value) {
         stream.value.getTracks().forEach(track => track.stop())
@@ -135,21 +127,6 @@ export default {
       startCapture()
     }
     
-    // 自动刷新（重新获取截图）
-    const setupAutoRefresh = () => {
-      if (!autoRefresh.value) return
-      
-      refreshInterval.value = setInterval(() => {
-        if (stream.value) {
-          // 重新获取流
-          stopCapture()
-          setTimeout(() => {
-            startCapture()
-          }, 100)
-        }
-      }, 1000) // 每秒刷新
-    }
-    
     // 监听 sourceId 变化
     watch(() => props.sourceId, (newId, oldId) => {
       if (newId !== oldId) {
@@ -158,24 +135,8 @@ export default {
       }
     })
     
-    // 监听 autoRefresh 变化
-    watch(autoRefresh, (newVal) => {
-      if (refreshInterval.value) {
-        clearInterval(refreshInterval.value)
-        refreshInterval.value = null
-      }
-      
-      if (newVal && stream.value) {
-        setupAutoRefresh()
-      }
-    })
-    
     onMounted(() => {
       startCapture()
-      
-      if (autoRefresh.value) {
-        setupAutoRefresh()
-      }
     })
     
     onUnmounted(() => {

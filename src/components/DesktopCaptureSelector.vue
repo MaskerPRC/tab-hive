@@ -55,10 +55,6 @@
       <div class="selector-footer">
         <div class="capture-options">
           <label>
-            <input type="checkbox" v-model="captureOptions.autoRefresh" />
-            自动刷新（每秒更新画面）
-          </label>
-          <label>
             <input type="checkbox" v-model="captureOptions.fitScreen" />
             适应屏幕大小
           </label>
@@ -97,7 +93,7 @@ export default {
     const selectedSource = ref(null)
     const captureOptions = ref({
       autoRefresh: false,
-      fitScreen: true
+      fitScreen: false
     })
 
     const filteredSources = computed(() => {

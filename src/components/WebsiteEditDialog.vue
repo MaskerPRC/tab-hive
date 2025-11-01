@@ -119,7 +119,7 @@
 </template>
 
 <script>
-import { inject, ref, watch, computed } from 'vue'
+import { inject, ref, watch, computed, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSessionManager } from '../composables/useSessionManager.js'
 import { useWebsiteForm } from '../composables/useWebsiteForm.js'
@@ -281,21 +281,32 @@ export default {
     const handleDesktopCaptureSelect = ({ source, options }) => {
       console.log('[WebsiteEditDialog] 选择桌面捕获源:', source, options)
       
-      // 设置桌面捕获相关数据
-      localWebsite.value.type = 'desktop-capture'
-      localWebsite.value.title = source.name || '桌面捕获'
-      localWebsite.value.url = '' // 桌面捕获不需要URL
-      localWebsite.value.desktopCaptureSourceId = source.id
-      localWebsite.value.desktopCaptureOptions = {
-        autoRefresh: options.autoRefresh || false,
-        fitScreen: options.fitScreen !== false // 默认true
-      }
-      
       // 关闭选择器
       showDesktopCaptureSelector.value = false
       
-      // 自动提交
-      handleConfirm()
+      // 关闭当前对话框
+      emit('cancel')
+      
+      // 延迟提交数据，让父组件有时间切换对话框类型
+      nextTick(() => {
+        const desktopCaptureData = {
+          type: 'desktop-capture',
+          title: source.name || '桌面捕获',
+          url: '', // 桌面捕获不需要URL
+          desktopCaptureSourceId: source.id,
+        desktopCaptureOptions: {
+          autoRefresh: false, // 已移除自动刷新功能
+          fitScreen: options.fitScreen || false // 默认false
+        },
+          padding: 10,
+          muted: false,
+          targetSelectors: [],
+          targetSelector: ''
+        }
+        
+        // 提交数据，父组件会识别类型并切换到桌面捕获对话框
+        emit('confirm', desktopCaptureData)
+      })
     }
 
     return {

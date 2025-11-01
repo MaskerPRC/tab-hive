@@ -62,7 +62,7 @@ export function useWebsiteManager(initialWebsites = []) {
       desktopCaptureSourceId: websiteData.desktopCaptureSourceId || null,
       desktopCaptureOptions: websiteData.desktopCaptureOptions || {
         autoRefresh: false,
-        fitScreen: true
+        fitScreen: false
       }
     }
     
@@ -129,7 +129,7 @@ export function useWebsiteManager(initialWebsites = []) {
       desktopCaptureSourceId: sourceSite.desktopCaptureSourceId || null,
       desktopCaptureOptions: sourceSite.desktopCaptureOptions ? { ...sourceSite.desktopCaptureOptions } : {
         autoRefresh: false,
-        fitScreen: true
+        fitScreen: false
       }
     }
 

@@ -23,7 +23,7 @@ export function useWebsiteForm(props, emit) {
     desktopCaptureSourceId: null,
     desktopCaptureOptions: {
       autoRefresh: false,
-      fitScreen: true
+      fitScreen: false
     }
   })
 

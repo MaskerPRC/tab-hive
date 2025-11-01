@@ -43,11 +43,20 @@
       </svg>
     </button>
 
-    <!-- 添加/编辑网站对话框 -->
+    <!-- 普通网站编辑对话框 -->
     <WebsiteEditDialog
-      :show="editingSlot !== null"
+      :show="editingSlot !== null && editingDialogType === 'website'"
       :editing-index="editingSlot"
-      :website="newWebsite"
+      :website="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : newWebsite"
+      @confirm="confirmAddWebsite"
+      @cancel="cancelAddWebsite"
+    />
+    
+    <!-- 桌面捕获编辑对话框 -->
+    <DesktopCaptureEditDialog
+      :show="editingSlot !== null && editingDialogType === 'desktop-capture'"
+      :editing-index="editingSlot"
+      :desktop-capture="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : {}"
       @confirm="confirmAddWebsite"
       @cancel="cancelAddWebsite"
     />
@@ -99,6 +108,7 @@
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
+import DesktopCaptureEditDialog from './DesktopCaptureEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
 import ElementSelector from './ElementSelector.vue'
 import { useCollisionDetection } from '../composables/useCollisionDetection'
@@ -113,6 +123,7 @@ export default {
   components: {
     FullscreenBar,
     WebsiteEditDialog,
+    DesktopCaptureEditDialog,
     WebsiteCard,
     ElementSelector
   },
@@ -142,6 +153,7 @@ export default {
   setup(props, { emit }) {
     // 编辑网站状态
     const editingSlot = ref(null)
+    const editingDialogType = ref('website') // 'website' 或 'desktop-capture'
     const newWebsite = ref({
       title: '',
       url: '',
@@ -262,6 +274,7 @@ export default {
      */
     const startAddWebsite = (index) => {
       editingSlot.value = index
+      editingDialogType.value = 'website' // 默认是普通网站
       newWebsite.value = {
         title: '',
         url: '',
@@ -276,6 +289,14 @@ export default {
         requireModifierForActions: false
       }
     }
+    
+    /**
+     * 开始添加桌面捕获（从快捷按钮触发）
+     */
+    const startAddDesktopCapture = () => {
+      editingSlot.value = -1
+      editingDialogType.value = 'desktop-capture'
+    }
 
     /**
      * 确认添加网站
@@ -284,6 +305,13 @@ export default {
       console.log('[GridView] ========== 确认添加/更新网站 ==========')
       console.log('[GridView] editingSlot:', editingSlot.value)
       console.log('[GridView] websiteData:', websiteData)
+      
+      // 如果提交的是桌面捕获类型，确保对话框类型正确（用于后续编辑）
+      if (websiteData.type === 'desktop-capture') {
+        editingDialogType.value = 'desktop-capture'
+      } else {
+        editingDialogType.value = 'website'
+      }
       
       // 如果是编辑模式
       if (editingSlot.value !== -1 && editingSlot.value !== null) {
@@ -334,7 +362,9 @@ export default {
         emit('add-website', websiteData)
       }
 
+      // 关闭对话框并重置状态
       editingSlot.value = null
+      editingDialogType.value = 'website'
       newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default', padding: 10, muted: false, darkMode: false, requireModifierForActions: false }
       console.log('[GridView] ========== 添加/更新流程完成 ==========')
     }
@@ -344,6 +374,7 @@ export default {
      */
     const cancelAddWebsite = () => {
       editingSlot.value = null
+      editingDialogType.value = 'website'
       newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default', padding: 10, muted: false, darkMode: false, requireModifierForActions: false }
     }
 
@@ -431,6 +462,8 @@ export default {
     const handleEditWebsite = (index) => {
       const website = props.websites[index]
       if (website) {
+        // 根据网站类型决定显示哪个对话框
+        editingDialogType.value = website.type === 'desktop-capture' ? 'desktop-capture' : 'website'
         editingSlot.value = index
         newWebsite.value = {
           title: website.title,
@@ -638,6 +671,7 @@ export default {
       isHidden,
       getItemStyle,
       editingSlot,
+      editingDialogType,
       newWebsite,
       dragOverIndex,
       isDragging,
@@ -651,6 +685,7 @@ export default {
       isSelectingElement,
       fullscreenIframe,
       startAddWebsite,
+      startAddDesktopCapture,
       confirmAddWebsite,
       cancelAddWebsite,
       handleCopyWebsite,

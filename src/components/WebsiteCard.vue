@@ -23,7 +23,7 @@
       <DesktopCaptureView
         v-if="item.type === 'desktop-capture'"
         :source-id="item.desktopCaptureSourceId"
-        :options="item.desktopCaptureOptions || { autoRefresh: false, fitScreen: true }"
+        :options="item.desktopCaptureOptions || { autoRefresh: false, fitScreen: false }"
         class="desktop-capture-view"
       />
       
