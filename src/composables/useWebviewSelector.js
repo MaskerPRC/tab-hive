@@ -284,11 +284,8 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
       if (hasSelectors && refreshOnFullscreenToggle && oldVal !== undefined) {
         if (isElectron.value && webviewRef.value) {
           console.log('[useWebviewSelector] 全屏切换，刷新 webview')
-          const currentSrc = webviewRef.value.src
-          webviewRef.value.src = ''
-          setTimeout(() => {
-            webviewRef.value.src = currentSrc
-          }, 10)
+          // 使用 reload() 方法而不是重置 src，避免白屏
+          webviewRef.value.reload()
         }
       }
     })

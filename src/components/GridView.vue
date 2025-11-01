@@ -430,7 +430,10 @@ export default {
       console.log('[GridView] ========== handleRefreshWebsite 被调用 ==========')
       console.log('[GridView] 刷新网站索引:', index)
       
-      // 处理 iframe 刷新
+      // 注意：WebsiteCard 组件内部已经处理了双缓冲刷新
+      // GridView 不需要直接操作 DOM，避免与内部刷新机制冲突
+      
+      // 处理 iframe 刷新（非 Electron 环境）
       const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
       if (iframe) {
         console.log('[GridView] 刷新 iframe')
@@ -443,18 +446,8 @@ export default {
         }, 10)
       }
       
-      // 处理 webview 刷新
-      const webview = document.querySelector(`.grid-item:nth-child(${index + 1}) webview:not(.buffer-webview)`)
-      if (webview) {
-        console.log('[GridView] 刷新 webview')
-        // 通过重新设置src来刷新webview
-        const currentSrc = webview.src
-        webview.src = ''
-        // 使用setTimeout确保浏览器识别到URL变化
-        setTimeout(() => {
-          webview.src = currentSrc
-        }, 10)
-      }
+      // Webview 刷新由 WebsiteCard 内部的双缓冲机制处理
+      // 不再直接操作 webview DOM
     }
 
     /**

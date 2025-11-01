@@ -327,7 +327,12 @@ export default {
       refreshWithDoubleBuffer(
         websiteUrl.value,
         partitionName.value,
-        () => emit('refresh', props.index)
+        () => {
+          // 直接设置 webview 的 src 来刷新，避免调用 reload() 导致重新初始化
+          if (webviewRef.value) {
+            webviewRef.value.src = websiteUrl.value
+          }
+        }
       )
       
       // 设置缓冲 webview 加载完成回调
@@ -335,7 +340,12 @@ export default {
         (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
         (props.item.targetSelector && props.item.targetSelector.trim())
       )
-      setupBufferWebview(() => emit('refresh', props.index), needSelector)
+      setupBufferWebview(() => {
+        // 直接设置 webview 的 src 来刷新，避免调用 reload() 导致重新初始化
+        if (webviewRef.value) {
+          webviewRef.value.src = websiteUrl.value
+        }
+      }, needSelector)
     }
 
     const { remainingTime, resetTimer, pauseTimer, resumeTimer } = useAutoRefresh({
@@ -491,8 +501,12 @@ export default {
         // 使用双缓冲刷新
         handleDoubleBufferRefresh()
       } else if (iframeRef.value) {
-        // iframe 刷新
-        emit('refresh', props.index)
+        // iframe 刷新 - 直接重新加载 iframe
+        const currentSrc = iframeRef.value.src
+        iframeRef.value.src = 'about:blank'
+        setTimeout(() => {
+          iframeRef.value.src = currentSrc
+        }, 10)
       }
     }
     

@@ -26,13 +26,13 @@ export function useWebview(props, emit) {
   const webviewRef = ref(null)
   const iframeRef = ref(null)
   const mainWebviewReady = ref(false)
-  
+
   // 代理设置状态标记
   const proxySetupDone = ref(false)
 
   // Session 管理
   const { getPartitionName } = useSessionManager()
-  
+
   // 计算 partition 名称
   const partitionName = computed(() => {
     const instanceId = props.item.sessionInstance || 'default'
@@ -94,39 +94,45 @@ export function useWebview(props, emit) {
       }
     }
   }
-  
+
   // 设置代理并加载页面
   const setupProxyAndLoadPage = async (webview) => {
-    // 先清空 src，防止在代理设置前加载
-    webview.src = 'about:blank'
+    // 检查 webview 是否已经有 src（比如从双缓冲刷新过来的）
+    const hasExistingSrc = webview.src && webview.src !== '' && webview.src !== 'about:blank'
     
     // 设置代理
     const proxySetupSuccess = await setupProxyIfNeeded()
-    
+
     // 延迟一下确保代理完全就绪
     if (props.item.proxyId && proxySetupSuccess) {
       await new Promise(resolve => setTimeout(resolve, 500))
     }
-    
-    // 加载实际页面
-    const url = props.item.url || props.item.href || 'https://www.google.com'
-    console.log(`[useWebview] 代理设置完成，加载页面: ${url}`)
-    
-    // 如果有代理，先加载测试页面验证代理是否工作
-    if (props.item.proxyId && proxySetupSuccess && props.item.testProxyFirst !== false) {
-      console.log(`[useWebview] 先加载测试页面验证代理`)
-      webview.src = 'https://httpbin.org/ip'
-      
-      // 等待测试页面加载
-      const testLoadHandler = () => {
-        console.log(`[useWebview] 测试页面加载完成，现在加载目标页面: ${url}`)
-        setTimeout(() => {
-          webview.src = url
-        }, 1000)
+
+    // 只有在 webview 没有 src 的情况下才加载页面（首次初始化）
+    if (!hasExistingSrc) {
+      // 加载实际页面
+      let url = props.item.url || props.item.href || 'https://www.google.com'
+      // 为 webview 添加 ID 参数
+      const separator = url.includes('?') ? '&' : '?'
+      url = `${url}${separator}__webview_id__=${props.item.id}`
+      console.log(`[useWebview] 代理设置完成，加载页面: ${url}`)
+
+      // 如果有代理，先加载测试页面验证代理是否工作
+      if (props.item.proxyId && proxySetupSuccess && props.item.testProxyFirst !== false) {
+        console.log(`[useWebview] 先加载测试页面验证代理`)
+        webview.src = 'https://httpbin.org/ip'
+
+        // 等待测试页面加载
+        const testLoadHandler = () => {
+          console.log(`[useWebview] 测试页面加载完成，现在加载目标页面: ${url}`)
+          setTimeout(() => {
+            webview.src = url
+          }, 1000)
+        }
+        webview.addEventListener('did-finish-load', testLoadHandler, { once: true })
+      } else {
+        webview.src = url
       }
-      webview.addEventListener('did-finish-load', testLoadHandler, { once: true })
-    } else {
-      webview.src = url
     }
   }
 
@@ -141,17 +147,17 @@ export function useWebview(props, emit) {
     console.log('[useWebview] webview 元素:', webview?.id)
     console.log('[useWebview] 是否已设置过:', setupWebviewsSet.has(webview))
     console.log('[useWebview] callbacks.onLoad 存在:', !!callbacks.onLoad)
-    
+
     // 总是更新 callbacks（即使已经设置过事件监听器）
     webviewCallbacksMap.set(webview, callbacks)
     console.log('[useWebview] 已更新 callbacks 到 WeakMap')
-    
+
     // 防止重复设置事件监听器
     if (setupWebviewsSet.has(webview)) {
       console.log('[useWebview] 已设置过事件监听器，但已更新 callbacks，跳过重复设置')
       return
     }
-    
+
     console.log('[useWebview] 首次设置 webview 事件监听')
     setupWebviewsSet.add(webview)
 
@@ -165,10 +171,10 @@ export function useWebview(props, emit) {
           resolve()
         }
       }
-      
+
       // 监听 DOM 就绪事件
       webview.addEventListener('dom-ready', resolveOnce, { once: true })
-      
+
       // 如果已经触发过 dom-ready，立即 resolve
       // 检查 webview 的 readyState（如果可用）
       if (webview.getWebContentsId) {
@@ -180,7 +186,7 @@ export function useWebview(props, emit) {
           // 如果失败，说明确实还没准备好，等待 dom-ready
         }
       }
-      
+
       // 超时保护：5秒后强制 resolve（防止永久等待）
       setTimeout(() => {
         if (!resolved) {
@@ -194,17 +200,17 @@ export function useWebview(props, emit) {
     webview.addEventListener('did-finish-load', async () => {
       console.log('[useWebview] Webview 加载完成')
       console.log('[useWebview] 当前 webview ID:', webview?.id)
-      
+
       // 等待 DOM 就绪 Promise
       await domReadyPromise
-      
+
       // 额外等待一小段时间确保 webview 完全准备好
       await new Promise(resolve => setTimeout(resolve, 300))
-      
+
       // 从 WeakMap 获取最新的 callbacks
       const latestCallbacks = webviewCallbacksMap.get(webview) || {}
       console.log('[useWebview] 最新的 callbacks.onLoad 存在:', !!latestCallbacks.onLoad)
-      
+
       mainWebviewReady.value = true
 
       // 触发加载完成回调
@@ -323,7 +329,7 @@ export function useWebview(props, emit) {
     if (oldVal !== undefined && newVal !== oldVal && isElectron.value && window.electron?.proxy) {
       const partition = partitionName.value
       const hiveId = props.item.id
-      
+
       try {
         console.log(`[useWebview] 代理配置变化: ${oldVal} -> ${newVal}`)
         proxySetupDone.value = false  // 重置状态，允许重新设置
@@ -362,12 +368,12 @@ export function useWebview(props, emit) {
     if (webviewRef.value) {
       setupWebviewsSet.delete(webviewRef.value)
     }
-    
+
     if (isElectron.value && window.electron && props.item.id) {
       window.electron.webview.unregister(props.item.id).catch(err => {
         console.error('[useWebview] 取消注册失败:', err)
       })
-      
+
       // 清理代理
       if (props.item.proxyId && window.electron.proxy) {
         const partition = partitionName.value
