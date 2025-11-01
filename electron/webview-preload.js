@@ -612,24 +612,105 @@ window.__webviewAPI__ = {
 // 拦截 window.open,防止打开新窗口
 const originalOpen = window.open
 window.open = function(url, target, features) {
-  console.log('[Webview Preload] 拦截 window.open:', url)
+  console.log('[Webview Preload] 拦截 window.open:', url, target)
   
-  // 通知宿主页面处理新窗口打开
-  ipcRenderer.sendToHost('webview-open-url', { 
-    url, 
-    target, 
-    features,
-    webviewId 
-  })
+  // 如果是_blank或新窗口，改为在当前webview中导航
+  if (!target || target === '_blank' || target === '_new') {
+    console.log('[Webview Preload] 重定向到当前webview:', url)
+    window.location.href = url
+    return window
+  }
   
-  // 返回 null,阻止打开新窗口
-  return null
+  // 其他情况也在当前webview中打开
+  if (url) {
+    console.log('[Webview Preload] 在当前webview中打开:', url)
+    window.location.href = url
+    return window
+  }
+  
+  // 如果没有URL，使用原始行为
+  return originalOpen.call(this, url, target, features)
 }
 
-// 页面加载完成后通知宿主
+// 修改所有target="_blank"的链接，让它们在当前webview中打开
+const processedLinks = new WeakSet() // 用于跟踪已处理的链接
+
+const modifyLinks = () => {
+  const links = document.querySelectorAll('a[target="_blank"]')
+  links.forEach(link => {
+    // 如果已经处理过，跳过
+    if (processedLinks.has(link)) {
+      return
+    }
+    
+    link.setAttribute('target', '_self')
+    processedLinks.add(link)
+    
+    // 添加点击事件监听，确保在当前webview中打开
+    const handleClick = (e) => {
+      const href = link.getAttribute('href')
+      if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//'))) {
+        e.preventDefault()
+        console.log('[Webview Preload] 拦截target="_blank"链接，在当前webview中打开:', href)
+        window.location.href = href
+      } else if (href && !href.startsWith('#')) {
+        // 相对路径也要在当前webview中打开
+        e.preventDefault()
+        try {
+          const absoluteUrl = new URL(href, window.location.href).href
+          console.log('[Webview Preload] 拦截相对链接，在当前webview中打开:', absoluteUrl)
+          window.location.href = absoluteUrl
+        } catch (error) {
+          console.log('[Webview Preload] URL解析失败:', error.message)
+        }
+      }
+    }
+    
+    link.addEventListener('click', handleClick, true)
+  })
+}
+
+// 立即执行一次（如果DOM已加载）
+if (document.body) {
+  modifyLinks()
+}
+
+// 监听DOM变化，动态修改新添加的链接
+if (document.body) {
+  const observer = new MutationObserver(() => {
+    modifyLinks()
+  })
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['target']
+  })
+}
+
+// 页面加载完成后通知宿主并处理链接
 window.addEventListener('DOMContentLoaded', () => {
   console.log('[Webview Preload] DOMContentLoaded')
+  // 延迟执行，确保DOM完全加载
+  setTimeout(() => {
+    modifyLinks()
+  }, 0)
+  setTimeout(() => {
+    modifyLinks()
+  }, 50)
+  setTimeout(() => {
+    modifyLinks()
+  }, 200)
   window.__webviewAPI__.notifyReady()
+})
+
+// 页面完全加载后再次处理链接
+window.addEventListener('load', () => {
+  console.log('[Webview Preload] 页面加载完成')
+  setTimeout(() => {
+    modifyLinks()
+  }, 0)
 })
 
 console.log('[Webview Preload] Preload script 加载完成')

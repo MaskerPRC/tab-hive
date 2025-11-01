@@ -97,6 +97,51 @@ function createWindow(windowId = null, options = {}) {
     window.show()
   })
 
+  // 拦截新窗口打开 - 在webview中导航而不是打开新窗口
+  window.webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
+    console.log('[Window Open Guard] 拦截新窗口打开:', { url, frameName, disposition })
+
+    // 发送消息到渲染进程，让它在最近点击的webview中导航
+    window.webContents.executeJavaScript(`
+      (function() {
+        console.log('[Window Open Guard] 尝试在webview中打开:', '${url.replace(/'/g, "\\'")}');
+        
+        // 查找最近获得焦点的webview
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.tagName === 'WEBVIEW') {
+          console.log('[Window Open Guard] 找到活动webview，在其中导航');
+          try {
+            activeElement.src = '${url.replace(/'/g, "\\'")}';
+            return true;
+          } catch (e) {
+            console.log('[Window Open Guard] 导航失败:', e.message);
+          }
+        }
+        
+        // 如果没有找到活动webview，尝试在最后一个webview中打开
+        const webviews = document.querySelectorAll('webview:not(.buffer-webview)');
+        if (webviews.length > 0) {
+          const lastWebview = webviews[webviews.length - 1];
+          console.log('[Window Open Guard] 在最后一个webview中导航');
+          try {
+            lastWebview.src = '${url.replace(/'/g, "\\'")}';
+            return true;
+          } catch (e) {
+            console.log('[Window Open Guard] 导航失败:', e.message);
+          }
+        }
+        
+        console.log('[Window Open Guard] 未找到可用webview');
+        return false;
+      })();
+    `).catch(err => {
+      console.log('[Window Open Guard] 执行失败:', err.message)
+    })
+    
+    // 阻止打开新窗口
+    return { action: 'deny' }
+  })
+
   window.on('closed', () => {
     console.log('[Electron Main] 窗口已关闭, ID:', wid)
     windows.delete(wid)
