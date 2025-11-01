@@ -86,6 +86,8 @@
       <FloatingActions
         v-if="!isFullscreen"
         :muted="item.muted || false"
+        :require-modifier="requireModifierForActions"
+        :is-modifier-pressed="isModifierPressed"
         @refresh="handleManualRefresh"
         @toggle-mute="handleToggleMute"
         @copy="$emit('copy', index)"
@@ -116,7 +118,7 @@
 </template>
 
 <script>
-import { computed, toRef } from 'vue'
+import { computed, toRef, ref, watch, onMounted, onUnmounted } from 'vue'
 import FloatingActions from './FloatingActions.vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
@@ -199,6 +201,10 @@ export default {
       default: true
     },
     globalMuted: {
+      type: Boolean,
+      default: false
+    },
+    requireModifierForActions: {
       type: Boolean,
       default: false
     }
@@ -440,6 +446,31 @@ export default {
       handleUseCurrentUrlBase(emit, props.index)
     }
 
+    // ==================== 修饰键状态管理 ====================
+    const isModifierPressed = ref(false)
+
+    // 监听键盘事件以跟踪修饰键状态
+    const handleKeyDown = (event) => {
+      if (props.requireModifierForActions) {
+        // 检查是否按下了 Ctrl 或 Alt 键
+        if (event.ctrlKey || event.altKey) {
+          isModifierPressed.value = true
+        }
+      }
+    }
+
+    const handleKeyUp = (event) => {
+      if (props.requireModifierForActions) {
+        // 当 Ctrl 或 Alt 键释放时，检查是否还有其他修饰键被按下
+        if (!event.ctrlKey && !event.altKey) {
+          isModifierPressed.value = false
+        } else if (event.ctrlKey || event.altKey) {
+          // 如果还有其他修饰键被按下，保持状态
+          isModifierPressed.value = true
+        }
+      }
+    }
+
     // ==================== 监听器 ====================
     
     // 监听静音状态变化
@@ -447,6 +478,33 @@ export default {
 
     // 监听全屏状态变化
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
+
+    // 监听需要修饰键配置的变化，动态添加/移除监听器
+    watch(() => props.requireModifierForActions, (newVal) => {
+      if (newVal) {
+        // 配置开启：添加监听器
+        document.addEventListener('keydown', handleKeyDown)
+        document.addEventListener('keyup', handleKeyUp)
+      } else {
+        // 配置关闭：移除监听器并重置状态
+        document.removeEventListener('keydown', handleKeyDown)
+        document.removeEventListener('keyup', handleKeyUp)
+        isModifierPressed.value = false
+      }
+    })
+
+    // 生命周期：根据初始配置添加键盘事件监听
+    onMounted(() => {
+      if (props.requireModifierForActions) {
+        document.addEventListener('keydown', handleKeyDown)
+        document.addEventListener('keyup', handleKeyUp)
+      }
+    })
+
+    onUnmounted(() => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keyup', handleKeyUp)
+    })
 
     return {
       // 计算属性
@@ -475,7 +533,10 @@ export default {
       // 事件处理方法
       handleManualRefresh,
       handleToggleMute,
-      handleUseCurrentUrl
+      handleUseCurrentUrl,
+      
+      // 修饰键状态
+      isModifierPressed
     }
   }
 }
@@ -652,6 +713,12 @@ export default {
 .grid-item:hover :deep(.floating-actions) {
   opacity: 1;
   pointer-events: all;
+}
+
+/* 如果需要修饰键但未按下，即使在悬停时也不显示 */
+.grid-item:hover :deep(.floating-actions.require-modifier:not(.modifier-pressed)) {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* 悬停时显示调整大小手柄 */

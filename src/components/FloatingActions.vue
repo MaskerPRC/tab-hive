@@ -1,5 +1,11 @@
 <template>
-  <div class="floating-actions">
+  <div 
+    class="floating-actions"
+    :class="{
+      'require-modifier': requireModifier,
+      'modifier-pressed': requireModifier && isModifierPressed
+    }"
+  >
     <button
       class="btn-action btn-refresh"
       @click="$emit('refresh')"
@@ -57,6 +63,14 @@ export default {
     muted: {
       type: Boolean,
       default: false
+    },
+    requireModifier: {
+      type: Boolean,
+      default: false
+    },
+    isModifierPressed: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove'],
@@ -81,6 +95,12 @@ export default {
   opacity: 0;
   transition: opacity 0.2s ease;
   pointer-events: none;
+}
+
+/* 如果需要修饰键但未按下，始终隐藏 */
+.floating-actions.require-modifier:not(.modifier-pressed) {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .btn-action {

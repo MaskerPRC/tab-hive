@@ -172,6 +172,8 @@ export default {
     refreshOnFullscreenToggleHint: 'Whether to refresh the webpage when toggling fullscreen for selector-type honeycombs',
     globalMuted: 'Global Mute',
     globalMutedHint: 'Mute/Unmute all websites globally',
+    requireModifierForActions: 'Require Modifier Key for Actions',
+    requireModifierForActionsHint: 'When enabled, hold Ctrl or Alt to show action buttons',
     instanceManagement: 'Instance Management',
     instanceManagementHint: 'Manage Cookie shared instances',
     help: 'Help',

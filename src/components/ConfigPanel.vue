@@ -136,6 +136,17 @@
           <span class="toggle-slider"></span>
         </label>
 
+        <label class="toggle-control" :title="$t('configPanel.requireModifierForActionsHint')">
+          <span class="toggle-label">{{ $t('configPanel.requireModifierForActions') }}</span>
+          <input
+            type="checkbox"
+            :checked="requireModifierForActions"
+            @change="handleToggleRequireModifier"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-slider"></span>
+        </label>
+
         <button
           @click="$emit('manage-sessions')"
           class="sidebar-btn btn-sessions"
@@ -235,12 +246,16 @@ export default {
       type: Boolean,
       default: false
     },
+    requireModifierForActions: {
+      type: Boolean,
+      default: false
+    },
     showUpdateButton: {
       type: Boolean,
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'manage-sessions', 'show-update'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'toggle-require-modifier', 'manage-sessions', 'show-update'],
   setup(props, { emit }) {
     const { t, locale } = useI18n()
     const showLayoutDropdown = ref(false)
@@ -438,6 +453,11 @@ export default {
       emit('toggle-global-mute', event.target.checked)
     }
 
+    // 切换需要修饰键显示按钮
+    const handleToggleRequireModifier = (event) => {
+      emit('toggle-require-modifier', event.target.checked)
+    }
+
     // 创建新窗口
     const handleCreateNewWindow = async () => {
       const result = await windowManager.createNewWindow()
@@ -477,6 +497,7 @@ export default {
       handleToggleTitles,
       handleToggleRefreshOnFullscreen,
       handleToggleGlobalMute,
+      handleToggleRequireModifier,
       windowManager,
       handleCreateNewWindow,
       handleSwitchWindow,

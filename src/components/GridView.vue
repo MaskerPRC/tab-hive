@@ -78,6 +78,7 @@
         :show-title="globalSettings?.showTitles"
         :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
         :global-muted="globalSettings?.globalMuted"
+        :require-modifier-for-actions="globalSettings?.requireModifierForActions"
         @drag-start="startDrag($event, index)"
         @drag-over="handleDragOver"
         @drag-leave="handleDragLeave"
