@@ -26,6 +26,9 @@ export function useWebview(props, emit) {
   const webviewRef = ref(null)
   const iframeRef = ref(null)
   const mainWebviewReady = ref(false)
+  
+  // 代理设置状态标记
+  const proxySetupDone = ref(false)
 
   // Session 管理
   const { getPartitionName } = useSessionManager()
@@ -36,14 +39,82 @@ export function useWebview(props, emit) {
     return getPartitionName(instanceId)
   })
 
+  // 设置代理（仅在需要时调用一次）
+  const setupProxyIfNeeded = async () => {
+    if (!isElectron.value || !window.electron?.proxy || proxySetupDone.value) {
+      return true  // 不需要设置代理，返回成功
+    }
+
+    const proxyId = props.item.proxyId
+    const partition = partitionName.value
+    const hiveId = props.item.id
+
+    if (proxyId) {
+      try {
+        console.log(`[useWebview] 首次为蜂巢 ${hiveId} 设置代理 ${proxyId}`)
+        const result = await window.electron.proxy.setSessionProxy(partition, hiveId, proxyId)
+        if (result.success) {
+          console.log(`[useWebview] 代理设置成功，端口: ${result.data?.httpPort}`)
+          proxySetupDone.value = true
+          return true
+        } else {
+          console.error(`[useWebview] 代理设置失败: ${result.error}`)
+          return false
+        }
+      } catch (error) {
+        console.error('[useWebview] 设置代理时出错:', error)
+        return false
+      }
+    }
+    return true  // 没有代理需要设置
+  }
+
   // 设置 webview 引用
   const setWebviewRef = (el) => {
     // 只在 webview 实例改变时才更新
     if (webviewRef.value !== el) {
       webviewRef.value = el
+      proxySetupDone.value = false  // 重置代理设置状态
       if (el) {
         setupWebviewEvents(el)
+        // 首次设置代理并加载页面
+        setupProxyAndLoadPage(el)
       }
+    }
+  }
+  
+  // 设置代理并加载页面
+  const setupProxyAndLoadPage = async (webview) => {
+    // 先清空 src，防止在代理设置前加载
+    webview.src = 'about:blank'
+    
+    // 设置代理
+    const proxySetupSuccess = await setupProxyIfNeeded()
+    
+    // 延迟一下确保代理完全就绪
+    if (props.item.proxyId && proxySetupSuccess) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    // 加载实际页面
+    const url = props.item.url || props.item.href || 'https://www.google.com'
+    console.log(`[useWebview] 代理设置完成，加载页面: ${url}`)
+    
+    // 如果有代理，先加载测试页面验证代理是否工作
+    if (props.item.proxyId && proxySetupSuccess && props.item.testProxyFirst !== false) {
+      console.log(`[useWebview] 先加载测试页面验证代理`)
+      webview.src = 'https://httpbin.org/ip'
+      
+      // 等待测试页面加载
+      const testLoadHandler = () => {
+        console.log(`[useWebview] 测试页面加载完成，现在加载目标页面: ${url}`)
+        setTimeout(() => {
+          webview.src = url
+        }, 1000)
+      }
+      webview.addEventListener('did-finish-load', testLoadHandler, { once: true })
+    } else {
+      webview.src = url
     }
   }
 
@@ -234,6 +305,33 @@ export function useWebview(props, emit) {
     }
   })
 
+  // 监听 proxyId 变化
+  watch(() => props.item.proxyId, async (newVal, oldVal) => {
+    console.log(`[useWebview] proxyId watch 触发: ${oldVal} -> ${newVal}`)
+    if (oldVal !== undefined && newVal !== oldVal && isElectron.value && window.electron?.proxy) {
+      const partition = partitionName.value
+      const hiveId = props.item.id
+      
+      try {
+        console.log(`[useWebview] 代理配置变化: ${oldVal} -> ${newVal}`)
+        proxySetupDone.value = false  // 重置状态，允许重新设置
+        const result = await window.electron.proxy.setSessionProxy(partition, hiveId, newVal || null)
+        if (result.success) {
+          console.log(`[useWebview] 代理配置更新成功`)
+          proxySetupDone.value = true
+          // 重新加载 webview 以使代理生效
+          if (webviewRef.value) {
+            webviewRef.value.reload()
+          }
+        } else {
+          console.error(`[useWebview] 代理配置更新失败: ${result.error}`)
+        }
+      } catch (error) {
+        console.error('[useWebview] 更新代理配置时出错:', error)
+      }
+    }
+  })
+
   // 组件挂载时设置事件监听
   onMounted(() => {
     if (isElectron.value && window.electron) {
@@ -257,6 +355,17 @@ export function useWebview(props, emit) {
       window.electron.webview.unregister(props.item.id).catch(err => {
         console.error('[useWebview] 取消注册失败:', err)
       })
+      
+      // 清理代理
+      if (props.item.proxyId && window.electron.proxy) {
+        const partition = partitionName.value
+        window.electron.proxy.setSessionProxy(partition, props.item.id, null).catch(err => {
+          console.error('[useWebview] 清理代理失败:', err)
+        })
+        window.electron.proxy.stopForHive(props.item.id).catch(err => {
+          console.error('[useWebview] 停止代理失败:', err)
+        })
+      }
     }
   })
 

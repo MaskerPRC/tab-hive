@@ -36,7 +36,6 @@
           :ref="setWebviewRef"
           :id="`webview-${item.id}`"
           :data-webview-id="item.id"
-          :src="websiteUrl"
           :partition="partitionName"
           class="website-webview"
           :class="{ 'mobile-view': item.deviceType === 'mobile' }"

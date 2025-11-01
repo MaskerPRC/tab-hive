@@ -170,7 +170,7 @@ export function useWebsiteManager(initialWebsites = []) {
     if (websites.value[index]) {
       console.log('[useWebsiteManager] 更新前的网站数据:', websites.value[index])
       
-      const { title, url, type, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding, requireModifierForActions, desktopCaptureSourceId, desktopCaptureOptions } = data
+      const { title, url, type, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding, requireModifierForActions, desktopCaptureSourceId, desktopCaptureOptions, proxyId } = data
       
       if (title !== undefined) websites.value[index].title = title
       if (url !== undefined) {
@@ -206,6 +206,10 @@ export function useWebsiteManager(initialWebsites = []) {
       if (requireModifierForActions !== undefined) {
         console.log('[useWebsiteManager] 更新 requireModifierForActions:', requireModifierForActions)
         websites.value[index].requireModifierForActions = requireModifierForActions
+      }
+      if (proxyId !== undefined) {
+        console.log('[useWebsiteManager] 更新 proxyId:', proxyId)
+        websites.value[index].proxyId = proxyId
       }
       if (position !== undefined) {
         websites.value[index].position = { ...position }

@@ -2,8 +2,22 @@ const { app, BrowserWindow, ipcMain, net, shell, session } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
+const { setupDatabase } = require('./database')
+const { ProxyManager } = require('./proxy-manager')
 
 console.log('[Electron Main] ========== Tab Hive 启动 (Webview 架构) ==========')
+
+// 初始化数据库
+let proxyManager = null
+setupDatabase().then(() => {
+  // 数据库初始化完成后，初始化代理管理器
+  proxyManager = new ProxyManager()
+  console.log('[Electron Main] 代理管理器已初始化')
+}).catch((err) => {
+  console.error('[Electron Main] 数据库初始化失败:', err)
+  // 即使数据库初始化失败，也创建代理管理器（可能无法使用数据库功能）
+  proxyManager = new ProxyManager()
+})
 
 // 设置 User-Agent
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 (KHTML, like Gecko) Safari/537.36'
@@ -643,6 +657,152 @@ ipcMain.handle('start-desktop-capture', async (event, sourceId, options = {}) =>
   }
 })
 
+// ========== 代理管理 ==========
+
+/**
+ * 获取代理列表
+ */
+ipcMain.handle('proxy:get-list', async (event, page = 1, pageSize = 10) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.getProxyList(page, pageSize)
+})
+
+/**
+ * 导入订阅链接
+ */
+ipcMain.handle('proxy:import-subscription', async (event, subscriptionUrl) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.importSubscription(subscriptionUrl)
+})
+
+/**
+ * 添加代理
+ */
+ipcMain.handle('proxy:add', async (event, proxyConfig) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.addProxy(proxyConfig)
+})
+
+/**
+ * 更新代理
+ */
+ipcMain.handle('proxy:update', async (event, proxyId, proxyConfig) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.updateProxy(proxyId, proxyConfig)
+})
+
+/**
+ * 删除代理
+ */
+ipcMain.handle('proxy:delete', async (event, proxyId) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.deleteProxy(proxyId)
+})
+
+/**
+ * 测试代理
+ */
+ipcMain.handle('proxy:test', async (event, proxyId) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.testProxy(proxyId)
+})
+
+/**
+ * 为蜂巢启动代理
+ */
+ipcMain.handle('proxy:start-for-hive', async (event, hiveId, proxyId) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.startProxyForHive(hiveId, proxyId)
+})
+
+/**
+ * 停止蜂巢代理
+ */
+ipcMain.handle('proxy:stop-for-hive', async (event, hiveId) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  return await proxyManager.stopProxyForHive(hiveId)
+})
+
+/**
+ * 获取蜂巢代理信息
+ */
+ipcMain.handle('proxy:get-hive-info', async (event, hiveId) => {
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+  const info = proxyManager.getHiveProxyInfo(hiveId)
+  return { success: true, data: info }
+})
+
+/**
+ * 为 webview session 设置代理
+ */
+ipcMain.handle('proxy:set-session-proxy', async (event, partition, hiveId, proxyId) => {
+  console.log(`[Proxy] 设置代理请求 - partition: ${partition}, hiveId: ${hiveId}, proxyId: ${proxyId}`)
+
+  if (!proxyManager) {
+    return { success: false, error: '代理管理器未初始化' }
+  }
+
+  try {
+    // 如果已有代理在运行，先停止
+    const existingInfo = proxyManager.getHiveProxyInfo(hiveId)
+    if (existingInfo) {
+      console.log(`[Proxy] 停止现有代理 - hiveId: ${hiveId}`)
+      await proxyManager.stopProxyForHive(hiveId)
+    }
+
+    // 启动新的代理
+    if (proxyId) {
+      console.log(`[Proxy] 启动新代理 - hiveId: ${hiveId}, proxyId: ${proxyId}`)
+      const result = await proxyManager.startProxyForHive(hiveId, proxyId)
+      console.log(`[Proxy] 代理启动结果:`, result)
+
+      if (result.success) {
+        // 为 session 设置代理
+        const webviewSession = session.fromPartition(partition)
+        const proxyConfig = {
+          proxyRules: `http=127.0.0.1:${result.data.httpPort};https=127.0.0.1:${result.data.httpPort};socks4=127.0.0.1:${result.data.socksPort};socks5=127.0.0.1:${result.data.socksPort}`,
+          proxyBypassRules: 'localhost,127.0.0.1'
+        }
+        console.log(`[Proxy] 应用代理配置:`, proxyConfig)
+        await webviewSession.setProxy(proxyConfig)
+        console.log(`[Proxy] 代理配置已应用到分区 ${partition}`)
+        return { success: true, data: result.data }
+      } else {
+        return result
+      }
+    } else {
+      // 清除代理
+      console.log(`[Proxy] 清除代理 - partition: ${partition}, hiveId: ${hiveId}`)
+      const webviewSession = session.fromPartition(partition)
+      await webviewSession.setProxy({ proxyRules: 'DIRECT' })
+      await proxyManager.stopProxyForHive(hiveId)
+      console.log(`[Proxy] 代理已清除`)
+      return { success: true }
+    }
+  } catch (error) {
+    console.error('[Proxy] 设置 session 代理失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
 // ========== 应用生命周期 ==========
 
 console.log('[Electron Main] 等待应用就绪...')
@@ -666,6 +826,17 @@ app.on('window-all-closed', () => {
   console.log('[Electron Main] 所有窗口已关闭')
   if (process.platform !== 'darwin') {
     app.quit()
+  }
+})
+
+// 应用退出时清理代理资源
+app.on('before-quit', async () => {
+  console.log('[Electron Main] 清理代理资源...')
+  if (proxyManager) {
+    // 停止所有蜂巢的代理
+    for (const hiveId of proxyManager.hiveClashProcesses.keys()) {
+      await proxyManager.stopProxyForHive(hiveId)
+    }
   }
 })
 

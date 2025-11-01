@@ -74,6 +74,12 @@
             @create-instance="handleCreateNewInstance"
             @manage-instances="handleOpenSessionManager"
           />
+          <ProxySelector
+            v-if="isElectron"
+            v-model="localWebsite.proxyId"
+            :dialog-visible="show"
+            @manage-proxies="handleOpenProxyManager"
+          />
           <PaddingConfig
             v-model="localWebsite.padding"
             @enter="handleConfirm"
@@ -129,6 +135,7 @@ import DeviceTypeSelector from './WebsiteEditDialog/DeviceTypeSelector.vue'
 import TargetSelectorList from './WebsiteEditDialog/TargetSelectorList.vue'
 import AudioVisualSettings from './WebsiteEditDialog/AudioVisualSettings.vue'
 import SessionInstanceSelector from './WebsiteEditDialog/SessionInstanceSelector.vue'
+import ProxySelector from './WebsiteEditDialog/ProxySelector.vue'
 import PaddingConfig from './WebsiteEditDialog/PaddingConfig.vue'
 import AutoRefreshConfig from './WebsiteEditDialog/AutoRefreshConfig.vue'
 import DesktopCaptureSelector from './DesktopCaptureSelector.vue'
@@ -141,6 +148,7 @@ export default {
     TargetSelectorList,
     AudioVisualSettings,
     SessionInstanceSelector,
+    ProxySelector,
     PaddingConfig,
     AutoRefreshConfig,
     DesktopCaptureSelector
@@ -164,6 +172,7 @@ export default {
         targetSelectors: [],
         autoRefreshInterval: 0,
         sessionInstance: 'default',
+        proxyId: '',
         padding: 10,
         muted: false,
         darkMode: false,
@@ -212,6 +221,7 @@ export default {
     const { sessionInstances, addSessionInstance } = useSessionManager()
     const showPrompt = inject('showPrompt')
     const openSessionManager = inject('openSessionManager')
+    const openProxyManager = inject('openProxyManager')
 
     // 表单数据管理
     const { localWebsite, handleConfirm: validateAndSubmit } = useWebsiteForm(props, emit)
@@ -258,6 +268,13 @@ export default {
     const handleOpenSessionManager = () => {
       if (openSessionManager) {
         openSessionManager()
+      }
+    }
+
+    // 打开代理管理器
+    const handleOpenProxyManager = () => {
+      if (openProxyManager) {
+        openProxyManager()
       }
     }
 
@@ -320,6 +337,7 @@ export default {
       handleOverlayClick,
       handleCreateNewInstance,
       handleOpenSessionManager,
+      handleOpenProxyManager,
       quickAddBaidu,
       quickAddGoogle,
       handleDesktopCaptureSelect

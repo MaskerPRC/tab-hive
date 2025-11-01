@@ -3,6 +3,9 @@
     <!-- 下载插件/客户端提醒弹窗 -->
     <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
 
+    <!-- 代理节点管理 -->
+    <ProxyManager :show="showProxyManager" @close="closeProxyManager" />
+
     <!-- 更新通知 -->
     <UpdateNotification
       :visible="showUpdateNotification"
@@ -82,6 +85,7 @@
       @toggle-global-mute="handleToggleGlobalMute"
       @toggle-ad-block="handleToggleAdBlock"
       @manage-sessions="handleManageSessions"
+      @manage-proxy="handleManageProxy"
       @show-update="handleShowUpdate"
       @clear-config="handleClearConfig"
       @mouseenter="showPanel = true"
@@ -155,6 +159,7 @@ import DownloadModal from './components/DownloadModal.vue'
 import ImportModeDialog from './components/ImportModeDialog.vue'
 import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
+import ProxyManager from './components/ProxyManager.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useWebsiteManager } from './composables/useWebsiteManager'
@@ -171,7 +176,8 @@ export default {
     DownloadModal,
     ImportModeDialog,
     SessionInstanceManager,
-    UpdateNotification
+    UpdateNotification,
+    ProxyManager
   },
   setup() {
     const { t } = useI18n()
@@ -206,6 +212,9 @@ export default {
     // Session实例管理对话框显示状态
     const showSessionManager = ref(false)
 
+    // 代理节点管理对话框显示状态
+    const showProxyManager = ref(false)
+
     // 当前视图：grid 或 canvas
     const currentView = ref('grid')
 
@@ -217,6 +226,16 @@ export default {
     // 关闭Session实例管理对话框
     const closeSessionManager = () => {
       showSessionManager.value = false
+    }
+
+    // 打开代理节点管理对话框
+    const handleManageProxy = () => {
+      showProxyManager.value = true
+    }
+
+    // 关闭代理节点管理对话框
+    const closeProxyManager = () => {
+      showProxyManager.value = false
     }
 
     // 显示更新通知（从按钮点击）
@@ -472,6 +491,7 @@ export default {
     )
     provide('showImportModeDialog', importExport.showImportModeDialog)
     provide('openSessionManager', handleManageSessions)
+    provide('openProxyManager', handleManageProxy)
 
     // 监听网站添加/删除，自动保存到当前布局
     watch(() => websiteManager.websites.value.length, () => {
@@ -552,6 +572,9 @@ export default {
       handleShowDownloadModal,
       handleManageSessions,
       closeSessionManager,
+      handleManageProxy,
+      closeProxyManager,
+      showProxyManager,
       handleShowUpdate,
       handleCloseUpdateNotification,
       handleIgnoreUpdate,

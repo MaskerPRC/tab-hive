@@ -159,6 +159,79 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // 代理管理 API
+  proxy: {
+    /**
+     * 获取代理列表
+     */
+    getList: (page = 1, pageSize = 10) => {
+      return ipcRenderer.invoke('proxy:get-list', page, pageSize)
+    },
+
+    /**
+     * 导入订阅链接
+     */
+    importSubscription: (subscriptionUrl) => {
+      return ipcRenderer.invoke('proxy:import-subscription', subscriptionUrl)
+    },
+
+    /**
+     * 添加代理
+     */
+    add: (proxyConfig) => {
+      return ipcRenderer.invoke('proxy:add', proxyConfig)
+    },
+
+    /**
+     * 更新代理
+     */
+    update: (proxyId, proxyConfig) => {
+      return ipcRenderer.invoke('proxy:update', proxyId, proxyConfig)
+    },
+
+    /**
+     * 删除代理
+     */
+    delete: (proxyId) => {
+      return ipcRenderer.invoke('proxy:delete', proxyId)
+    },
+
+    /**
+     * 测试代理
+     */
+    test: (proxyId) => {
+      return ipcRenderer.invoke('proxy:test', proxyId)
+    },
+
+    /**
+     * 为蜂巢启动代理
+     */
+    startForHive: (hiveId, proxyId) => {
+      return ipcRenderer.invoke('proxy:start-for-hive', hiveId, proxyId)
+    },
+
+    /**
+     * 停止蜂巢代理
+     */
+    stopForHive: (hiveId) => {
+      return ipcRenderer.invoke('proxy:stop-for-hive', hiveId)
+    },
+
+    /**
+     * 获取蜂巢代理信息
+     */
+    getHiveInfo: (hiveId) => {
+      return ipcRenderer.invoke('proxy:get-hive-info', hiveId)
+    },
+
+    /**
+     * 为 webview session 设置代理
+     */
+    setSessionProxy: (partition, hiveId, proxyId) => {
+      return ipcRenderer.invoke('proxy:set-session-proxy', partition, hiveId, proxyId)
+    }
+  },
+
   // 事件监听
   on: (channel, callback) => {
     const validChannels = [

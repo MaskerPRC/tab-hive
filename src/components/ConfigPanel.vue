@@ -162,6 +162,18 @@
         </button>
 
         <button
+          v-if="isElectron"
+          @click="$emit('manage-proxy')"
+          class="sidebar-btn btn-proxy"
+          :title="'代理节点管理'"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <span>代理节点管理</span>
+        </button>
+
+        <button
           @click="openHelp"
           class="sidebar-btn btn-help"
           :title="$t('configPanel.helpHint')"
@@ -255,7 +267,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'toggle-ad-block', 'manage-sessions', 'show-update'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-refresh-on-fullscreen', 'toggle-global-mute', 'toggle-ad-block', 'manage-sessions', 'manage-proxy', 'show-update'],
   setup(props, { emit }) {
     const { t, locale } = useI18n()
     const showLayoutDropdown = ref(false)
@@ -790,20 +802,23 @@ export default {
   border: none;
 }
 
-.btn-sessions {
+.btn-sessions,
+.btn-proxy {
   background: transparent;
   color: #666;
   border: 1px solid #ddd;
 }
 
-.btn-sessions:hover {
+.btn-sessions:hover,
+.btn-proxy:hover {
   background: #fff5f0;
   color: var(--primary-color);
   border-color: var(--primary-color);
   transform: translateX(2px);
 }
 
-.btn-sessions svg {
+.btn-sessions svg,
+.btn-proxy svg {
   stroke: currentColor;
 }
 

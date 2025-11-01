@@ -31,3 +31,5 @@ server/*.db-journal
 *.sln
 *.sw?
 
+reference_automa
+reference_net_vpn
