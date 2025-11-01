@@ -69,6 +69,7 @@
       :showTitles="layoutManager.globalSettings.value.showTitles"
       :refreshOnFullscreenToggle="layoutManager.globalSettings.value.refreshOnFullscreenToggle"
       :globalMuted="layoutManager.globalSettings.value.globalMuted"
+      :adBlockEnabled="layoutManager.globalSettings.value.adBlockEnabled"
       :showUpdateButton="showUpdateButton"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
@@ -79,6 +80,7 @@
       @toggle-titles="handleToggleTitles"
       @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
       @toggle-global-mute="handleToggleGlobalMute"
+      @toggle-ad-block="handleToggleAdBlock"
       @manage-sessions="handleManageSessions"
       @show-update="handleShowUpdate"
       @clear-config="handleClearConfig"
@@ -359,6 +361,37 @@ export default {
       }
     }
 
+    // 切换去广告
+    const handleToggleAdBlock = (adBlockEnabled) => {
+      layoutManager.updateGlobalSettings({ adBlockEnabled })
+      // 刷新所有网站以应用去广告（通过更新 URL 触发重新加载）
+      websiteManager.websites.value.forEach((website, index) => {
+        if (website.url && website.type !== 'desktop-capture') {
+          // 触发刷新事件，让 GridView 处理实际的刷新
+          const gridView = document.querySelector('.grid-view')
+          if (gridView) {
+            const webview = gridView.querySelector(`webview[data-webview-id="${website.id}"]`)
+            if (webview) {
+              const currentSrc = webview.src
+              webview.src = ''
+              setTimeout(() => {
+                webview.src = currentSrc
+              }, 10)
+            } else {
+              const iframe = gridView.querySelector(`iframe[src*="${website.url}"]`)
+              if (iframe) {
+                const currentSrc = iframe.src
+                iframe.src = 'about:blank'
+                setTimeout(() => {
+                  iframe.src = currentSrc
+                }, 10)
+              }
+            }
+          }
+        }
+      })
+    }
+
     // 切换布局
     const handleSwitchLayout = (layoutId) => {
       const websites = layoutManager.switchLayout(layoutId)
@@ -542,6 +575,8 @@ export default {
       handleToggleTitles,
       handleToggleRefreshOnFullscreen,
       handleToggleGlobalMute,
+      handleToggleAdBlock,
+      handleClearConfig,
       currentView,
       switchView
     }

@@ -42,7 +42,8 @@ export function useLayoutManager() {
             globalSettings: {
               showTitles: false, // 默认不显示标题
               refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的蜂巢
-              globalMuted: false // 默认不全局静音
+              globalMuted: false, // 默认不全局静音
+              adBlockEnabled: false // 默认不启用去广告
             }
           }
         }
@@ -52,7 +53,8 @@ export function useLayoutManager() {
           config.globalSettings = {
             showTitles: false, // 默认不显示标题
             refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的蜂巢
-            globalMuted: false // 默认不全局静音
+            globalMuted: false, // 默认不全局静音
+            adBlockEnabled: false // 默认不启用去广告
           }
         } else {
           // 确保旧配置也有新字段
@@ -61,6 +63,9 @@ export function useLayoutManager() {
           }
           if (config.globalSettings.globalMuted === undefined) {
             config.globalSettings.globalMuted = false
+          }
+          if (config.globalSettings.adBlockEnabled === undefined) {
+            config.globalSettings.adBlockEnabled = false
           }
         }
 
@@ -150,12 +155,24 @@ export function useLayoutManager() {
   // 当前布局 ID
   const currentLayoutId = ref(savedConfig?.currentLayoutId || 1)
 
-  // 全局设置
-  const globalSettings = ref(savedConfig?.globalSettings || {
+  // 全局设置 - 确保合并保存的配置和默认值
+  const defaultGlobalSettings = {
     showTitles: false, // 默认不显示标题
     refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的蜂巢
-    globalMuted: false // 默认不全局静音
-  })
+    globalMuted: false, // 默认不全局静音
+    adBlockEnabled: false // 默认不启用去广告
+  }
+  const globalSettings = ref(savedConfig?.globalSettings 
+    ? { ...defaultGlobalSettings, ...savedConfig.globalSettings }
+    : defaultGlobalSettings)
+  
+  // 确保所有字段都存在（兼容旧配置）
+  if (savedConfig?.globalSettings) {
+    if (savedConfig.globalSettings.adBlockEnabled === undefined) {
+      globalSettings.value.adBlockEnabled = false
+      console.log('[useLayoutManager] 检测到旧配置，初始化 adBlockEnabled 为 false')
+    }
+  }
 
   // 当前布局（计算属性）
   const currentLayout = ref(layouts.value.find(l => l.id === currentLayoutId.value) || layouts.value[0])

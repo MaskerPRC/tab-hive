@@ -219,6 +219,10 @@ export default {
     globalMuted: {
       type: Boolean,
       default: false
+    },
+    adBlockEnabled: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url'],
@@ -263,8 +267,33 @@ export default {
       applyDarkMode,
       applySelector,
       restoreOriginalStyles,
-      watchFullscreenToggle
-    } = useWebviewSelector(props, { isElectron, webviewRef, executeJavaScript })
+      watchFullscreenToggle,
+      applyAdBlock
+    } = useWebviewSelector(props, { isElectron, webviewRef, executeJavaScript, adBlockEnabled: computed(() => props.adBlockEnabled) })
+
+    // 监听去广告配置变化，重新应用到已加载的 webview
+    watch(() => props.adBlockEnabled, async (newVal) => {
+      console.log('[WebsiteCard] 去广告配置变化:', newVal)
+      if (isElectron.value && webviewRef.value) {
+        if (newVal) {
+          // 启用去广告
+          await applyAdBlock(webviewRef.value)
+        } else {
+          // 关闭去广告 - 移除样式和标记
+          try {
+            const removeCode = `(function() {
+              const style = document.getElementById('tabhive-adblock-style');
+              if (style) style.remove();
+              window.__tabHiveAdBlockInjected = false;
+              console.log('[Tab Hive AdBlock] 去广告已关闭');
+            })();`
+            await webviewRef.value.executeJavaScript(removeCode)
+          } catch (error) {
+            console.error('[WebsiteCard] 移除去广告失败:', error)
+          }
+        }
+      }
+    })
 
     // ==================== 双缓冲刷新 ====================
     const {
@@ -384,6 +413,11 @@ export default {
               // 应用静音状态
               applyMuteState(webview)
               
+              // 应用去广告
+              if (props.adBlockEnabled) {
+                await applyAdBlock(webview)
+              }
+
               // 应用暗色主题
           if (props.item.darkMode) {
             await applyDarkMode(webview)
@@ -423,7 +457,12 @@ export default {
         if (el) {
           setupWebviewEvents(el, {
             onLoad: async (webview) => {
-      // 应用暗色主题
+              // 应用去广告
+              if (props.adBlockEnabled) {
+                await applyAdBlock(webview)
+              }
+              
+              // 应用暗色主题
               if (props.item.darkMode) {
                 await applyDarkMode(webview)
               }

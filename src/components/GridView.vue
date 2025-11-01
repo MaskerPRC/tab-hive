@@ -87,6 +87,7 @@
         :show-title="globalSettings?.showTitles"
         :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
         :global-muted="globalSettings?.globalMuted"
+        :ad-block-enabled="globalSettings?.adBlockEnabled"
         @drag-start="startDrag($event, index)"
         @drag-over="handleDragOver"
         @drag-leave="handleDragLeave"

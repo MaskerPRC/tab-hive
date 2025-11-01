@@ -175,6 +175,8 @@ export default {
     refreshOnFullscreenToggleHint: 'Whether to refresh the webpage when toggling fullscreen for selector-type honeycombs',
     globalMuted: 'Global Mute',
     globalMutedHint: 'Mute/Unmute all websites globally',
+    adBlockEnabled: 'Ad Block',
+    adBlockEnabledHint: 'Enable to automatically block ads on all websites',
     instanceManagement: 'Instance Management',
     instanceManagementHint: 'Manage Cookie shared instances',
     help: 'Help',

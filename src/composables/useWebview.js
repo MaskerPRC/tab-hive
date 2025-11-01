@@ -72,10 +72,51 @@ export function useWebview(props, emit) {
     console.log('[useWebview] 首次设置 webview 事件监听')
     setupWebviewsSet.add(webview)
 
+    // 使用 Promise 来确保 DOM 就绪
+    let domReadyPromise = new Promise((resolve) => {
+      let resolved = false
+      const resolveOnce = () => {
+        if (!resolved) {
+          resolved = true
+          console.log('[useWebview] Webview DOM 已就绪')
+          resolve()
+        }
+      }
+      
+      // 监听 DOM 就绪事件
+      webview.addEventListener('dom-ready', resolveOnce, { once: true })
+      
+      // 如果已经触发过 dom-ready，立即 resolve
+      // 检查 webview 的 readyState（如果可用）
+      if (webview.getWebContentsId) {
+        try {
+          // 如果可以获取 WebContents ID，说明可能已经准备好了
+          webview.getWebContentsId()
+          // 但为了安全，还是等待 dom-ready 事件
+        } catch (e) {
+          // 如果失败，说明确实还没准备好，等待 dom-ready
+        }
+      }
+      
+      // 超时保护：5秒后强制 resolve（防止永久等待）
+      setTimeout(() => {
+        if (!resolved) {
+          console.warn('[useWebview] ⚠ DOM 就绪等待超时，但继续执行')
+          resolveOnce()
+        }
+      }, 5000)
+    })
+
     // 监听加载完成
     webview.addEventListener('did-finish-load', async () => {
       console.log('[useWebview] Webview 加载完成')
       console.log('[useWebview] 当前 webview ID:', webview?.id)
+      
+      // 等待 DOM 就绪 Promise
+      await domReadyPromise
+      
+      // 额外等待一小段时间确保 webview 完全准备好
+      await new Promise(resolve => setTimeout(resolve, 300))
       
       // 从 WeakMap 获取最新的 callbacks
       const latestCallbacks = webviewCallbacksMap.get(webview) || {}
@@ -86,8 +127,23 @@ export function useWebview(props, emit) {
       // 触发加载完成回调
       if (latestCallbacks.onLoad) {
         console.log('[useWebview] 调用最新的 onLoad 回调')
-        await latestCallbacks.onLoad(webview)
-        console.log('[useWebview] onLoad 回调执行完成')
+        try {
+          await latestCallbacks.onLoad(webview)
+          console.log('[useWebview] onLoad 回调执行完成')
+        } catch (error) {
+          console.error('[useWebview] onLoad 回调执行失败:', error)
+          // 如果是 DOM 未就绪错误，等待后重试一次
+          if (error.message && error.message.includes('dom-ready')) {
+            console.log('[useWebview] 检测到 DOM 未就绪错误，等待后重试...')
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            try {
+              await latestCallbacks.onLoad(webview)
+              console.log('[useWebview] 重试成功')
+            } catch (retryError) {
+              console.error('[useWebview] 重试也失败:', retryError)
+            }
+          }
+        }
       } else {
         console.log('[useWebview] ⚠️ 没有 onLoad 回调')
       }
