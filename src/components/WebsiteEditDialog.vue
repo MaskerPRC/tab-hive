@@ -50,6 +50,7 @@
           <AudioVisualSettings
             v-model:muted="localWebsite.muted"
             v-model:dark-mode="localWebsite.darkMode"
+            v-model:require-modifier-for-actions="localWebsite.requireModifierForActions"
           />
         </div>
       </div>
@@ -147,7 +148,8 @@ export default {
         sessionInstance: 'default',
         padding: 10,
         muted: false,
-        darkMode: false
+        darkMode: false,
+        requireModifierForActions: false
       })
     }
   },

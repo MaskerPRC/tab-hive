@@ -48,8 +48,13 @@ export function useWebsiteManager(initialWebsites = []) {
       title: websiteData.title,
       deviceType: websiteData.deviceType || 'desktop',
       targetSelector: websiteData.targetSelector || '',
+      targetSelectors: websiteData.targetSelectors || [],
       autoRefreshInterval: websiteData.autoRefreshInterval || 0,
       sessionInstance: websiteData.sessionInstance || 'default', // Session实例ID
+      padding: websiteData.padding !== undefined ? websiteData.padding : 10,
+      muted: websiteData.muted || false,
+      darkMode: websiteData.darkMode || false,
+      requireModifierForActions: websiteData.requireModifierForActions || false,
       position: websiteData.position || { x: newX, y: newY },
       size: websiteData.size || { width: defaultWidth, height: defaultHeight }
     }
@@ -103,8 +108,13 @@ export function useWebsiteManager(initialWebsites = []) {
       title: `${sourceSite.title} - 副本`,
       deviceType: sourceSite.deviceType || 'desktop',
       targetSelector: sourceSite.targetSelector || '',
+      targetSelectors: sourceSite.targetSelectors || [],
       autoRefreshInterval: sourceSite.autoRefreshInterval || 0,
       sessionInstance: sourceSite.sessionInstance || 'default', // 复制session实例设置
+      padding: sourceSite.padding !== undefined ? sourceSite.padding : 10,
+      muted: sourceSite.muted || false,
+      darkMode: sourceSite.darkMode || false,
+      requireModifierForActions: sourceSite.requireModifierForActions || false,
       position: { x: newX, y: newY },
       size: { ...sourceSite.size }
     }
@@ -146,7 +156,7 @@ export function useWebsiteManager(initialWebsites = []) {
     if (websites.value[index]) {
       console.log('[useWebsiteManager] 更新前的网站数据:', websites.value[index])
       
-      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding } = data
+      const { title, url, deviceType, targetSelector, targetSelectors, autoRefreshInterval, sessionInstance, position, size, muted, darkMode, padding, requireModifierForActions } = data
       
       if (title !== undefined) websites.value[index].title = title
       if (url !== undefined) {
@@ -175,6 +185,10 @@ export function useWebsiteManager(initialWebsites = []) {
       if (padding !== undefined) {
         console.log('[useWebsiteManager] 更新 padding:', padding)
         websites.value[index].padding = padding
+      }
+      if (requireModifierForActions !== undefined) {
+        console.log('[useWebsiteManager] 更新 requireModifierForActions:', requireModifierForActions)
+        websites.value[index].requireModifierForActions = requireModifierForActions
       }
       if (position !== undefined) {
         websites.value[index].position = { ...position }

@@ -69,7 +69,6 @@
       :showTitles="layoutManager.globalSettings.value.showTitles"
       :refreshOnFullscreenToggle="layoutManager.globalSettings.value.refreshOnFullscreenToggle"
       :globalMuted="layoutManager.globalSettings.value.globalMuted"
-      :requireModifierForActions="layoutManager.globalSettings.value.requireModifierForActions"
       :showUpdateButton="showUpdateButton"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
@@ -80,7 +79,6 @@
       @toggle-titles="handleToggleTitles"
       @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
       @toggle-global-mute="handleToggleGlobalMute"
-      @toggle-require-modifier="handleToggleRequireModifier"
       @manage-sessions="handleManageSessions"
       @show-update="handleShowUpdate"
       @clear-config="handleClearConfig"
@@ -359,11 +357,6 @@ export default {
           }
         })
       }
-    }
-
-    // 切换需要修饰键显示按钮
-    const handleToggleRequireModifier = (requireModifierForActions) => {
-      layoutManager.updateGlobalSettings({ requireModifierForActions })
     }
 
     // 切换布局

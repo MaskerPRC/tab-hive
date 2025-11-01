@@ -117,7 +117,10 @@ export default {
     mutedHint: '💡 When enabled, this website will not play any sound',
     visualSettings: 'Visual Settings:',
     darkMode: '🌙 Dark Theme',
-    darkModeHint: '💡 Force dark theme for the website, suitable for night browsing'
+    darkModeHint: '💡 Force dark theme for the website, suitable for night browsing',
+    actionButtonSettings: 'Action Button Settings:',
+    requireModifierForActions: '⌨️ Require Modifier Key',
+    requireModifierForActionsHint: '💡 When enabled, hold Ctrl or Alt to show action buttons, avoiding interference with webpage operations'
   },
 
   // Session instance selector
@@ -172,8 +175,6 @@ export default {
     refreshOnFullscreenToggleHint: 'Whether to refresh the webpage when toggling fullscreen for selector-type honeycombs',
     globalMuted: 'Global Mute',
     globalMutedHint: 'Mute/Unmute all websites globally',
-    requireModifierForActions: 'Require Modifier Key for Actions',
-    requireModifierForActionsHint: 'When enabled, hold Ctrl or Alt to show action buttons',
     instanceManagement: 'Instance Management',
     instanceManagementHint: 'Manage Cookie shared instances',
     help: 'Help',

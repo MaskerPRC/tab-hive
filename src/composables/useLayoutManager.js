@@ -154,8 +154,7 @@ export function useLayoutManager() {
   const globalSettings = ref(savedConfig?.globalSettings || {
     showTitles: false, // 默认不显示标题
     refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的蜂巢
-    globalMuted: false, // 默认不全局静音
-    requireModifierForActions: false // 默认不需要修饰键显示操作按钮
+    globalMuted: false // 默认不全局静音
   })
 
   // 当前布局（计算属性）

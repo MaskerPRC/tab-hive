@@ -137,11 +137,11 @@ function createWindow(windowId = null, options = {}) {
     `).catch(err => {
       console.log('[Window Open Guard] 执行失败:', err.message)
     })
-    
+
     // 阻止打开新窗口
     return { action: 'deny' }
   })
-
+ 
   window.on('closed', () => {
     console.log('[Electron Main] 窗口已关闭, ID:', wid)
     windows.delete(wid)

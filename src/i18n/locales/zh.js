@@ -117,7 +117,10 @@ export default {
     mutedHint: '💡 开启后该网页将不会播放任何声音',
     visualSettings: '视觉设置：',
     darkMode: '🌙 暗色主题',
-    darkModeHint: '💡 为网页强制应用暗色主题，适合夜间浏览'
+    darkModeHint: '💡 为网页强制应用暗色主题，适合夜间浏览',
+    actionButtonSettings: '操作按钮设置：',
+    requireModifierForActions: '⌨️ 需要修饰键显示按钮',
+    requireModifierForActionsHint: '💡 勾选后，需要按住 Ctrl 或 Alt 键才会显示操作按钮，避免干扰网页操作'
   },
 
   // Session实例选择器
@@ -172,8 +175,6 @@ export default {
     refreshOnFullscreenToggleHint: '选择器类型的蜂巢，全屏切换时是否刷新网页',
     globalMuted: '全局静音',
     globalMutedHint: '全局静音/取消静音所有网页',
-    requireModifierForActions: '需要修饰键显示按钮',
-    requireModifierForActionsHint: '勾选后，需要按住 Ctrl 或 Alt 键才会显示操作按钮',
     instanceManagement: '实例管理',
     instanceManagementHint: '管理Cookie共享实例',
     help: '使用帮助',

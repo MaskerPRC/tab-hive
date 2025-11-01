@@ -35,6 +35,24 @@
         {{ $t('audioVisual.darkModeHint') }}
       </div>
     </div>
+
+    <!-- 操作按钮设置 -->
+    <div class="form-group">
+      <label>{{ $t('audioVisual.actionButtonSettings') }}</label>
+      <div class="action-control">
+        <label class="action-option" :class="{ active: requireModifierForActions }">
+          <input
+            type="checkbox"
+            :checked="requireModifierForActions"
+            @change="$emit('update:requireModifierForActions', $event.target.checked)"
+          />
+          <span>{{ $t('audioVisual.requireModifierForActions') }}</span>
+        </label>
+      </div>
+      <div class="action-hint">
+        {{ $t('audioVisual.requireModifierForActionsHint') }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -51,9 +69,13 @@ export default {
     darkMode: {
       type: Boolean,
       default: false
+    },
+    requireModifierForActions: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['update:muted', 'update:darkMode']
+  emits: ['update:muted', 'update:darkMode', 'update:requireModifierForActions']
 }
 </script>
 
@@ -150,6 +172,58 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #4338ca;
+}
+
+.action-control {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.action-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.action-option:hover {
+  border-color: #FF5C00;
+  background: #fff5f0;
+}
+
+.action-option.active {
+  border-color: #FF5C00;
+  background: #FF5C00;
+  color: white;
+}
+
+.action-option input[type="checkbox"] {
+  display: none;
+}
+
+.action-option span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-hint {
+  margin-top: 8px;
+  padding: 10px;
+  background: #fff5f0;
+  border-left: 3px solid #FF5C00;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #b45309;
 }
 </style>
 

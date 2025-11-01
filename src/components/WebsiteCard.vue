@@ -10,7 +10,9 @@
       'dragging': isDragging && isCurrentDrag,
       'resizing': isResizing && isCurrentResize,
       'colliding': isColliding && (isCurrentDrag || isCurrentResize),
-      'dark-mode': item.darkMode
+      'dark-mode': item.darkMode,
+      'require-modifier': requireModifierForActions,
+      'modifier-pressed': requireModifierForActions && isModifierPressed
     }"
     :style="computedItemStyle"
     :data-padding="!isFullscreen && item.padding && item.padding > 0 ? item.padding : null"
@@ -201,10 +203,6 @@ export default {
       default: true
     },
     globalMuted: {
-      type: Boolean,
-      default: false
-    },
-    requireModifierForActions: {
       type: Boolean,
       default: false
     }
@@ -449,9 +447,14 @@ export default {
     // ==================== 修饰键状态管理 ====================
     const isModifierPressed = ref(false)
 
+    // 从网站配置中读取是否需要修饰键
+    const requireModifierForActions = computed(() => {
+      return props.item?.requireModifierForActions || false
+    })
+
     // 监听键盘事件以跟踪修饰键状态
     const handleKeyDown = (event) => {
-      if (props.requireModifierForActions) {
+      if (requireModifierForActions.value) {
         // 检查是否按下了 Ctrl 或 Alt 键
         if (event.ctrlKey || event.altKey) {
           isModifierPressed.value = true
@@ -460,7 +463,7 @@ export default {
     }
 
     const handleKeyUp = (event) => {
-      if (props.requireModifierForActions) {
+      if (requireModifierForActions.value) {
         // 当 Ctrl 或 Alt 键释放时，检查是否还有其他修饰键被按下
         if (!event.ctrlKey && !event.altKey) {
           isModifierPressed.value = false
@@ -480,7 +483,7 @@ export default {
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
 
     // 监听需要修饰键配置的变化，动态添加/移除监听器
-    watch(() => props.requireModifierForActions, (newVal) => {
+    watch(requireModifierForActions, (newVal) => {
       if (newVal) {
         // 配置开启：添加监听器
         document.addEventListener('keydown', handleKeyDown)
@@ -495,7 +498,7 @@ export default {
 
     // 生命周期：根据初始配置添加键盘事件监听
     onMounted(() => {
-      if (props.requireModifierForActions) {
+      if (requireModifierForActions.value) {
         document.addEventListener('keydown', handleKeyDown)
         document.addEventListener('keyup', handleKeyUp)
       }
@@ -536,7 +539,8 @@ export default {
       handleUseCurrentUrl,
       
       // 修饰键状态
-      isModifierPressed
+      isModifierPressed,
+      requireModifierForActions
     }
   }
 }
@@ -694,9 +698,18 @@ export default {
   opacity: 1;
 }
 
-/* 拖动时保持手柄和标题可见 */
-.grid-item.dragging :deep(.drag-handle) {
-  opacity: 1;
+/* 如果需要修饰键但未按下，即使在悬停时也不显示拖动手柄和标题 */
+.grid-item.require-modifier:not(.modifier-pressed):hover :deep(.drag-handle),
+.grid-item.require-modifier:not(.modifier-pressed):hover .website-title {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 拖动时保持手柄和标题可见（不受修饰键影响） */
+.grid-item.dragging :deep(.drag-handle),
+.grid-item.resizing :deep(.resize-handle) {
+  opacity: 1 !important;
+  pointer-events: all !important;
 }
 
 .grid-item.dragging .website-title {
@@ -726,10 +739,23 @@ export default {
   opacity: 0.8;
 }
 
+/* 如果需要修饰键但未按下，即使在悬停时也不显示调整大小手柄 */
+.grid-item.require-modifier:not(.modifier-pressed):hover :deep(.resize-handle) {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* 悬停时显示倒计时和URL提示 */
 .grid-item:hover :deep(.refresh-timer),
 .grid-item:hover :deep(.url-change-hint) {
   opacity: 1;
+}
+
+/* 如果需要修饰键但未按下，即使在悬停时也不显示倒计时和URL提示 */
+.grid-item.require-modifier:not(.modifier-pressed):hover :deep(.refresh-timer),
+.grid-item.require-modifier:not(.modifier-pressed):hover :deep(.url-change-hint) {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* 全屏模式下隐藏倒计时和URL提示 */

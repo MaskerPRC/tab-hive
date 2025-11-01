@@ -16,7 +16,8 @@ export function useWebsiteForm(props, emit) {
     sessionInstance: 'default',
     padding: 10,
     muted: false,
-    darkMode: false
+    darkMode: false,
+    requireModifierForActions: false
   })
 
   /**
@@ -55,7 +56,8 @@ export function useWebsiteForm(props, emit) {
       // 如果是旧数据（没有 padding 属性），保留为 undefined，不设置默认值
       padding: 'padding' in newVal ? newVal.padding : (props.editingIndex === -1 ? 10 : 0),
       muted: newVal.muted || false,
-      darkMode: newVal.darkMode || false
+      darkMode: newVal.darkMode || false,
+      requireModifierForActions: newVal.requireModifierForActions || false
     }
     
     console.log('[WebsiteEditDialog] 加载网站数据:', {

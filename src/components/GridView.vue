@@ -78,7 +78,6 @@
         :show-title="globalSettings?.showTitles"
         :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
         :global-muted="globalSettings?.globalMuted"
-        :require-modifier-for-actions="globalSettings?.requireModifierForActions"
         @drag-start="startDrag($event, index)"
         @drag-over="handleDragOver"
         @drag-leave="handleDragLeave"
@@ -149,7 +148,12 @@ export default {
       deviceType: 'desktop',
       targetSelector: '',
       targetSelectors: [],
-      autoRefreshInterval: 0
+      autoRefreshInterval: 0,
+      sessionInstance: 'default',
+      padding: 10,
+      muted: false,
+      darkMode: false,
+      requireModifierForActions: false
     })
 
     // 元素选择器状态
@@ -263,8 +267,13 @@ export default {
         url: '',
         deviceType: 'desktop',
         targetSelector: '',
+        targetSelectors: [],
         autoRefreshInterval: 0,
-        sessionInstance: 'default'
+        sessionInstance: 'default',
+        padding: 10,
+        muted: false,
+        darkMode: false,
+        requireModifierForActions: false
       }
     }
 
@@ -326,7 +335,7 @@ export default {
       }
 
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default' }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default', padding: 10, muted: false, darkMode: false, requireModifierForActions: false }
       console.log('[GridView] ========== 添加/更新流程完成 ==========')
     }
 
@@ -335,7 +344,7 @@ export default {
      */
     const cancelAddWebsite = () => {
       editingSlot.value = null
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default' }
+      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default', padding: 10, muted: false, darkMode: false, requireModifierForActions: false }
     }
 
     /**
@@ -433,7 +442,8 @@ export default {
           sessionInstance: website.sessionInstance || 'default',
           padding: website.padding !== undefined ? website.padding : 10,
           muted: website.muted || false,
-          darkMode: website.darkMode || false
+          darkMode: website.darkMode || false,
+          requireModifierForActions: website.requireModifierForActions || false
         }
         console.log('[GridView] 编辑网站:', {
           title: website.title,
