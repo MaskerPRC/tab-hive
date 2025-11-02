@@ -57,17 +57,17 @@ jobs:
           fi
           cat package.json | grep version
 
-      - name: Build Electron app
-        run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            npm run electron:build:linux
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            npm run electron:build:mac
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            npm run electron:build:win
-          else
-            npm run electron:build
-          fi
+      - name: Build Electron app (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run electron:build:linux
+
+      - name: Build Electron app (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npm run electron:build:mac
+
+      - name: Build Electron app (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run electron:build:win
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
