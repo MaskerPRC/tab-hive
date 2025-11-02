@@ -58,7 +58,16 @@ jobs:
           cat package.json | grep version
 
       - name: Build Electron app
-        run: npm run electron:build
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            npm run electron:build:linux
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            npm run electron:build:mac
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            npm run electron:build:win
+          else
+            npm run electron:build
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

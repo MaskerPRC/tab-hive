@@ -395,6 +395,33 @@ async function main() {
   
   if (args.includes('--all')) {
     await downloadAllPlatforms()
+  } else if (args.includes('--platform')) {
+    // 支持通过参数指定平台
+    const platformIndex = args.indexOf('--platform')
+    const platform = args[platformIndex + 1]
+    
+    if (!platform || !['win32', 'darwin', 'linux'].includes(platform)) {
+      console.error('❌ 无效的平台，支持: win32, darwin, linux')
+      process.exit(1)
+    }
+    
+    // 根据平台下载对应架构
+    console.log('📡 获取最新 release 信息...')
+    const release = await getLatestRelease()
+    console.log(`✅ 最新版本: ${release.tag_name}\n`)
+    
+    if (platform === 'darwin') {
+      // macOS 需要下载 x64 和 arm64
+      await downloadForPlatformWithRelease('darwin', 'x64', release)
+      await downloadForPlatformWithRelease('darwin', 'arm64', release)
+    } else if (platform === 'linux') {
+      // Linux 需要下载 x64 和 arm64
+      await downloadForPlatformWithRelease('linux', 'x64', release)
+      await downloadForPlatformWithRelease('linux', 'arm64', release)
+    } else if (platform === 'win32') {
+      // Windows 只需要 x64
+      await downloadForPlatformWithRelease('win32', 'x64', release)
+    }
   } else {
     await downloadForPlatform()
   }
