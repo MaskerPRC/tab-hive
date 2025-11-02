@@ -827,6 +827,16 @@ class ProxyManager {
       'external-controller': `127.0.0.1:${controllerPort}`,
       secret: secret,
       
+      // 禁用 GeoIP 自动更新，避免启动时下载失败
+      'geodata-mode': false,
+      'geo-auto-update': false,
+      'geox-url': {
+        'geoip': '',
+        'geosite': '',
+        'mmdb': ''
+      },
+      
+      // 简化 DNS 配置，不使用需要 GeoIP 的 fallback 功能
       dns: {
         enable: true,
         ipv6: false,
@@ -834,8 +844,8 @@ class ProxyManager {
         'enhanced-mode': 'fake-ip',
         'fake-ip-range': '198.18.0.1/16',
         'use-hosts': true,
-        nameserver: ['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query'],
-        fallback: ['https://doh.dns.sb/dns-query', 'https://dns.cloudflare.com/dns-query', 'https://dns.twnic.tw/dns-query', 'tls://8.8.4.4:853']
+        nameserver: ['223.5.5.5', '119.29.29.29', '8.8.8.8']
+        // 移除 fallback 配置，因为它需要 GeoIP 数据库
       },
       
       proxies: [],
