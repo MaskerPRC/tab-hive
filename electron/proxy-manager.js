@@ -14,15 +14,15 @@ class ProxyManager {
     // 存储每个蜂巢的 Clash 进程和配置
     // key: hiveId (网站ID), value: { process, port, controllerPort, secret }
     this.hiveClashProcesses = new Map()
-    
+
     // 基础端口配置
     this.baseHttpPort = 7890
     this.baseSocksPort = 7891
     this.baseControllerPort = 9090
-    
+
     // 当前使用的端口计数器
     this.portCounter = 0
-    
+
     this.proxyTestTimeout = 10000 // 10秒超时
   }
 
@@ -45,11 +45,11 @@ class ProxyManager {
   async getProxyList(page = 1, pageSize = 10) {
     try {
       console.log(`[ProxyManager] 获取代理列表 - 页码: ${page}, 每页数量: ${pageSize}`)
-      
+
       const offset = (page - 1) * pageSize
       const countResult = await get('SELECT COUNT(*) as total FROM proxies')
       const total = countResult ? countResult.total : 0
-      
+
       if (total === 0) {
         return {
           success: true,
@@ -64,14 +64,14 @@ class ProxyManager {
           }
         }
       }
-      
+
       const proxies = await query(
         'SELECT * FROM proxies ORDER BY created_at DESC LIMIT ? OFFSET ?',
         [pageSize, offset]
       )
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         data: {
           list: proxies,
           pagination: {
@@ -91,21 +91,24 @@ class ProxyManager {
   // 添加代理
   async addProxy(proxyConfig) {
     try {
-      const { name, type, host, port, username, password, cipher, uuid, alterId, network, plugin, pluginOpts, udp, tfo } = proxyConfig
-      
+      const {
+        name, type, host, port, username, password, cipher, uuid, alterId, network,
+        plugin, pluginOpts, udp, tfo, ports, skipCertVerify, sni, clientFingerprint,
+        up, down, authStr, alpn, protocol, fastOpen, disableMtuDiscovery
+      } = proxyConfig
+
       if (!name || !type || !host || !port) {
         throw new Error('代理名称、类型、主机和端口不能为空')
       }
 
       const result = await run(
-        `INSERT INTO proxies (name, type, host, port, username, password, cipher, uuid, alterId, network, plugin, plugin_opts, udp, tfo) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO proxies (name, type, host, port, username, password, cipher, uuid, alterId, network, 
+          plugin, plugin_opts, udp, tfo, ports, skip_cert_verify, sni, client_fingerprint,
+          up, down, auth_str, alpn, protocol, fast_open, disable_mtu_discovery) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          name, 
-          type, 
-          host, 
-          port, 
-          username || null, 
+          name, type, host, port,
+          username || null,
           password || null,
           cipher || null,
           uuid || null,
@@ -114,7 +117,18 @@ class ProxyManager {
           plugin || null,
           pluginOpts || null,
           udp !== undefined ? udp : null,
-          tfo !== undefined ? tfo : null
+          tfo !== undefined ? tfo : null,
+          ports || null,
+          skipCertVerify !== undefined ? skipCertVerify : null,
+          sni || null,
+          clientFingerprint || null,
+          up !== undefined ? up : null,
+          down !== undefined ? down : null,
+          authStr || null,
+          alpn || null,
+          protocol || null,
+          fastOpen !== undefined ? fastOpen : null,
+          disableMtuDiscovery !== undefined ? disableMtuDiscovery : null
         ]
       )
 
@@ -129,29 +143,48 @@ class ProxyManager {
   async importSubscription(subscriptionUrl) {
     try {
       console.log('[ProxyManager] 开始导入订阅链接:', subscriptionUrl)
-      
-      // 下载订阅内容
+
+      // 下载订阅内容，使用 Clash 的 User-Agent 以获取 YAML 格式
       const response = await axios.get(subscriptionUrl, {
         timeout: 30000,
-        responseType: 'text'
+        responseType: 'text',
+        headers: {
+          'User-Agent': 'clash-verge/v1.3.8'
+        }
       })
-      
+
       let content = response.data
-      
-      // 尝试 Base64 解码
-      try {
-        content = Buffer.from(content, 'base64').toString('utf-8')
-      } catch (e) {
-        // 如果不是 Base64，直接使用原始内容
+      console.log('[ProxyManager] 订阅原始内容长度:', content.length)
+      console.log('[ProxyManager] 内容开头:', content.substring(0, 100))
+
+      // 检查是否需要 Base64 解码
+      // 如果内容不包含 YAML 标记且不以协议前缀开头，尝试 base64 解码
+      const isYaml = content.includes('proxies:') || content.trim().startsWith('-')
+      const isLink = content.startsWith('vmess://') || content.startsWith('ss://') ||
+                     content.startsWith('trojan://') || content.startsWith('hysteria')
+
+      if (!isYaml && !isLink) {
+        try {
+          const decoded = Buffer.from(content, 'base64').toString('utf-8')
+          // 验证解码是否成功（检查是否包含有效字符）
+          if (decoded && (decoded.includes('proxies:') || decoded.includes('://') || decoded.trim().startsWith('-'))) {
+            console.log('[ProxyManager] Base64 解码成功')
+            content = decoded
+          }
+        } catch (e) {
+          console.log('[ProxyManager] Base64 解码失败，使用原始内容')
+        }
+      } else {
+        console.log('[ProxyManager] 检测到明文格式，跳过 Base64 解码')
       }
-      
+
       // 解析为代理节点列表
       const proxies = this.parseSubscriptionContent(content)
-      
+
       if (proxies.length === 0) {
         return { success: false, error: '订阅链接中未找到有效的代理节点' }
       }
-      
+
       // 批量导入代理节点
       let importedCount = 0
       for (const proxy of proxies) {
@@ -163,7 +196,7 @@ class ProxyManager {
           console.warn('[ProxyManager] 导入代理节点失败:', proxy.name, error.message)
         }
       }
-      
+
       return {
         success: true,
         data: {
@@ -180,25 +213,28 @@ class ProxyManager {
   // 解析订阅内容
   parseSubscriptionContent(content) {
     const proxies = []
-    
+
     // 首先尝试解析为 Clash YAML 格式
     try {
       console.log('[ProxyManager] 尝试解析 YAML 格式...')
       console.log('[ProxyManager] 内容预览:', content.substring(0, 500))
-      
+
       const config = YAML.parse(content)
       console.log('[ProxyManager] YAML 解析结果:', config ? 'success' : 'failed')
-      
+
       if (config && config.proxies && Array.isArray(config.proxies)) {
         console.log('[ProxyManager] 检测到 Clash YAML 格式，包含', config.proxies.length, '个节点')
         console.log('[ProxyManager] 第一个节点示例:', JSON.stringify(config.proxies[0]))
-        
+
         for (const node of config.proxies) {
           const proxy = this.convertClashNode(node)
           if (proxy) {
             proxies.push(proxy)
+          } else {
+            console.warn('[ProxyManager] 转换节点失败，跳过:', node.name || '未知节点')
           }
         }
+        console.log('[ProxyManager] 成功转换', proxies.length, '个节点')
         return proxies
       }
     } catch (e) {
@@ -206,9 +242,35 @@ class ProxyManager {
       // 不是 YAML 格式，继续尝试其他格式
     }
 
+    // 尝试解析为 YAML 节点数组（直接是 proxies 数组）
+    try {
+      console.log('[ProxyManager] 尝试解析为 YAML 节点数组...')
+      const nodes = YAML.parse(content)
+
+      if (Array.isArray(nodes)) {
+        console.log('[ProxyManager] 检测到 YAML 节点数组格式，包含', nodes.length, '个节点')
+
+        for (const node of nodes) {
+          const proxy = this.convertClashNode(node)
+          if (proxy) {
+            proxies.push(proxy)
+          } else {
+            console.warn('[ProxyManager] 转换节点失败，跳过:', node.name || '未知节点')
+          }
+        }
+
+        if (proxies.length > 0) {
+          console.log('[ProxyManager] 成功转换', proxies.length, '个节点')
+          return proxies
+        }
+      }
+    } catch (e) {
+      console.error('[ProxyManager] YAML 节点数组解析失败:', e.message)
+    }
+
     // 按行解析链接格式
     const lines = content.split('\n').filter(line => line.trim())
-    
+
     for (const line of lines) {
       try {
         // 解析 vmess:// 链接
@@ -221,11 +283,26 @@ class ProxyManager {
           const proxy = this.parseShadowsocksLink(line)
           if (proxy) proxies.push(proxy)
         }
+        // 解析 trojan:// 链接
+        else if (line.startsWith('trojan://')) {
+          const proxy = this.parseTrojanLink(line)
+          if (proxy) proxies.push(proxy)
+        }
+        // 解析 hysteria2:// 或 hy2:// 链接
+        else if (line.startsWith('hysteria2://') || line.startsWith('hy2://')) {
+          const proxy = this.parseHysteria2Link(line)
+          if (proxy) proxies.push(proxy)
+        }
+        // 解析 hysteria:// 链接
+        else if (line.startsWith('hysteria://')) {
+          const proxy = this.parseHysteriaLink(line)
+          if (proxy) proxies.push(proxy)
+        }
       } catch (error) {
         console.warn('[ProxyManager] 解析代理节点失败:', line.substring(0, 50), error.message)
       }
     }
-    
+
     return proxies
   }
 
@@ -235,7 +312,7 @@ class ProxyManager {
       const base64 = vmessUrl.replace('vmess://', '')
       const decoded = Buffer.from(base64, 'base64').toString('utf-8')
       const config = JSON.parse(decoded)
-      
+
       return {
         name: config.ps || `VMess-${config.add}:${config.port}`,
         type: 'vmess',
@@ -257,9 +334,9 @@ class ProxyManager {
     try {
       // 格式: ss://base64(method:password)@server:port/?plugin=xxx#name
       // 或: ss://base64(method:password@server:port)#name
-      
+
       let linkContent = ssUrl.replace('ss://', '')
-      
+
       // 提取名称（# 后面的部分）
       let name = 'SS节点'
       const hashIndex = linkContent.indexOf('#')
@@ -267,7 +344,7 @@ class ProxyManager {
         name = decodeURIComponent(linkContent.substring(hashIndex + 1))
         linkContent = linkContent.substring(0, hashIndex)
       }
-      
+
       // 提取插件参数（? 后面的部分）
       let pluginStr = ''
       const queryIndex = linkContent.indexOf('?')
@@ -275,10 +352,10 @@ class ProxyManager {
         pluginStr = linkContent.substring(queryIndex + 1)
         linkContent = linkContent.substring(0, queryIndex)
       }
-      
+
       // 解析主要内容
       let method, password, server, port
-      
+
       if (linkContent.includes('@')) {
         // 新格式: base64(method:password)@server:port
         const [userInfo, serverInfo] = linkContent.split('@')
@@ -286,7 +363,7 @@ class ProxyManager {
         const [m, p] = decoded.split(':')
         method = m
         password = p
-        
+
         const [s, po] = serverInfo.split(':')
         server = s
         port = parseInt(po)
@@ -303,7 +380,7 @@ class ProxyManager {
           throw new Error('无法解析 SS 链接格式')
         }
       }
-      
+
       const result = {
         name: name.trim(),  // 去除名称中的空白字符
         type: 'ss',
@@ -312,24 +389,24 @@ class ProxyManager {
         password: password,
         cipher: method
       }
-      
+
       // 解析插件参数和其他查询参数
       if (pluginStr) {
         const pluginParams = new URLSearchParams(pluginStr)
-        
+
         // 解析插件配置
         const pluginValue = pluginParams.get('plugin')
         if (pluginValue) {
           // 格式: obfs-local;obfs=http;obfs-host=xxx.com;tfo=1
           const parts = pluginValue.split(';')
-          
+
           // 转换插件名：obfs-local -> obfs (Clash 使用 obfs)
           let pluginName = parts[0]
           if (pluginName === 'obfs-local') {
             pluginName = 'obfs'
           }
           result.plugin = pluginName
-          
+
           const opts = {}
           for (let i = 1; i < parts.length; i++) {
             const [key, value] = parts[i].split('=')
@@ -343,29 +420,29 @@ class ProxyManager {
               result.udp = value === '1' || value === 'true'
             }
           }
-          
+
           if (Object.keys(opts).length > 0) {
             result.pluginOpts = JSON.stringify(opts)
           }
         }
-        
+
         // 检查其他独立的查询参数
         const udpParam = pluginParams.get('udp')
         if (udpParam !== null) {
           result.udp = udpParam === '1' || udpParam === 'true'
         }
-        
+
         const tfoParam = pluginParams.get('tfo')
         if (tfoParam !== null) {
           result.tfo = tfoParam === '1' || tfoParam === 'true'
         }
       }
-      
+
       // 默认启用 UDP（如果没有明确指定）
       if (result.udp === undefined) {
         result.udp = true
       }
-      
+
       return result
     } catch (error) {
       console.error('解析 Shadowsocks 链接失败:', error)
@@ -373,29 +450,220 @@ class ProxyManager {
     }
   }
 
+  // 解析 Trojan 链接
+  parseTrojanLink(trojanUrl) {
+    try {
+      // 格式: trojan://password@server:port?sni=xxx&type=xxx#name
+      let linkContent = trojanUrl.replace('trojan://', '')
+
+      // 提取名称（# 后面的部分）
+      let name = 'Trojan节点'
+      const hashIndex = linkContent.indexOf('#')
+      if (hashIndex !== -1) {
+        name = decodeURIComponent(linkContent.substring(hashIndex + 1))
+        linkContent = linkContent.substring(0, hashIndex)
+      }
+
+      // 提取查询参数（? 后面的部分）
+      let queryStr = ''
+      const queryIndex = linkContent.indexOf('?')
+      if (queryIndex !== -1) {
+        queryStr = linkContent.substring(queryIndex + 1)
+        linkContent = linkContent.substring(0, queryIndex)
+      }
+
+      // 解析主要内容: password@server:port
+      const [password, serverInfo] = linkContent.split('@')
+      const [server, port] = serverInfo.split(':')
+
+      const result = {
+        name: name.trim(),
+        type: 'trojan',
+        host: server,
+        port: parseInt(port),
+        password: password
+      }
+
+      // 解析查询参数
+      if (queryStr) {
+        const params = new URLSearchParams(queryStr)
+
+        if (params.has('sni')) result.sni = params.get('sni')
+        if (params.has('type')) result.network = params.get('type')
+        if (params.has('security')) result.security = params.get('security')
+        if (params.has('alpn')) result.alpn = params.get('alpn')
+
+        const skipCertVerify = params.get('allowInsecure') || params.get('skip-cert-verify')
+        if (skipCertVerify !== null) {
+          result.skipCertVerify = skipCertVerify === '1' || skipCertVerify === 'true'
+        }
+
+        const udp = params.get('udp')
+        if (udp !== null) {
+          result.udp = udp === '1' || udp === 'true'
+        }
+      }
+
+      return result
+    } catch (error) {
+      console.error('解析 Trojan 链接失败:', error)
+      return null
+    }
+  }
+
+  // 解析 Hysteria2 链接
+  parseHysteria2Link(hy2Url) {
+    try {
+      // 格式: hysteria2://password@server:port?sni=xxx&insecure=1#name
+      // 或: hy2://password@server:port?sni=xxx#name
+      let linkContent = hy2Url.replace('hysteria2://', '').replace('hy2://', '')
+
+      // 提取名称（# 后面的部分）
+      let name = 'Hysteria2节点'
+      const hashIndex = linkContent.indexOf('#')
+      if (hashIndex !== -1) {
+        name = decodeURIComponent(linkContent.substring(hashIndex + 1))
+        linkContent = linkContent.substring(0, hashIndex)
+      }
+
+      // 提取查询参数（? 后面的部分）
+      let queryStr = ''
+      const queryIndex = linkContent.indexOf('?')
+      if (queryIndex !== -1) {
+        queryStr = linkContent.substring(queryIndex + 1)
+        linkContent = linkContent.substring(0, queryIndex)
+      }
+
+      // 解析主要内容: password@server:port
+      const [password, serverInfo] = linkContent.split('@')
+      const [server, port] = serverInfo.split(':')
+
+      const result = {
+        name: name.trim(),
+        type: 'hysteria2',
+        host: server,
+        port: parseInt(port),
+        password: password
+      }
+
+      // 解析查询参数
+      if (queryStr) {
+        const params = new URLSearchParams(queryStr)
+
+        if (params.has('sni')) result.sni = params.get('sni')
+        if (params.has('ports')) result.ports = params.get('ports')
+        if (params.has('up')) result.up = parseInt(params.get('up'))
+        if (params.has('down')) result.down = parseInt(params.get('down'))
+
+        const insecure = params.get('insecure') || params.get('skip-cert-verify')
+        if (insecure !== null) {
+          result.skipCertVerify = insecure === '1' || insecure === 'true'
+        }
+
+        const udp = params.get('udp')
+        if (udp !== null) {
+          result.udp = udp === '1' || udp === 'true'
+        }
+      }
+
+      return result
+    } catch (error) {
+      console.error('解析 Hysteria2 链接失败:', error)
+      return null
+    }
+  }
+
+  // 解析 Hysteria 链接
+  parseHysteriaLink(hyUrl) {
+    try {
+      // 格式: hysteria://server:port?auth=xxx&insecure=1&upmbps=xxx&downmbps=xxx#name
+      let linkContent = hyUrl.replace('hysteria://', '')
+
+      // 提取名称（# 后面的部分）
+      let name = 'Hysteria节点'
+      const hashIndex = linkContent.indexOf('#')
+      if (hashIndex !== -1) {
+        name = decodeURIComponent(linkContent.substring(hashIndex + 1))
+        linkContent = linkContent.substring(0, hashIndex)
+      }
+
+      // 提取查询参数（? 后面的部分）
+      let queryStr = ''
+      const queryIndex = linkContent.indexOf('?')
+      if (queryIndex !== -1) {
+        queryStr = linkContent.substring(queryIndex + 1)
+        linkContent = linkContent.substring(0, queryIndex)
+      }
+
+      // 解析主要内容: server:port
+      const [server, port] = linkContent.split(':')
+
+      const result = {
+        name: name.trim(),
+        type: 'hysteria',
+        host: server,
+        port: parseInt(port)
+      }
+
+      // 解析查询参数
+      if (queryStr) {
+        const params = new URLSearchParams(queryStr)
+
+        if (params.has('auth')) result.authStr = params.get('auth')
+        if (params.has('password')) result.password = params.get('password')
+        if (params.has('peer') || params.has('sni')) result.sni = params.get('peer') || params.get('sni')
+        if (params.has('alpn')) result.alpn = params.get('alpn')
+        if (params.has('protocol')) result.protocol = params.get('protocol')
+        if (params.has('upmbps')) result.up = parseInt(params.get('upmbps'))
+        if (params.has('downmbps')) result.down = parseInt(params.get('downmbps'))
+
+        const insecure = params.get('insecure') || params.get('allowInsecure')
+        if (insecure !== null) {
+          result.skipCertVerify = insecure === '1' || insecure === 'true'
+        }
+
+        const fastOpen = params.get('fastopen') || params.get('fast-open')
+        if (fastOpen !== null) {
+          result.fastOpen = fastOpen === '1' || fastOpen === 'true'
+        }
+      }
+
+      return result
+    } catch (error) {
+      console.error('解析 Hysteria 链接失败:', error)
+      return null
+    }
+  }
+
   // 转换 Clash 节点格式
   convertClashNode(node) {
     try {
-      console.log('[ProxyManager] 原始节点数据:', JSON.stringify(node))
-      
       // 验证必要字段
       if (!node || !node.server || node.port === undefined) {
-        console.warn('[ProxyManager] 节点缺少必要字段:', node)
+        console.warn('[ProxyManager] 节点缺少必要字段 (server/port):', node?.name || '未知节点')
         return null
       }
 
       // 类型映射
       let type = node.type?.toLowerCase()
+
+      if (!type) {
+        console.warn('[ProxyManager] 节点缺少 type 字段:', node.name || '未知节点')
+        return null
+      }
+
       if (type === 'shadowsocks' || type === 'ss') {
         type = 'ss'
-      } else if (type === 'trojan' || type === 'ssr') {
+      } else if (type === 'ssr') {
         // 暂时将不支持的类型转换为 socks5
         console.warn(`[ProxyManager] 不支持的代理类型 ${type}，转换为 socks5`)
         type = 'socks5'
-      } else if (!['http', 'https', 'socks5', 'ss', 'vmess'].includes(type)) {
-        console.warn(`[ProxyManager] 未知的代理类型 ${type}，跳过`)
+      } else if (!['http', 'https', 'socks5', 'ss', 'vmess', 'trojan', 'hysteria', 'hysteria2', 'anytls'].includes(type)) {
+        console.warn(`[ProxyManager] 未知的代理类型 ${type}，跳过节点: ${node.name || '未知'}`)
         return null
       }
+
+      console.log(`[ProxyManager] 转换节点: ${node.name} (${type})`)
 
       const proxy = {
         name: node.name || `${type}-${node.server}:${node.port}`,
@@ -403,7 +671,7 @@ class ProxyManager {
         host: node.server,
         port: parseInt(node.port)
       }
-      
+
       // 根据类型处理不同的字段
       if (type === 'ss') {
         proxy.password = node.password
@@ -411,13 +679,51 @@ class ProxyManager {
         // 保留插件信息
         if (node.plugin) proxy.plugin = node.plugin
         if (node['plugin-opts']) {
-          proxy.pluginOpts = typeof node['plugin-opts'] === 'string' 
-            ? node['plugin-opts'] 
+          proxy.pluginOpts = typeof node['plugin-opts'] === 'string'
+            ? node['plugin-opts']
             : JSON.stringify(node['plugin-opts'])
         }
         // 保留 UDP 和 TCP Fast Open 配置
         if (node.udp !== undefined) proxy.udp = node.udp
         if (node.tfo !== undefined) proxy.tfo = node.tfo
+      } else if (type === 'hysteria2') {
+        // Hysteria2 协议配置
+        proxy.password = node.password
+        if (node.ports) proxy.ports = node.ports
+        if (node['skip-cert-verify'] !== undefined) proxy.skipCertVerify = node['skip-cert-verify']
+        if (node.sni) proxy.sni = node.sni
+        if (node.up !== undefined) proxy.up = node.up
+        if (node.down !== undefined) proxy.down = node.down
+        if (node.udp !== undefined) proxy.udp = node.udp
+        if (node.tfo !== undefined) proxy.tfo = node.tfo
+      } else if (type === 'hysteria') {
+        // Hysteria 协议配置
+        if (node.auth_str) proxy.authStr = node.auth_str
+        if (node.password) proxy.password = node.password
+        if (node.ports) proxy.ports = node.ports
+        if (node['skip-cert-verify'] !== undefined) proxy.skipCertVerify = node['skip-cert-verify']
+        if (node.sni) proxy.sni = node.sni
+        if (node.up !== undefined) proxy.up = node.up
+        if (node.down !== undefined) proxy.down = node.down
+        if (node.alpn) proxy.alpn = Array.isArray(node.alpn) ? JSON.stringify(node.alpn) : node.alpn
+        if (node.protocol) proxy.protocol = node.protocol
+        if (node['fast-open'] !== undefined) proxy.fastOpen = node['fast-open']
+        if (node.disable_mtu_discovery !== undefined) proxy.disableMtuDiscovery = node.disable_mtu_discovery
+      } else if (type === 'anytls') {
+        // AnyTLS 协议配置
+        proxy.password = node.password
+        if (node['client-fingerprint']) proxy.clientFingerprint = node['client-fingerprint']
+        if (node.sni) proxy.sni = node.sni
+        if (node['skip-cert-verify'] !== undefined) proxy.skipCertVerify = node['skip-cert-verify']
+        if (node.udp !== undefined) proxy.udp = node.udp
+        if (node.tfo !== undefined) proxy.tfo = node.tfo
+      } else if (type === 'trojan') {
+        // Trojan 协议配置
+        proxy.password = node.password
+        if (node['skip-cert-verify'] !== undefined) proxy.skipCertVerify = node['skip-cert-verify']
+        if (node.sni) proxy.sni = node.sni
+        if (node.udp !== undefined) proxy.udp = node.udp
+        if (node.network) proxy.network = node.network
       } else if (type === 'vmess') {
         proxy.uuid = node.uuid
         proxy.alterId = node.alterId || 0
@@ -430,8 +736,8 @@ class ProxyManager {
         // 处理 WS 配置（如果 network 是 ws）
         if (node.network === 'ws') {
           if (node['ws-opts']) {
-            proxy['ws-opts'] = typeof node['ws-opts'] === 'string' 
-              ? node['ws-opts'] 
+            proxy['ws-opts'] = typeof node['ws-opts'] === 'string'
+              ? node['ws-opts']
               : JSON.stringify(node['ws-opts'])
           }
           if (node['ws-path']) proxy['ws-path'] = node['ws-path']
@@ -443,7 +749,7 @@ class ProxyManager {
         if (node.username) proxy.username = node.username
         if (node.password) proxy.password = node.password
       }
-      
+
       console.log('[ProxyManager] 转换后的代理:', JSON.stringify(proxy))
       return proxy
     } catch (error) {
@@ -455,21 +761,24 @@ class ProxyManager {
   // 更新代理
   async updateProxy(proxyId, proxyConfig) {
     try {
-      const { name, type, host, port, username, password, is_enabled, cipher, uuid, alterId, network, plugin, pluginOpts, udp, tfo } = proxyConfig
-      
+      const {
+        name, type, host, port, username, password, is_enabled, cipher, uuid, alterId, network,
+        plugin, pluginOpts, udp, tfo, ports, skipCertVerify, sni, clientFingerprint,
+        up, down, authStr, alpn, protocol, fastOpen, disableMtuDiscovery
+      } = proxyConfig
+
       const result = await run(
         `UPDATE proxies 
          SET name = ?, type = ?, host = ?, port = ?, username = ?, password = ?, 
              cipher = ?, uuid = ?, alterId = ?, network = ?, plugin = ?, plugin_opts = ?, udp = ?, tfo = ?,
+             ports = ?, skip_cert_verify = ?, sni = ?, client_fingerprint = ?,
+             up = ?, down = ?, auth_str = ?, alpn = ?, protocol = ?, fast_open = ?, disable_mtu_discovery = ?,
              is_enabled = ?, updated_at = CURRENT_TIMESTAMP 
          WHERE id = ?`,
         [
-          name, 
-          type, 
-          host, 
-          port, 
-          username || null, 
-          password || null, 
+          name, type, host, port,
+          username || null,
+          password || null,
           cipher || null,
           uuid || null,
           alterId || null,
@@ -478,7 +787,18 @@ class ProxyManager {
           pluginOpts || null,
           udp !== undefined ? udp : null,
           tfo !== undefined ? tfo : null,
-          is_enabled, 
+          ports || null,
+          skipCertVerify !== undefined ? skipCertVerify : null,
+          sni || null,
+          clientFingerprint || null,
+          up !== undefined ? up : null,
+          down !== undefined ? down : null,
+          authStr || null,
+          alpn || null,
+          protocol || null,
+          fastOpen !== undefined ? fastOpen : null,
+          disableMtuDiscovery !== undefined ? disableMtuDiscovery : null,
+          is_enabled,
           proxyId
         ]
       )
@@ -518,9 +838,9 @@ class ProxyManager {
       }
 
       console.log('[ProxyManager] 开始测试代理:', proxy.name)
-      
+
       // 对于 SS 和 VMess 等复杂协议，需要通过 Clash 测试
-      if (['ss', 'vmess', 'trojan'].includes(proxy.type.toLowerCase())) {
+      if (['ss', 'vmess', 'trojan', 'hysteria', 'hysteria2', 'anytls'].includes(proxy.type.toLowerCase())) {
         return await this.testProxyThroughClash(proxy)
       } else {
         // HTTP/HTTPS/SOCKS5 可以直接测试
@@ -537,21 +857,21 @@ class ProxyManager {
     try {
       const proxyUrl = this.buildProxyUrl(proxy)
       console.log('[ProxyManager] 测试简单代理:', proxyUrl)
-      
+
       let agent
       if (proxy.type.toLowerCase() === 'socks5') {
         agent = new SocksProxyAgent(proxyUrl)
       } else {
         agent = new HttpsProxyAgent(proxyUrl)
       }
-      
+
       const startTime = Date.now()
       const response = await axios.get('https://api.ipify.org?format=json', {
         httpsAgent: agent,
         timeout: 15000
       })
       const responseTime = Date.now() - startTime
-      
+
       return {
         success: true,
         ip: response.data.ip,
@@ -573,24 +893,24 @@ class ProxyManager {
     const tempPort = 17890 + Math.floor(Math.random() * 1000)
     const tempControllerPort = 19090 + Math.floor(Math.random() * 1000)
     const tempSecret = require('crypto').randomBytes(8).toString('hex')
-    
+
     try {
       console.log('[ProxyManager] 创建临时 Clash 进行代理测试...')
-      
+
       const clashBinary = this.getClashBinary()
       if (!fs.existsSync(clashBinary)) {
         throw new Error('Clash 可执行文件不存在')
       }
-      
+
       // 生成临时测试配置
       const tempConfig = this.generateClashConfig([proxy], tempPort, tempPort + 1, tempControllerPort, tempSecret)
       tempConfigPath = path.join(app.getPath('temp'), `clash-test-${Date.now()}.yaml`)
-      
+
       const configYaml = YAML.stringify(tempConfig, 4)
       fs.writeFileSync(tempConfigPath, configYaml, 'utf8')
       console.log('[ProxyManager] 临时配置文件已创建:', tempConfigPath)
       console.log('[ProxyManager] 临时配置内容:\n', configYaml)
-      
+
       // 启动临时 Clash
       tempClashProcess = spawn(clashBinary, [
         '-f', tempConfigPath,
@@ -601,29 +921,29 @@ class ProxyManager {
         windowsHide: true,
         cwd: path.dirname(clashBinary)
       })
-      
+
       // 监听输出用于调试
       tempClashProcess.stdout.on('data', (data) => {
         console.log(`[TempClash] 输出:`, data.toString().trim())
       })
-      
+
       tempClashProcess.stderr.on('data', (data) => {
         console.log(`[TempClash] 错误:`, data.toString().trim())
       })
-      
+
       console.log('[ProxyManager] 临时 Clash 进程已启动')
-      
+
       // 等待 Clash 启动
       await this.waitForClashReady(tempControllerPort, tempSecret, 20)
       console.log('[ProxyManager] 临时 Clash 就绪')
-      
+
       // 额外等待，确保代理完全初始化
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
+
       // 通过 Clash 代理测试
       console.log('[ProxyManager] 开始通过 Clash 代理发送测试请求...')
       const startTime = Date.now()
-      
+
       try {
         const response = await axios.get('https://api.ipify.org?format=json', {
           proxy: false,
@@ -632,10 +952,10 @@ class ProxyManager {
           timeout: 15000
         })
         const responseTime = Date.now() - startTime
-        
+
         console.log('[ProxyManager] 代理测试成功，响应时间:', responseTime, 'ms')
         console.log('[ProxyManager] 代理IP:', response.data.ip)
-        
+
         return {
           success: true,
           ip: response.data.ip,
@@ -657,7 +977,7 @@ class ProxyManager {
       if (tempClashProcess) {
         tempClashProcess.kill()
       }
-      
+
       if (tempConfigPath && fs.existsSync(tempConfigPath)) {
         try {
           fs.unlinkSync(tempConfigPath)
@@ -674,7 +994,7 @@ class ProxyManager {
     if (proxy.username && proxy.password) {
       auth = `${proxy.username}:${proxy.password}@`
     }
-    
+
     const protocol = proxy.type.toLowerCase() === 'socks5' ? 'socks5' : 'http'
     return `${protocol}://${auth}${proxy.host}:${proxy.port}`
   }
@@ -691,7 +1011,7 @@ class ProxyManager {
       if (!proxy) {
         throw new Error('代理不存在')
       }
-      
+
       console.log(`[ProxyManager] 获取到的代理信息:`, proxy)
 
       // 获取端口
@@ -702,10 +1022,10 @@ class ProxyManager {
       const clashConfig = this.generateClashConfig([proxy], httpPort, socksPort, controllerPort, secret)
       const configPath = path.join(app.getPath('userData'), `clash-config-${hiveId}.yaml`)
       const configYaml = YAML.stringify(clashConfig, 4)
-      
+
       console.log(`[ProxyManager] 生成的 Clash 配置:`)
       console.log(configYaml)
-      
+
       fs.writeFileSync(configPath, configYaml, 'utf8')
 
       // 启动 Clash 进程
@@ -729,15 +1049,15 @@ class ProxyManager {
       clashProcess.stdout.on('data', (data) => {
         console.log(`[Clash ${hiveId}] 输出:`, data.toString())
       })
-      
+
       clashProcess.stderr.on('data', (data) => {
         console.error(`[Clash ${hiveId}] 错误:`, data.toString())
       })
-      
+
       clashProcess.on('error', (error) => {
         console.error(`[Clash ${hiveId}] 进程错误:`, error)
       })
-      
+
       clashProcess.on('exit', (code, signal) => {
         console.log(`[Clash ${hiveId}] 进程退出，代码:`, code, '信号:', signal)
         this.hiveClashProcesses.delete(hiveId)
@@ -826,7 +1146,7 @@ class ProxyManager {
       'log-level': 'debug',  // 改为 debug 获取更详细的日志
       'external-controller': `127.0.0.1:${controllerPort}`,
       secret: secret,
-      
+
       // 禁用 GeoIP 自动更新，避免启动时下载失败
       'geodata-mode': false,
       'geo-auto-update': false,
@@ -835,7 +1155,7 @@ class ProxyManager {
         'geosite': '',
         'mmdb': ''
       },
-      
+
       // 简化 DNS 配置，不使用需要 GeoIP 的 fallback 功能
       dns: {
         enable: true,
@@ -847,7 +1167,7 @@ class ProxyManager {
         nameserver: ['223.5.5.5', '119.29.29.29', '8.8.8.8']
         // 移除 fallback 配置，因为它需要 GeoIP 数据库
       },
-      
+
       proxies: [],
       'proxy-groups': [],
       rules: []
@@ -888,7 +1208,7 @@ class ProxyManager {
           }
           if (proxy.plugin_opts) {
             try {
-              proxyNode['plugin-opts'] = typeof proxy.plugin_opts === 'string' 
+              proxyNode['plugin-opts'] = typeof proxy.plugin_opts === 'string'
                 ? JSON.parse(proxy.plugin_opts)
                 : proxy.plugin_opts
             } catch (e) {
@@ -902,6 +1222,54 @@ class ProxyManager {
           if (proxy.tfo !== undefined) {
             proxyNode.tfo = proxy.tfo
           }
+          break
+        case 'hysteria2':
+          proxyNode.type = 'hysteria2'
+          proxyNode.password = proxy.password
+          if (proxy.ports) proxyNode.ports = proxy.ports
+          if (proxy.skip_cert_verify !== undefined) proxyNode['skip-cert-verify'] = proxy.skip_cert_verify
+          if (proxy.sni) proxyNode.sni = proxy.sni
+          if (proxy.up !== undefined) proxyNode.up = proxy.up
+          if (proxy.down !== undefined) proxyNode.down = proxy.down
+          if (proxy.udp !== undefined) proxyNode.udp = proxy.udp
+          if (proxy.tfo !== undefined) proxyNode.tfo = proxy.tfo
+          break
+        case 'hysteria':
+          proxyNode.type = 'hysteria'
+          if (proxy.auth_str) proxyNode.auth_str = proxy.auth_str
+          if (proxy.password) proxyNode.password = proxy.password
+          if (proxy.ports) proxyNode.ports = proxy.ports
+          if (proxy.skip_cert_verify !== undefined) proxyNode['skip-cert-verify'] = proxy.skip_cert_verify
+          if (proxy.sni) proxyNode.sni = proxy.sni
+          if (proxy.up !== undefined) proxyNode.up = proxy.up
+          if (proxy.down !== undefined) proxyNode.down = proxy.down
+          if (proxy.alpn) {
+            try {
+              proxyNode.alpn = typeof proxy.alpn === 'string' ? JSON.parse(proxy.alpn) : proxy.alpn
+            } catch (e) {
+              proxyNode.alpn = proxy.alpn
+            }
+          }
+          if (proxy.protocol) proxyNode.protocol = proxy.protocol
+          if (proxy.fast_open !== undefined) proxyNode['fast-open'] = proxy.fast_open
+          if (proxy.disable_mtu_discovery !== undefined) proxyNode.disable_mtu_discovery = proxy.disable_mtu_discovery
+          break
+        case 'anytls':
+          proxyNode.type = 'anytls'
+          proxyNode.password = proxy.password
+          if (proxy.client_fingerprint) proxyNode['client-fingerprint'] = proxy.client_fingerprint
+          if (proxy.sni) proxyNode.sni = proxy.sni
+          if (proxy.skip_cert_verify !== undefined) proxyNode['skip-cert-verify'] = proxy.skip_cert_verify
+          if (proxy.udp !== undefined) proxyNode.udp = proxy.udp
+          if (proxy.tfo !== undefined) proxyNode.tfo = proxy.tfo
+          break
+        case 'trojan':
+          proxyNode.type = 'trojan'
+          proxyNode.password = proxy.password
+          if (proxy.skip_cert_verify !== undefined) proxyNode['skip-cert-verify'] = proxy.skip_cert_verify
+          if (proxy.sni) proxyNode.sni = proxy.sni
+          if (proxy.udp !== undefined) proxyNode.udp = proxy.udp
+          if (proxy.network) proxyNode.network = proxy.network
           break
         case 'vmess':
           proxyNode.type = 'vmess'
@@ -925,7 +1293,7 @@ class ProxyManager {
           if (proxy.network === 'ws' || proxy.network === 'websocket') {
             if (proxy['ws-opts']) {
               try {
-                proxyNode['ws-opts'] = typeof proxy['ws-opts'] === 'string' 
+                proxyNode['ws-opts'] = typeof proxy['ws-opts'] === 'string'
                   ? JSON.parse(proxy['ws-opts'])
                   : proxy['ws-opts']
               } catch (e) {
@@ -957,7 +1325,7 @@ class ProxyManager {
         type: 'select',
         proxies: [...clashConfig.proxies.map(p => p.name), 'DIRECT']  // 添加 DIRECT 作为后备
       }]
-      
+
       // 设置规则：本地网络直连，其他走代理
       clashConfig.rules = [
         // 本地网络直连
@@ -987,7 +1355,10 @@ class ProxyManager {
       'socks5': 'socks5',
       'ss': 'ss',
       'vmess': 'vmess',
-      'trojan': 'trojan'
+      'trojan': 'trojan',
+      'hysteria': 'hysteria',
+      'hysteria2': 'hysteria2',
+      'anytls': 'anytls'
     }
     return typeMap[type.toLowerCase()] || 'http'
   }
@@ -1003,7 +1374,7 @@ class ProxyManager {
             timeout: 2000
           }
         )
-        
+
         if (response.data) {
           console.log('Clash 就绪，版本:', response.data.version)
           return true
@@ -1012,7 +1383,7 @@ class ProxyManager {
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
-    
+
     throw new Error('Clash 启动超时')
   }
 
@@ -1021,21 +1392,21 @@ class ProxyManager {
     const platform = process.platform
     const arch = process.arch
     const possiblePaths = []
-    
+
     console.log(`[ProxyManager] ========== 查找 Clash 二进制文件 ==========`)
     console.log(`[ProxyManager] 平台: ${platform}`)
     console.log(`[ProxyManager] 架构: ${arch}`)
     console.log(`[ProxyManager] process.resourcesPath: ${process.resourcesPath}`)
     console.log(`[ProxyManager] __dirname: ${__dirname}`)
     console.log(`[ProxyManager] process.cwd(): ${process.cwd()}`)
-    
+
     if (process.resourcesPath) {
       possiblePaths.push(path.join(process.resourcesPath, 'resources'))
     }
-    
+
     possiblePaths.push(path.join(__dirname, '../../resources'))
     possiblePaths.push(path.join(process.cwd(), 'resources'))
-    
+
     // 根据平台和架构确定文件名
     let fileName
     switch (platform) {
@@ -1065,10 +1436,10 @@ class ProxyManager {
       default:
         throw new Error(`不支持的平台: ${platform}`)
     }
-    
+
     console.log(`[ProxyManager] 目标文件名: ${fileName}`)
     console.log(`[ProxyManager] 搜索路径:`, possiblePaths)
-    
+
     // 首先尝试使用架构特定的文件
     for (const resourcesPath of possiblePaths) {
       const binaryPath = path.join(resourcesPath, fileName)
@@ -1079,12 +1450,12 @@ class ProxyManager {
         return binaryPath
       }
     }
-    
+
     // 如果在 macOS/Linux 上没找到架构特定的文件，尝试回退到 amd64（兼容性）
     if ((platform === 'darwin' || platform === 'linux') && arch === 'arm64') {
       const fallbackFileName = platform === 'darwin' ? 'clash-darwin-amd64' : 'clash-linux-amd64'
       console.log(`[ProxyManager] ⚠️  未找到 ARM64 版本，尝试回退到: ${fallbackFileName}`)
-      
+
       for (const resourcesPath of possiblePaths) {
         const binaryPath = path.join(resourcesPath, fallbackFileName)
         console.log(`[ProxyManager] 检查回退路径: ${binaryPath}`)
@@ -1095,7 +1466,7 @@ class ProxyManager {
         }
       }
     }
-    
+
     const defaultPath = path.join(process.cwd(), 'resources', fileName)
     console.log(`[ProxyManager] ⚠️  未找到文件，使用默认路径: ${defaultPath}`)
     console.log(`[ProxyManager] =========================================`)

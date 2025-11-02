@@ -31,6 +31,17 @@ function createTables(callback) {
       plugin_opts TEXT,
       udp BOOLEAN,
       tfo BOOLEAN,
+      ports TEXT,
+      skip_cert_verify BOOLEAN,
+      sni TEXT,
+      client_fingerprint TEXT,
+      up INTEGER,
+      down INTEGER,
+      auth_str TEXT,
+      alpn TEXT,
+      protocol TEXT,
+      fast_open BOOLEAN,
+      disable_mtu_discovery BOOLEAN,
       is_enabled BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -63,6 +74,39 @@ function createTables(callback) {
           }
           if (!existingColumns.includes('tfo')) {
             columnsToAdd.push('ALTER TABLE proxies ADD COLUMN tfo BOOLEAN')
+          }
+          if (!existingColumns.includes('ports')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN ports TEXT')
+          }
+          if (!existingColumns.includes('skip_cert_verify')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN skip_cert_verify BOOLEAN')
+          }
+          if (!existingColumns.includes('sni')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN sni TEXT')
+          }
+          if (!existingColumns.includes('client_fingerprint')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN client_fingerprint TEXT')
+          }
+          if (!existingColumns.includes('up')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN up INTEGER')
+          }
+          if (!existingColumns.includes('down')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN down INTEGER')
+          }
+          if (!existingColumns.includes('auth_str')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN auth_str TEXT')
+          }
+          if (!existingColumns.includes('alpn')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN alpn TEXT')
+          }
+          if (!existingColumns.includes('protocol')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN protocol TEXT')
+          }
+          if (!existingColumns.includes('fast_open')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN fast_open BOOLEAN')
+          }
+          if (!existingColumns.includes('disable_mtu_discovery')) {
+            columnsToAdd.push('ALTER TABLE proxies ADD COLUMN disable_mtu_discovery BOOLEAN')
           }
 
           // 执行 ALTER TABLE
