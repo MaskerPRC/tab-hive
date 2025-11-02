@@ -1009,9 +1009,12 @@ class ProxyManager {
   // 获取 Clash 可执行文件路径
   getClashBinary() {
     const platform = process.platform
+    const arch = process.arch
     const possiblePaths = []
     
+    console.log(`[ProxyManager] ========== 查找 Clash 二进制文件 ==========`)
     console.log(`[ProxyManager] 平台: ${platform}`)
+    console.log(`[ProxyManager] 架构: ${arch}`)
     console.log(`[ProxyManager] process.resourcesPath: ${process.resourcesPath}`)
     console.log(`[ProxyManager] __dirname: ${__dirname}`)
     console.log(`[ProxyManager] process.cwd(): ${process.cwd()}`)
@@ -1023,35 +1026,69 @@ class ProxyManager {
     possiblePaths.push(path.join(__dirname, '../../resources'))
     possiblePaths.push(path.join(process.cwd(), 'resources'))
     
+    // 根据平台和架构确定文件名
     let fileName
     switch (platform) {
       case 'win32':
         fileName = 'clash-windows-amd64.exe'
         break
       case 'darwin':
-        fileName = 'clash-darwin-amd64'
+        // macOS 需要根据架构选择
+        if (arch === 'arm64') {
+          fileName = 'clash-darwin-arm64'
+          console.log(`[ProxyManager] 检测到 ARM64 Mac，使用: ${fileName}`)
+        } else {
+          fileName = 'clash-darwin-amd64'
+          console.log(`[ProxyManager] 检测到 x64 Mac，使用: ${fileName}`)
+        }
         break
       case 'linux':
-        fileName = 'clash-linux-amd64'
+        // Linux 也需要根据架构选择
+        if (arch === 'arm64') {
+          fileName = 'clash-linux-arm64'
+          console.log(`[ProxyManager] 检测到 ARM64 Linux，使用: ${fileName}`)
+        } else {
+          fileName = 'clash-linux-amd64'
+          console.log(`[ProxyManager] 检测到 x64 Linux，使用: ${fileName}`)
+        }
         break
       default:
         throw new Error(`不支持的平台: ${platform}`)
     }
     
-    console.log(`[ProxyManager] 搜索文件: ${fileName}`)
-    console.log(`[ProxyManager] 可能的路径:`, possiblePaths)
+    console.log(`[ProxyManager] 目标文件名: ${fileName}`)
+    console.log(`[ProxyManager] 搜索路径:`, possiblePaths)
     
+    // 首先尝试使用架构特定的文件
     for (const resourcesPath of possiblePaths) {
       const binaryPath = path.join(resourcesPath, fileName)
       console.log(`[ProxyManager] 检查路径: ${binaryPath}`)
       if (fs.existsSync(binaryPath)) {
-        console.log(`[ProxyManager] 找到 Clash 文件: ${binaryPath}`)
+        console.log(`[ProxyManager] ✅ 找到 Clash 文件: ${binaryPath}`)
+        console.log(`[ProxyManager] =========================================`)
         return binaryPath
       }
     }
     
+    // 如果在 macOS/Linux 上没找到架构特定的文件，尝试回退到 amd64（兼容性）
+    if ((platform === 'darwin' || platform === 'linux') && arch === 'arm64') {
+      const fallbackFileName = platform === 'darwin' ? 'clash-darwin-amd64' : 'clash-linux-amd64'
+      console.log(`[ProxyManager] ⚠️  未找到 ARM64 版本，尝试回退到: ${fallbackFileName}`)
+      
+      for (const resourcesPath of possiblePaths) {
+        const binaryPath = path.join(resourcesPath, fallbackFileName)
+        console.log(`[ProxyManager] 检查回退路径: ${binaryPath}`)
+        if (fs.existsSync(binaryPath)) {
+          console.log(`[ProxyManager] ✅ 找到回退 Clash 文件: ${binaryPath}`)
+          console.log(`[ProxyManager] =========================================`)
+          return binaryPath
+        }
+      }
+    }
+    
     const defaultPath = path.join(process.cwd(), 'resources', fileName)
-    console.log(`[ProxyManager] 使用默认路径: ${defaultPath}`)
+    console.log(`[ProxyManager] ⚠️  未找到文件，使用默认路径: ${defaultPath}`)
+    console.log(`[ProxyManager] =========================================`)
     return defaultPath
   }
 }
