@@ -17,10 +17,12 @@
     "electron:dev": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"npm run server\" \"wait-on http://localhost:3000 && nodemon\"",
     "electron:dev-simple": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:3000 && nodemon\"",
     "electron:start": "cross-env NODE_ENV=development electron .",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:linux": "npm run build && electron-builder --linux"
+    "download:mihomo": "node scripts/download-mihomo.js",
+    "download:mihomo:all": "node scripts/download-mihomo.js --all",
+    "electron:build": "npm run download:mihomo:all && npm run build && electron-builder",
+    "electron:build:win": "npm run download:mihomo && npm run build && electron-builder --win",
+    "electron:build:mac": "npm run download:mihomo:all && npm run build && electron-builder --mac",
+    "electron:build:linux": "npm run download:mihomo:all && npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@vue-flow/background": "^1.3.2",
@@ -35,14 +37,15 @@
     "http-proxy-agent": "^7.0.0",
     "https-proxy-agent": "^7.0.0",
     "perfect-freehand": "^1.2.2",
-    "sqlite3": "^5.1.7",
     "socks-proxy-agent": "^8.0.0",
+    "sqlite3": "^5.1.7",
     "vue": "^3.4.0",
     "vue-i18n": "^9.14.5",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "adm-zip": "^0.5.16",
     "archiver": "^6.0.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
@@ -67,6 +70,15 @@
     "files": [
       "dist/**/*",
       "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "win": {
       "target": [
