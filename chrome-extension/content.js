@@ -53,9 +53,10 @@ window.addEventListener('message', async (event) => {
 
     if (message.action === 'executeScriptInIframe') {
       // 在当前页面（iframe）中应用选择器
-      console.log('[Tab Hive Extension] 应用选择器:', message.selector)
+      console.log('[Tab Hive Extension] 应用选择器:', message.selector, '内边距:', message.padding)
       try {
-        const result = applyTabHiveSelectorInIframe(message.selector)
+        const padding = message.padding && message.padding > 0 ? message.padding : 0
+        const result = applyTabHiveSelectorInIframe(message.selector, padding)
         // 发送完成回调
         window.parent.postMessage({
           source: 'tab-hive-extension',
@@ -218,9 +219,9 @@ window.addEventListener('message', (event) => {
 /**
  * 在iframe中应用选择器（隐藏其他元素，目标元素填满）
  */
-function applyTabHiveSelectorInIframe(selector) {
+function applyTabHiveSelectorInIframe(selector, padding = 0) {
   try {
-    console.log('[Tab Hive iframe] 应用选择器:', selector);
+    console.log('[Tab Hive iframe] 应用选择器:', selector, '内边距:', padding);
     
     const targetElement = document.querySelector(selector);
     
@@ -261,6 +262,7 @@ function applyTabHiveSelectorInIframe(selector) {
       document.head.appendChild(style);
     }
     
+    const paddingValue = padding > 0 ? `${padding}px` : '0';
     style.textContent = `
       html, body {
         margin: 0 !important;
@@ -274,10 +276,10 @@ function applyTabHiveSelectorInIframe(selector) {
         display: block !important;
         visibility: visible !important;
         position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
+        top: ${paddingValue} !important;
+        left: ${paddingValue} !important;
+        width: calc(100vw - ${paddingValue} * 2) !important;
+        height: calc(100vh - ${paddingValue} * 2) !important;
         margin: 0 !important;
         padding: 0 !important;
         z-index: 999999 !important;

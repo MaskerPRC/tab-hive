@@ -89,6 +89,84 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     }
   }
 
+  // 应用内边距（网页模式，无选择器）
+  const applyPadding = async (webview) => {
+    const padding = props.item.padding && props.item.padding > 0 ? props.item.padding : 0
+    if (padding === 0) return
+
+    console.log('[useWebviewSelector] 应用内边距（网页模式）:', padding)
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const paddingStyleId = `tabhive-padding-style-${props.item.id}`
+
+      const paddingCode = `
+        (function() {
+          try {
+            console.log('[Webview Padding] 应用内边距（网页模式）');
+            
+            // 移除旧样式
+            const oldStyle = document.getElementById('${paddingStyleId}');
+            if (oldStyle) {
+              oldStyle.remove();
+            }
+            
+            // 添加内边距样式
+            const style = document.createElement('style');
+            style.id = '${paddingStyleId}';
+            style.textContent = \`
+              html, body {
+                padding: ${padding}px !important;
+                box-sizing: border-box !important;
+              }
+            \`;
+            
+            document.head.appendChild(style);
+            console.log('[Webview Padding] 内边距已应用（网页模式）');
+            return { success: true };
+          } catch (e) {
+            console.error('[Webview Padding] 错误:', e);
+            return { success: false, error: e.message };
+          }
+        })();
+      `
+
+      await webview.executeJavaScript(paddingCode)
+      console.log('[useWebviewSelector] ✓ 内边距应用成功（网页模式）')
+    } catch (error) {
+      console.error('[useWebviewSelector] 应用内边距失败（网页模式）:', error)
+    }
+  }
+
+  // 移除内边距（网页模式）
+  const removePadding = async () => {
+    if (!isElectron.value || !webviewRef.value) return
+
+    console.log('[useWebviewSelector] 移除内边距（网页模式）')
+
+    try {
+      const paddingStyleId = `tabhive-padding-style-${props.item.id}`
+      const removeCode = `
+        (function() {
+          try {
+            const style = document.getElementById('${paddingStyleId}');
+            if (style) {
+              style.remove();
+            }
+            return { success: true };
+          } catch (e) {
+            console.error('[Webview Padding] 移除失败:', e);
+            return { success: false, error: e.message };
+          }
+        })();
+      `
+      await webviewRef.value.executeJavaScript(removeCode)
+    } catch (error) {
+      console.error('[useWebviewSelector] 移除内边距失败（网页模式）:', error)
+    }
+  }
+
   // 应用暗色主题
   const applyDarkMode = async (webview) => {
     if (!props.item.darkMode) return
@@ -169,7 +247,8 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
 
     try {
       const styleId = `tabhive-selector-style-${props.item.id}`
-      const selectorCode = generateSelectorCode(selectors, styleId)
+      const padding = props.item.padding && props.item.padding > 0 ? props.item.padding : 0
+      const selectorCode = generateSelectorCode(selectors, styleId, padding)
 
       // 重试机制：最多尝试3次，每次间隔递增
       let lastResult = null
@@ -297,7 +376,9 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     restoreOriginalStyles,
     watchFullscreenToggle,
     applyAdBlock,
-    removeAdBlock
+    removeAdBlock,
+    applyPadding,
+    removePadding
   }
 }
 

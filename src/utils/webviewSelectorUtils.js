@@ -7,9 +7,10 @@
  * 应用选择器到页面
  * @param {string[]} selectors - CSS选择器数组
  * @param {string} styleId - 样式ID
+ * @param {number} padding - 内边距（像素）
  * @returns {Object} 执行结果
  */
-export function applyWebviewSelector(selectors, styleId) {
+export function applyWebviewSelector(selectors, styleId, padding = 0) {
   try {
     console.log('[Webview Selector] 应用多个选择器:', selectors);
     
@@ -159,6 +160,7 @@ export function applyWebviewSelector(selectors, styleId) {
     
     // 如果只有一个目标元素，应用单选择器样式（固定全屏）
     if (targetElements.length === 1) {
+      const paddingValue = padding > 0 ? `${padding}px` : '0';
       style.textContent = `
         html, body {
           margin: 0 !important;
@@ -172,10 +174,10 @@ export function applyWebviewSelector(selectors, styleId) {
           display: block !important;
           visibility: visible !important;
           position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
+          top: ${paddingValue} !important;
+          left: ${paddingValue} !important;
+          width: calc(100vw - ${paddingValue} * 2) !important;
+          height: calc(100vh - ${paddingValue} * 2) !important;
           margin: 0 !important;
           padding: 0 !important;
           z-index: 999999 !important;
@@ -188,13 +190,15 @@ export function applyWebviewSelector(selectors, styleId) {
       `;
     } else {
       // 多个目标元素，保持原有布局
+      const paddingValue = padding > 0 ? `${padding}px` : '0';
       style.textContent = `
         html, body {
           margin: 0 !important;
-          padding: 0 !important;
+          padding: ${paddingValue} !important;
           overflow: auto !important;
           width: 100% !important;
           height: 100% !important;
+          box-sizing: border-box !important;
         }
         
         ${combinedSelector} {
@@ -262,17 +266,19 @@ export function restoreWebviewStyles(styleId) {
  * 生成选择器应用的包装函数代码
  * @param {string[]} selectors - CSS选择器数组
  * @param {string} styleId - 样式ID
+ * @param {number} padding - 内边距（像素）
  * @returns {string} 可执行的JavaScript代码字符串
  */
-export function generateSelectorCode(selectors, styleId) {
+export function generateSelectorCode(selectors, styleId, padding = 0) {
   // 将完整的函数代码作为字符串内联，避免打包后 toString() 失败
   return `
     (function() {
       const selectors = ${JSON.stringify(selectors)};
       const styleId = ${JSON.stringify(styleId)};
+      const padding = ${padding};
       
       // 内联 applyWebviewSelector 函数
-      function applyWebviewSelector(selectors, styleId) {
+      function applyWebviewSelector(selectors, styleId, padding) {
         try {
           console.log('[Webview Selector] 应用多个选择器:', selectors);
           
@@ -422,6 +428,7 @@ export function generateSelectorCode(selectors, styleId) {
           
           // 如果只有一个目标元素，应用单选择器样式（固定全屏）
           if (targetElements.length === 1) {
+            const paddingValue = padding > 0 ? padding + 'px' : '0';
             style.textContent = \`
               html, body {
                 margin: 0 !important;
@@ -435,10 +442,10 @@ export function generateSelectorCode(selectors, styleId) {
                 display: block !important;
                 visibility: visible !important;
                 position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
+                top: \${paddingValue} !important;
+                left: \${paddingValue} !important;
+                width: calc(100vw - \${paddingValue} * 2) !important;
+                height: calc(100vh - \${paddingValue} * 2) !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 z-index: 999999 !important;
@@ -451,13 +458,15 @@ export function generateSelectorCode(selectors, styleId) {
             \`;
           } else {
             // 多个目标元素，保持原有布局
+            const paddingValue = padding > 0 ? padding + 'px' : '0';
             style.textContent = \`
               html, body {
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: \${paddingValue} !important;
                 overflow: auto !important;
                 width: 100% !important;
                 height: 100% !important;
+                box-sizing: border-box !important;
               }
               
               \${combinedSelector} {
@@ -486,7 +495,7 @@ export function generateSelectorCode(selectors, styleId) {
         }
       }
       
-      return applyWebviewSelector(selectors, styleId);
+      return applyWebviewSelector(selectors, styleId, padding);
     })();
   `;
 }

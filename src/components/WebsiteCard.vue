@@ -15,7 +15,6 @@
       'modifier-pressed': requireModifierForActions && isModifierPressed
     }"
     :style="computedItemStyle"
-    :data-padding="!isFullscreen && item.padding && item.padding > 0 ? item.padding : null"
   >
     <!-- 已有网站显示 -->
     <template v-if="item.url || item.type === 'desktop-capture'">
@@ -267,7 +266,8 @@ export default {
       applySelector,
       restoreOriginalStyles,
       watchFullscreenToggle,
-      applyAdBlock
+      applyAdBlock,
+      applyPadding
     } = useWebviewSelector(props, { isElectron, webviewRef, executeJavaScript, adBlockEnabled: computed(() => props.adBlockEnabled) })
 
     // 监听去广告配置变化，重新应用到已加载的 webview
@@ -378,14 +378,9 @@ export default {
       return url
     })
 
-    // 计算包含内边距的样式
+    // 计算样式（内边距现在在网页内部应用）
     const computedItemStyle = computed(() => {
-      const style = { ...props.itemStyle }
-      // 全屏模式下不应用内边距
-      if (!props.isFullscreen && props.item.padding && props.item.padding > 0) {
-        style['--item-padding'] = `${props.item.padding}px`
-      }
-      return style
+      return { ...props.itemStyle }
     })
 
     // ==================== 事件处理 ====================
@@ -442,9 +437,13 @@ export default {
                 console.log('[WebsiteCard] 开始应用选择器')
                 await applySelector(webview, false)
                 console.log('[WebsiteCard] 选择器应用完成')
+              } else if (!props.isFullscreen && !hasSelectors) {
+                // 网页模式：应用内边距
+                console.log('[WebsiteCard] 网页模式，应用内边距')
+                await applyPadding(webview)
               } else {
-                console.log('[WebsiteCard] 跳过应用选择器，原因:', 
-                  props.isFullscreen ? '处于全屏状态' : '没有选择器')
+                console.log('[WebsiteCard] 跳过应用选择器/内边距，原因:', 
+                  props.isFullscreen ? '处于全屏状态' : '没有选择器且无内边距')
               }
             },
             onNavigate: (url) => {
@@ -476,11 +475,14 @@ export default {
                 await applyDarkMode(webview)
               }
               
-              // 应用选择器
+              // 应用选择器或内边距
               const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
                                   (props.item.targetSelector && props.item.targetSelector.trim())
               if (!props.isFullscreen && hasSelectors) {
                 await applySelector(webview, true)
+              } else if (!props.isFullscreen && !hasSelectors) {
+                // 网页模式：应用内边距
+                await applyPadding(webview)
               }
             }
           })
@@ -705,14 +707,7 @@ export default {
   border: none;
 }
 
-/* 内边距支持 */
-.grid-item[data-padding] .website-webview,
-.grid-item[data-padding] .website-iframe,
-.grid-item[data-padding] .desktop-capture-view {
-  width: calc(100% - var(--item-padding) * 2);
-  height: calc(100% - var(--item-padding) * 2);
-  margin: var(--item-padding);
-}
+/* 内边距现在在网页内部应用，不再需要外侧样式 */
 
 /* 拖动或调整大小时,禁用 webview/iframe 的鼠标事件 */
 .grid-item.dragging .website-webview,

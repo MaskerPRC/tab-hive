@@ -74,6 +74,7 @@ export function useIframeSelector(props) {
           source: 'tab-hive',
           action: 'executeScriptInIframe',
           selector: selector,
+          padding: item.padding && item.padding > 0 ? item.padding : 0,
           requestId: requestId
         }, '*')
       } catch (error) {
@@ -249,6 +250,9 @@ export function useIframeSelector(props) {
         }
         
         const styleId = `tabhive-selector-style-${item.id}`
+        const padding = item.padding && item.padding > 0 ? item.padding : 0
+        const paddingValue = padding > 0 ? `${padding}px` : '0'
+        
         let style = iframeDoc.getElementById(styleId)
         if (!style) {
           style = iframeDoc.createElement('style')
@@ -269,10 +273,10 @@ export function useIframeSelector(props) {
             display: block !important;
             visibility: visible !important;
             position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
+            top: ${paddingValue} !important;
+            left: ${paddingValue} !important;
+            width: calc(100vw - ${paddingValue} * 2) !important;
+            height: calc(100vh - ${paddingValue} * 2) !important;
             margin: 0 !important;
             padding: 0 !important;
             z-index: 999999 !important;
@@ -317,11 +321,13 @@ export function useIframeSelector(props) {
         
         const styleId = `tabhive-selector-style-${props.item.id}`
         const selector = props.item.targetSelector
+        const padding = props.item.padding && props.item.padding > 0 ? props.item.padding : 0
         
         const code = `
           (function() {
             try {
               const selector = '${selector.replace(/'/g, "\\'")}';
+              const padding = ${padding};
               console.log('[Tab Hive iframe] 应用选择器:', selector);
               
               const oldStyle = document.getElementById('${styleId}');
@@ -358,12 +364,13 @@ export function useIframeSelector(props) {
                       hiddenCount++;
                     }
                   });
-                }
-                current = parent;
+              }
+              current = parent;
               }
               
               console.log('[Tab Hive iframe] 已隐藏 ' + hiddenCount + ' 个兄弟元素');
               
+              const paddingValue = padding > 0 ? padding + 'px' : '0';
               const style = document.createElement('style');
               style.id = '${styleId}';
               style.textContent = \`
@@ -379,10 +386,10 @@ export function useIframeSelector(props) {
                   display: block !important;
                   visibility: visible !important;
                   position: fixed !important;
-                  top: 0 !important;
-                  left: 0 !important;
-                  width: 100vw !important;
-                  height: 100vh !important;
+                  top: \${paddingValue} !important;
+                  left: \${paddingValue} !important;
+                  width: calc(100vw - \${paddingValue} * 2) !important;
+                  height: calc(100vh - \${paddingValue} * 2) !important;
                   margin: 0 !important;
                   padding: 0 !important;
                   z-index: 999999 !important;
@@ -493,6 +500,9 @@ export function useIframeSelector(props) {
         console.log('[Tab Hive] 已隐藏 ' + hiddenCount + ' 个兄弟元素')
         
         const styleId = `tabhive-selector-style-${props.item.id}`
+        const padding = props.item.padding && props.item.padding > 0 ? props.item.padding : 0
+        const paddingValue = padding > 0 ? `${padding}px` : '0'
+        
         let style = iframeDoc.getElementById(styleId)
         if (!style) {
           style = iframeDoc.createElement('style')
@@ -513,10 +523,10 @@ export function useIframeSelector(props) {
             display: block !important;
             visibility: visible !important;
             position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
+            top: ${paddingValue} !important;
+            left: ${paddingValue} !important;
+            width: calc(100vw - ${paddingValue} * 2) !important;
+            height: calc(100vh - ${paddingValue} * 2) !important;
             margin: 0 !important;
             padding: 0 !important;
             z-index: 999999 !important;
