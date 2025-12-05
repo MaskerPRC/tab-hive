@@ -62,6 +62,7 @@
       @contextmenu="handleContextMenu"
       @drop.prevent="handleDropOnEmpty"
       @dragover.prevent="handleDragOverOnEmpty"
+      @dragenter.prevent="handleDragEnterForFiles"
     >
       <!-- 画布内容 -->
       <div
@@ -223,7 +224,7 @@ export default {
       default: () => []
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'open-script-panel'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'open-script-panel', 'import-layout-from-image'],
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
     const allWebsites = computed(() => {
@@ -366,7 +367,8 @@ export default {
     // 处理空白区域的拖放
     const handleDragOverOnEmpty = (event) => {
       const types = event.dataTransfer.types
-      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
+      // 支持文件拖拽和URL拖拽
+      if (types.includes('Files') || types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
         const target = event.target
         if (target.closest('.grid-item')) {
           return
@@ -375,14 +377,60 @@ export default {
         dragOverIndex.value = null
       }
     }
-
-    const handleDropOnEmpty = (event) => {
+    
+    // 处理文件拖拽进入
+    const handleDragEnterForFiles = (event) => {
       const types = event.dataTransfer.types
-      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
-        const target = event.target
-        if (target.closest('.grid-item')) {
-          return
+      if (types.includes('Files')) {
+        event.preventDefault()
+        console.log('[GridView] 文件拖拽进入画布')
+      }
+    }
+
+    const handleDropOnEmpty = async (event) => {
+      console.log('[GridView] handleDropOnEmpty 被调用')
+      const types = event.dataTransfer.types
+      console.log('[GridView] 拖拽类型:', types)
+      
+      const target = event.target
+      if (target.closest('.grid-item')) {
+        console.log('[GridView] 拖拽到卡片上，跳过')
+        return
+      }
+      
+      // 检查是否是文件拖拽（图片文件）
+      if (types.includes('Files')) {
+        console.log('[GridView] 检测到文件拖拽')
+        const files = event.dataTransfer.files
+        if (files.length > 0) {
+          const file = files[0]
+          console.log('[GridView] 文件:', file.name, file.type, file.size)
+          
+          // 检查是否是图片文件
+          if (file.type.startsWith('image/')) {
+            console.log('[GridView] 是图片文件，尝试提取布局数据')
+            try {
+              const { extractLayoutFromImage } = await import('../utils/layoutImageUtils.js')
+              const layoutData = await extractLayoutFromImage(file)
+              
+              console.log('[GridView] 从拖拽图片提取的布局数据:', layoutData)
+              
+              if (layoutData && layoutData.websites && Array.isArray(layoutData.websites)) {
+                console.log('[GridView] 从拖拽图片检测到布局数据，触发导入事件')
+                emit('import-layout-from-image', layoutData)
+                return
+              } else {
+                console.log('[GridView] 图片中没有找到布局数据')
+              }
+            } catch (error) {
+              console.error('[GridView] 处理拖拽图片失败:', error)
+            }
+          }
         }
+      }
+      
+      // 处理URL拖拽
+      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
         handleDropOnEmptyBase(event, emit)
       }
     }
@@ -777,6 +825,7 @@ export default {
       handleDrop,
       handleDropOnEmpty,
       handleDragOverOnEmpty,
+      handleDragEnterForFiles,
       handleContextMenu,
       startDrag,
       startResize,

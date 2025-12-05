@@ -16,6 +16,8 @@
         :current-layout-id="currentLayoutId"
         @create-layout="handleCreateLayout"
         @select-layout="selectLayout"
+        @share-layout="$emit('share-layout', $event)"
+        @export-layout="$emit('export-layout', $event)"
       />
 
       <!-- 设置和操作按钮 -->
@@ -110,7 +112,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
   setup(props, { emit }) {
     const { t } = useI18n()
 

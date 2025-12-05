@@ -1,0 +1,63 @@
+{
+  "name": "test",
+  "websites": [
+    {
+      "id": 1764921028514,
+      "url": "https://www.baidu.com",
+      "title": "百度",
+      "type": "website",
+      "deviceType": "desktop",
+      "targetSelector": "",
+      "targetSelectors": [],
+      "autoRefreshInterval": 0,
+      "sessionInstance": "default",
+      "padding": 10,
+      "muted": false,
+      "darkMode": false,
+      "requireModifierForActions": false,
+      "position": {
+        "x": 20,
+        "y": 20
+      },
+      "size": {
+        "width": 400,
+        "height": 300
+      },
+      "desktopCaptureSourceId": null,
+      "desktopCaptureOptions": {
+        "autoRefresh": false,
+        "fitScreen": false
+      }
+    },
+    {
+      "id": 1764943918611,
+      "url": "https://www.baidu.com/favicon.ico",
+      "title": "baidu.com",
+      "type": "website",
+      "deviceType": "desktop",
+      "targetSelector": "",
+      "targetSelectors": [],
+      "autoRefreshInterval": 0,
+      "sessionInstance": "default",
+      "padding": 0,
+      "muted": false,
+      "darkMode": false,
+      "requireModifierForActions": false,
+      "position": {
+        "x": 440,
+        "y": 20
+      },
+      "size": {
+        "width": 400,
+        "height": 300
+      },
+      "desktopCaptureSourceId": null,
+      "desktopCaptureOptions": {
+        "autoRefresh": false,
+        "fitScreen": false
+      }
+    }
+  ],
+  "version": 1,
+  "exportedAt": "2025-12-05T15:48:38.693Z"
+}

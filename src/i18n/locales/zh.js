@@ -259,7 +259,23 @@ export default {
     preview: '预览',
     sharedLayoutsDesc: '浏览并导入网友分享的 Tab Hive 布局配置',
     sortHot: '最热下载',
-    sortLatest: '最新发布'
+    sortLatest: '最新发布',
+    exportLayout: '导出布局',
+    shareWithScreenshotConfirm: '是否要截图当前页面并嵌入布局数据？\n\n截图将作为分享图片，布局的JSON数据会保存在图片的元数据中。',
+    exportWithScreenshotConfirm: '是否要截图当前页面并嵌入布局数据？\n\n截图将作为导出图片，布局的JSON数据会保存在图片的元数据中。',
+    capturingScreenshot: '正在截图...',
+    screenshotCopied: '截图已复制到剪贴板！',
+    screenshotDownloaded: '截图已下载！',
+    shareFailed: '分享失败',
+    exportSuccess: '导出成功！',
+    exportFailed: '导出失败',
+    importLayout: '导入布局',
+    importLayoutFromImageConfirm: '检测到图片中包含布局数据（"{name}"）。\n\n是否要导入此布局？',
+    importedLayout: '导入的布局',
+    unnamedLayout: '未命名布局',
+    invalidLayoutData: '无效的布局数据',
+    importSuccess: '导入成功！',
+    importFailed: '导入失败'
   },
 
   // 下载弹窗

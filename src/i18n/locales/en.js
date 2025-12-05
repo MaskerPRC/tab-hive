@@ -243,7 +243,22 @@ export default {
     shareLayout: 'Share Layout',
     renameLayout: 'Rename',
     deleteLayout: 'Delete',
-    websiteCount: ' websites'
+    websiteCount: ' websites',
+    exportLayout: 'Export Layout',
+    shareWithScreenshotConfirm: 'Do you want to capture a screenshot of the current page and embed layout data?\n\nThe screenshot will be used as the sharing image, and the layout JSON data will be saved in the image metadata.',
+    exportWithScreenshotConfirm: 'Do you want to capture a screenshot of the current page and embed layout data?\n\nThe screenshot will be used as the export image, and the layout JSON data will be saved in the image metadata.',
+    capturingScreenshot: 'Capturing screenshot...',
+    screenshotCopied: 'Screenshot copied to clipboard!',
+    screenshotDownloaded: 'Screenshot downloaded!',
+    shareFailed: 'Share failed',
+    exportSuccess: 'Export successful!',
+    exportFailed: 'Export failed',
+    importLayoutFromImageConfirm: 'Detected layout data in image ("{name}").\n\nDo you want to import this layout?',
+    importedLayout: 'Imported Layout',
+    unnamedLayout: 'Unnamed Layout',
+    invalidLayoutData: 'Invalid layout data',
+    importSuccess: 'Import successful!',
+    importFailed: 'Import failed'
   },
 
   // Download modal
