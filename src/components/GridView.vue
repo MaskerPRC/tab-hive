@@ -74,12 +74,11 @@
       >
         <WebsiteCard
           v-for="(item, index) in allWebsites"
-          v-if="fullscreenIndex !== index"
           :key="item.id || `website-${index}`"
           :item="item"
           :index="index"
           :item-style="getItemStyle(item, index, fullscreenIndex)"
-          :is-fullscreen="false"
+          :is-fullscreen="fullscreenIndex === index"
           :is-hidden="isHidden(index)"
           :is-drag-over="dragOverIndex === index"
           :is-external-dragging="isDragging"
@@ -89,7 +88,7 @@
           :is-current-resize="currentResizeIndex === index"
           :is-colliding="dragIsColliding || resizeIsColliding"
           :show-title="globalSettings?.showTitles"
-          :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
+          :refresh-on-fullscreen-toggle="false"
           :global-muted="globalSettings?.globalMuted"
           :ad-block-enabled="globalSettings?.adBlockEnabled"
           @drag-start="startDrag($event, index)"
@@ -99,46 +98,18 @@
           @refresh="handleRefreshWebsite"
           @copy="handleCopyWebsite"
           @edit="handleEditWebsite"
-          @fullscreen="$emit('fullscreen', index)"
+          @fullscreen="handleFullscreenToggle(index)"
           @remove="handleRemoveWebsite"
           @toggle-mute="handleToggleMute"
           @update-url="handleUpdateUrl"
           @resize-start="startResize($event, index, $event)"
         />
       </div>
-      
-      <!-- 全屏元素渲染在画布容器外，避免受 transform 影响 -->
-      <WebsiteCard
-        v-if="fullscreenIndex !== null && allWebsites[fullscreenIndex]"
-        :key="`fullscreen-${allWebsites[fullscreenIndex].id || fullscreenIndex}`"
-        :item="allWebsites[fullscreenIndex]"
-        :index="fullscreenIndex"
-        :item-style="{}"
-        :is-fullscreen="true"
-        :is-hidden="false"
-        :is-drag-over="false"
-        :is-external-dragging="false"
-        :is-dragging="false"
-        :is-current-drag="false"
-        :is-resizing="false"
-        :is-current-resize="false"
-        :is-colliding="false"
-        :show-title="globalSettings?.showTitles"
-        :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
-        :global-muted="globalSettings?.globalMuted"
-        :ad-block-enabled="globalSettings?.adBlockEnabled"
-        @fullscreen="$emit('fullscreen', null)"
-        @refresh="handleRefreshWebsite"
-        @copy="handleCopyWebsite"
-        @edit="handleEditWebsite"
-        @remove="handleRemoveWebsite"
-        @toggle-mute="handleToggleMute"
-        @update-url="handleUpdateUrl"
-      />
     </div>
 
-    <!-- 画布控制按钮 -->
+    <!-- 画布控制按钮（全屏时隐藏） -->
     <CanvasControls
+      v-if="fullscreenIndex === null"
       :zoom-percentage="zoomPercentage"
       @zoom-in="zoomIn"
       @zoom-out="zoomOut"
@@ -362,6 +333,11 @@ export default {
      * 处理画布鼠标按下（开始平移）
      */
     const handleCanvasMouseDown = (event) => {
+      // 如果全屏模式，禁用画布平移
+      if (props.fullscreenIndex !== null) {
+        return
+      }
+
       // 如果正在拖动或调整大小，不启动画布平移
       if (isDraggingItem.value || isResizing.value) {
         return
@@ -370,7 +346,7 @@ export default {
       // 如果点击的是网站卡片或其他可交互元素，不启动画布平移
       const target = event.target
       if (target.closest('.grid-item') || 
-          target.closest('.btn-add-website-float') ||
+          target.closest('.btn-add-website-float') || 
           target.closest('.canvas-controls')) {
         return
       }
@@ -383,6 +359,11 @@ export default {
      * 处理画布滚轮（缩放）
      */
     const handleCanvasWheel = (event) => {
+      // 如果全屏模式，禁用画布缩放
+      if (props.fullscreenIndex !== null) {
+        return
+      }
+
       // 如果正在拖动或调整大小，不缩放
       if (isDraggingItem.value || isResizing.value) {
         return
@@ -409,6 +390,19 @@ export default {
      */
     const resetTransform = () => {
       resetCanvasTransform()
+    }
+
+    /**
+     * 处理全屏切换
+     */
+    const handleFullscreenToggle = (index) => {
+      if (props.fullscreenIndex === index) {
+        // 退出全屏
+        emit('fullscreen', null)
+      } else {
+        // 进入全屏
+        emit('fullscreen', index)
+      }
     }
 
     /**
@@ -459,6 +453,11 @@ export default {
 
     // 键盘快捷键
     const handleKeyDown = (event) => {
+      // 如果全屏模式，禁用画布缩放快捷键
+      if (props.fullscreenIndex !== null) {
+        return
+      }
+
       // Ctrl + Plus 放大
       if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
         event.preventDefault()
@@ -475,6 +474,15 @@ export default {
         resetTransform()
       }
     }
+
+    // 监听全屏状态变化，进入全屏时重置画布变换
+    watch(() => props.fullscreenIndex, (newVal, oldVal) => {
+      if (newVal !== null && oldVal === null) {
+        // 进入全屏时，强制重置画布缩放为100%
+        console.log('[GridView] 进入全屏，重置画布变换')
+        resetCanvasTransform()
+      }
+    })
 
     // 监听网站列表变化，初始化新添加的项目
     watch(allWebsites, () => {
@@ -586,7 +594,8 @@ export default {
       zoomIn,
       zoomOut,
       resetTransform,
-      handleAutoArrange
+      handleAutoArrange,
+      handleFullscreenToggle
     }
   }
 }
