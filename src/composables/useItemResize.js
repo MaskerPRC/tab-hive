@@ -13,6 +13,10 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
   const currentDragIndex = ref(-1)
   const isColliding = ref(false)
 
+  // 最小可调整尺寸：确保用户能够找到边框并继续调整大小
+  const MIN_WIDTH = 200  // 最小宽度 200px
+  const MIN_HEIGHT = 150  // 最小高度 150px
+
   /**
    * 开始调整大小
    */
@@ -67,10 +71,10 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
     let newHeight = currentSize.height
 
     if (resizeHandle.value.includes('e')) {
-      newWidth = Math.max(1, dragStartItemPos.value.width + scaledDeltaX)
+      newWidth = Math.max(MIN_WIDTH, dragStartItemPos.value.width + scaledDeltaX)
     }
     if (resizeHandle.value.includes('s')) {
-      newHeight = Math.max(1, dragStartItemPos.value.height + scaledDeltaY)
+      newHeight = Math.max(MIN_HEIGHT, dragStartItemPos.value.height + scaledDeltaY)
     }
 
     const currentPos = itemPositions.value[currentDragIndex.value] || { x: 0, y: 0 }
@@ -145,8 +149,8 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
       const currentSize = itemSizes.value[currentDragIndex.value]
       if (currentSize) {
         const snappedSize = {
-          width: snapToGrid(currentSize.width),
-          height: snapToGrid(currentSize.height)
+          width: Math.max(MIN_WIDTH, snapToGrid(currentSize.width)),
+          height: Math.max(MIN_HEIGHT, snapToGrid(currentSize.height))
         }
         itemSizes.value[currentDragIndex.value] = snappedSize
 

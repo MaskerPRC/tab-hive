@@ -110,8 +110,9 @@
       />
       <!-- 桌面捕获类型禁用刷新（因为不支持） -->
 
-      <!-- 调整大小手柄 -->
+      <!-- 调整大小手柄（全屏状态下隐藏，因为拖动整个软件边框就可以调整大小） -->
       <ResizeHandles
+        v-if="!isFullscreen"
         @resize-start="(event, direction) => $emit('resize-start', event, index, direction)"
       />
       
