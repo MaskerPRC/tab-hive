@@ -410,6 +410,7 @@ export default {
   // Панель полноэкранного режима
   fullscreenBar: {
     selectElement: 'Выбрать элемент',
+    refresh: 'Обновить',
     exitFullscreen: 'Выход из полноэкранного режима'
   },
 

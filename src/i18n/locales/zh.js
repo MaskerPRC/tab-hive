@@ -415,6 +415,7 @@ export default {
   // 全屏栏
   fullscreenBar: {
     selectElement: '选择元素',
+    refresh: '刷新',
     exitFullscreen: '退出全屏'
   },
 

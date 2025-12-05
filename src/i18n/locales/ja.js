@@ -410,6 +410,7 @@ export default {
   // フルスクリーンバー
   fullscreenBar: {
     selectElement: '要素を選択',
+    refresh: '更新',
     exitFullscreen: 'フルスクリーンを終了'
   },
 

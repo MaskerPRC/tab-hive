@@ -16,6 +16,18 @@
       <span>{{ $t('fullscreenBar.selectElement') }}</span>
     </button>
     <button
+      class="btn-refresh"
+      @click="$emit('refresh')"
+      :title="$t('fullscreenBar.refresh')"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"/>
+        <polyline points="1 20 1 14 7 14"/>
+        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+      </svg>
+      <span>{{ $t('fullscreenBar.refresh') }}</span>
+    </button>
+    <button
       class="btn-exit-fullscreen"
       @click="$emit('exit')"
     >
@@ -38,7 +50,7 @@ export default {
       required: true
     }
   },
-  emits: ['exit', 'leave', 'selectElement'],
+  emits: ['exit', 'leave', 'selectElement', 'refresh'],
   setup() {
     const { t } = useI18n()
     return { t }
@@ -75,6 +87,7 @@ export default {
 }
 
 .btn-selector,
+.btn-refresh,
 .btn-exit-fullscreen {
   display: flex;
   align-items: center;
@@ -94,12 +107,18 @@ export default {
   border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.btn-refresh {
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .btn-selector:hover,
+.btn-refresh:hover,
 .btn-exit-fullscreen:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
 .btn-selector svg,
+.btn-refresh svg,
 .btn-exit-fullscreen svg {
   display: block;
 }

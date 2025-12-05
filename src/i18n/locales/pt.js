@@ -410,6 +410,7 @@ export default {
   // Barra de tela cheia
   fullscreenBar: {
     selectElement: 'Selecionar Elemento',
+    refresh: 'Atualizar',
     exitFullscreen: 'Sair da Tela Cheia'
   },
 

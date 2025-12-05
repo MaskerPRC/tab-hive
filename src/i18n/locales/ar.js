@@ -410,6 +410,7 @@ export default {
   // شريط ملء الشاشة
   fullscreenBar: {
     selectElement: 'تحديد العنصر',
+    refresh: 'تحديث',
     exitFullscreen: 'الخروج من ملء الشاشة'
   },
 

@@ -410,6 +410,7 @@ export default {
   // Barra de pantalla completa
   fullscreenBar: {
     selectElement: 'Seleccionar Elemento',
+    refresh: 'Actualizar',
     exitFullscreen: 'Salir de Pantalla Completa'
   },
 

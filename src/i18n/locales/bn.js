@@ -410,6 +410,7 @@ export default {
   // ফুলস্ক্রিন বার
   fullscreenBar: {
     selectElement: 'উপাদান নির্বাচন করুন',
+    refresh: 'রিফ্রেশ করুন',
     exitFullscreen: 'ফুলস্ক্রিন থেকে প্রস্থান করুন'
   },
 

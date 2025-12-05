@@ -40,7 +40,6 @@
       :layouts="layouts"
       :currentLayoutId="currentLayoutId"
       :showTitles="layoutManager.globalSettings.value.showTitles"
-      :refreshOnFullscreenToggle="layoutManager.globalSettings.value.refreshOnFullscreenToggle"
       :globalMuted="layoutManager.globalSettings.value.globalMuted"
       :adBlockEnabled="layoutManager.globalSettings.value.adBlockEnabled"
       :showUpdateButton="showUpdateButton"
@@ -51,7 +50,6 @@
       @toggle-keep-alive="handleToggleKeepAlive"
       @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
-      @toggle-refresh-on-fullscreen="handleToggleRefreshOnFullscreen"
       @toggle-global-mute="handleToggleGlobalMute"
       @toggle-ad-block="handleToggleAdBlock"
       @manage-sessions="handleManageSessions"
@@ -311,11 +309,6 @@ export default {
       layoutManager.updateGlobalSettings({ showTitles })
     }
 
-    // 切换全屏刷新配置
-    const handleToggleRefreshOnFullscreen = (refreshOnFullscreenToggle) => {
-      layoutManager.updateGlobalSettings({ refreshOnFullscreenToggle })
-    }
-
     // 切换全局静音
     const handleToggleGlobalMute = (globalMuted) => {
       layoutManager.updateGlobalSettings({ globalMuted })
@@ -533,7 +526,6 @@ export default {
       handleToggleKeepAlive,
       renameLayout: layoutManager.renameLayout,
       handleToggleTitles,
-      handleToggleRefreshOnFullscreen,
       handleToggleGlobalMute,
       handleToggleAdBlock,
       handleClearConfig,

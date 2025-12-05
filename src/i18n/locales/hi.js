@@ -410,6 +410,7 @@ export default {
   // पूर्ण स्क्रीन बार
   fullscreenBar: {
     selectElement: 'तत्व चुनें',
+    refresh: 'रीफ्रेश करें',
     exitFullscreen: 'पूर्ण स्क्रीन से बाहर निकलें'
   },
 

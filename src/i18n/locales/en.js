@@ -415,6 +415,7 @@ export default {
   // Fullscreen bar
   fullscreenBar: {
     selectElement: 'Select Element',
+    refresh: 'Refresh',
     exitFullscreen: 'Exit Fullscreen'
   },
 

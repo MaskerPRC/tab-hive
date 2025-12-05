@@ -12,6 +12,7 @@
       @exit="$emit('exitFullscreen')"
       @leave="handleFullscreenBarLeave"
       @selectElement="startElementSelection"
+      @refresh="handleFullscreenRefresh"
     />
 
     <!-- 元素选择器覆盖层 -->
@@ -655,6 +656,18 @@ export default {
     }
 
     /**
+     * 处理全屏模式下的刷新
+     */
+    const handleFullscreenRefresh = () => {
+      if (props.fullscreenIndex !== null) {
+        // fullscreenIndex 是 allWebsites 的索引，可以直接使用
+        // 因为 WebsiteCard 也是基于 allWebsites 渲染的，handleRefreshWebsite 会正确处理
+        console.log('[GridView] 全屏模式下刷新网站，索引:', props.fullscreenIndex)
+        handleRefreshWebsite(props.fullscreenIndex)
+      }
+    }
+
+    /**
      * 处理自动排布
      */
     const handleAutoArrange = () => {
@@ -845,6 +858,7 @@ export default {
       resetTransform,
       handleAutoArrange,
       handleFullscreenToggle,
+      handleFullscreenRefresh,
       // 绘制相关
       isDrawingMode,
       currentPath,

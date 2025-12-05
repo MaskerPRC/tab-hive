@@ -410,6 +410,7 @@ export default {
   // Vollbild-Leiste
   fullscreenBar: {
     selectElement: 'Element auswählen',
+    refresh: 'Aktualisieren',
     exitFullscreen: 'Vollbild beenden'
   },
 
