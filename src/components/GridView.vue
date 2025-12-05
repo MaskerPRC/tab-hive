@@ -104,6 +104,41 @@
           @update-url="handleUpdateUrl"
           @resize-start="startResize($event, index, $event)"
         />
+        
+        <!-- 绘制层 -->
+        <svg
+          v-if="isDrawingMode || savedDrawings.length > 0"
+          class="drawing-layer"
+          :class="{ 'drawing-active': isDrawingMode }"
+          xmlns="http://www.w3.org/2000/svg"
+          @mousedown="handleDrawingMouseDown"
+          @mousemove="handleDrawingMouseMove"
+          @mouseup="handleDrawingMouseUp"
+          @mouseleave="handleDrawingMouseUp"
+        >
+          <!-- 已保存的绘制路径 -->
+          <path
+            v-for="(path, index) in savedDrawings"
+            :key="`saved-${index}`"
+            :d="path.d"
+            :stroke="path.color"
+            :stroke-width="path.width"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          
+          <!-- 当前正在绘制的路径 -->
+          <path
+            v-if="currentPath.length > 0"
+            :d="getPathData(currentPath)"
+            :stroke="drawingColor"
+            :stroke-width="drawingWidth"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </div>
     </div>
 
@@ -111,16 +146,24 @@
     <CanvasControls
       v-if="fullscreenIndex === null"
       :zoom-percentage="zoomPercentage"
+      :is-drawing-mode="isDrawingMode"
+      :drawing-color="drawingColor"
+      :drawing-width="drawingWidth"
       @zoom-in="zoomIn"
       @zoom-out="zoomOut"
       @reset="resetTransform"
       @auto-arrange="handleAutoArrange"
+      @toggle-drawing="toggleDrawingMode"
+      @update-color="(color) => drawingColor = color"
+      @update-width="(width) => drawingWidth = parseInt(width)"
+      @clear-drawings="clearAllDrawings"
     />
   </div>
 </template>
 
 <script>
-import { computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, watch, onMounted, onUnmounted, nextTick, ref } from 'vue'
+import getStroke from 'perfect-freehand'
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
 import DesktopCaptureEditDialog from './DesktopCaptureEditDialog.vue'
@@ -169,9 +212,13 @@ export default {
     globalSettings: {
       type: Object,
       default: () => ({ showTitles: false })
+    },
+    drawings: {
+      type: Array,
+      default: () => []
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings'],
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
     const allWebsites = computed(() => {
@@ -288,6 +335,195 @@ export default {
     // 使用计算属性优化 transform 样式，避免每次重新计算
     const transformStyle = computed(() => getTransformStyle())
 
+    // 绘制相关状态
+    const isDrawingMode = ref(false)
+    const currentPath = ref([])
+    const isDrawing = ref(false)
+    const drawingColor = ref('#FF5C00')
+    const drawingWidth = ref(3)
+    const savedDrawings = ref([])
+
+    // 从 props 加载绘制数据
+    watch(() => props.drawings, (newDrawings) => {
+      savedDrawings.value = newDrawings || []
+    }, { immediate: true })
+
+    // 绘制层不需要单独的样式，因为 SVG 不应用 transform
+    // 坐标计算时会考虑 grid-container 的 transform
+
+    // 切换绘制模式
+    const toggleDrawingMode = () => {
+      console.log('[绘制] 切换绘制模式，当前状态:', isDrawingMode.value)
+      isDrawingMode.value = !isDrawingMode.value
+      if (!isDrawingMode.value) {
+        // 退出绘制模式时，保存当前路径
+        if (currentPath.value.length > 1) {
+          saveCurrentPath()
+        }
+        currentPath.value = []
+        isDrawing.value = false
+      } else {
+        console.log('[绘制] 绘制模式已激活')
+      }
+    }
+
+    // 获取画布坐标（相对于 grid-container 本地坐标）
+    const getCanvasCoordinates = (event) => {
+      const svg = event.target.closest('svg.drawing-layer')
+      if (!svg) {
+        return null
+      }
+      
+      // 获取 canvas-wrapper 的位置（这是未变换的容器）
+      const canvasWrapper = event.target.closest('.canvas-wrapper')
+      if (!canvasWrapper) {
+        return null
+      }
+      
+      const wrapperRect = canvasWrapper.getBoundingClientRect()
+      const transform = canvasTransform.value
+      
+      // 计算鼠标相对于 canvas-wrapper 的屏幕坐标
+      const screenX = event.clientX - wrapperRect.left
+      const screenY = event.clientY - wrapperRect.top
+      
+      // 转换为本地坐标：减去 transform 的偏移，再除以缩放
+      // 因为 grid-container 有 transform: translate(x, y) scale(zoom)
+      // 所以本地坐标 = (屏幕坐标 - 偏移) / 缩放
+      const x = (screenX - (transform?.x || 0)) / (transform?.zoom || 1)
+      const y = (screenY - (transform?.y || 0)) / (transform?.zoom || 1)
+      
+      // 加上 SVG 的位置偏移（SVG 的 left: -10000px, top: -10000px）
+      // 这样 SVG 坐标系统的原点在 grid-container 的 (-10000, -10000)
+      const svgX = x + 10000
+      const svgY = y + 10000
+      
+      return [svgX, svgY]
+    }
+
+    // 开始绘制
+    const handleDrawingMouseDown = (event) => {
+      // 只响应左键（button === 0），中键用于拖动画布
+      if (event.button !== 0) {
+        return
+      }
+      
+      if (!isDrawingMode.value) {
+        return
+      }
+      if (props.fullscreenIndex !== null) {
+        return
+      }
+      
+      // 如果点击的是网站卡片或其他元素，不开始绘制
+      if (event.target.closest('.grid-item') || 
+          event.target.closest('.drawing-toolbar') ||
+          event.target.closest('.canvas-controls')) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+      
+      isDrawing.value = true
+      const coords = getCanvasCoordinates(event)
+      if (coords) {
+        currentPath.value = [coords]
+      }
+    }
+
+    // 绘制中
+    const handleDrawingMouseMove = (event) => {
+      if (!isDrawing.value || !isDrawingMode.value) return
+      
+      const coords = getCanvasCoordinates(event)
+      if (coords) {
+        currentPath.value.push(coords)
+        // 限制路径长度，避免性能问题
+        if (currentPath.value.length > 1000) {
+          currentPath.value.shift()
+        }
+      }
+    }
+
+    // 停止绘制
+    const handleDrawingMouseUp = () => {
+      if (!isDrawing.value) return
+      
+      if (currentPath.value.length > 1) {
+        saveCurrentPath()
+      }
+      
+      currentPath.value = []
+      isDrawing.value = false
+    }
+
+    // 保存当前路径
+    const saveCurrentPath = () => {
+      if (currentPath.value.length < 2) return
+
+      // 使用 perfect-freehand 生成平滑路径
+      const stroke = getStroke(currentPath.value, {
+        size: parseInt(drawingWidth.value),
+        thinning: 0.5,
+        smoothing: 0.5,
+        streamline: 0.5
+      })
+      
+      const pathData = getSvgPathFromStroke(stroke)
+      
+      const newPath = {
+        d: pathData,
+        color: drawingColor.value,
+        width: drawingWidth.value
+      }
+      
+      savedDrawings.value.push(newPath)
+      
+      // 通知父组件更新绘制数据
+      emit('update-drawings', [...savedDrawings.value])
+    }
+
+    // 获取路径数据（临时绘制）
+    const getPathData = (points) => {
+      if (points.length < 2) return ''
+      
+      const stroke = getStroke(points, {
+        size: parseInt(drawingWidth.value),
+        thinning: 0.5,
+        smoothing: 0.5,
+        streamline: 0.5
+      })
+      
+      return getSvgPathFromStroke(stroke)
+    }
+
+    // 将 stroke 转换为 SVG path
+    const getSvgPathFromStroke = (stroke) => {
+      if (!stroke.length) return ''
+      
+      const d = stroke.reduce(
+        (acc, [x0, y0], i, arr) => {
+          const [x1, y1] = arr[(i + 1) % arr.length]
+          acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2)
+          return acc
+        },
+        ['M', ...stroke[0], 'Q']
+      )
+      
+      d.push('Z')
+      return d.join(' ')
+    }
+
+    // 清除所有绘制
+    const clearAllDrawings = () => {
+      if (confirm('确定要清除所有绘制内容吗？')) {
+        savedDrawings.value = []
+        currentPath.value = []
+        emit('update-drawings', [])
+      }
+    }
+
     /**
      * 判断某个索引的网站是否应该隐藏
      */
@@ -347,7 +583,20 @@ export default {
       const target = event.target
       if (target.closest('.grid-item') || 
           target.closest('.btn-add-website-float') || 
-          target.closest('.canvas-controls')) {
+          target.closest('.canvas-controls') ||
+          target.closest('.drawing-toolbar')) {
+        return
+      }
+
+      // 绘制模式下：左键绘制，中键拖动
+      // 中键 (button === 1) 始终用于拖动画布
+      if (event.button === 1) {
+        startPan(event)
+        return
+      }
+
+      // 左键在绘制模式下不启动画布平移（由绘制层处理）
+      if (isDrawingMode.value && event.button === 0) {
         return
       }
 
@@ -595,7 +844,19 @@ export default {
       zoomOut,
       resetTransform,
       handleAutoArrange,
-      handleFullscreenToggle
+      handleFullscreenToggle,
+      // 绘制相关
+      isDrawingMode,
+      currentPath,
+      drawingColor,
+      drawingWidth,
+      savedDrawings,
+      toggleDrawingMode,
+      handleDrawingMouseDown,
+      handleDrawingMouseMove,
+      handleDrawingMouseUp,
+      getPathData,
+      clearAllDrawings
     }
   }
 }
@@ -687,5 +948,36 @@ export default {
 /* 全局拖动或调整大小时，禁用所有iframe的鼠标事件 */
 .grid-container.is-dragging .website-iframe {
   pointer-events: none;
+}
+
+/* 绘制层 */
+.drawing-layer {
+  position: absolute;
+  /* 偏移到左上方，让坐标系统覆盖负数区域 */
+  top: -10000px;
+  left: -10000px;
+  width: 20000px;
+  height: 20000px;
+  pointer-events: none;
+  z-index: 100;
+  overflow: visible;
+}
+
+.drawing-layer path {
+  pointer-events: none;
+}
+
+/* 绘制模式下，允许绘制层接收鼠标事件 */
+.drawing-layer.drawing-active {
+  pointer-events: auto;
+  cursor: crosshair;
+  z-index: 100;
+}
+
+
+/* 绘制模式下，绘制层可以接收鼠标事件 */
+.grid-container:has(+ .drawing-layer) .drawing-layer {
+  pointer-events: auto;
+  cursor: crosshair;
 }
 </style>

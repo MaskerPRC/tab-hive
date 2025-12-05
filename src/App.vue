@@ -21,36 +21,6 @@
       @retry-download="handleRetryDownload"
     />
 
-    <!-- 视图切换按钮 -->
-    <div v-if="false" class="view-toggle">
-      <button
-        @click="switchView('grid')"
-        class="view-toggle-btn"
-        :class="{ active: currentView === 'grid' }"
-        :title="$t('other.gridView')"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="7"/>
-          <rect x="14" y="3" width="7" height="7"/>
-          <rect x="14" y="14" width="7" height="7"/>
-          <rect x="3" y="14" width="7" height="7"/>
-        </svg>
-      </button>
-      <button
-        @click="switchView('canvas')"
-        class="view-toggle-btn"
-        :class="{ active: currentView === 'canvas' }"
-        :title="$t('other.canvasView')"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-          <path d="M2 2l7.586 7.586"/>
-          <circle cx="11" cy="11" r="2"/>
-        </svg>
-      </button>
-    </div>
-
     <!-- 左侧检测区域和展开标签 -->
     <div
       v-if="fullscreenIndex === null"
@@ -92,33 +62,25 @@
       @mouseleave="handlePanelLeave"
     />
     <!-- 网格视图 -->
-    <template v-if="currentView === 'grid'">
-      <template v-for="layout in layouts" :key="`layout-${layout.id}`">
-        <GridView
-          v-if="layout.id === currentLayoutId || layout.keepAlive"
-          :class="{ 'layout-hidden': layout.id !== currentLayoutId }"
-          :websites="layout.id === currentLayoutId ? websites : layout.websites"
-          :rows="2"
-          :cols="2"
-          :fullscreenIndex="layout.id === currentLayoutId ? fullscreenIndex : null"
-          :globalSettings="layoutManager.globalSettings.value"
-          @fullscreen="layout.id === currentLayoutId ? handleFullscreen($event) : null"
-          @exitFullscreen="exitFullscreen"
-          @add-website="(data) => layout.id === currentLayoutId ? handleAddWebsite(data) : null"
-          @copy-website="(index) => layout.id === currentLayoutId ? handleCopyWebsite(index) : null"
-          @remove-website="(index) => layout.id === currentLayoutId ? handleRemoveWebsite(index) : null"
-          @update-website="(data) => layout.id === currentLayoutId ? handleUpdateWebsite(data) : null"
-        />
-      </template>
+    <template v-for="layout in layouts" :key="`layout-${layout.id}`">
+      <GridView
+        v-if="layout.id === currentLayoutId || layout.keepAlive"
+        :class="{ 'layout-hidden': layout.id !== currentLayoutId }"
+        :websites="layout.id === currentLayoutId ? websites : layout.websites"
+        :rows="2"
+        :cols="2"
+        :fullscreenIndex="layout.id === currentLayoutId ? fullscreenIndex : null"
+        :globalSettings="layoutManager.globalSettings.value"
+        :drawings="layout.id === currentLayoutId ? (layout.drawings || []) : (layout.drawings || [])"
+        @fullscreen="layout.id === currentLayoutId ? handleFullscreen($event) : null"
+        @exitFullscreen="exitFullscreen"
+        @add-website="(data) => layout.id === currentLayoutId ? handleAddWebsite(data) : null"
+        @copy-website="(index) => layout.id === currentLayoutId ? handleCopyWebsite(index) : null"
+        @remove-website="(index) => layout.id === currentLayoutId ? handleRemoveWebsite(index) : null"
+        @update-website="(data) => layout.id === currentLayoutId ? handleUpdateWebsite(data) : null"
+        @update-drawings="(drawings) => handleUpdateDrawings(drawings)"
+      />
     </template>
-
-    <!-- 画布视图 -->
-    <CanvasView
-      v-if="currentView === 'canvas'"
-      :websites="websites"
-      @add-website="handleAddWebsite"
-      @update-website="handleUpdateWebsite"
-    />
 
     <!-- 全局对话框 -->
     <Dialog
@@ -153,7 +115,6 @@ import { ref, watch, onMounted, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
-import CanvasView from './components/CanvasView.vue'
 import Dialog from './components/Dialog.vue'
 import DownloadModal from './components/DownloadModal.vue'
 import ImportModeDialog from './components/ImportModeDialog.vue'
@@ -171,7 +132,6 @@ export default {
   components: {
     ConfigPanel,
     GridView,
-    CanvasView,
     Dialog,
     DownloadModal,
     ImportModeDialog,
@@ -214,9 +174,6 @@ export default {
 
     // 代理节点管理对话框显示状态
     const showProxyManager = ref(false)
-
-    // 当前视图：grid 或 canvas
-    const currentView = ref('grid')
 
     // 打开Session实例管理对话框
     const handleManageSessions = () => {
@@ -480,10 +437,13 @@ export default {
       console.log('[App] 保存完成')
     })
 
-    // 切换视图
-    const switchView = (view) => {
-      currentView.value = view
-      console.log('[App] 切换到视图:', view)
+    // 更新绘制数据
+    const handleUpdateDrawings = (drawings) => {
+      const layout = layoutManager.layouts.value.find(l => l.id === layoutManager.currentLayoutId.value)
+      if (layout) {
+        layout.drawings = drawings
+        layoutManager.saveCurrentLayout(websiteManager.websites.value)
+      }
     }
 
     // 页面加载时自动显示左侧栏，然后隐藏
@@ -577,8 +537,7 @@ export default {
       handleToggleGlobalMute,
       handleToggleAdBlock,
       handleClearConfig,
-      currentView,
-      switchView
+      handleUpdateDrawings
     }
   }
 }
@@ -671,49 +630,5 @@ export default {
 
 .app-container :deep(.config-panel.panel-visible) {
   transform: translateX(0);
-}
-
-/* 视图切换按钮 */
-.view-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 8px;
-  z-index: 999;
-  background: white;
-  padding: 8px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.view-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.3s;
-  color: #666;
-}
-
-.view-toggle-btn:hover {
-  background: #f8f9fa;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.view-toggle-btn.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-}
-
-.view-toggle-btn svg {
-  stroke: currentColor;
 }
 </style>

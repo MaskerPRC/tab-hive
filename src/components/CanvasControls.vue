@@ -48,6 +48,43 @@
         <rect x="3" y="14" width="7" height="7"/>
       </svg>
     </button>
+    
+    <!-- 绘制功能 -->
+    <div class="drawing-divider"></div>
+    <button
+      class="canvas-control-btn"
+      :class="{ 'active': isDrawingMode }"
+      @click="$emit('toggle-drawing')"
+      title="绘制模式"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+        <path d="M2 2l7.586 7.586"/>
+        <circle cx="11" cy="11" r="2"/>
+      </svg>
+    </button>
+    
+    <div v-if="isDrawingMode" class="drawing-controls">
+      <label class="drawing-control-item">
+        <span>颜色</span>
+        <input type="color" :value="drawingColor" @input="$emit('update-color', $event.target.value)" />
+      </label>
+      <label class="drawing-control-item">
+        <span>粗细</span>
+        <input type="range" :value="drawingWidth" @input="$emit('update-width', $event.target.value)" min="1" max="20" />
+      </label>
+      <button
+        class="canvas-control-btn btn-clear"
+        @click="$emit('clear-drawings')"
+        title="清除绘制"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -58,9 +95,21 @@ export default {
     zoomPercentage: {
       type: Number,
       required: true
+    },
+    isDrawingMode: {
+      type: Boolean,
+      default: false
+    },
+    drawingColor: {
+      type: String,
+      default: '#FF5C00'
+    },
+    drawingWidth: {
+      type: Number,
+      default: 3
     }
   },
-  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange']
+  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'toggle-drawing', 'update-color', 'update-width', 'clear-drawings']
 }
 </script>
 
@@ -116,6 +165,64 @@ export default {
   color: #666;
   padding: 4px 0;
   min-width: 40px;
+}
+
+/* 绘制功能分隔线 */
+.drawing-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 8px 0;
+}
+
+/* 绘制控制 */
+.drawing-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+}
+
+.drawing-control-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #666;
+}
+
+.drawing-control-item span {
+  font-weight: 500;
+  min-width: 30px;
+}
+
+.drawing-control-item input[type="color"] {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.drawing-control-item input[type="range"] {
+  flex: 1;
+  max-width: 80px;
+}
+
+.canvas-control-btn.active {
+  background: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.3);
+}
+
+.canvas-control-btn.btn-clear {
+  background: #ff4444;
+}
+
+.canvas-control-btn.btn-clear:hover {
+  background: #cc0000;
 }
 </style>
 
