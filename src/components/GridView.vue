@@ -77,7 +77,7 @@
           'free-layout': true,
           'is-dragging': isDraggingItem || isResizing
         }"
-        :style="getTransformStyle()"
+        :style="transformStyle"
         :data-websites-count="allWebsites.length"
       >
         <WebsiteCard
@@ -326,6 +326,9 @@ export default {
     const zoomPercentage = computed(() => {
       return Math.round((canvasTransform.value?.zoom || 1) * 100)
     })
+    
+    // 使用计算属性优化 transform 样式，避免每次重新计算
+    const transformStyle = computed(() => getTransformStyle())
 
     /**
      * 判断某个索引的网站是否应该隐藏
@@ -849,6 +852,7 @@ export default {
       canvasTransform,
       isPanning,
       zoomPercentage,
+      transformStyle,
       getTransformStyle,
       handleCanvasMouseDown,
       handleCanvasWheel,
@@ -948,10 +952,18 @@ export default {
   min-height: 100%;
   height: auto;
   position: relative;
-  transition: transform 0.1s ease-out;
   /* 确保画布可以扩展到足够大的范围 */
   min-width: 200vw;
   min-height: 200vh;
+  /* 性能优化：使用 GPU 加速 */
+  will-change: transform;
+  /* 拖动时禁用 transition，提升性能 */
+  transition: transform 0.1s ease-out;
+}
+
+/* 拖动时禁用 transition */
+.canvas-wrapper.panning .grid-container {
+  transition: none !important;
 }
 
 .grid-container.free-layout {

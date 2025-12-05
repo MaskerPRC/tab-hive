@@ -16,6 +16,10 @@ export function useCanvasTransform() {
   const isPanning = ref(false)
   const panStartPos = ref({ x: 0, y: 0 })
   const panStartTransform = ref({ x: 0, y: 0 })
+  
+  // 使用 requestAnimationFrame 优化性能
+  let rafId = null
+  let pendingTransform = null
 
   /**
    * 开始拖动画布
@@ -39,6 +43,12 @@ export function useCanvasTransform() {
 
     panStartPos.value = { x: clientX, y: clientY }
     panStartTransform.value = { ...canvasTransform.value }
+    
+    // 取消之前的动画帧
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
 
     document.addEventListener('mousemove', handlePanMove, { passive: false })
     document.addEventListener('mouseup', handlePanEnd)
@@ -49,7 +59,7 @@ export function useCanvasTransform() {
   }
 
   /**
-   * 处理画布平移移动
+   * 处理画布平移移动（使用 requestAnimationFrame 优化）
    */
   const handlePanMove = (event) => {
     if (!isPanning.value) return
@@ -63,10 +73,22 @@ export function useCanvasTransform() {
     const deltaX = clientX - panStartPos.value.x
     const deltaY = clientY - panStartPos.value.y
 
-    canvasTransform.value = {
-      ...panStartTransform.value,
+    // 保存待更新的变换值
+    pendingTransform = {
       x: panStartTransform.value.x + deltaX,
-      y: panStartTransform.value.y + deltaY
+      y: panStartTransform.value.y + deltaY,
+      zoom: panStartTransform.value.zoom
+    }
+
+    // 使用 requestAnimationFrame 批量更新，避免频繁触发响应式更新
+    if (rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        if (pendingTransform) {
+          canvasTransform.value = pendingTransform
+          pendingTransform = null
+        }
+        rafId = null
+      })
     }
   }
 
@@ -75,6 +97,16 @@ export function useCanvasTransform() {
    */
   const handlePanEnd = () => {
     isPanning.value = false
+
+    // 确保最后一次更新被应用
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
+    if (pendingTransform) {
+      canvasTransform.value = pendingTransform
+      pendingTransform = null
+    }
 
     document.removeEventListener('mousemove', handlePanMove)
     document.removeEventListener('mouseup', handlePanEnd)
