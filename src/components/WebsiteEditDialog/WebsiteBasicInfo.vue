@@ -1,27 +1,37 @@
 <template>
-  <div class="form-row">
+  <div class="basic-info-grid">
     <div class="form-group">
       <label>{{ $t('websiteBasicInfo.name') }}</label>
-      <input
-        :value="title"
-        @input="$emit('update:title', $event.target.value)"
-        type="text"
-        :placeholder="$t('websiteBasicInfo.namePlaceholder')"
-        class="form-input"
-        @keyup.enter="$emit('enter')"
-        ref="titleInput"
-      />
+      <div class="input-wrapper">
+        <div class="input-icon">
+          <i class="fa-solid fa-tag"></i>
+        </div>
+        <input
+          :value="title"
+          @input="$emit('update:title', $event.target.value)"
+          type="text"
+          :placeholder="$t('websiteBasicInfo.namePlaceholder')"
+          class="form-input"
+          @keyup.enter="$emit('enter')"
+          ref="titleInput"
+        />
+      </div>
     </div>
     <div class="form-group">
       <label>{{ $t('websiteBasicInfo.url') }}</label>
-      <input
-        :value="url"
-        @input="$emit('update:url', $event.target.value)"
-        type="text"
-        :placeholder="$t('websiteBasicInfo.urlPlaceholder')"
-        class="form-input"
-        @keyup.enter="$emit('enter')"
-      />
+      <div class="input-wrapper">
+        <div class="input-icon">
+          <i class="fa-solid fa-link"></i>
+        </div>
+        <input
+          :value="url"
+          @input="$emit('update:url', $event.target.value)"
+          type="text"
+          :placeholder="$t('websiteBasicInfo.urlPlaceholder')"
+          class="form-input url-input"
+          @keyup.enter="$emit('enter')"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -68,47 +78,79 @@ export default {
 </script>
 
 <style scoped>
-.form-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
+.basic-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
 }
 
-.form-row .form-group {
-  flex: 1;
+@media (min-width: 768px) {
+  .basic-info-grid {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+.form-group {
   margin-bottom: 0;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
+  margin-bottom: 0.5rem;
+  color: #374151;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 0.75rem;
+  pointer-events: none;
+  color: #9ca3af;
+}
+
+.input-icon i {
+  font-size: 0.875rem;
 }
 
 .form-input {
   width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.3s;
+  padding: 0.625rem 1rem 0.625rem 2.25rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  color: #1f2937;
+  font-weight: 500;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
+  background: white;
 }
 
-@media (max-width: 900px) {
-  .form-row {
-    flex-direction: column;
-    gap: 0;
-  }
-  
-  .form-row .form-group {
-    margin-bottom: 20px;
+.url-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  color: #4b5563;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .basic-info-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,27 +1,35 @@
 <template>
-  <div class="form-group">
-    <label>{{ $t('targetSelector.title') }}</label>
+  <div class="selector-config">
+    <div class="config-header">
+      <label class="config-label">{{ $t('targetSelector.title') }}</label>
+      <span class="config-badge">CSS Selectors</span>
+    </div>
     <div class="selector-list">
       <div 
         v-for="(selector, index) in modelValue"
         :key="index"
         class="selector-item"
       >
-        <input
-          :value="selector"
-          @input="updateSelector(index, $event.target.value)"
-          type="text"
-          :placeholder="$t('targetSelector.placeholder')"
-          class="form-input selector-item-input"
-          @keyup.enter="$emit('enter')"
-        />
+        <div class="input-wrapper">
+          <div class="input-icon">
+            <i class="fa-solid fa-crosshairs"></i>
+          </div>
+          <input
+            :value="selector"
+            @input="updateSelector(index, $event.target.value)"
+            type="text"
+            :placeholder="$t('targetSelector.placeholder')"
+            class="form-input selector-item-input"
+            @keyup.enter="$emit('enter')"
+          />
+        </div>
         <button
           type="button"
           class="btn-remove-selector"
           @click="removeSelector(index)"
           :title="$t('targetSelector.removeSelector')"
         >
-          ✕
+          <i class="fa-solid fa-times"></i>
         </button>
       </div>
       <button
@@ -30,11 +38,20 @@
         @click="addSelector"
         :title="$t('targetSelector.addSelector')"
       >
+        <i class="fa-solid fa-plus"></i>
         {{ $t('targetSelector.addSelector') }}
       </button>
     </div>
     <div class="selector-hint">
-      {{ $t('targetSelector.hint') }}
+      <i class="fa-regular fa-lightbulb"></i>
+      <div class="hint-content">
+        <p class="hint-title">功能说明：</p>
+        <ul class="hint-list">
+          <li>可以添加多个 CSS 选择器，Grid 模式下只显示匹配的元素，隐藏其他内容。</li>
+          <li>多个选择器会同时保留所有匹配的元素。</li>
+          <li><span class="highlight">全屏时显示完整页面</span>，留空则始终显示整个页面。</li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
@@ -83,123 +100,180 @@ export default {
 </script>
 
 <style scoped>
-.form-group {
-  margin-bottom: 20px;
+.selector-config {
+  margin-bottom: 0;
 }
 
-.form-group label {
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.config-label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
+  color: #374151;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-.selector-hint {
-  margin-top: 8px;
-  padding: 10px;
-  background: #fff4e6;
-  border-left: 3px solid #ff9800;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #e65100;
+.config-badge {
+  font-size: 0.75rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
 }
 
 .selector-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-/* 自定义滚动条样式 */
-.selector-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.selector-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.selector-list::-webkit-scrollbar-thumb {
-  background: #FF5C00;
-  border-radius: 3px;
-  transition: background 0.3s ease;
-}
-
-.selector-list::-webkit-scrollbar-thumb:hover {
-  background: #e64e00;
+  gap: 0.75rem;
 }
 
 .selector-item {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: center;
 }
 
-.selector-item-input {
+.input-wrapper {
+  position: relative;
   flex: 1;
 }
 
-.form-input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.3s;
+.input-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 0.75rem;
+  pointer-events: none;
+  color: #9ca3af;
 }
 
-.form-input:focus {
+.input-icon i {
+  font-size: 0.875rem;
+}
+
+.selector-item-input {
+  width: 100%;
+  padding: 0.625rem 1rem 0.625rem 2.25rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  transition: all 0.2s;
+}
+
+.selector-item-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
+  background: white;
 }
 
 .btn-remove-selector {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 42px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: white;
+  color: #9ca3af;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  transition: all 0.3s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .btn-remove-selector:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.btn-remove-selector i {
+  font-size: 0.875rem;
 }
 
 .btn-add-selector {
   width: 100%;
-  padding: 10px 16px;
+  padding: 0.625rem 1rem;
   background: transparent;
-  color: var(--primary-color);
-  border: 2px dashed var(--primary-color);
-  border-radius: 6px;
+  color: #f97316;
+  border: 2px dashed #fed7aa;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.3s;
-  margin-top: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .btn-add-selector:hover {
-  background: var(--primary-light);
+  background: #fff7ed;
+  border-color: #f97316;
   border-style: solid;
-  transform: translateY(-1px);
+}
+
+.btn-add-selector i {
+  font-size: 0.75rem;
+}
+
+.selector-hint {
+  margin-top: 1rem;
+  background: #fff7ed;
+  border-left: 4px solid #f97316;
+  padding: 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.selector-hint i {
+  color: #f97316;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.hint-content {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.hint-title {
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.hint-list {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.hint-list li {
+  margin: 0.25rem 0;
+}
+
+.highlight {
+  color: #c2410c;
+  font-weight: 500;
 }
 </style>
 

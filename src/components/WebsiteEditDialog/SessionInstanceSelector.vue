@@ -1,21 +1,33 @@
 <template>
-  <div class="form-group">
-    <label>{{ $t('sessionInstance.title') }}</label>
+  <div class="session-config">
+    <label class="config-label">{{ $t('sessionInstance.title') }}</label>
+    
+    <!-- 警告信息 -->
+    <div v-if="isHiddenInstance" class="warning-box">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <span>当前正在使用代理专用会话，如需更改共享实例，请先取消下方的代理设置。</span>
+    </div>
+
     <div class="session-selector">
-      <select
-        :value="modelValue"
-        @change="$emit('update:modelValue', $event.target.value)"
-        class="form-input session-select"
-        :disabled="isHiddenInstance"
-      >
-        <option 
-          v-for="instance in displayInstances" 
-          :key="instance.id" 
-          :value="instance.id"
+      <div class="select-wrapper">
+        <select
+          :value="modelValue"
+          @change="$emit('update:modelValue', $event.target.value)"
+          class="form-select"
+          :disabled="isHiddenInstance"
         >
-          {{ instance.name }}{{ instance.hidden ? ' (代理专用)' : '' }}
-        </option>
-      </select>
+          <option 
+            v-for="instance in displayInstances" 
+            :key="instance.id" 
+            :value="instance.id"
+          >
+            {{ instance.name }}{{ instance.hidden ? ' (代理专用)' : '' }}
+          </option>
+        </select>
+        <div class="select-arrow">
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
       <button
         type="button"
         class="btn-new-instance"
@@ -23,7 +35,7 @@
         :title="$t('sessionInstance.createHint')"
         :disabled="isHiddenInstance"
       >
-        {{ $t('sessionInstance.create') }}
+        <i class="fa-solid fa-plus"></i> {{ $t('sessionInstance.create') }}
       </button>
       <button
         type="button"
@@ -32,18 +44,8 @@
         :title="$t('sessionInstance.manageHint')"
         :disabled="isHiddenInstance"
       >
-        {{ $t('sessionInstance.manage') }}
+        <i class="fa-solid fa-gear"></i> {{ $t('sessionInstance.manage') }}
       </button>
-    </div>
-    <div v-if="isHiddenInstance" class="session-hint disabled-hint">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M15 9l-6 6m0-6l6 6"/>
-      </svg>
-      正在使用代理专用会话，如需更改请先取消代理设置
-    </div>
-    <div v-else class="session-hint">
-      {{ $t('sessionInstance.hint') }}
     </div>
   </div>
 </template>
@@ -95,62 +97,113 @@ export default {
 </script>
 
 <style scoped>
-.form-group {
-  margin-bottom: 20px;
+.session-config {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  border: 1px dashed #d1d5db;
 }
 
-.form-group label {
+.config-label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
+  margin-bottom: 1rem;
+  color: #374151;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
+}
+
+.warning-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.warning-box i {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .session-selector {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
   align-items: stretch;
 }
 
-.form-input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
-.session-select {
+.select-wrapper {
+  position: relative;
   flex: 1;
-  min-width: 0;
+}
+
+.form-select {
+  width: 100%;
+  appearance: none;
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
+  padding: 0.625rem 1rem 0.625rem 1rem;
+  padding-right: 2rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
   cursor: pointer;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
+}
+
+.form-select:disabled {
+  opacity: 0.6;
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-right: 0.5rem;
+  pointer-events: none;
+  color: #6b7280;
+}
+
+.select-arrow i {
+  font-size: 0.75rem;
 }
 
 .btn-new-instance {
   flex: 0 0 auto;
-  padding: 12px 20px;
-  background: var(--primary-color);
-  color: white;
+  padding: 0.625rem 1rem;
+  background: #fff7ed;
+  color: #f97316;
   border: none;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-new-instance:hover:not(:disabled) {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
+  background: #fed7aa;
 }
 
 .btn-new-instance:disabled {
@@ -158,24 +211,29 @@ export default {
   cursor: not-allowed;
 }
 
+.btn-new-instance i {
+  font-size: 0.75rem;
+}
+
 .btn-manage-instance {
   flex: 0 0 auto;
-  padding: 12px 20px;
-  background: #6366f1;
-  color: white;
+  padding: 0.625rem 1rem;
+  background: #eef2ff;
+  color: #6366f1;
   border: none;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-manage-instance:hover:not(:disabled) {
-  background: #4f46e5;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: #e0e7ff;
 }
 
 .btn-manage-instance:disabled {
@@ -183,35 +241,8 @@ export default {
   cursor: not-allowed;
 }
 
-.session-hint {
-  margin-top: 8px;
-  padding: 10px;
-  background: #fef3c7;
-  border-left: 3px solid #f59e0b;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #92400e;
-}
-
-.session-hint.disabled-hint {
-  background: #fee;
-  border-left-color: #ef4444;
-  color: #991b1b;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.session-hint.disabled-hint svg {
-  flex-shrink: 0;
-  stroke: #ef4444;
-}
-
-.form-input:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
-  opacity: 0.7;
+.btn-manage-instance i {
+  font-size: 0.75rem;
 }
 </style>
 

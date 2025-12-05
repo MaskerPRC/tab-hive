@@ -1,12 +1,25 @@
 <template>
   <div v-if="show" class="edit-website-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="edit-website-dialog" @mousedown.stop>
-      <h3>{{ editingIndex === -1 ? $t('websiteEdit.addWebsite') : $t('websiteEdit.editWebsite') }}</h3>
-      
-      <!-- 核心信息区：网站名称和网站地址 -->
-      <div class="section-core">
-        <div class="core-content-wrapper">
-          <div class="basic-info-wrapper">
+      <!-- 顶部标题栏 (固定) -->
+      <div class="dialog-header">
+        <div>
+          <h1>{{ editingIndex === -1 ? $t('websiteEdit.addWebsite') : $t('websiteEdit.editWebsite') }}</h1>
+          <p class="header-subtitle">配置站点的显示选项、代理及高级功能</p>
+        </div>
+        <div v-if="website.id" class="header-badge">
+          <span class="badge-text">ID: {{ website.id }}</span>
+        </div>
+      </div>
+
+      <!-- 内容滚动区域 -->
+      <div class="dialog-content">
+        <!-- 1. 基础信息 Section -->
+        <section class="content-section">
+          <h2 class="section-heading">
+            <i class="fa-solid fa-globe"></i> 基础信息
+          </h2>
+          <div class="basic-info-col">
             <WebsiteBasicInfo
               v-model:title="localWebsite.title"
               v-model:url="localWebsite.url"
@@ -14,10 +27,12 @@
               @enter="handleConfirm"
             />
           </div>
-          
           <!-- 快捷添加按钮（仅在添加新网站时显示） -->
-          <div v-if="editingIndex === -1" class="quick-add-wrapper">
-            <span class="quick-add-title">{{ $t('websiteEdit.quickStart') }}</span>
+          <div v-if="editingIndex === -1" class="quick-add-card">
+            <div class="quick-add-header">
+              <i class="fa-solid fa-bolt"></i>
+              <span class="quick-add-title">{{ $t('websiteEdit.quickStart') }}</span>
+            </div>
             <div class="quick-add-buttons">
               <button 
                 class="quick-add-btn"
@@ -25,7 +40,8 @@
                 type="button"
                 :title="$t('websiteEdit.quickAddBaidu')"
               >
-                <span>百</span>
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>百度</span>
               </button>
               <button 
                 class="quick-add-btn"
@@ -33,7 +49,8 @@
                 type="button"
                 :title="$t('websiteEdit.quickAddGoogle')"
               >
-                <span>谷</span>
+                <i class="fa-solid fa-globe"></i>
+                <span>谷歌</span>
               </button>
               <button 
                 class="quick-add-btn desktop-capture-btn"
@@ -42,76 +59,99 @@
                 title="添加桌面捕获"
                 :disabled="!isElectron"
               >
-                <span>🖥️</span>
+                <i class="fa-solid fa-desktop"></i>
+                <span>桌面</span>
               </button>
             </div>
           </div>
-        </div>
+        </section>
+
+        <!-- 2. 常用设置 Section -->
+        <section class="content-section">
+          <h2 class="section-heading">
+            <i class="fa-solid fa-sliders"></i> 常用设置
+          </h2>
+          <div class="common-settings-grid">
+            <DeviceTypeSelector
+              v-model="localWebsite.deviceType"
+            />
+            <AudioVisualSettings
+              v-model:muted="localWebsite.muted"
+              v-model:dark-mode="localWebsite.darkMode"
+              v-model:require-modifier-for-actions="localWebsite.requireModifierForActions"
+            />
+          </div>
+        </section>
+
+        <!-- 3. 高级配置 (Two Columns) -->
+        <section class="content-section advanced-config-section">
+          <div class="advanced-config-grid">
+            <!-- 左侧：网络与会话 -->
+            <div class="network-session-col">
+              <h2 class="section-heading">
+                <i class="fa-solid fa-network-wired"></i> 网络与会话
+              </h2>
+              <SessionInstanceSelector
+                v-model="localWebsite.sessionInstance"
+                :session-instances="sessionInstances"
+                @create-instance="handleCreateNewInstance"
+                @manage-instances="handleOpenSessionManager"
+              />
+              <ProxySelector
+                v-if="isElectron"
+                v-model="localWebsite.proxyId"
+                :dialog-visible="show"
+                @manage-proxies="handleOpenProxyManager"
+              />
+            </div>
+
+            <!-- 右侧：样式配置 -->
+            <div class="style-config-col">
+              <h2 class="section-heading">
+                <i class="fa-solid fa-ruler-combined"></i> 样式配置
+              </h2>
+              <PaddingConfig
+                v-model="localWebsite.padding"
+                @enter="handleConfirm"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. 进阶功能 (展开的 Details Section) -->
+        <section class="content-section">
+          <details class="advanced-details" :open="showAdvanced" @toggle="showAdvanced = $event.target.open">
+            <summary class="advanced-summary">
+              <div class="summary-icon">
+                <i class="fa-solid fa-cube" :class="{ 'rotated': showAdvanced }"></i>
+              </div>
+              <div class="summary-content">
+                <span class="summary-title">{{ $t('websiteEdit.advancedSettings') }}</span>
+                <p class="summary-subtitle" v-show="showAdvanced">配置高级 DOM 选择器与自动化刷新策略</p>
+              </div>
+              <span class="summary-arrow" :class="{ 'rotated': showAdvanced }">
+                <i class="fa-solid fa-chevron-right"></i>
+              </span>
+            </summary>
+            
+            <div class="advanced-content">
+              <TargetSelectorList
+                v-model="localWebsite.targetSelectors"
+                @enter="handleConfirm"
+              />
+              <AutoRefreshConfig
+                v-model="localWebsite.autoRefreshInterval"
+                @enter="handleConfirm"
+              />
+            </div>
+          </details>
+        </section>
       </div>
-      
-      <!-- 常用设置区：设备类型、静音、暗黑模式 -->
-      <div class="section-common">
-        <div class="section-title">{{ $t('websiteEdit.commonSettings') }}</div>
-        <div class="form-row common-settings">
-          <DeviceTypeSelector
-            v-model="localWebsite.deviceType"
-          />
-          <AudioVisualSettings
-            v-model:muted="localWebsite.muted"
-            v-model:dark-mode="localWebsite.darkMode"
-            v-model:require-modifier-for-actions="localWebsite.requireModifierForActions"
-          />
-        </div>
-      </div>
-      
-      <!-- 可选配置区：Session实例和内边距 -->
-      <div class="section-optional">
-        <div class="section-title">{{ $t('websiteEdit.optionalSettings') }}</div>
-        <div class="form-row optional-settings">
-          <SessionInstanceSelector
-            v-model="localWebsite.sessionInstance"
-            :session-instances="sessionInstances"
-            @create-instance="handleCreateNewInstance"
-            @manage-instances="handleOpenSessionManager"
-          />
-          <ProxySelector
-            v-if="isElectron"
-            v-model="localWebsite.proxyId"
-            :dialog-visible="show"
-            @manage-proxies="handleOpenProxyManager"
-          />
-          <PaddingConfig
-            v-model="localWebsite.padding"
-            @enter="handleConfirm"
-          />
-        </div>
-      </div>
-      
-      <!-- 进阶功能区：目标选择器和自动刷新（可折叠） -->
-      <div class="section-advanced">
-        <div 
-          class="section-title collapsible" 
-          @click="showAdvanced = !showAdvanced"
-        >
-          <span class="collapse-icon">{{ showAdvanced ? '▼' : '▶' }}</span>
-          <span>{{ $t('websiteEdit.advancedSettings') }}</span>
-        </div>
-        <div v-show="showAdvanced" class="advanced-content">
-          <TargetSelectorList
-            v-model="localWebsite.targetSelectors"
-            @enter="handleConfirm"
-          />
-          <AutoRefreshConfig
-            v-model="localWebsite.autoRefreshInterval"
-            @enter="handleConfirm"
-          />
-        </div>
-      </div>
-      
-      <!-- 操作按钮 -->
-      <div class="form-actions">
-        <button class="btn-confirm" @click="handleConfirm">{{ $t('common.confirm') }}</button>
+
+      <!-- 底部按钮栏 -->
+      <div class="dialog-footer">
         <button class="btn-cancel" @click="$emit('cancel')">{{ $t('common.cancel') }}</button>
+        <button class="btn-confirm" @click="handleConfirm">{{ $t('common.confirm') }}</button>
       </div>
     </div>
     
@@ -384,16 +424,36 @@ export default {
 </script>
 
 <style scoped>
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; 
+}
+
 .edit-website-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
   z-index: 10000;
   backdrop-filter: blur(5px);
   animation: fadeIn 0.2s ease-out;
@@ -410,37 +470,16 @@ export default {
 
 .edit-website-dialog {
   background: white;
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 1000px;
-  width: 90%;
-  max-height: 85vh;
-  overflow-y: auto;
-  scrollbar-gutter: stable; /* 预留滚动条空间，避免内容展开时布局跳动 */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 80rem; /* 5xl */
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
   animation: slideUp 0.3s ease-out;
-  /* 自定义滚动条样式 - 保持圆角效果 */
-  scrollbar-width: 10px;
-  scrollbar-color: #FF5C00 transparent;
-}
-
-.edit-website-dialog::-webkit-scrollbar {
-  width: 6px;
-}
-
-.edit-website-dialog::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.edit-website-dialog::-webkit-scrollbar-thumb {
-  background: #FF5C00;
-  border-radius: 3px;
-  transition: background 0.3s ease;
-  margin: 2px;
-}
-
-.edit-website-dialog::-webkit-scrollbar-thumb:hover {
-  background: #e64e00;
 }
 
 @keyframes slideUp {
@@ -454,235 +493,377 @@ export default {
   }
 }
 
-.edit-website-dialog h3 {
-  color: var(--primary-color);
-  margin: 0 0 24px 0;
-  font-size: 24px;
-  text-align: center;
-}
-
-/* 核心信息区布局 */
-.core-content-wrapper {
+/* 顶部标题栏 (固定) */
+.dialog-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #f3f4f6;
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  flex-shrink: 0;
+  z-index: 20;
 }
 
-.basic-info-wrapper {
+.dialog-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
+.header-badge {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge-text {
+  padding: 0.25rem 0.75rem;
+  background: #f3f4f6;
+  color: #4b5563;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 内容滚动区域 */
+.dialog-content {
   flex: 1;
-}
-
-/* 快捷添加区域 */
-.quick-add-wrapper {
+  overflow-y: auto;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
+  gap: 2.5rem;
+}
+
+.content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-heading {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding-bottom: 2px;
+  gap: 0.5rem;
+}
+
+.section-heading i {
+  font-size: 0.875rem;
+}
+
+/* 基础信息列 */
+.basic-info-col {
+  margin-bottom: 0;
+}
+
+/* 快捷添加卡片 */
+.quick-add-card {
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+  border: 1px solid #fdba74;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.quick-add-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #c2410c;
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.quick-add-header i {
+  font-size: 1rem;
 }
 
 .quick-add-title {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-  white-space: nowrap;
+  font-size: 0.875rem;
+  color: #c2410c;
+  font-weight: 600;
 }
 
-/* 快捷添加按钮 */
 .quick-add-buttons {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 0.75rem;
 }
 
 .quick-add-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #FF5C00;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
+  flex: 0 0 auto;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fdba74;
+  background: white;
+  color: #c2410c;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.3);
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.quick-add-btn:hover {
-  background: #e64e00;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.5);
+.quick-add-btn:hover:not(:disabled) {
+  background: #fff7ed;
+  border-color: #f97316;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }
 
-.quick-add-btn:active {
-  transform: scale(0.95);
+.quick-add-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.quick-add-btn i {
+  font-size: 0.875rem;
 }
 
 .quick-add-btn.desktop-capture-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: #ccc;
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
 }
 
 .quick-add-btn.desktop-capture-btn:disabled:hover {
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-/* 分区样式 */
-.section-core {
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
+/* 常用设置网格 */
+.common-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
-.section-common,
-.section-optional,
-.section-advanced {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
+@media (min-width: 768px) {
+  .common-settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 12px;
+@media (min-width: 1024px) {
+  .common-settings-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* 高级配置区域 */
+.advanced-config-section {
+  margin-top: 0;
+}
+
+.advanced-config-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .advanced-config-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.network-session-col,
+.style-config-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 进阶功能 Details */
+.advanced-details {
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.advanced-details[open] {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border-color: #f97316;
+}
+
+.advanced-summary {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.section-title.collapsible {
+  gap: 0.75rem;
+  padding: 1.5rem;
   cursor: pointer;
+  list-style: none;
   user-select: none;
+  transition: background-color 0.2s;
+}
+
+.advanced-summary:hover {
+  background: #f9fafb;
+}
+
+.advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: #fff7ed;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-
-.section-title.collapsible:hover {
-  background: rgba(255, 92, 0, 0.05);
-}
-
-.collapse-icon {
-  font-size: 11px;
-  color: var(--primary-color);
+  justify-content: center;
+  color: #f97316;
   transition: transform 0.3s;
-  margin-right: 6px;
-  font-weight: bold;
+}
+
+.summary-icon i {
+  font-size: 1.125rem;
+  transition: transform 0.3s;
+}
+
+.summary-icon i.rotated {
+  transform: rotate(12deg);
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f2937;
+  display: block;
+}
+
+.summary-subtitle {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 400;
+  margin: 0.125rem 0 0 0;
+  display: block;
+}
+
+.summary-arrow {
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.summary-arrow.rotated {
+  transform: rotate(90deg);
 }
 
 .advanced-content {
-  margin-top: 12px;
-}
-
-.form-row {
+  padding: 0 1.5rem 2rem 1.5rem;
+  border-top: 1px solid #f3f4f6;
   display: flex;
-  gap: 20px;
-  margin-bottom: 0;
+  flex-direction: column;
+  gap: 2rem;
+  animation: fadeIn 0.3s ease-out;
 }
 
-.form-row > * {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-/* 常用设置行 - 设备类型占更多空间 */
-.form-row.common-settings > :first-child {
-  flex: 1.5;
-}
-
-.form-row.common-settings > :last-child {
-  flex: 1;
-}
-
-/* 可选配置行 - 均分空间 */
-.form-row.optional-settings > * {
-  flex: 1;
-}
-
-.form-actions {
+/* 底部按钮栏 */
+.dialog-footer {
+  background: #f9fafb;
+  padding: 1.25rem 2rem;
+  border-top: 1px solid #e5e7eb;
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.btn-confirm {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background 0.3s;
-}
-
-.btn-confirm:hover {
-  background: var(--primary-hover);
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .btn-cancel {
-  background: #e0e0e0;
-  color: #666;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
   font-weight: 500;
-  transition: background 0.3s;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  font-size: 0.875rem;
 }
 
 .btn-cancel:hover {
-  background: #d0d0d0;
+  background: #f3f4f6;
+  color: #1f2937;
 }
 
-/* 响应式设计：在较小屏幕上切换回纵向布局 */
-@media (max-width: 900px) {
+.btn-confirm {
+  padding: 0.625rem 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(to right, #f97316, #ef4444);
+  color: white;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2);
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-confirm:hover {
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);
+  transform: translateY(-1px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
   .edit-website-dialog {
-    max-width: 600px;
-    padding: 24px;
+    max-width: 100%;
+    max-height: 95vh;
   }
-  
-  .form-row {
+
+  .dialog-header {
+    padding: 1rem 1.5rem;
     flex-direction: column;
-    gap: 0;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
-  
-  .form-row > * {
-    margin-bottom: 16px;
+
+  .dialog-content {
+    padding: 1.5rem;
+    gap: 1.5rem;
   }
-  
-  .form-row > *:last-child {
-    margin-bottom: 0;
+
+  .common-settings-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .section-common,
-  .section-optional,
-  .section-advanced {
-    padding: 12px;
+
+  .advanced-config-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .core-content-wrapper {
-    flex-direction: column;
-  }
-  
-  .quick-add-wrapper {
-    justify-content: center;
-    padding-bottom: 0;
-  }
+
 }
 </style>

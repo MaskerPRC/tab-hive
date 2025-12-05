@@ -69,7 +69,7 @@ export default defineConfig({
   base: './', // 使用相对路径，适配Electron
   server: {
     port: 3000,
-    open: true
+    open: false
   },
   build: {
     outDir: 'dist',

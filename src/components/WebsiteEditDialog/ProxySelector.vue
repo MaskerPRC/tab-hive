@@ -1,18 +1,23 @@
 <template>
-  <div class="form-group">
-    <label>代理节点</label>
+  <div class="proxy-config">
+    <label class="config-label">代理节点</label>
     <div class="selector-wrapper">
-      <select
-        :value="modelValue"
-        @change="$emit('update:modelValue', $event.target.value ? Number($event.target.value) : '')"
-        class="form-select"
-        :disabled="loading"
-      >
-        <option value="">不使用代理</option>
-        <option v-for="proxy in proxyList" :key="proxy.id" :value="proxy.id">
-          {{ proxy.name }} ({{ proxy.type.toUpperCase() }})
-        </option>
-      </select>
+      <div class="select-wrapper">
+        <select
+          :value="modelValue"
+          @change="$emit('update:modelValue', $event.target.value ? Number($event.target.value) : '')"
+          class="form-select"
+          :disabled="loading"
+        >
+          <option value="">不使用代理</option>
+          <option v-for="proxy in proxyList" :key="proxy.id" :value="proxy.id">
+            {{ proxy.name }} ({{ proxy.type.toUpperCase() }})
+          </option>
+        </select>
+        <div class="select-arrow">
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
       <button
         v-if="isElectron"
         @click="$emit('manage-proxies')"
@@ -20,19 +25,14 @@
         type="button"
         :title="'管理代理节点'"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
+        <i class="fa-solid fa-wave-square"></i>
       </button>
     </div>
     <!-- 代理与 Session 实例关系提示 -->
     <div v-if="modelValue" class="proxy-tip">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M9 12l2 2 4-4"/>
-      </svg>
+      <i class="fa-solid fa-circle-check"></i>
       <span class="info-tip">
-        将为此网站创建独立的代理会话，不会影响其他网站
+        将为此网站创建独立的代理会话，不会影响其他网站的访问策略。
       </span>
     </div>
   </div>
@@ -104,27 +104,48 @@ export default {
 </script>
 
 <style scoped>
+.proxy-config {
+  margin-bottom: 0;
+}
+
+.config-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
 .selector-wrapper {
   display: flex;
-  gap: 8px;
+  gap: 0.75rem;
   align-items: center;
 }
 
-.form-select {
+.select-wrapper {
+  position: relative;
   flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
+}
+
+.form-select {
+  width: 100%;
+  appearance: none;
   background: white;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
+  padding: 0.625rem 1rem 0.625rem 1rem;
+  padding-right: 2rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
   cursor: pointer;
-  transition: border-color 0.3s;
 }
 
 .form-select:focus {
   outline: none;
-  border-color: var(--primary-color, #FF5C00);
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
 }
 
 .form-select:disabled {
@@ -132,53 +153,63 @@ export default {
   cursor: not-allowed;
 }
 
+.select-arrow {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-right: 0.5rem;
+  pointer-events: none;
+  color: #6b7280;
+}
+
+.select-arrow i {
+  font-size: 0.75rem;
+}
+
 .manage-btn {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.625rem;
   background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
-  color: #666;
+  transition: all 0.2s;
+  color: #6b7280;
 }
 
 .manage-btn:hover {
-  background: #fff5f0;
-  border-color: var(--primary-color, #FF5C00);
-  color: var(--primary-color, #FF5C00);
+  background: #f9fafb;
+  color: #374151;
 }
 
-.manage-btn svg {
-  stroke: currentColor;
+.manage-btn i {
+  font-size: 0.875rem;
 }
 
 /* 代理提示样式 */
 .proxy-tip {
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: #fff5f0;
-  border-radius: 6px;
-  font-size: 12px;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  font-size: 0.75rem;
   line-height: 1.5;
+  color: #059669;
 }
 
-.proxy-tip svg {
+.proxy-tip i {
   flex-shrink: 0;
-  stroke: #10b981;
+  color: #10b981;
+  font-size: 0.75rem;
 }
 
 .info-tip {
-  color: #666;
-}
-
-.warning-tip {
-  color: #ff5c00;
-  font-weight: 500;
+  color: #059669;
 }
 </style>

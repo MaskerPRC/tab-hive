@@ -1,6 +1,9 @@
 <template>
-  <div class="form-group">
-    <label>{{ $t('autoRefresh.title') }}</label>
+  <div class="refresh-config">
+    <div class="config-header">
+      <label class="config-label">{{ $t('autoRefresh.title') }}</label>
+      <span class="config-badge">Auto Refresh</span>
+    </div>
     
     <!-- 常用预设 -->
     <div class="refresh-presets">
@@ -18,7 +21,7 @@
     
     <!-- 自定义配置 -->
     <div class="refresh-custom">
-      <div class="custom-label">{{ $t('autoRefresh.custom') }}</div>
+      <span class="custom-label">{{ $t('autoRefresh.custom') }}:</span>
       <div class="refresh-interval-selector">
         <input
           :value="customValue"
@@ -30,21 +33,32 @@
           class="form-input refresh-input"
           @keyup.enter="$emit('enter')"
         />
-        <select
-          :value="timeUnit"
-          @change="handleUnitChange($event.target.value)"
-          class="form-input unit-select"
-        >
-          <option value="seconds">{{ $t('autoRefresh.seconds') }}</option>
-          <option value="minutes">{{ $t('autoRefresh.minutes') }}</option>
-          <option value="hours">{{ $t('autoRefresh.hours') }}</option>
-          <option value="days">{{ $t('autoRefresh.days') }}</option>
-        </select>
+        <div class="unit-wrapper">
+          <select
+            :value="timeUnit"
+            @change="handleUnitChange($event.target.value)"
+            class="unit-select"
+          >
+            <option value="seconds">{{ $t('autoRefresh.seconds') }}</option>
+            <option value="minutes">{{ $t('autoRefresh.minutes') }}</option>
+            <option value="hours">{{ $t('autoRefresh.hours') }}</option>
+            <option value="days">{{ $t('autoRefresh.days') }}</option>
+          </select>
+        </div>
       </div>
     </div>
     
     <div class="refresh-hint">
-      {{ $t('autoRefresh.hint') }}
+      <i class="fa-regular fa-clock"></i>
+      <div class="hint-content">
+        <p class="hint-title">刷新策略：</p>
+        <ul class="hint-list">
+          <li>设置 iframe 自动刷新的时间间隔。</li>
+          <li>设置为 <code>0</code> 表示不自动刷新。</li>
+          <li>建议最小值：<span class="highlight">30秒</span>（避免频繁刷新影响性能）。</li>
+          <li>适用场景：实时监控、数据大屏等需要定期更新的页面。</li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
@@ -132,106 +146,193 @@ export default {
 </script>
 
 <style scoped>
-.form-group {
-  margin-bottom: 20px;
+.refresh-config {
+  margin-bottom: 0;
 }
 
-.form-group label {
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.config-label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
+  color: #374151;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.config-badge {
+  font-size: 0.75rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
 }
 
 .refresh-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .refresh-presets {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .refresh-presets {
+    grid-template-columns: repeat(7, 1fr);
+  }
 }
 
 .preset-btn {
-  flex: 0 0 auto;
-  padding: 8px 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
+  padding: 0.5rem 0.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
   background: white;
-  color: #333;
-  font-size: 13px;
+  color: #4b5563;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   white-space: nowrap;
 }
 
 .preset-btn:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-light);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(255, 92, 0, 0.1);
+  border-color: #f97316;
+  color: #f97316;
 }
 
 .preset-btn.active {
-  border-color: var(--primary-color);
-  background: var(--primary-color);
+  background: #f97316;
   color: white;
-  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.3);
+  border-color: #f97316;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .refresh-custom {
-  margin-top: 12px;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .custom-label {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .refresh-interval-selector {
   display: flex;
   align-items: center;
-  gap: 10px;
+  width: 12rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
 }
 
-.form-input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
+.refresh-interval-selector:focus-within {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
 }
 
 .refresh-input {
-  flex: 0 1 120px;
-  min-width: 80px;
-  max-width: 150px;
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: #1f2937;
+  background: white;
+}
+
+.unit-wrapper {
+  height: 100%;
+  background: #f9fafb;
+  border-left: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
 }
 
 .unit-select {
-  flex: 0 0 90px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  color: #4b5563;
   cursor: pointer;
-  padding: 12px 10px;
-  font-size: 14px;
+  padding: 0.25rem 0;
 }
 
 .refresh-hint {
-  margin-top: 12px;
-  padding: 10px;
-  background: #f0fdf4;
-  border-left: 3px solid #10b981;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 1.6;
+  margin-top: 1rem;
+  background: #d1fae5;
+  border-left: 4px solid #10b981;
+  padding: 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.refresh-hint i {
+  color: #059669;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.hint-content {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.hint-title {
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.hint-list {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1rem;
+  font-size: 0.75rem;
   color: #065f46;
+}
+
+.hint-list li {
+  margin: 0.25rem 0;
+}
+
+.hint-list code {
+  background: white;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+}
+
+.highlight {
+  color: #047857;
+  font-weight: 500;
 }
 </style>
 
