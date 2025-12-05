@@ -300,8 +300,13 @@ export default {
       handleViewDragLeave,
       handleDragOver,
       handleDragLeave,
-      handleDrop
+      handleDrop: handleDropBase
     } = useUrlDrop()
+
+    // 包装 handleDrop，传递正确的参数
+    const handleDrop = (event, index) => {
+      handleDropBase(event, index, allWebsites.value, emit)
+    }
 
     // 网站操作
     const {

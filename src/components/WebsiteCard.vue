@@ -567,6 +567,27 @@ export default {
 
     // ==================== 监听器 ====================
     
+    // 监听 URL 变化，更新 webview
+    watch(() => props.item.url, (newUrl, oldUrl) => {
+      // 只在 URL 真正变化时更新（不是初始化时）
+      if (newUrl && newUrl !== oldUrl && oldUrl !== undefined) {
+        console.log('[WebsiteCard] URL 已更新，刷新 webview:', { oldUrl, newUrl })
+        
+        if (isElectron.value && webviewRef.value) {
+          // 更新 webview 的 src
+          const newWebsiteUrl = websiteUrl.value
+          console.log('[WebsiteCard] 设置新的 webview src:', newWebsiteUrl)
+          // 直接设置新的 URL
+          webviewRef.value.src = newWebsiteUrl
+        } else if (!isElectron.value && iframeRef.value) {
+          // 更新 iframe 的 src
+          const newWebsiteUrl = websiteUrl.value
+          console.log('[WebsiteCard] 设置新的 iframe src:', newWebsiteUrl)
+          iframeRef.value.src = newWebsiteUrl
+        }
+      }
+    })
+    
     // 监听静音状态变化
     watchMuteState()
 
