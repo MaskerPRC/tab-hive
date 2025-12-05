@@ -67,8 +67,9 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
     const deltaX = clientX - dragStartPos.value.x
     const deltaY = clientY - dragStartPos.value.y
 
-    const newX = Math.max(0, dragStartItemPos.value.x + deltaX)
-    const newY = Math.max(0, dragStartItemPos.value.y + deltaY)
+    // 移除边界限制，允许移动到负坐标（无限画布）
+    const newX = dragStartItemPos.value.x + deltaX
+    const newY = dragStartItemPos.value.y + deltaY
 
     const currentSize = itemSizes.value[currentDragIndex.value] || { width: 400, height: 300 }
 

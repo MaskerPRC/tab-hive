@@ -126,9 +126,9 @@ function calculateNewPosition(position, direction, distance) {
   newPos.x = snapToGrid(newPos.x)
   newPos.y = snapToGrid(newPos.y)
 
-  // 确保不会移出左上边界
-  newPos.x = Math.max(0, newPos.x)
-  newPos.y = Math.max(0, newPos.y)
+  // 移除边界限制，允许移动到负坐标（无限画布）
+  // newPos.x = Math.max(0, newPos.x)
+  // newPos.y = Math.max(0, newPos.y)
 
   console.log(`[网格对齐] 推开后对齐到网格`, {
     oldPos: position,

@@ -62,46 +62,97 @@
       @cancel="cancelAddWebsite"
     />
 
+    <!-- 画布容器 -->
     <div
-      class="grid-container"
-      :class="{
-        'free-layout': true,
-        'is-dragging': isDraggingItem || isResizing
-      }"
-      :data-websites-count="allWebsites.length"
+      class="canvas-wrapper"
+      :class="{ 'panning': isPanning || false, 'dragging-item': isDraggingItem || isResizing }"
+      @mousedown="handleCanvasMouseDown"
+      @wheel="handleCanvasWheel"
+      @contextmenu.prevent
     >
-      <WebsiteCard
-        v-for="(item, index) in allWebsites"
-        :key="item.id"
-        :item="item"
-        :index="index"
-        :item-style="getItemStyle(item, index, fullscreenIndex)"
-        :is-fullscreen="fullscreenIndex === index"
-        :is-hidden="isHidden(index)"
-        :is-drag-over="dragOverIndex === index"
-        :is-external-dragging="isDragging"
-        :is-dragging="isDraggingItem"
-        :is-current-drag="currentDragIndex === index"
-        :is-resizing="isResizing"
-        :is-current-resize="currentResizeIndex === index"
-        :is-colliding="dragIsColliding || resizeIsColliding"
-        :show-title="globalSettings?.showTitles"
-        :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
-        :global-muted="globalSettings?.globalMuted"
-        :ad-block-enabled="globalSettings?.adBlockEnabled"
-        @drag-start="startDrag($event, index)"
-        @drag-over="handleDragOver"
-        @drag-leave="handleDragLeave"
-        @drop="handleDrop"
-        @refresh="handleRefreshWebsite"
-        @copy="handleCopyWebsite"
-        @edit="handleEditWebsite"
-        @fullscreen="$emit('fullscreen', index)"
-        @remove="handleRemoveWebsite"
-        @toggle-mute="handleToggleMute"
-        @update-url="handleUpdateUrl"
-        @resize-start="startResize($event, index, $event)"
-      />
+      <!-- 画布内容 -->
+      <div
+        class="grid-container"
+        :class="{
+          'free-layout': true,
+          'is-dragging': isDraggingItem || isResizing
+        }"
+        :style="getTransformStyle()"
+        :data-websites-count="allWebsites.length"
+      >
+        <WebsiteCard
+          v-for="(item, index) in allWebsites"
+          :key="item.id || `website-${index}`"
+          :item="item"
+          :index="index"
+          :item-style="getItemStyle(item, index, fullscreenIndex)"
+          :is-fullscreen="fullscreenIndex === index"
+          :is-hidden="isHidden(index)"
+          :is-drag-over="dragOverIndex === index"
+          :is-external-dragging="isDragging"
+          :is-dragging="isDraggingItem"
+          :is-current-drag="currentDragIndex === index"
+          :is-resizing="isResizing"
+          :is-current-resize="currentResizeIndex === index"
+          :is-colliding="dragIsColliding || resizeIsColliding"
+          :show-title="globalSettings?.showTitles"
+          :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
+          :global-muted="globalSettings?.globalMuted"
+          :ad-block-enabled="globalSettings?.adBlockEnabled"
+          @drag-start="startDrag($event, index)"
+          @drag-over="handleDragOver"
+          @drag-leave="handleDragLeave"
+          @drop="handleDrop"
+          @refresh="handleRefreshWebsite"
+          @copy="handleCopyWebsite"
+          @edit="handleEditWebsite"
+          @fullscreen="$emit('fullscreen', index)"
+          @remove="handleRemoveWebsite"
+          @toggle-mute="handleToggleMute"
+          @update-url="handleUpdateUrl"
+          @resize-start="startResize($event, index, $event)"
+        />
+      </div>
+    </div>
+
+    <!-- 画布控制按钮 -->
+    <div class="canvas-controls">
+      <button
+        class="canvas-control-btn"
+        @click="zoomIn"
+        title="放大 (Ctrl + Plus)"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="11" y1="8" x2="11" y2="14"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </button>
+      <button
+        class="canvas-control-btn"
+        @click="zoomOut"
+        title="缩小 (Ctrl + Minus)"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </button>
+      <div class="canvas-zoom-display">
+        {{ zoomPercentage }}%
+      </div>
+      <button
+        class="canvas-control-btn"
+        @click="resetTransform"
+        title="重置视图 (Ctrl + 0)"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+          <path d="M3 21v-5h5"/>
+        </svg>
+      </button>
     </div>
   </div>
 </template>
@@ -119,6 +170,7 @@ import { useItemDrag } from '../composables/useItemDrag'
 import { useItemResize } from '../composables/useItemResize'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useUrlDrop } from '../composables/useUrlDrop'
+import { useCanvasTransform } from '../composables/useCanvasTransform'
 
 export default {
   name: 'GridView',
@@ -258,6 +310,22 @@ export default {
       handleDragLeave,
       handleDrop
     } = useUrlDrop()
+
+    // 画布变换（平移和缩放）
+    const {
+      canvasTransform,
+      isPanning,
+      startPan,
+      handleWheelZoom,
+      setZoom,
+      resetTransform: resetCanvasTransform,
+      getTransformStyle
+    } = useCanvasTransform()
+
+    // 计算缩放百分比（用于显示）
+    const zoomPercentage = computed(() => {
+      return Math.round((canvasTransform.value?.zoom || 1) * 100)
+    })
 
     /**
      * 判断某个索引的网站是否应该隐藏
@@ -606,6 +674,78 @@ export default {
       fullscreenIframe.value = null
     }
 
+    /**
+     * 处理画布鼠标按下（开始平移）
+     */
+    const handleCanvasMouseDown = (event) => {
+      // 如果正在拖动或调整大小，不启动画布平移
+      if (isDraggingItem.value || isResizing.value) {
+        return
+      }
+
+      // 如果点击的是网站卡片或其他可交互元素，不启动画布平移
+      const target = event.target
+      if (target.closest('.grid-item') || 
+          target.closest('.btn-add-website-float') ||
+          target.closest('.canvas-controls')) {
+        return
+      }
+
+      // 只有点击空白区域才启动画布平移
+      startPan(event)
+    }
+
+    /**
+     * 处理画布滚轮（缩放）
+     */
+    const handleCanvasWheel = (event) => {
+      // 如果正在拖动或调整大小，不缩放
+      if (isDraggingItem.value || isResizing.value) {
+        return
+      }
+      handleWheelZoom(event)
+    }
+
+    /**
+     * 放大
+     */
+    const zoomIn = () => {
+      setZoom(canvasTransform.value.zoom + 0.1)
+    }
+
+    /**
+     * 缩小
+     */
+    const zoomOut = () => {
+      setZoom(canvasTransform.value.zoom - 0.1)
+    }
+
+    /**
+     * 重置画布变换
+     */
+    const resetTransform = () => {
+      resetCanvasTransform()
+    }
+
+    // 键盘快捷键
+    const handleKeyDown = (event) => {
+      // Ctrl + Plus 放大
+      if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
+        event.preventDefault()
+        zoomIn()
+      }
+      // Ctrl + Minus 缩小
+      if (event.ctrlKey && event.key === '-') {
+        event.preventDefault()
+        zoomOut()
+      }
+      // Ctrl + 0 重置
+      if (event.ctrlKey && event.key === '0') {
+        event.preventDefault()
+        resetTransform()
+      }
+    }
+
     // 监听网站列表变化，初始化新添加的项目
     watch(allWebsites, () => {
       // 使用 nextTick 确保 DOM 已更新
@@ -636,6 +776,9 @@ export default {
           handleResizeEnd(emit)
         }
       })
+
+      // 监听键盘快捷键
+      window.addEventListener('keydown', handleKeyDown)
     })
     
     // 监视 props.websites 变化
@@ -658,6 +801,7 @@ export default {
     onUnmounted(() => {
       cleanupFullscreen()
       window.removeEventListener('resize', initializeGridLayout)
+      window.removeEventListener('keydown', handleKeyDown)
     })
 
     return {
@@ -700,7 +844,17 @@ export default {
       startResize,
       startElementSelection,
       handleElementSelected,
-      cancelElementSelection
+      cancelElementSelection,
+      // 画布变换
+      canvasTransform,
+      isPanning,
+      zoomPercentage,
+      getTransformStyle,
+      handleCanvasMouseDown,
+      handleCanvasWheel,
+      zoomIn,
+      zoomOut,
+      resetTransform
     }
   }
 }
@@ -771,25 +925,101 @@ export default {
   display: block;
 }
 
+/* 画布包装器 */
+.canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.canvas-wrapper.panning {
+  cursor: grabbing;
+}
+
+.canvas-wrapper.dragging-item {
+  cursor: move;
+}
+
+/* 画布内容容器 */
 .grid-container {
   width: 100%;
   min-height: 100%;
   height: auto;
   position: relative;
+  transition: transform 0.1s ease-out;
+  /* 确保画布可以扩展到足够大的范围 */
+  min-width: 200vw;
+  min-height: 200vh;
 }
 
 .grid-container.free-layout {
   position: relative;
-  min-height: 100vh;
   background-image:
     linear-gradient(to right, rgba(255, 92, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 92, 0, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
   background-position: 0 0;
+  /* 无限画布背景 */
+  background-repeat: repeat;
 }
 
 /* 全局拖动或调整大小时，禁用所有iframe的鼠标事件 */
 .grid-container.is-dragging .website-iframe {
   pointer-events: none;
+}
+
+/* 画布控制按钮 */
+.canvas-controls {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.canvas-control-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.canvas-control-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.canvas-control-btn:active {
+  transform: scale(0.95);
+}
+
+.canvas-control-btn svg {
+  display: block;
+}
+
+.canvas-zoom-display {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  padding: 4px 0;
+  min-width: 40px;
 }
 </style>
