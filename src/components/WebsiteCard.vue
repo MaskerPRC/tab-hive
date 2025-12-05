@@ -137,7 +137,7 @@
 </template>
 
 <script>
-import { computed, toRef, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import FloatingActions from './FloatingActions.vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
@@ -152,6 +152,9 @@ import { useDoubleBuffer } from '../composables/useDoubleBuffer.js'
 import { useWebviewSelector } from '../composables/useWebviewSelector.js'
 import { useUrlChangeDetector } from '../composables/useUrlChangeDetector.js'
 import { useWebviewAudio } from '../composables/useWebviewAudio.js'
+import { useModifierKey } from '../composables/useModifierKey.js'
+import { useNavigation } from '../composables/useNavigation.js'
+import { useWebviewSetup } from '../composables/useWebviewSetup.js'
 
 export default {
   name: 'WebsiteCard',
@@ -332,6 +335,29 @@ export default {
     // ==================== 自动刷新 ====================
     const itemRef = toRef(props, 'item')
     const isFullscreenRef = toRef(props, 'isFullscreen')
+
+    // 计算网站 URL
+    const websiteUrl = computed(() => {
+      // 桌面捕获类型不需要URL
+      if (props.item.type === 'desktop-capture') {
+        return ''
+      }
+      
+      if (!props.item.url) return ''
+      
+      let url = props.item.url
+      
+      // Electron 环境下，为 webview 添加 ID 参数
+      if (isElectron.value) {
+        const separator = url.includes('?') ? '&' : '?'
+        url = `${url}${separator}__webview_id__=${props.item.id}`
+      } else {
+        // 非 Electron 环境，使用 iframe URL 处理
+        url = getIframeWebsiteUrl()
+      }
+      
+      return url
+    })
     
     // 双缓冲刷新回调
     const handleDoubleBufferRefresh = () => {
@@ -364,30 +390,46 @@ export default {
       onRefresh: handleDoubleBufferRefresh
     })
 
-    // ==================== 计算属性 ====================
+    // ==================== 修饰键状态管理 ====================
+    const {
+      isModifierPressed,
+      requireModifierForActions
+    } = useModifierKey(props)
 
-    // 计算网站 URL
-    const websiteUrl = computed(() => {
-      // 桌面捕获类型不需要URL
-      if (props.item.type === 'desktop-capture') {
-        return ''
-      }
-      
-      if (!props.item.url) return ''
-      
-      let url = props.item.url
-      
-      // Electron 环境下，为 webview 添加 ID 参数
-      if (isElectron.value) {
-        const separator = url.includes('?') ? '&' : '?'
-        url = `${url}${separator}__webview_id__=${props.item.id}`
-      } else {
-        // 非 Electron 环境，使用 iframe URL 处理
-        url = getIframeWebsiteUrl()
-      }
-      
-      return url
+    // ==================== 前进后退功能 ====================
+    const {
+      canGoBack,
+      canGoForward,
+      checkNavigationState,
+      handleGoBack,
+      handleGoForward,
+      watchIframeLoad
+    } = useNavigation(props, { isElectron, webviewRef, iframeRef })
+
+    // 初始化 iframe 加载监听
+    watchIframeLoad()
+
+    // ==================== Webview 设置 ====================
+    const {
+      setWebviewRef,
+      setBufferWebviewRef
+    } = useWebviewSetup(props, {
+      isElectron,
+      websiteUrl,
+      webviewRef,
+      setWebviewRefBase,
+      setBufferWebviewRefBase,
+      setupWebviewEvents,
+      applyMuteState,
+      applyAdBlock,
+      applyDarkMode,
+      applySelector,
+      applyPadding,
+      checkNavigationState,
+      checkUrlChange
     })
+
+    // ==================== 计算属性 ====================
 
     // 计算样式（内边距现在在网页内部应用）
     const computedItemStyle = computed(() => {
@@ -395,116 +437,6 @@ export default {
     })
 
     // ==================== 事件处理 ====================
-    
-    // 跟踪已设置的主 webview
-    let lastMainWebview = null
-    
-    // 设置 webview 引用（带事件监听）
-    const setWebviewRef = (el) => {
-      console.log('[WebsiteCard] ========== setWebviewRef 被调用 ==========')
-      console.log('[WebsiteCard] 新的 webview 元素:', el?.id)
-      console.log('[WebsiteCard] 上次的 webview 元素:', lastMainWebview?.id)
-      console.log('[WebsiteCard] 是否为新元素:', lastMainWebview !== el)
-      
-      // 更新 webview ref
-      if (lastMainWebview !== el) {
-        console.log('[WebsiteCard] webview 元素已改变')
-        lastMainWebview = el
-        setWebviewRefBase(el)
-      }
-      
-      // 每次都设置/更新 webview 事件回调（即使元素没变，callbacks 也可能需要更新）
-      if (el) {
-        console.log('[WebsiteCard] 设置/更新 webview 事件回调')
-        // 设置 webview 事件监听，传入回调
-        setupWebviewEvents(el, {
-            onLoad: async (webview) => {
-              console.log('[WebsiteCard] ========== onLoad 回调被调用 ==========')
-              console.log('[WebsiteCard] webview ID:', props.item.id)
-              console.log('[WebsiteCard] isFullscreen:', props.isFullscreen)
-              console.log('[WebsiteCard] targetSelector:', props.item.targetSelector)
-              console.log('[WebsiteCard] targetSelectors:', props.item.targetSelectors)
-              
-              // 应用静音状态
-              applyMuteState(webview)
-              
-              // 应用去广告
-              if (props.adBlockEnabled) {
-                await applyAdBlock(webview)
-              }
-
-              // 应用暗色主题
-          if (props.item.darkMode) {
-            await applyDarkMode(webview)
-          }
-
-              // 应用选择器
-              const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
-                                  (props.item.targetSelector && props.item.targetSelector.trim())
-              console.log('[WebsiteCard] hasSelectors:', hasSelectors)
-              console.log('[WebsiteCard] 是否应用选择器:', !props.isFullscreen && hasSelectors)
-              
-              if (!props.isFullscreen && hasSelectors) {
-                console.log('[WebsiteCard] 开始应用选择器')
-                await applySelector(webview, false)
-                console.log('[WebsiteCard] 选择器应用完成')
-              } else if (!props.isFullscreen && !hasSelectors) {
-                // 网页模式：应用内边距
-                console.log('[WebsiteCard] 网页模式，应用内边距')
-                await applyPadding(webview)
-              } else {
-                console.log('[WebsiteCard] 跳过应用选择器/内边距，原因:', 
-                  props.isFullscreen ? '处于全屏状态' : '没有选择器且无内边距')
-              }
-              
-              // 加载完成后检查导航状态
-              checkNavigationState()
-            },
-            onNavigate: (url) => {
-              checkUrlChange(url)
-              // 导航后检查导航状态
-              checkNavigationState()
-            }
-          })
-      }
-    }
-
-    // 跟踪已设置的缓冲 webview
-    let lastBufferWebview = null
-    
-    // 设置缓冲 webview 引用（带事件监听）
-    const setBufferWebviewRef = (el) => {
-      // 只在 webview 实例改变时才设置事件监听器
-      if (lastBufferWebview !== el) {
-        lastBufferWebview = el
-        setBufferWebviewRefBase(el)
-        if (el) {
-          setupWebviewEvents(el, {
-            onLoad: async (webview) => {
-              // 应用去广告
-              if (props.adBlockEnabled) {
-                await applyAdBlock(webview)
-              }
-              
-              // 应用暗色主题
-              if (props.item.darkMode) {
-                await applyDarkMode(webview)
-              }
-              
-              // 应用选择器或内边距
-              const hasSelectors = (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
-                                  (props.item.targetSelector && props.item.targetSelector.trim())
-              if (!props.isFullscreen && hasSelectors) {
-                await applySelector(webview, true)
-              } else if (!props.isFullscreen && !hasSelectors) {
-                // 网页模式：应用内边距
-                await applyPadding(webview)
-              }
-            }
-          })
-        }
-      }
-    }
 
     // 手动刷新
     const handleManualRefresh = () => {
@@ -545,144 +477,7 @@ export default {
       handleUseCurrentUrlBase(emit, props.index)
     }
 
-    // ==================== 前进后退功能 ====================
-    const canGoBack = ref(false)
-    const canGoForward = ref(false)
-
-    // 检查是否可以前进/后退
-    const checkNavigationState = async () => {
-      if (props.item.type === 'desktop-capture') {
-        canGoBack.value = false
-        canGoForward.value = false
-        return
-      }
-
-      if (isElectron.value && webviewRef.value) {
-        try {
-          canGoBack.value = webviewRef.value.canGoBack()
-          canGoForward.value = webviewRef.value.canGoForward()
-        } catch (error) {
-          console.error('[WebsiteCard] 检查导航状态失败:', error)
-          canGoBack.value = false
-          canGoForward.value = false
-        }
-      } else if (iframeRef.value) {
-        // iframe 无法直接检查历史记录，尝试访问 history 对象
-        try {
-          const iframeWindow = iframeRef.value.contentWindow
-          if (iframeWindow && iframeWindow.history) {
-            // 对于 iframe，我们无法直接检查，假设可以前进后退
-            // 实际使用时如果失败会被捕获
-            canGoBack.value = true
-            canGoForward.value = true
-          } else {
-            canGoBack.value = false
-            canGoForward.value = false
-          }
-        } catch (error) {
-          // 跨域 iframe 无法访问，设置为 false
-          canGoBack.value = false
-          canGoForward.value = false
-        }
-      }
-    }
-
-    // 后退
-    const handleGoBack = () => {
-      if (props.item.type === 'desktop-capture') return
-
-      if (isElectron.value && webviewRef.value) {
-        try {
-          if (webviewRef.value.canGoBack()) {
-            webviewRef.value.goBack()
-            // 延迟检查状态更新
-            setTimeout(checkNavigationState, 100)
-          }
-        } catch (error) {
-          console.error('[WebsiteCard] 后退失败:', error)
-        }
-      } else if (iframeRef.value) {
-        try {
-          const iframeWindow = iframeRef.value.contentWindow
-          if (iframeWindow && iframeWindow.history) {
-            iframeWindow.history.back()
-            // 延迟检查状态更新
-            setTimeout(checkNavigationState, 100)
-          }
-        } catch (error) {
-          console.error('[WebsiteCard] iframe 后退失败:', error)
-        }
-      }
-    }
-
-    // 前进
-    const handleGoForward = () => {
-      if (props.item.type === 'desktop-capture') return
-
-      if (isElectron.value && webviewRef.value) {
-        try {
-          if (webviewRef.value.canGoForward()) {
-            webviewRef.value.goForward()
-            // 延迟检查状态更新
-            setTimeout(checkNavigationState, 100)
-          }
-        } catch (error) {
-          console.error('[WebsiteCard] 前进失败:', error)
-        }
-      } else if (iframeRef.value) {
-        try {
-          const iframeWindow = iframeRef.value.contentWindow
-          if (iframeWindow && iframeWindow.history) {
-            iframeWindow.history.forward()
-            // 延迟检查状态更新
-            setTimeout(checkNavigationState, 100)
-          }
-        } catch (error) {
-          console.error('[WebsiteCard] iframe 前进失败:', error)
-        }
-      }
-    }
-
-    // ==================== 修饰键状态管理 ====================
-    const isModifierPressed = ref(false)
-
-    // 从网站配置中读取是否需要修饰键
-    const requireModifierForActions = computed(() => {
-      return props.item?.requireModifierForActions || false
-    })
-
-    // 监听键盘事件以跟踪修饰键状态
-    const handleKeyDown = (event) => {
-      if (requireModifierForActions.value) {
-        // 检查是否按下了 Ctrl 或 Alt 键
-        if (event.ctrlKey || event.altKey) {
-          isModifierPressed.value = true
-        }
-      }
-    }
-
-    const handleKeyUp = (event) => {
-      if (requireModifierForActions.value) {
-        // 当 Ctrl 或 Alt 键释放时，检查是否还有其他修饰键被按下
-        if (!event.ctrlKey && !event.altKey) {
-          isModifierPressed.value = false
-        } else if (event.ctrlKey || event.altKey) {
-          // 如果还有其他修饰键被按下，保持状态
-          isModifierPressed.value = true
-        }
-      }
-    }
-
     // ==================== 监听器 ====================
-    
-    // 监听 iframe 加载完成（非 Electron 环境）
-    watch(iframeRef, (newIframe) => {
-      if (newIframe && !isElectron.value) {
-        newIframe.addEventListener('load', () => {
-          checkNavigationState()
-        })
-      }
-    }, { immediate: true })
 
     // 监听 URL 变化，更新 webview
     watch(() => props.item.url, (newUrl, oldUrl) => {
@@ -710,33 +505,6 @@ export default {
 
     // 监听全屏状态变化
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
-
-    // 监听需要修饰键配置的变化，动态添加/移除监听器
-    watch(requireModifierForActions, (newVal) => {
-      if (newVal) {
-        // 配置开启：添加监听器
-        document.addEventListener('keydown', handleKeyDown)
-        document.addEventListener('keyup', handleKeyUp)
-      } else {
-        // 配置关闭：移除监听器并重置状态
-        document.removeEventListener('keydown', handleKeyDown)
-        document.removeEventListener('keyup', handleKeyUp)
-        isModifierPressed.value = false
-      }
-    })
-
-    // 生命周期：根据初始配置添加键盘事件监听
-    onMounted(() => {
-      if (requireModifierForActions.value) {
-        document.addEventListener('keydown', handleKeyDown)
-        document.addEventListener('keyup', handleKeyUp)
-      }
-    })
-
-    onUnmounted(() => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('keyup', handleKeyUp)
-    })
 
     return {
       // 计算属性
