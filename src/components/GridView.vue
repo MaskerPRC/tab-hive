@@ -82,11 +82,12 @@
       >
         <WebsiteCard
           v-for="(item, index) in allWebsites"
+          v-if="fullscreenIndex !== index"
           :key="item.id || `website-${index}`"
           :item="item"
           :index="index"
           :item-style="getItemStyle(item, index, fullscreenIndex)"
-          :is-fullscreen="fullscreenIndex === index"
+          :is-fullscreen="false"
           :is-hidden="isHidden(index)"
           :is-drag-over="dragOverIndex === index"
           :is-external-dragging="isDragging"
@@ -113,6 +114,35 @@
           @resize-start="startResize($event, index, $event)"
         />
       </div>
+      
+      <!-- 全屏元素渲染在画布容器外，避免受 transform 影响 -->
+      <WebsiteCard
+        v-if="fullscreenIndex !== null && allWebsites[fullscreenIndex]"
+        :key="`fullscreen-${allWebsites[fullscreenIndex].id || fullscreenIndex}`"
+        :item="allWebsites[fullscreenIndex]"
+        :index="fullscreenIndex"
+        :item-style="{}"
+        :is-fullscreen="true"
+        :is-hidden="false"
+        :is-drag-over="false"
+        :is-external-dragging="false"
+        :is-dragging="false"
+        :is-current-drag="false"
+        :is-resizing="false"
+        :is-current-resize="false"
+        :is-colliding="false"
+        :show-title="globalSettings?.showTitles"
+        :refresh-on-fullscreen-toggle="globalSettings?.refreshOnFullscreenToggle"
+        :global-muted="globalSettings?.globalMuted"
+        :ad-block-enabled="globalSettings?.adBlockEnabled"
+        @fullscreen="$emit('fullscreen', null)"
+        @refresh="handleRefreshWebsite"
+        @copy="handleCopyWebsite"
+        @edit="handleEditWebsite"
+        @remove="handleRemoveWebsite"
+        @toggle-mute="handleToggleMute"
+        @update-url="handleUpdateUrl"
+      />
     </div>
 
     <!-- 画布控制按钮 -->
