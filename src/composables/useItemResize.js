@@ -5,7 +5,7 @@
 import { ref } from 'vue'
 import { performCollisionPush } from './collisionPushAlgorithm'
 
-export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, websites) {
+export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, websites, canvasTransform = null) {
   const isResizing = ref(false)
   const resizeHandle = ref('')
   const dragStartPos = ref({ x: 0, y: 0 })
@@ -57,15 +57,20 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
     const deltaX = clientX - dragStartPos.value.x
     const deltaY = clientY - dragStartPos.value.y
 
+    // 考虑画布缩放：鼠标移动距离需要除以缩放比例才能得到画布上的实际移动距离
+    const zoom = canvasTransform?.value?.zoom || 1
+    const scaledDeltaX = deltaX / zoom
+    const scaledDeltaY = deltaY / zoom
+
     const currentSize = itemSizes.value[currentDragIndex.value] || { width: 300, height: 200 }
     let newWidth = currentSize.width
     let newHeight = currentSize.height
 
     if (resizeHandle.value.includes('e')) {
-      newWidth = Math.max(1, dragStartItemPos.value.width + deltaX)
+      newWidth = Math.max(1, dragStartItemPos.value.width + scaledDeltaX)
     }
     if (resizeHandle.value.includes('s')) {
-      newHeight = Math.max(1, dragStartItemPos.value.height + deltaY)
+      newHeight = Math.max(1, dragStartItemPos.value.height + scaledDeltaY)
     }
 
     const currentPos = itemPositions.value[currentDragIndex.value] || { x: 0, y: 0 }

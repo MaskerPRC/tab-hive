@@ -303,23 +303,34 @@ export default {
       getItemStyle
     } = useGridLayout(allWebsites)
 
-    // 拖拽
+    // 画布变换（平移和缩放）- 需要先初始化，因为拖拽和调整大小会用到
+    const {
+      canvasTransform,
+      isPanning,
+      startPan,
+      handleWheelZoom,
+      setZoom,
+      resetTransform: resetCanvasTransform,
+      getTransformStyle
+    } = useCanvasTransform()
+
+    // 拖拽（传入画布变换以考虑缩放）
     const {
       isDraggingItem,
       currentDragIndex,
       isColliding: dragIsColliding,
       startDrag: startDragItem,
       handleDragEnd
-    } = useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway, allWebsites)
+    } = useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway, allWebsites, canvasTransform)
 
-    // 调整大小
+    // 调整大小（传入画布变换以考虑缩放）
     const {
       isResizing,
       currentDragIndex: currentResizeIndex,
       isColliding: resizeIsColliding,
       startResize: startResizeItem,
       handleResizeEnd
-    } = useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, allWebsites)
+    } = useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, allWebsites, canvasTransform)
 
     // 全屏
     const fullscreenIndexRef = computed(() => props.fullscreenIndex)
@@ -340,17 +351,6 @@ export default {
       handleDragLeave,
       handleDrop
     } = useUrlDrop()
-
-    // 画布变换（平移和缩放）
-    const {
-      canvasTransform,
-      isPanning,
-      startPan,
-      handleWheelZoom,
-      setZoom,
-      resetTransform: resetCanvasTransform,
-      getTransformStyle
-    } = useCanvasTransform()
 
     // 计算缩放百分比（用于显示）
     const zoomPercentage = computed(() => {

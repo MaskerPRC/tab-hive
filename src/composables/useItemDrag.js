@@ -5,7 +5,7 @@
 import { ref } from 'vue'
 import { performCollisionPush } from './collisionPushAlgorithm'
 
-export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway, websites = null) {
+export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollisionWithOthers, isMovingAway, websites = null, canvasTransform = null) {
   const isDraggingItem = ref(false)
   const dragStartPos = ref({ x: 0, y: 0 })
   const dragStartItemPos = ref({ x: 0, y: 0 })
@@ -67,9 +67,14 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
     const deltaX = clientX - dragStartPos.value.x
     const deltaY = clientY - dragStartPos.value.y
 
+    // 考虑画布缩放：鼠标移动距离需要除以缩放比例才能得到画布上的实际移动距离
+    const zoom = canvasTransform?.value?.zoom || 1
+    const scaledDeltaX = deltaX / zoom
+    const scaledDeltaY = deltaY / zoom
+
     // 移除边界限制，允许移动到负坐标（无限画布）
-    const newX = dragStartItemPos.value.x + deltaX
-    const newY = dragStartItemPos.value.y + deltaY
+    const newX = dragStartItemPos.value.x + scaledDeltaX
+    const newY = dragStartItemPos.value.y + scaledDeltaY
 
     const currentSize = itemSizes.value[currentDragIndex.value] || { width: 400, height: 300 }
 
