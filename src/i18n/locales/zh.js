@@ -206,6 +206,18 @@ export default {
     unnamed: '未命名'
   },
 
+  // 画布控制
+  canvasControls: {
+    addWebsite: '添加窗口',
+    autoArrange: '适应屏幕',
+    clearDrawings: '清除绘制',
+    drawingMode: '绘制模式',
+    drawingSettings: '绘制设置',
+    resetZoom: '重置缩放 (100%)',
+    zoomIn: '放大',
+    zoomOut: '缩小'
+  },
+
   // 布局操作
   layout: {
     create: '创建新布局',
@@ -243,7 +255,11 @@ export default {
     shareLayout: '分享布局',
     renameLayout: '重命名',
     deleteLayout: '删除',
-    websiteCount: '个网站'
+    websiteCount: '个网站',
+    preview: '预览',
+    sharedLayoutsDesc: '浏览并导入网友分享的 Tab Hive 布局配置',
+    sortHot: '最热下载',
+    sortLatest: '最新发布'
   },
 
   // 下载弹窗
