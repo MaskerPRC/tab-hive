@@ -2,7 +2,7 @@
 
 ## 概述
 
-参考 Automa 项目的优秀实现，我们对 Tab Hive 的元素选择器进行了全面升级，提供了更加直观和强大的可视化选择体验。
+参考 Automa 项目的优秀实现，我们对 全视界 的元素选择器进行了全面升级，提供了更加直观和强大的可视化选择体验。
 
 ## 🎨 主要改进
 
@@ -122,7 +122,7 @@
 
 **Chrome 扩展高亮样式:**
 ```css
-.tabhive-element-highlight {
+.quanshijie-element-highlight {
   border: 2px solid #ff5c00;
   background: rgba(255, 92, 0, 0.1);
   box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.3);
@@ -130,9 +130,9 @@
 }
 
 /* 虚线边框动画 */
-.tabhive-element-highlight::before {
+.quanshijie-element-highlight::before {
   border: 2px dashed rgba(255, 92, 0, 0.5);
-  animation: tabhive-dash 0.5s linear infinite;
+  animation: quanshijie-dash 0.5s linear infinite;
 }
 ```
 
@@ -152,7 +152,7 @@ ElementSelector.vue (主组件)
 ```javascript
 // 发送悬停消息
 window.parent.postMessage({
-  source: 'tab-hive-extension',
+  source: 'quanshijie-extension',
   action: 'elementHovered',
   selector: '#element-id',
   rect: { x: 100, y: 200, width: 300, height: 150 },
@@ -227,7 +227,7 @@ const settings = reactive({
 
 ## 📋 与 Automa 的对比
 
-| 特性 | Automa | Tab Hive (改进后) |
+| 特性 | Automa | 全视界 (改进后) |
 |-----|--------|------------------|
 | SVG 高亮 | ✓ | ✓ |
 | 可拖动面板 | ✓ | ✓ |
@@ -378,7 +378,7 @@ A: 检查是否正确清理了事件监听器。
 
 ---
 
-**作者**: Tab Hive Team  
+**作者**: 全视界 Team  
 **日期**: 2024-10-29  
 **版本**: 2.0.0
 

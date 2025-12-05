@@ -5,7 +5,7 @@ const os = require('os')
 const { setupDatabase } = require('./database')
 const { ProxyManager } = require('./proxy-manager')
 
-console.log('[Electron Main] ========== Tab Hive 启动 (Webview 架构) ==========')
+console.log('[Electron Main] ========== 全视界 启动 (Webview 架构) ==========')
 
 // 初始化数据库
 let proxyManager = null
@@ -73,7 +73,7 @@ function createWindow(windowId = null, options = {}) {
     backgroundColor: '#f5f5f5',
     show: false,
     autoHideMenuBar: true,
-    title: `Tab Hive - 窗口 ${wid}`
+    title: `全视界 - 窗口 ${wid}`
   })
 
   // 将窗口 ID 附加到窗口对象
@@ -267,7 +267,7 @@ ipcMain.handle('webview-register', (event, webviewId) => {
     [event.processId, event.frameId],
     'main-to-webview',
     'welcome',
-    { webviewId, message: '欢迎来到 Tab Hive!' }
+    { webviewId, message: '欢迎来到 全视界!' }
   )
 
   return { success: true, webviewId }
@@ -720,7 +720,7 @@ ipcMain.handle('proxy:test', async (event, proxyId) => {
 })
 
 /**
- * 为蜂巢启动代理
+ * 为视界启动代理
  */
 ipcMain.handle('proxy:start-for-hive', async (event, hiveId, proxyId) => {
   if (!proxyManager) {
@@ -730,7 +730,7 @@ ipcMain.handle('proxy:start-for-hive', async (event, hiveId, proxyId) => {
 })
 
 /**
- * 停止蜂巢代理
+ * 停止视界代理
  */
 ipcMain.handle('proxy:stop-for-hive', async (event, hiveId) => {
   if (!proxyManager) {
@@ -740,7 +740,7 @@ ipcMain.handle('proxy:stop-for-hive', async (event, hiveId) => {
 })
 
 /**
- * 获取蜂巢代理信息
+ * 获取视界代理信息
  */
 ipcMain.handle('proxy:get-hive-info', async (event, hiveId) => {
   if (!proxyManager) {
@@ -834,7 +834,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async () => {
   console.log('[Electron Main] 清理代理资源...')
   if (proxyManager) {
-    // 停止所有蜂巢的代理
+    // 停止所有视界的代理
     for (const hiveId of proxyManager.hiveClashProcesses.keys()) {
       await proxyManager.stopProxyForHive(hiveId)
     }

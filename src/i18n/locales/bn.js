@@ -63,8 +63,8 @@ export default {
 
   // অ্যাপ শিরোনাম এবং নাম
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // ডায়ালগ
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'সমস্ত কনফিগ সাফ করুন',
     windowManagement: 'উইন্ডো ব্যবস্থাপনা',
     createNewWindow: 'নতুন উইন্ডো',
-    createNewWindowHint: 'একটি নতুন Tab Hive উইন্ডো তৈরি করুন',
+    createNewWindowHint: 'একটি নতুন 全视界 উইন্ডো তৈরি করুন',
     allWindows: 'সমস্ত উইন্ডো',
     window: 'উইন্ডো',
     current: 'বর্তমান',

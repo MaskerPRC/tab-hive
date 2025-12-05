@@ -37,8 +37,8 @@ export function useUpdateChecker() {
 
   const GITHUB_REPO = 'MaskerPRC/tab-hive'
   const CHECK_INTERVAL = 24 * 60 * 60 * 1000 // 24小时
-  const IGNORED_VERSION_KEY = 'tab-hive-ignored-update-version'
-  const LAST_CHECK_KEY = 'tab-hive-last-update-check'
+  const IGNORED_VERSION_KEY = 'quanshijie-ignored-update-version'
+  const LAST_CHECK_KEY = 'quanshijie-last-update-check'
 
   let checkInterval = null
 

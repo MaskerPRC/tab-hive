@@ -29,20 +29,20 @@ isBufferReady.value = true
 让选择器应用函数返回结果，并在完成后通过`postMessage`发送回调：
 
 ```javascript
-function applyTabHiveSelectorInIframe(selector) {
+function applyQuanShiJieSelectorInIframe(selector) {
   // ... 应用选择器逻辑 ...
   
-  console.log('[Tab Hive iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
+  console.log('[全视界 iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
   return { success: true, hiddenCount: hiddenCount };
 }
 
 // 在消息处理中发送回调
 if (message.action === 'executeScriptInIframe') {
-  const result = applyTabHiveSelectorInIframe(message.selector)
+  const result = applyQuanShiJieSelectorInIframe(message.selector)
   
   // 发送完成回调到父页面
   window.parent.postMessage({
-    source: 'tab-hive-extension',
+    source: 'quanshijie-extension',
     action: 'selectorApplied',
     requestId: message.requestId,
     success: result.success,
@@ -64,14 +64,14 @@ const applySelectorViaExtension = (targetIframe, selector) => {
     // 监听扩展的回调
     const handleMessage = (event) => {
       if (event.data && 
-          event.data.source === 'tab-hive-extension' && 
+          event.data.source === 'quanshijie-extension' && 
           event.data.action === 'selectorApplied' &&
           event.data.requestId === requestId) {
         
         window.removeEventListener('message', handleMessage)
         
         if (event.data.success) {
-          console.log('[Tab Hive] 选择器应用成功，隐藏了', event.data.hiddenCount, '个元素')
+          console.log('[全视界] 选择器应用成功，隐藏了', event.data.hiddenCount, '个元素')
           resolve({ success: true, hiddenCount: event.data.hiddenCount })
         } else {
           reject(new Error(event.data.error || '选择器应用失败'))
@@ -89,7 +89,7 @@ const applySelectorViaExtension = (targetIframe, selector) => {
     
     // 发送消息到iframe
     targetIframe.contentWindow.postMessage({
-      source: 'tab-hive',
+      source: 'quanshijie',
       action: 'executeScriptInIframe',
       selector: selector,
       requestId: requestId
@@ -108,14 +108,14 @@ const applySelector = async (targetIframe, item) => {
   
   if (!targetIframe.contentDocument) {
     // 跨域iframe，使用Chrome扩展
-    console.info('[Tab Hive] 尝试使用Chrome扩展并等待完成...')
+    console.info('[全视界] 尝试使用Chrome扩展并等待完成...')
     
     try {
       await applySelectorViaExtension(targetIframe, item.targetSelector)
-      console.log('[Tab Hive] Chrome扩展应用选择器成功')
+      console.log('[全视界] Chrome扩展应用选择器成功')
       return true  // 返回成功状态
     } catch (error) {
-      console.error('[Tab Hive] Chrome扩展应用选择器失败:', error.message)
+      console.error('[全视界] Chrome扩展应用选择器失败:', error.message)
       return false  // 返回失败状态
     }
   }
@@ -130,7 +130,7 @@ const applySelector = async (targetIframe, item) => {
 
 ```javascript
 if (needSelector) {
-  console.log('[Tab Hive] 选择器类型页面，等待应用选择器到缓冲iframe')
+  console.log('[全视界] 选择器类型页面，等待应用选择器到缓冲iframe')
   
   // 等待页面DOM准备好
   await new Promise(resolve => setTimeout(resolve, 1000))
@@ -140,14 +140,14 @@ if (needSelector) {
     const success = await applySelector(bufferIframeRef.value, props.item)
     
     if (success) {
-      console.log('[Tab Hive] 选择器应用成功，等待DOM更新')
+      console.log('[全视界] 选择器应用成功，等待DOM更新')
       await new Promise(resolve => setTimeout(resolve, 100))
-      console.log('[Tab Hive] 选择器应用完成，缓冲准备就绪')
+      console.log('[全视界] 选择器应用完成，缓冲准备就绪')
     } else {
-      console.warn('[Tab Hive] 选择器应用失败，仍然显示缓冲iframe')
+      console.warn('[全视界] 选择器应用失败，仍然显示缓冲iframe')
     }
   } catch (error) {
-    console.error('[Tab Hive] 选择器应用出错:', error)
+    console.error('[全视界] 选择器应用出错:', error)
   }
 }
 
@@ -174,25 +174,25 @@ isBufferReady.value = true
 ### 控制台日志输出（正常流程）
 
 ```
-[Tab Hive] 使用双缓冲刷新: 百度
-[Tab Hive] 缓冲iframe加载完成
-[Tab Hive] 选择器类型页面，等待应用选择器到缓冲iframe
-[Tab Hive] 开始应用选择器到指定iframe
-[Tab Hive] iframe.contentDocument不可用（跨域iframe）
-[Tab Hive] 尝试使用Chrome扩展并等待完成...
-[Tab Hive] 向iframe发送消息，请求应用选择器
-[Tab Hive Extension] 收到来自Tab Hive的消息
-[Tab Hive Extension] 应用选择器: div#s-hotsearch-wrapper
-[Tab Hive iframe] 应用选择器: div#s-hotsearch-wrapper
-[Tab Hive iframe] 找到目标元素，开始处理
-[Tab Hive iframe] 选择器已应用，隐藏了 19 个元素
-[Tab Hive] 收到扩展回调: {success: true, hiddenCount: 19}
-[Tab Hive] 选择器应用成功，隐藏了 19 个元素
-[Tab Hive] Chrome扩展应用选择器成功
-[Tab Hive] 选择器应用成功，等待DOM更新
-[Tab Hive] 选择器应用完成，缓冲准备就绪
-[Tab Hive] 刷新主iframe
-[Tab Hive] 双缓冲刷新完成
+[全视界] 使用双缓冲刷新: 百度
+[全视界] 缓冲iframe加载完成
+[全视界] 选择器类型页面，等待应用选择器到缓冲iframe
+[全视界] 开始应用选择器到指定iframe
+[全视界] iframe.contentDocument不可用（跨域iframe）
+[全视界] 尝试使用Chrome扩展并等待完成...
+[全视界] 向iframe发送消息，请求应用选择器
+[全视界 Extension] 收到来自全视界的消息
+[全视界 Extension] 应用选择器: div#s-hotsearch-wrapper
+[全视界 iframe] 应用选择器: div#s-hotsearch-wrapper
+[全视界 iframe] 找到目标元素，开始处理
+[全视界 iframe] 选择器已应用，隐藏了 19 个元素
+[全视界] 收到扩展回调: {success: true, hiddenCount: 19}
+[全视界] 选择器应用成功，隐藏了 19 个元素
+[全视界] Chrome扩展应用选择器成功
+[全视界] 选择器应用成功，等待DOM更新
+[全视界] 选择器应用完成，缓冲准备就绪
+[全视界] 刷新主iframe
+[全视界] 双缓冲刷新完成
 ```
 
 ## 关键改进
@@ -238,7 +238,7 @@ isBufferReady.value = true
 
 ## 注意事项
 
-1. 需要安装Tab Hive Chrome扩展才能在跨域iframe中应用选择器
+1. 需要安装全视界 Chrome扩展才能在跨域iframe中应用选择器
 2. 超时时间设置为5秒，如果网页加载很慢可能需要调整
 3. requestId必须唯一，避免多个请求的回调混淆
 4. 监听器必须及时清理，避免内存泄漏

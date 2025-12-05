@@ -1,6 +1,6 @@
 # 部署指南
 
-本文档介绍如何部署 Tab Hive 应用（包含布局分享功能）。
+本文档介绍如何部署 全视界 应用（包含布局分享功能）。
 
 ## 快速开始
 
@@ -90,7 +90,7 @@ PORT=8080 npm run server
 ```bash
 # 克隆项目
 git clone <your-repo-url>
-cd tab-hive
+cd quanshijie
 
 # 安装依赖
 npm install
@@ -106,19 +106,19 @@ npm run build
 npm install -g pm2
 
 # 启动应用
-pm2 start server/server.js --name tab-hive
+pm2 start server/server.js --name quanshijie
 
 # 查看状态
 pm2 status
 
 # 查看日志
-pm2 logs tab-hive
+pm2 logs quanshijie
 
 # 重启应用
-pm2 restart tab-hive
+pm2 restart quanshijie
 
 # 停止应用
-pm2 stop tab-hive
+pm2 stop quanshijie
 
 # 设置开机自启
 pm2 startup
@@ -149,15 +149,15 @@ CMD ["node", "server/server.js"]
 
 ```bash
 # 构建镜像
-docker build -t tab-hive .
+docker build -t quanshijie .
 
 # 运行容器
-docker run -d -p 3101:3101 --name tab-hive tab-hive
+docker run -d -p 3101:3101 --name quanshijie quanshijie
 
 # 使用数据卷持久化数据库
 docker run -d -p 3101:3101 \
   -v $(pwd)/data:/app/server \
-  --name tab-hive tab-hive
+  --name quanshijie quanshijie
 ```
 
 ### 4. 使用 Nginx 反向代理
@@ -327,13 +327,13 @@ PORT=8080 npm run server
 **解决方案：**
 ```bash
 # 关闭所有连接
-pm2 stop tab-hive
+pm2 stop quanshijie
 
 # 删除锁文件
 rm server/layouts.db-journal
 
 # 重启
-pm2 start tab-hive
+pm2 start quanshijie
 ```
 
 ## 安全建议

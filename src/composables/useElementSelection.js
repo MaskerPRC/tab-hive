@@ -44,9 +44,9 @@ export function useElementSelection(props, emit) {
       if (webviewElements[props.fullscreenIndex]) {
         fullscreenIframe.value = webviewElements[props.fullscreenIndex]
         isSelectingElement.value = true
-        console.log('[Tab Hive] 开始元素选择模式 (webview)')
+        console.log('[全视界] 开始元素选择模式 (webview)')
       } else {
-        console.error('[Tab Hive] 未找到全屏 webview')
+        console.error('[全视界] 未找到全屏 webview')
       }
     } else {
       // 浏览器环境：查找 iframe
@@ -54,9 +54,9 @@ export function useElementSelection(props, emit) {
       if (iframeElements[props.fullscreenIndex]) {
         fullscreenIframe.value = iframeElements[props.fullscreenIndex]
         isSelectingElement.value = true
-        console.log('[Tab Hive] 开始元素选择模式 (iframe)')
+        console.log('[全视界] 开始元素选择模式 (iframe)')
       } else {
-        console.error('[Tab Hive] 未找到全屏 iframe')
+        console.error('[全视界] 未找到全屏 iframe')
       }
     }
   }

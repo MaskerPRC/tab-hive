@@ -19,7 +19,7 @@ function zipChromeExtension() {
     name: 'zip-chrome-extension',
     closeBundle: async () => {
       const sourceDir = path.resolve('chrome-extension')
-      const outputFile = path.resolve('dist/tab-hive-selector-extension.zip')
+      const outputFile = path.resolve('dist/quanshijie-selector-extension.zip')
 
       console.log('📦 正在打包选择器插件...')
 

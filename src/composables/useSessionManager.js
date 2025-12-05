@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 // 从localStorage加载session实例列表
 const loadSessionInstances = () => {
   try {
-    const saved = localStorage.getItem('tab-hive-session-instances')
+    const saved = localStorage.getItem('quanshijie-session-instances')
     if (saved) {
       const instances = JSON.parse(saved)
       // 确保至少有默认实例
@@ -32,7 +32,7 @@ const saveSessionInstances = () => {
   try {
     // 过滤掉隐藏的实例，它们会自动重建
     const instancesForSave = sessionInstances.value.filter(inst => !inst.hidden)
-    localStorage.setItem('tab-hive-session-instances', JSON.stringify(instancesForSave))
+    localStorage.setItem('quanshijie-session-instances', JSON.stringify(instancesForSave))
   } catch (e) {
     console.error('保存session实例失败:', e)
   }

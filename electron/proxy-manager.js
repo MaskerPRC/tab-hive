@@ -109,10 +109,10 @@ class ProxyManager {
     }
   }
 
-  // ==================== 蜂巢代理管理 ====================
+  // ==================== 视界代理管理 ====================
 
   /**
-   * 为蜂巢启动代理
+   * 为视界启动代理
    */
   async startProxyForHive(hiveId, proxyId) {
     try {
@@ -124,20 +124,20 @@ class ProxyManager {
       const proxy = proxyResult.data
       return await this.clashManager.startProxyForHive(hiveId, proxy)
     } catch (error) {
-      console.error('[ProxyManager] 启动蜂巢代理失败:', error)
+      console.error('[ProxyManager] 启动视界代理失败:', error)
       return { success: false, error: error.message }
     }
   }
 
   /**
-   * 停止蜂巢代理
+   * 停止视界代理
    */
   async stopProxyForHive(hiveId) {
     return await this.clashManager.stopProxyForHive(hiveId)
   }
 
   /**
-   * 获取蜂巢代理信息
+   * 获取视界代理信息
    */
   getHiveProxyInfo(hiveId) {
     return this.clashManager.getHiveProxyInfo(hiveId)

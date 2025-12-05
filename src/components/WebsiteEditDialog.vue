@@ -315,7 +315,7 @@ export default {
 
     // 创建新的session实例
     const handleCreateNewInstance = async () => {
-      // 使用当前蜂巢的名称作为实例的默认命名
+      // 使用当前视界的名称作为实例的默认命名
         const defaultName = localWebsite.value.title 
         ? `${localWebsite.value.title}` 
         : `${t('sessionInstance.defaultInstanceName')} ${sessionInstances.value.length}`

@@ -126,7 +126,7 @@ function stopElementSelector() {
  */
 function createOverlay() {
   overlayDiv = document.createElement('div')
-  overlayDiv.id = 'tab-hive-element-selector-overlay'
+  overlayDiv.id = 'quanshijie-element-selector-overlay'
   overlayDiv.style.cssText = `
     position: absolute;
     background: rgba(255, 92, 0, 0.3);
@@ -460,7 +460,7 @@ function generateSelectorCandidates(element) {
     // 候选2: 标签 + 第一个有效类名
     if (element.className && typeof element.className === 'string') {
       const classes = element.className.trim().split(/\s+/)
-        .filter(c => c && !c.startsWith('tab-hive-') && !hasGarbledCharacters(c))
+        .filter(c => c && !c.startsWith('quanshijie-') && !hasGarbledCharacters(c))
       
       if (classes.length > 0) {
         candidates.push({ 

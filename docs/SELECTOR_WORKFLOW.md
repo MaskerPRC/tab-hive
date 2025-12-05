@@ -150,7 +150,7 @@ const stopInteractiveSelection = () => {
   } else {
     // Browser: 发送postMessage
     props.targetIframe.contentWindow.postMessage({
-      source: 'tab-hive',
+      source: 'quanshijie',
       action: 'stopElementSelector'
     }, '*')
   }
@@ -239,7 +239,7 @@ const cancel = () => {
 
 ### 🎯 与 Automa 对齐
 
-| 特性 | Automa | Tab Hive | 状态 |
+| 特性 | Automa | 全视界 | 状态 |
 |-----|--------|----------|------|
 | 选择后不关闭 | ✓ | ✓ | ✅ |
 | 父子导航 | ✓ | ✓ | ✅ |

@@ -1,6 +1,6 @@
-# Tab Hive 后端服务
+# 全视界 后端服务
 
-这是 Tab Hive 的布局分享后端服务，基于 Express + SQLite。
+这是 全视界 的布局分享后端服务，基于 Express + SQLite。
 
 ## 功能特性
 

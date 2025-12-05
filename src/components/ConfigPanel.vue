@@ -3,9 +3,9 @@
     <!-- Logo 和标题（固定在顶部） -->
     <div class="logo-section">
       <div class="logo-icon">
-        <img src="/128x128.png" alt="Tab Hive Logo" class="logo-img" />
+        <img src="/128x128.png" alt="全视界 Logo" class="logo-img" />
       </div>
-      <h1 class="app-title">Tab Hive</h1>
+      <h1 class="app-title">全视界</h1>
     </div>
 
     <!-- 可滚动内容区 -->

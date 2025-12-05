@@ -559,7 +559,7 @@ app.get('/api/stats', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'Tab Hive API is running',
+    message: '全视界 API is running',
     version: '1.0.0'
   });
 });
@@ -581,7 +581,7 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('='.repeat(50));
-  console.log('🐝 Tab Hive 服务器已启动');
+  console.log('🐝 全视界 服务器已启动');
   console.log('='.repeat(50));
   console.log(`📡 服务地址: http://localhost:${PORT}`);
   console.log(`🔧 API 地址: http://localhost:${PORT}/api`);

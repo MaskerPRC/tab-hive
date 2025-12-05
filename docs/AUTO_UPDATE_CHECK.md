@@ -2,7 +2,7 @@
 
 ## 功能概述
 
-Tab Hive 现已支持自动更新检测功能，可以帮助用户及时了解新版本的发布并进行升级。
+全视界 现已支持自动更新检测功能，可以帮助用户及时了解新版本的发布并进行升级。
 
 ## 主要特性
 
@@ -76,8 +76,8 @@ const compareVersions = (v1, v2) => {
 ### 本地存储
 
 使用 `localStorage` 存储以下信息：
-- `tab-hive-ignored-update-version`：用户忽略的版本号
-- `tab-hive-last-update-check`：上次检测的时间戳
+- `quanshijie-ignored-update-version`：用户忽略的版本号
+- `quanshijie-last-update-check`：上次检测的时间戳
 
 ### 状态管理
 

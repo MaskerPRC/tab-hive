@@ -4,8 +4,8 @@
     <nav class="navbar" :class="{ 'scrolled': isScrolled }">
       <div class="nav-container">
         <div class="nav-logo">
-          <img src="/256x256.png" alt="Tab Hive" class="logo-img" />
-          <span class="logo-text">Tab Hive</span>
+          <img src="/256x256.png" alt="全视界" class="logo-img" />
+          <span class="logo-text">全视界</span>
         </div>
         <div class="nav-links">
           <a href="#features">功能</a>
@@ -19,7 +19,7 @@
       <div class="hero-content">
         <div class="hero-text">
           <h1 class="title">将网页铺满<br>你的无限画布</h1>
-          <p class="subtitle">Tab Hive 将浏览器变成一张可无限扩展的画布。自由平铺、组合多个网页，打造属于你的专属工作台。不再受限于单一标签页，让信息触手可及。</p>
+          <p class="subtitle">全视界 将浏览器变成一张可无限扩展的画布。自由平铺、组合多个网页，打造属于你的专属工作台。不再受限于单一标签页，让信息触手可及。</p>
           
           <div class="hero-buttons">
             <a href="#download" class="primary-btn">
@@ -42,7 +42,7 @@
         </div>
         
         <div class="hero-visual">
-          <!-- 这里可以使用应用截图或者抽象的蜂巢图形 -->
+          <!-- 这里可以使用应用截图或者抽象的视界图形 -->
           <div class="app-window-mockup">
             <div class="window-header">
               <div class="window-controls">
@@ -172,7 +172,7 @@
       <div class="container">
         <div class="download-card">
           <div class="download-content">
-            <h2 class="download-title">开始使用 Tab Hive</h2>
+            <h2 class="download-title">开始使用 全视界</h2>
             <p class="download-desc">选择适合你系统的版本，开启高效浏览体验。</p>
             
             <div class="download-buttons-large">
@@ -221,8 +221,8 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-brand">
-            <span class="logo-text">Tab Hive</span>
-            <p class="copyright">© {{ new Date().getFullYear() }} Tab Hive. Open Source Project.</p>
+            <span class="logo-text">全视界</span>
+            <p class="copyright">© {{ new Date().getFullYear() }} 全视界. Open Source Project.</p>
           </div>
           <div class="footer-links">
             <a href="https://github.com/MaskerPRC/tab-hive" target="_blank">GitHub</a>

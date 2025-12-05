@@ -1,4 +1,4 @@
-# 🐝 Tab Hive - 快速开始
+# 🐝 全视界 - 快速开始
 
 ## 构建并发布 Electron 桌面应用
 
@@ -7,7 +7,7 @@
 ```bash
 # 克隆仓库
 git clone git@github.com:MaskerPRC/tab-hive.git
-cd tab-hive
+cd quanshijie
 
 # 安装依赖
 npm install
@@ -37,14 +37,14 @@ npm run electron:build:linux  # Linux
 构建完成后，安装包会在 `release/` 目录中：
 
 **Windows:**
-- `Tab Hive Setup x.x.x.exe` - 安装程序
+- `全视界 Setup x.x.x.exe` - 安装程序
 
 **macOS:**
-- `Tab Hive-x.x.x.dmg` - 磁盘镜像
-- `Tab Hive-x.x.x-arm64.dmg` - Apple Silicon 版本
+- `全视界-x.x.x.dmg` - 磁盘镜像
+- `全视界-x.x.x-arm64.dmg` - Apple Silicon 版本
 
 **Linux:**
-- `Tab Hive-x.x.x.AppImage` - 可执行文件
+- `全视界-x.x.x.AppImage` - 可执行文件
 
 ### 步骤 4: 上传到 GitHub Releases
 

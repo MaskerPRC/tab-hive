@@ -204,7 +204,7 @@ export default {
     // 检查用户是否已经看过首次弹窗
     const hasSeenDownloadModal = () => {
       try {
-        return localStorage.getItem('tab-hive-seen-download-modal') === 'true'
+        return localStorage.getItem('quanshijie-seen-download-modal') === 'true'
       } catch (e) {
         return false
       }
@@ -289,7 +289,7 @@ export default {
 
       // 保存用户已经看过弹窗的标记
       try {
-        localStorage.setItem('tab-hive-seen-download-modal', 'true')
+        localStorage.setItem('quanshijie-seen-download-modal', 'true')
       } catch (e) {
         console.error('保存弹窗状态失败:', e)
       }

@@ -53,13 +53,13 @@ export function applyWebviewSelector(selectors, styleId, padding = 0) {
     const markedElements = new Set();
     targetElements.forEach(element => {
       // 标记目标元素本身
-      element.setAttribute('data-tabhive-keep', 'true');
+      element.setAttribute('data-quanshijie-keep', 'true');
       markedElements.add(element);
       
       // 标记所有祖先元素
       let current = element.parentElement;
       while (current && current !== document.body && current !== document.documentElement) {
-        current.setAttribute('data-tabhive-keep', 'true');
+        current.setAttribute('data-quanshijie-keep', 'true');
         markedElements.add(current);
         current = current.parentElement;
       }
@@ -67,7 +67,7 @@ export function applyWebviewSelector(selectors, styleId, padding = 0) {
       // 标记所有后代元素
       function markDescendants(el) {
         Array.from(el.children).forEach(child => {
-          child.setAttribute('data-tabhive-keep', 'true');
+          child.setAttribute('data-quanshijie-keep', 'true');
           markedElements.add(child);
           markDescendants(child);
         });
@@ -89,9 +89,9 @@ export function applyWebviewSelector(selectors, styleId, padding = 0) {
         }
         
         // 如果元素未被标记，隐藏它
-        if (!child.hasAttribute('data-tabhive-keep')) {
+        if (!child.hasAttribute('data-quanshijie-keep')) {
           child.style.display = 'none';
-          child.setAttribute('data-tabhive-hidden', 'true');
+          child.setAttribute('data-quanshijie-hidden', 'true');
           hiddenCount++;
         } else {
           // 如果元素被标记，递归处理其子元素
@@ -124,7 +124,7 @@ export function applyWebviewSelector(selectors, styleId, padding = 0) {
         display: computedStyle.display,
         visibility: computedStyle.visibility,
         opacity: computedStyle.opacity,
-        hasKeepAttr: el.hasAttribute('data-tabhive-keep')
+        hasKeepAttr: el.hasAttribute('data-quanshijie-keep')
       };
     });
     
@@ -134,7 +134,7 @@ export function applyWebviewSelector(selectors, styleId, padding = 0) {
       let current = el.parentElement;
       let level = 0;
       while (current && current !== document.body && level < 10) {
-        const isHidden = current.hasAttribute('data-tabhive-hidden') || 
+        const isHidden = current.hasAttribute('data-quanshijie-hidden') || 
                         window.getComputedStyle(current).display === 'none';
         if (isHidden) {
           hiddenAncestors.push({
@@ -142,7 +142,7 @@ export function applyWebviewSelector(selectors, styleId, padding = 0) {
             tagName: current.tagName,
             id: current.id,
             className: current.className,
-            hasHiddenAttr: current.hasAttribute('data-tabhive-hidden'),
+            hasHiddenAttr: current.hasAttribute('data-quanshijie-hidden'),
             display: window.getComputedStyle(current).display
           });
         }
@@ -240,18 +240,18 @@ export function restoreWebviewStyles(styleId) {
     }
     
     // 恢复隐藏的元素
-    const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+    const hiddenElements = document.querySelectorAll('[data-quanshijie-hidden]');
     let restoredCount = 0;
     hiddenElements.forEach(el => {
       el.style.display = '';
-      el.removeAttribute('data-tabhive-hidden');
+      el.removeAttribute('data-quanshijie-hidden');
       restoredCount++;
     });
     
     // 移除标记
-    const markedElements = document.querySelectorAll('[data-tabhive-keep]');
+    const markedElements = document.querySelectorAll('[data-quanshijie-keep]');
     markedElements.forEach(el => {
-      el.removeAttribute('data-tabhive-keep');
+      el.removeAttribute('data-quanshijie-keep');
     });
     
     console.log('[Webview Selector] 已恢复', restoredCount, '个元素');
@@ -321,13 +321,13 @@ export function generateSelectorCode(selectors, styleId, padding = 0) {
           const markedElements = new Set();
           targetElements.forEach(element => {
             // 标记目标元素本身
-            element.setAttribute('data-tabhive-keep', 'true');
+            element.setAttribute('data-quanshijie-keep', 'true');
             markedElements.add(element);
             
             // 标记所有祖先元素
             let current = element.parentElement;
             while (current && current !== document.body && current !== document.documentElement) {
-              current.setAttribute('data-tabhive-keep', 'true');
+              current.setAttribute('data-quanshijie-keep', 'true');
               markedElements.add(current);
               current = current.parentElement;
             }
@@ -335,7 +335,7 @@ export function generateSelectorCode(selectors, styleId, padding = 0) {
             // 标记所有后代元素
             function markDescendants(el) {
               Array.from(el.children).forEach(child => {
-                child.setAttribute('data-tabhive-keep', 'true');
+                child.setAttribute('data-quanshijie-keep', 'true');
                 markedElements.add(child);
                 markDescendants(child);
               });
@@ -357,9 +357,9 @@ export function generateSelectorCode(selectors, styleId, padding = 0) {
               }
               
               // 如果元素未被标记，隐藏它
-              if (!child.hasAttribute('data-tabhive-keep')) {
+              if (!child.hasAttribute('data-quanshijie-keep')) {
                 child.style.display = 'none';
-                child.setAttribute('data-tabhive-hidden', 'true');
+                child.setAttribute('data-quanshijie-hidden', 'true');
                 hiddenCount++;
               } else {
                 // 如果元素被标记，递归处理其子元素
@@ -392,7 +392,7 @@ export function generateSelectorCode(selectors, styleId, padding = 0) {
               display: computedStyle.display,
               visibility: computedStyle.visibility,
               opacity: computedStyle.opacity,
-              hasKeepAttr: el.hasAttribute('data-tabhive-keep')
+              hasKeepAttr: el.hasAttribute('data-quanshijie-keep')
             };
           });
           
@@ -402,7 +402,7 @@ export function generateSelectorCode(selectors, styleId, padding = 0) {
             let current = el.parentElement;
             let level = 0;
             while (current && current !== document.body && level < 10) {
-              const isHidden = current.hasAttribute('data-tabhive-hidden') || 
+              const isHidden = current.hasAttribute('data-quanshijie-hidden') || 
                               window.getComputedStyle(current).display === 'none';
               if (isHidden) {
                 hiddenAncestors.push({
@@ -410,7 +410,7 @@ export function generateSelectorCode(selectors, styleId, padding = 0) {
                   tagName: current.tagName,
                   id: current.id,
                   className: current.className,
-                  hasHiddenAttr: current.hasAttribute('data-tabhive-hidden'),
+                  hasHiddenAttr: current.hasAttribute('data-quanshijie-hidden'),
                   display: window.getComputedStyle(current).display
                 });
               }
@@ -520,18 +520,18 @@ export function generateRestoreCode(styleId) {
           }
           
           // 恢复隐藏的元素
-          const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+          const hiddenElements = document.querySelectorAll('[data-quanshijie-hidden]');
           let restoredCount = 0;
           hiddenElements.forEach(el => {
             el.style.display = '';
-            el.removeAttribute('data-tabhive-hidden');
+            el.removeAttribute('data-quanshijie-hidden');
             restoredCount++;
           });
           
           // 移除标记
-          const markedElements = document.querySelectorAll('[data-tabhive-keep]');
+          const markedElements = document.querySelectorAll('[data-quanshijie-keep]');
           markedElements.forEach(el => {
-            el.removeAttribute('data-tabhive-keep');
+            el.removeAttribute('data-quanshijie-keep');
           });
           
           console.log('[Webview Selector] 已恢复', restoredCount, '个元素');

@@ -2,7 +2,7 @@
 
 ## 📋 实现概览
 
-已完成为Tab Hive添加CSS选择器全屏功能，支持**Electron版本**（内置）和**网页版本**（Chrome扩展）两种实现方式。
+已完成为全视界添加CSS选择器全屏功能，支持**Electron版本**（内置）和**网页版本**（Chrome扩展）两种实现方式。
 
 **完成时间：** 2025年10月21日  
 **实现方式：** 双端支持（Electron + Chrome Extension）  
@@ -91,7 +91,7 @@ electron/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Tab Hive 主应用                          │
+│                      全视界 主应用                          │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │          WebsiteEditDialog.vue                      │    │
@@ -163,14 +163,14 @@ mainWindow.webContents.executeJavaScript(`
 ```javascript
 // 1. 页面发送消息
 window.postMessage({
-  source: 'tab-hive',
+  source: 'quanshijie',
   action: 'applySelectorFullscreen',
   selector: '#player'
 }, '*')
 
 // 2. Content Script接收（content.js）
 window.addEventListener('message', (event) => {
-  if (event.data.source === 'tab-hive') {
+  if (event.data.source === 'quanshijie') {
     chrome.runtime.sendMessage(...)
   }
 })
@@ -192,7 +192,7 @@ function applySelectorFullscreenInPage(selector) {
 
 // 5. 返回结果
 window.postMessage({
-  source: 'tab-hive-extension',
+  source: 'quanshijie-extension',
   action: 'applySelectorFullscreenResponse',
   response: { success: true }
 }, '*')

@@ -226,7 +226,7 @@ export default {
   },
   emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'open-script-panel', 'import-layout-from-image'],
   setup(props, { emit }) {
-    // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
+    // 所有网站列表（过滤掉空白项，防止僵尸视界）
     const allWebsites = computed(() => {
       console.log('[GridView] ========== allWebsites 计算开始 ==========')
       const sites = props.websites || []

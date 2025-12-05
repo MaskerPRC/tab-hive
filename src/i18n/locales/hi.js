@@ -63,8 +63,8 @@ export default {
 
   // ऐप शीर्षक और नाम
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // संवाद
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'सभी कॉन्फ़िगरेशन साफ करें',
     windowManagement: 'विंडो प्रबंधन',
     createNewWindow: 'नई विंडो',
-    createNewWindowHint: 'एक नई Tab Hive विंडो बनाएं',
+    createNewWindowHint: 'एक नई 全视界 विंडो बनाएं',
     allWindows: 'सभी विंडो',
     window: 'विंडो',
     current: 'वर्तमान',

@@ -62,7 +62,7 @@ async function getLatestRelease(retries = 3, delay = 5000) {
       const release = await new Promise((resolve, reject) => {
         const options = {
           headers: {
-            'User-Agent': 'Tab-Hive-Build-Script',
+            'User-Agent': 'QuanShiJie-Build-Script',
             'Accept': 'application/vnd.github.v3+json'
           }
         }

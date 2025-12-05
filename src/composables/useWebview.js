@@ -52,7 +52,7 @@ export function useWebview(props, emit) {
     try {
       if (proxyId) {
         // 设置代理
-        console.log(`[useWebview] 首次为蜂巢 ${hiveId} 设置代理 ${proxyId}`)
+        console.log(`[useWebview] 首次为视界 ${hiveId} 设置代理 ${proxyId}`)
         const result = await window.electron.proxy.setSessionProxy(partition, hiveId, proxyId)
         if (result.success) {
           console.log(`[useWebview] 代理设置成功，端口: ${result.data?.httpPort}`)
@@ -64,7 +64,7 @@ export function useWebview(props, emit) {
         }
       } else {
         // 清除代理
-        console.log(`[useWebview] 清除蜂巢 ${hiveId} 的代理设置`)
+        console.log(`[useWebview] 清除视界 ${hiveId} 的代理设置`)
         const result = await window.electron.proxy.setSessionProxy(partition, hiveId, null)
         if (result.success) {
           console.log(`[useWebview] 代理清除成功`)

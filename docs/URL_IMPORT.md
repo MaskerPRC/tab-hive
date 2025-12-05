@@ -1,6 +1,6 @@
 # 通过 URL 参数导入布局功能
 
-Tab Hive 现在支持通过 URL 查询参数直接导入一个 URLs 数组来创建新布局。
+全视界 现在支持通过 URL 查询参数直接导入一个 URLs 数组来创建新布局。
 
 ## 功能说明
 
@@ -161,13 +161,13 @@ console.log(importUrl);
 // 然后可以通过 window.location.href = importUrl 跳转
 ```
 
-### 在其他页面创建"在 Tab Hive 中打开"按钮
+### 在其他页面创建"在 全视界 中打开"按钮
 
 ```html
-<button onclick="openInTabHive()">在 Tab Hive 中打开这些网站</button>
+<button onclick="openInQuanShiJie()">在 全视界 中打开这些网站</button>
 
 <script>
-function openInTabHive() {
+function openInQuanShiJie() {
   const websites = [
     { url: 'https://example1.com', title: '网站1' },
     { url: 'https://example2.com', title: '网站2' },

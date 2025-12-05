@@ -1,8 +1,8 @@
 {
-  "name": "tab-hive",
+  "name": "quanshijie",
   "private": true,
-  "version": "0.8.1",
-  "description": "🐝 Tab Hive - Organize your tabs like a beehive!",
+  "version": "0.9.0",
+  "description": "🌐 全视界 - 将浏览器变成一张可无限扩展的画布",
   "author": "MaskerPRC",
   "license": "MIT",
   "main": "electron/main.js",
@@ -66,7 +66,7 @@
   },
   "build": {
     "appId": "com.maskerprc.tabhive",
-    "productName": "Tab Hive",
+    "productName": "全视界",
     "publish": null,
     "directories": {
       "output": "release"

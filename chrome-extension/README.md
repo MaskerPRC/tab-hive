@@ -1,6 +1,6 @@
-# Tab Hive - Chrome Extension
+# 全视界 - Chrome Extension
 
-这是 Tab Hive 的 Chrome 扩展，用于在网页版本中提供选择器全屏功能。
+这是 全视界 的 Chrome 扩展，用于在网页版本中提供选择器全屏功能。
 
 ## 功能
 
@@ -29,7 +29,7 @@
 
 ## 使用方法
 
-### 在 Tab Hive 中配置
+### 在 全视界 中配置
 
 1. 添加或编辑网站时，填写"目标选择器"字段
 2. 输入CSS选择器，例如：
@@ -51,7 +51,7 @@
 ### 工作原理
 
 1. Content Script 在每个页面中运行
-2. 监听来自 Tab Hive 应用的消息
+2. 监听来自 全视界 应用的消息
 3. 通过 Background Script 在iframe中执行脚本
 4. 使用CSS选择器定位目标元素
 5. 隐藏其他元素并将目标元素全屏化

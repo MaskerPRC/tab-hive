@@ -50,7 +50,7 @@ export function useCredentialManager() {
   // 从 localStorage 加载凭证
   const loadCredentials = () => {
     try {
-      const stored = localStorage.getItem('tab-hive-credentials')
+      const stored = localStorage.getItem('quanshijie-credentials')
       if (stored) {
         const data = JSON.parse(stored)
         credentials.value = data.credentials || []
@@ -69,7 +69,7 @@ export function useCredentialManager() {
         credentials: credentials.value,
         version: '1.0'
       }
-      localStorage.setItem('tab-hive-credentials', JSON.stringify(data))
+      localStorage.setItem('quanshijie-credentials', JSON.stringify(data))
       return true
     } catch (e) {
       console.error('保存凭证失败:', e)
@@ -88,7 +88,7 @@ export function useCredentialManager() {
     
     // 保存主密码哈希（用于验证）
     const hash = btoa(password) // 简化版，实际应使用 SHA-256
-    localStorage.setItem('tab-hive-master-hash', hash)
+    localStorage.setItem('quanshijie-master-hash', hash)
     
     isLocked.value = false
     return true
@@ -96,7 +96,7 @@ export function useCredentialManager() {
 
   // 验证主密码
   const verifyMasterPassword = (password) => {
-    const storedHash = localStorage.getItem('tab-hive-master-hash')
+    const storedHash = localStorage.getItem('quanshijie-master-hash')
     if (!storedHash) {
       throw new Error('未设置主密码')
     }
@@ -321,7 +321,7 @@ export function useCredentialManager() {
 
         const handler = (event) => {
           if (event.data && 
-              event.data.source === 'tab-hive-content-executor' &&
+              event.data.source === 'quanshijie-content-executor' &&
               event.data.requestId === requestId) {
             clearTimeout(timeout)
             window.removeEventListener('message', handler)
@@ -332,7 +332,7 @@ export function useCredentialManager() {
         window.addEventListener('message', handler)
 
         target.contentWindow.postMessage({
-          source: 'tab-hive',
+          source: 'quanshijie',
           action: 'executeScript',
           requestId,
           script
@@ -403,7 +403,7 @@ export function useCredentialManager() {
 
         const handler = (event) => {
           if (event.data && 
-              event.data.source === 'tab-hive-content-executor' &&
+              event.data.source === 'quanshijie-content-executor' &&
               event.data.requestId === requestId) {
             clearTimeout(timeout)
             window.removeEventListener('message', handler)
@@ -414,7 +414,7 @@ export function useCredentialManager() {
         window.addEventListener('message', handler)
 
         target.contentWindow.postMessage({
-          source: 'tab-hive',
+          source: 'quanshijie',
           action: 'executeScript',
           requestId,
           script
@@ -442,7 +442,7 @@ export function useCredentialManager() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `tab-hive-credentials-${Date.now()}.json`
+    a.download = `quanshijie-credentials-${Date.now()}.json`
     a.click()
     URL.revokeObjectURL(url)
     
@@ -494,7 +494,7 @@ export function useCredentialManager() {
 
   // 检查是否已设置主密码
   const hasMasterPassword = computed(() => {
-    return !!localStorage.getItem('tab-hive-master-hash')
+    return !!localStorage.getItem('quanshijie-master-hash')
   })
 
   // 凭证数量

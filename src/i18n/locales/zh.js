@@ -63,8 +63,8 @@ export default {
 
   // 应用标题和名称
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // 对话框
@@ -135,7 +135,7 @@ export default {
     createNewInstanceMessage: '请输入实例名称（例如：账号2、测试环境等）',
     inputPlaceholder: '请输入实例名称',
     defaultInstanceName: '共享实例',
-    hint: '💡 相同实例的蜂巢会共享Cookie和存储，不同实例之间完全隔离\n• 默认共享实例：所有网站共用\n• 新建实例：可用于多账号登录等场景'
+    hint: '💡 相同实例的视界会共享Cookie和存储，不同实例之间完全隔离\n• 默认共享实例：所有网站共用\n• 新建实例：可用于多账号登录等场景'
   },
 
   // 内边距配置
@@ -170,9 +170,9 @@ export default {
     language: '语言',
     languageHint: '选择界面语言',
     showTitles: '显示标题',
-    showTitlesHint: '显示/隐藏蜂巢标题',
+    showTitlesHint: '显示/隐藏视界标题',
     refreshOnFullscreenToggle: '全屏切换刷新',
-    refreshOnFullscreenToggleHint: '选择器类型的蜂巢，全屏切换时是否刷新网页',
+    refreshOnFullscreenToggleHint: '选择器类型的视界，全屏切换时是否刷新网页',
     globalMuted: '全局静音',
     globalMutedHint: '全局静音/取消静音所有网页',
     adBlockEnabled: '去广告',
@@ -191,7 +191,7 @@ export default {
     clearConfigHint: '清除所有配置',
     windowManagement: '窗口管理',
     createNewWindow: '新建窗口',
-    createNewWindowHint: '创建新的 Tab Hive 窗口',
+    createNewWindowHint: '创建新的 全视界 窗口',
     allWindows: '所有窗口',
     window: '窗口',
     current: '当前',
@@ -257,7 +257,7 @@ export default {
     deleteLayout: '删除',
     websiteCount: '个网站',
     preview: '预览',
-    sharedLayoutsDesc: '浏览并导入网友分享的 Tab Hive 布局配置',
+    sharedLayoutsDesc: '浏览并导入网友分享的 全视界 布局配置',
     sortHot: '最热下载',
     sortLatest: '最新发布',
     exportLayout: '导出布局',
@@ -372,16 +372,16 @@ export default {
   sessionInstanceManager: {
     title: 'Cookie共享实例管理',
     whatIs: '什么是Cookie共享实例？',
-    description: '同一实例的蜂巢会共享Cookie、LocalStorage等存储。不同实例之间完全隔离。',
+    description: '同一实例的视界会共享Cookie、LocalStorage等存储。不同实例之间完全隔离。',
     useCases: '使用场景：',
     useCasesDesc: '多账号登录、测试环境隔离等。',
     rename: '重命名',
     delete: '删除',
-    deleteDisabled: '有蜂巢正在使用此实例，无法删除',
+    deleteDisabled: '有视界正在使用此实例，无法删除',
     deleteConfirm: '确定要删除实例 "{name}" 吗？',
     create: '新建实例',
     close: '关闭',
-    usageCount: '个蜂巢'
+    usageCount: '个视界'
   },
 
   // 自动刷新预设
@@ -402,7 +402,7 @@ export default {
     goForward: '前进',
     mute: '静音',
     unmute: '取消静音',
-    copy: '复制蜂巢',
+    copy: '复制视界',
     script: '脚本执行器',
     edit: '编辑链接',
     fullscreen: '全屏查看',

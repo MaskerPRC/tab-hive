@@ -99,7 +99,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     try {
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      const paddingStyleId = `tabhive-padding-style-${props.item.id}`
+      const paddingStyleId = `quanshijie-padding-style-${props.item.id}`
 
       const paddingCode = `
         (function() {
@@ -146,7 +146,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     console.log('[useWebviewSelector] 移除内边距（网页模式）')
 
     try {
-      const paddingStyleId = `tabhive-padding-style-${props.item.id}`
+      const paddingStyleId = `quanshijie-padding-style-${props.item.id}`
       const removeCode = `
         (function() {
           try {
@@ -177,7 +177,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
       // 等待一段时间确保页面完全加载
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      const darkModeStyleId = `tabhive-darkmode-style-${props.item.id}`
+      const darkModeStyleId = `quanshijie-darkmode-style-${props.item.id}`
 
       const darkModeCode = `
         (function() {
@@ -246,7 +246,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     console.log('[useWebviewSelector] ========== 开始执行选择器应用代码 ==========')
 
     try {
-      const styleId = `tabhive-selector-style-${props.item.id}`
+      const styleId = `quanshijie-selector-style-${props.item.id}`
       const padding = props.item.padding && props.item.padding > 0 ? props.item.padding : 0
       const selectorCode = generateSelectorCode(selectors, styleId, padding)
 
@@ -319,7 +319,7 @@ export function useWebviewSelector(props, { isElectron, webviewRef, executeJavaS
     
     if (isElectron.value && webviewRef.value) {
       try {
-        const styleId = `tabhive-selector-style-${props.item.id}`
+        const styleId = `quanshijie-selector-style-${props.item.id}`
         
         // 使用独立的工具函数生成恢复代码
         const code = generateRestoreCode(styleId)

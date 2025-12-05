@@ -6,7 +6,7 @@
         <div class="modal-header">
           <div>
             <h2 class="modal-title">{{ $t('layout.sharedLayouts') || '发现社区灵感' }}</h2>
-            <p class="modal-subtitle">{{ $t('layout.sharedLayoutsDesc') || '浏览并导入网友分享的 Tab Hive 布局配置' }}</p>
+            <p class="modal-subtitle">{{ $t('layout.sharedLayoutsDesc') || '浏览并导入网友分享的 全视界 布局配置' }}</p>
           </div>
           <button @click="handleClose" class="modal-close-btn">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

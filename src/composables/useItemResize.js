@@ -103,7 +103,7 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
     
     isColliding.value = hasCollision
 
-    // 先更新当前蜂巢的尺寸
+    // 先更新当前视界的尺寸
     itemSizes.value[currentDragIndex.value] = { width: newWidth, height: newHeight }
 
     // 如果正在放大且有碰撞，执行推开算法
@@ -135,7 +135,7 @@ export function useItemResize(itemPositions, itemSizes, snapToGrid, checkCollisi
         newPositions
       })
 
-      // 更新所有蜂巢的位置
+      // 更新所有视界的位置
       itemPositions.value = { ...newPositions }
     } 
   }

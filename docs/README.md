@@ -1,6 +1,6 @@
-# 🐝 Tab Hive
+# 🐝 全视界
 
-一个纯前端的网页工具，支持在同一个页面中集成并查看多个网站。像蜂巢一样组织你的网页！
+一个纯前端的网页工具，支持在同一个页面中集成并查看多个网站。像视界一样组织你的网页！
 
 ## 📺 演示视频
 <img width="2975" height="1752" alt="image" src="https://github.com/user-attachments/assets/14884fb9-19a1-4f9c-b31f-0f94d5ed397b" />
@@ -76,9 +76,9 @@ npm run preview
 #### 下载安装包
 
 前往 [Releases](https://github.com/MaskerPRC/tab-hive/releases) 页面下载最新版本：
-- Windows: `Tab Hive Setup.exe`
-- macOS: `Tab Hive.dmg`
-- Linux: `Tab Hive.AppImage`
+- Windows: `全视界 Setup.exe`
+- macOS: `全视界.dmg`
+- Linux: `全视界.AppImage`
 
 #### 从源码构建
 
@@ -142,7 +142,7 @@ npm run electron:build
 
 ### 布局分享功能 🆕
 
-Tab Hive 现在支持布局分享！
+全视界 现在支持布局分享！
 
 #### 启动分享服务
 
@@ -179,7 +179,7 @@ npm run dev
 
 ### URL 参数导入功能 🆕
 
-Tab Hive 现在支持通过 URL 参数直接导入网站集合！
+全视界 现在支持通过 URL 参数直接导入网站集合！
 
 #### 使用方法
 
@@ -203,7 +203,7 @@ http://localhost:3000/?urls=https://twitter.com,https://facebook.com,https://ins
 
 ### CSS选择器全屏功能 🆕
 
-Tab Hive 现在支持在全屏时只显示iframe中指定CSS选择器的元素！
+全视界 现在支持在全屏时只显示iframe中指定CSS选择器的元素！
 
 #### 应用场景
 
@@ -221,7 +221,7 @@ Tab Hive 现在支持在全屏时只显示iframe中指定CSS选择器的元素�
 
 2. **网页版本**（需要Chrome扩展）
    - 安装Chrome扩展（见下方）
-   - 在Tab Hive中配置选择器
+   - 在全视界中配置选择器
    - 全屏时扩展会自动应用
 
 #### 常用选择器示例
@@ -248,7 +248,7 @@ Bilibili:     .bilibili-player
 
 ## iframe 反检测功能 🆕
 
-有些网站会检测到在 iframe 中运行并阻止显示。Tab Hive 提供了两种解决方案：
+有些网站会检测到在 iframe 中运行并阻止显示。全视界 提供了两种解决方案：
 
 ### 方案1: Chrome 扩展（需要手动安装）
 

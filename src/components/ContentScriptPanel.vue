@@ -301,7 +301,7 @@ export default {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `tab-hive-extract-${Date.now()}.json`
+      a.download = `quanshijie-extract-${Date.now()}.json`
       a.click()
       URL.revokeObjectURL(url)
     }

@@ -36,7 +36,7 @@ export function useCollisionDetection() {
     for (let i = 0; i < totalItems; i++) {
       if (i === index) continue // 跳过自己
 
-      // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸蜂巢）
+      // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸视界）
       if (websites && websites[i] && !websites[i].url) continue
 
       const pos = itemPositions[i]
@@ -68,7 +68,7 @@ export function useCollisionDetection() {
     for (let i = 0; i < totalItems; i++) {
       if (i === index) continue
 
-      // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸蜂巢）
+      // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸视界）
       if (websites && websites[i] && !websites[i].url) continue
 
       const otherPos = itemPositions[i]

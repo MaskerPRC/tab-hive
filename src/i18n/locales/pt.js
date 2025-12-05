@@ -63,8 +63,8 @@ export default {
 
   // Nome e título do aplicativo
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // Diálogo
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'Limpar todas as configurações',
     windowManagement: 'Gerenciamento de Janelas',
     createNewWindow: 'Nova Janela',
-    createNewWindowHint: 'Criar uma nova janela Tab Hive',
+    createNewWindowHint: 'Criar uma nova janela 全视界',
     allWindows: 'Todas as Janelas',
     window: 'Janela',
     current: 'Atual',

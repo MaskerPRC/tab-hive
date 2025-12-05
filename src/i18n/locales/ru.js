@@ -63,8 +63,8 @@ export default {
 
   // Название и заголовок приложения
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // Диалог
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'Очистить все настройки',
     windowManagement: 'Управление окнами',
     createNewWindow: 'Новое окно',
-    createNewWindowHint: 'Создать новое окно Tab Hive',
+    createNewWindowHint: 'Создать новое окно 全视界',
     allWindows: 'Все окна',
     window: 'Окно',
     current: 'Текущее',

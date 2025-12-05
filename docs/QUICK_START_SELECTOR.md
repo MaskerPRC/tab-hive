@@ -93,7 +93,7 @@ npm run dev
 3. 点击你想要全屏的区域（如视频播放器）
 4. 在Elements面板中右键点击高亮的元素
 5. 选择 Copy → Copy selector
-6. 粘贴到Tab Hive的"目标选择器"输入框
+6. 粘贴到全视界的"目标选择器"输入框
 
 ### 方法2：手动查找
 
@@ -147,14 +147,14 @@ video
 
 ```javascript
 // 成功的日志
-[Tab Hive] 选择器全屏已应用: #player
+[全视界] 选择器全屏已应用: #player
 
 // Electron环境
 window.electron?.isElectron  // 应该返回 true
 
 // Chrome扩展环境
 // 应该看到扩展的消息
-[Tab Hive Extension] Content script loaded
+[全视界 Extension] Content script loaded
 ```
 
 ## 常见问题
@@ -231,7 +231,7 @@ document.querySelectorAll('body > *').forEach(e => {
 
 - 📖 阅读完整文档：[SELECTOR_FEATURE.md](SELECTOR_FEATURE.md)
 - 🔧 Chrome扩展详细安装：[chrome-extension/INSTALL.md](../chrome-extension/INSTALL.md)
-- 🐝 探索更多Tab Hive功能：[README.md](README.md)
+- 🐝 探索更多全视界功能：[README.md](README.md)
 
 ## 反馈
 

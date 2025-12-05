@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Tab Hive - iframe反检测助手",
+  "name": "全视界 - iframe反检测助手",
   "version": "2.0.0",
-  "description": "为Tab Hive提供iframe反检测和选择器全屏功能支持，解决网站在iframe中的显示问题",
+  "description": "为全视界提供iframe反检测和选择器全屏功能支持，解决网站在iframe中的显示问题",
   "permissions": [
     "activeTab",
     "scripting",

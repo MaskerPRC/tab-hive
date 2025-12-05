@@ -106,7 +106,7 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
 
     isColliding.value = hasCollision
 
-    // 先更新当前蜂巢的位置
+    // 先更新当前视界的位置
     itemPositions.value[currentDragIndex.value] = { x: newX, y: newY }
 
     // 如果有碰撞且不是在远离，执行推开算法（拖拽时推开力度较小，仅轻微推开）
@@ -136,7 +136,7 @@ export function useItemDrag(itemPositions, itemSizes, snapToGrid, checkCollision
         newPositions
       })
 
-      // 更新所有蜂巢的位置
+      // 更新所有视界的位置
       itemPositions.value = { ...newPositions }
     } 
   }

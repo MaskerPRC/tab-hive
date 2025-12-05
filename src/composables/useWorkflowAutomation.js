@@ -424,7 +424,7 @@ export function useWorkflowAutomation() {
     
     // 显示浏览器通知（如果有权限）
     if (Notification.permission === 'granted') {
-      new Notification('Tab Hive 工作流', {
+      new Notification('全视界 工作流', {
         body: message,
         icon: '/256x256.png'
       })
@@ -476,7 +476,7 @@ export function useWorkflowAutomation() {
    */
   const saveWorkflows = () => {
     try {
-      localStorage.setItem('tab-hive-workflows', JSON.stringify(workflows.value))
+      localStorage.setItem('quanshijie-workflows', JSON.stringify(workflows.value))
     } catch (e) {
       console.error('保存工作流失败:', e)
     }
@@ -487,7 +487,7 @@ export function useWorkflowAutomation() {
    */
   const loadWorkflows = () => {
     try {
-      const stored = localStorage.getItem('tab-hive-workflows')
+      const stored = localStorage.getItem('quanshijie-workflows')
       if (stored) {
         workflows.value = JSON.parse(stored)
       }

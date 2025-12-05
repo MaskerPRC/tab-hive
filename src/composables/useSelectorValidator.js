@@ -216,7 +216,7 @@ export function generateSelectorCandidates(element) {
     // 候选2: 标签 + 第一个有效类名
     if (element.className && typeof element.className === 'string') {
       const classes = element.className.trim().split(/\s+/)
-        .filter(c => c && !c.startsWith('tab-hive-') && !hasGarbledCharacters(c))
+        .filter(c => c && !c.startsWith('quanshijie-') && !hasGarbledCharacters(c))
       
       if (classes.length > 0) {
         candidates.push(`${element.tagName.toLowerCase()}.${classes[0]}`)

@@ -1,10 +1,10 @@
 /**
- * Tab Hive - Chrome Extension Content Script
- * 在每个页面中运行，监听来自Tab Hive应用的消息
+ * 全视界 - Chrome Extension Content Script
+ * 在每个页面中运行，监听来自全视界应用的消息
  * 并注入反检测脚本以解决iframe显示问题
  */
 
-console.log('[Tab Hive Extension] Content script loaded');
+console.log('[全视界 Extension] Content script loaded');
 
 // 立即设置扩展检测标记
 try {
@@ -28,18 +28,18 @@ try {
     const script = document.createElement('script');
     script.src = chrome.runtime.getURL('inject.js');
     script.onload = function() {
-      console.log('[Tab Hive Extension] iframe反检测脚本已注入');
+      console.log('[全视界 Extension] iframe反检测脚本已注入');
       this.remove(); // 加载后移除script标签
     };
     script.onerror = function() {
-      console.error('[Tab Hive Extension] 注入反检测脚本失败');
+      console.error('[全视界 Extension] 注入反检测脚本失败');
       this.remove();
     };
     
     // 尽早插入脚本
     (document.head || document.documentElement).appendChild(script);
   } catch (error) {
-    console.error('[Tab Hive Extension] 创建注入脚本失败:', error);
+    console.error('[全视界 Extension] 创建注入脚本失败:', error);
   }
 })();
 
@@ -47,41 +47,41 @@ try {
 window.addEventListener('message', async (event) => {
   const message = event.data;
 
-  // 检查是否是Tab Hive的消息
-  if (message && message.source === 'tab-hive') {
-    console.log('[Tab Hive Extension] 收到来自Tab Hive的消息:', message);
+  // 检查是否是全视界的消息
+  if (message && message.source === 'quanshijie') {
+    console.log('[全视界 Extension] 收到来自全视界的消息:', message);
 
     if (message.action === 'executeScriptInIframe') {
       // 在当前页面（iframe）中应用选择器
-      console.log('[Tab Hive Extension] 应用选择器:', message.selector, '内边距:', message.padding)
+      console.log('[全视界 Extension] 应用选择器:', message.selector, '内边距:', message.padding)
       try {
         const padding = message.padding && message.padding > 0 ? message.padding : 0
-        const result = applyTabHiveSelectorInIframe(message.selector, padding)
+        const result = applyQuanShiJieSelectorInIframe(message.selector, padding)
         // 发送完成回调
         window.parent.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'selectorApplied',
           requestId: message.requestId,
           success: result.success,
           hiddenCount: result.hiddenCount
         }, '*')
       } catch (error) {
-        console.error('[Tab Hive Extension] 选择器应用失败:', error)
+        console.error('[全视界 Extension] 选择器应用失败:', error)
         window.parent.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'selectorApplied',
           requestId: message.requestId,
           success: false,
           error: error.message
         }, '*')
       }
-    } else if (message.action === 'restoreTabHiveStyles') {
+    } else if (message.action === 'restoreQuanShiJieStyles') {
       // 恢复原始样式
-      console.log('[Tab Hive Extension] 恢复原始样式')
+      console.log('[全视界 Extension] 恢复原始样式')
       try {
-        restoreTabHiveStylesInIframe()
+        restoreQuanShiJieStylesInIframe()
       } catch (error) {
-        console.error('[Tab Hive Extension] 样式恢复失败:', error)
+        console.error('[全视界 Extension] 样式恢复失败:', error)
       }
     } else if (message.action === 'applySelectorFullscreen') {
       // 应用选择器全屏
@@ -94,14 +94,14 @@ window.addEventListener('message', async (event) => {
 
         // 将结果发送回页面
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'applySelectorFullscreenResponse',
           requestId: message.requestId,
           response: response
         }, '*');
       } catch (error) {
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'applySelectorFullscreenResponse',
           requestId: message.requestId,
           response: { success: false, error: error.message }
@@ -116,14 +116,14 @@ window.addEventListener('message', async (event) => {
         });
 
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'restoreOriginalStylesResponse',
           requestId: message.requestId,
           response: response
         }, '*');
       } catch (error) {
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'restoreOriginalStylesResponse',
           requestId: message.requestId,
           response: { success: false, error: error.message }
@@ -131,19 +131,19 @@ window.addEventListener('message', async (event) => {
       }
     } else if (message.action === 'startElementSelector') {
       // 启动元素选择器
-      console.log('[Tab Hive Extension] 启动元素选择器')
+      console.log('[全视界 Extension] 启动元素选择器')
       try {
         startElementSelectorInIframe()
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'elementSelectorStarted',
           requestId: message.requestId,
           success: true
         }, '*')
       } catch (error) {
-        console.error('[Tab Hive Extension] 启动元素选择器失败:', error)
+        console.error('[全视界 Extension] 启动元素选择器失败:', error)
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'elementSelectorStarted',
           requestId: message.requestId,
           success: false,
@@ -152,19 +152,19 @@ window.addEventListener('message', async (event) => {
       }
     } else if (message.action === 'stopElementSelector') {
       // 停止元素选择器
-      console.log('[Tab Hive Extension] 停止元素选择器')
+      console.log('[全视界 Extension] 停止元素选择器')
       try {
         stopElementSelectorInIframe()
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'elementSelectorStopped',
           requestId: message.requestId,
           success: true
         }, '*')
       } catch (error) {
-        console.error('[Tab Hive Extension] 停止元素选择器失败:', error)
+        console.error('[全视界 Extension] 停止元素选择器失败:', error)
         window.postMessage({
-          source: 'tab-hive-extension',
+          source: 'quanshijie-extension',
           action: 'elementSelectorStopped',
           requestId: message.requestId,
           success: false,
@@ -173,27 +173,27 @@ window.addEventListener('message', async (event) => {
       }
     } else if (message.action === 'navigateElement') {
       // 导航到父/子元素
-      console.log('[Tab Hive Extension] 导航元素:', message.direction)
+      console.log('[全视界 Extension] 导航元素:', message.direction)
       try {
         navigateToElement(message.direction)
       } catch (error) {
-        console.error('[Tab Hive Extension] 元素导航失败:', error)
+        console.error('[全视界 Extension] 元素导航失败:', error)
       }
     } else if (message.action === 'restartElementSelector') {
       // 重新启动元素选择器（完全清空并重新开始）
-      console.log('[Tab Hive Extension] 重新启动元素选择器')
+      console.log('[全视界 Extension] 重新启动元素选择器')
       try {
         restartElementSelectorInIframe()
       } catch (error) {
-        console.error('[Tab Hive Extension] 重新启动选择器失败:', error)
+        console.error('[全视界 Extension] 重新启动选择器失败:', error)
       }
     } else if (message.action === 'cleanupElementSelector') {
       // 完全清理选择器（移除所有高亮和状态）
-      console.log('[Tab Hive Extension] 完全清理选择器')
+      console.log('[全视界 Extension] 完全清理选择器')
       try {
         completeCleanupInIframe()
       } catch (error) {
-        console.error('[Tab Hive Extension] 完全清理失败:', error)
+        console.error('[全视界 Extension] 完全清理失败:', error)
       }
     }
   }
@@ -201,16 +201,16 @@ window.addEventListener('message', async (event) => {
 
 // 向页面注入一个标记，表示扩展已加载
 window.postMessage({
-  source: 'tab-hive-extension',
+  source: 'quanshijie-extension',
   action: 'extensionLoaded'
 }, '*');
 
 // 监听ping消息并响应
 window.addEventListener('message', (event) => {
-  if (event.data && event.data.source === 'tab-hive' && event.data.action === 'ping') {
-    console.log('[Tab Hive Extension] 收到ping，发送pong')
+  if (event.data && event.data.source === 'quanshijie' && event.data.action === 'ping') {
+    console.log('[全视界 Extension] 收到ping，发送pong')
     window.postMessage({
-      source: 'tab-hive-extension',
+      source: 'quanshijie-extension',
       action: 'pong'
     }, '*');
   }
@@ -219,18 +219,18 @@ window.addEventListener('message', (event) => {
 /**
  * 在iframe中应用选择器（隐藏其他元素，目标元素填满）
  */
-function applyTabHiveSelectorInIframe(selector, padding = 0) {
+function applyQuanShiJieSelectorInIframe(selector, padding = 0) {
   try {
-    console.log('[Tab Hive iframe] 应用选择器:', selector, '内边距:', padding);
+    console.log('[全视界 iframe] 应用选择器:', selector, '内边距:', padding);
     
     const targetElement = document.querySelector(selector);
     
     if (!targetElement) {
-      console.warn('[Tab Hive iframe] 未找到选择器:', selector);
+      console.warn('[全视界 iframe] 未找到选择器:', selector);
       return { success: false, error: '未找到元素' };
     }
     
-    console.log('[Tab Hive iframe] 找到目标元素，开始处理');
+    console.log('[全视界 iframe] 找到目标元素，开始处理');
     
     // 隐藏兄弟元素
     let current = targetElement;
@@ -243,7 +243,7 @@ function applyTabHiveSelectorInIframe(selector, padding = 0) {
           if (sibling !== current && 
               !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
             sibling.style.display = 'none';
-            sibling.setAttribute('data-tabhive-hidden', 'true');
+            sibling.setAttribute('data-quanshijie-hidden', 'true');
             hiddenCount++;
           }
         });
@@ -251,10 +251,10 @@ function applyTabHiveSelectorInIframe(selector, padding = 0) {
       current = parent;
     }
     
-    console.log('[Tab Hive iframe] 已隐藏', hiddenCount, '个兄弟元素');
+    console.log('[全视界 iframe] 已隐藏', hiddenCount, '个兄弟元素');
     
     // 注入样式
-    const styleId = 'tabhive-selector-style';
+    const styleId = 'quanshijie-selector-style';
     let style = document.getElementById(styleId);
     if (!style) {
       style = document.createElement('style');
@@ -291,36 +291,36 @@ function applyTabHiveSelectorInIframe(selector, padding = 0) {
       }
     `;
     
-    console.log('[Tab Hive iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
+    console.log('[全视界 iframe] 选择器已应用，隐藏了', hiddenCount, '个元素');
     return { success: true, hiddenCount: hiddenCount };
   } catch (error) {
-    console.error('[Tab Hive iframe] 错误:', error);
+    console.error('[全视界 iframe] 错误:', error);
     return { success: false, error: error.message };
   }
 }
 
 /**
- * 恢复Tab Hive的样式修改
+ * 恢复全视界的样式修改
  */
-function restoreTabHiveStylesInIframe() {
+function restoreQuanShiJieStylesInIframe() {
   try {
-    const styleId = 'tabhive-selector-style';
+    const styleId = 'quanshijie-selector-style';
     const style = document.getElementById(styleId);
     if (style) {
       style.remove();
-      console.log('[Tab Hive iframe] 样式已移除');
+      console.log('[全视界 iframe] 样式已移除');
     }
     
-    const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+    const hiddenElements = document.querySelectorAll('[data-quanshijie-hidden]');
     let restoredCount = 0;
     hiddenElements.forEach(el => {
       el.style.display = '';
-      el.removeAttribute('data-tabhive-hidden');
+      el.removeAttribute('data-quanshijie-hidden');
       restoredCount++;
     });
-    console.log('[Tab Hive iframe] 已恢复', restoredCount, '个元素');
+    console.log('[全视界 iframe] 已恢复', restoredCount, '个元素');
   } catch (error) {
-    console.error('[Tab Hive iframe] 恢复失败:', error);
+    console.error('[全视界 iframe] 恢复失败:', error);
   }
 }
 
@@ -400,7 +400,7 @@ function generateSelectorCandidates(element) {
     // 候选2: 标签 + 第一个有效类名
     if (element.className && typeof element.className === 'string') {
       const classes = element.className.trim().split(/\s+/)
-        .filter(c => c && !c.startsWith('tabhive-') && !hasGarbledCharacters(c));
+        .filter(c => c && !c.startsWith('quanshijie-') && !hasGarbledCharacters(c));
       
       if (classes.length > 0) {
         candidates.push({ 
@@ -455,7 +455,7 @@ function generateSelectorCandidates(element) {
       
       // 如果所有候选都很差，尝试使用父元素
       if (candidates.length === 0 || candidates.every(c => calculateSelectorQuality(c.selector) < 30)) {
-        console.log('[Tab Hive] 当前元素选择器质量低，尝试父元素');
+        console.log('[全视界] 当前元素选择器质量低，尝试父元素');
         const parentCandidates = generateSelectorCandidates(parent);
         // 只取父元素的最佳选择器
         if (parentCandidates.length > 0) {
@@ -473,7 +473,7 @@ function generateSelectorCandidates(element) {
     }
     
   } catch (error) {
-    console.error('[Tab Hive] 生成候选选择器失败:', error);
+    console.error('[全视界] 生成候选选择器失败:', error);
   }
   
   return candidates;
@@ -493,7 +493,7 @@ function selectBestSelector(candidates) {
   
   scored.sort((a, b) => b.score - a.score);
   
-  console.log('[Tab Hive] 选择器候选列表:', scored.map(s => `${s.selector} (分数: ${s.score})`).join(', '));
+  console.log('[全视界] 选择器候选列表:', scored.map(s => `${s.selector} (分数: ${s.score})`).join(', '));
   
   return scored[0];
 }
@@ -517,13 +517,13 @@ function generateCssSelector(element) {
     
     // 如果最佳选择器使用了不同的元素（比如父元素），更新 currentHoveredElement
     if (best.element !== element) {
-      console.log('[Tab Hive] 选择器质量优化：使用', best.element.tagName, '代替', element.tagName);
+      console.log('[全视界] 选择器质量优化：使用', best.element.tagName, '代替', element.tagName);
       currentHoveredElement = best.element;
     }
     
     return best.selector;
   } catch (error) {
-    console.error('[Tab Hive] 生成选择器失败:', error);
+    console.error('[全视界] 生成选择器失败:', error);
     return element.tagName ? element.tagName.toLowerCase() : '';
   }
 }
@@ -532,15 +532,15 @@ function generateCssSelector(element) {
  * 启动元素选择器
  */
 function startElementSelectorInIframe() {
-  console.log('[Tab Hive] 在iframe中启动元素选择器');
+  console.log('[全视界] 在iframe中启动元素选择器');
   
   // 注入样式
-  const styleId = 'tabhive-element-selector-styles';
+  const styleId = 'quanshijie-element-selector-styles';
   if (!document.getElementById(styleId)) {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
-      .tabhive-selector-overlay {
+      .quanshijie-selector-overlay {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
@@ -556,7 +556,7 @@ function startElementSelectorInIframe() {
         cursor: crosshair !important;
       }
       
-      .tabhive-element-highlight {
+      .quanshijie-element-highlight {
         position: absolute !important;
         border: 2px solid #ff5c00 !important;
         background: rgba(255, 92, 0, 0.1) !important;
@@ -566,7 +566,7 @@ function startElementSelectorInIframe() {
         box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.3) !important;
       }
       
-      .tabhive-element-highlight::before {
+      .quanshijie-element-highlight::before {
         content: '' !important;
         position: absolute !important;
         top: -2px !important;
@@ -574,10 +574,10 @@ function startElementSelectorInIframe() {
         right: -2px !important;
         bottom: -2px !important;
         border: 2px dashed rgba(255, 92, 0, 0.5) !important;
-        animation: tabhive-dash 0.5s linear infinite !important;
+        animation: quanshijie-dash 0.5s linear infinite !important;
       }
       
-      @keyframes tabhive-dash {
+      @keyframes quanshijie-dash {
         to {
           stroke-dashoffset: -20;
         }
@@ -588,12 +588,12 @@ function startElementSelectorInIframe() {
   
   // 创建覆盖层（用于视觉提示，不阻挡事件）
   selectorOverlay = document.createElement('div');
-  selectorOverlay.className = 'tabhive-selector-overlay';
+  selectorOverlay.className = 'quanshijie-selector-overlay';
   document.body.appendChild(selectorOverlay);
   
   // 创建高亮元素
   selectorHighlight = document.createElement('div');
-  selectorHighlight.className = 'tabhive-element-highlight';
+  selectorHighlight.className = 'quanshijie-element-highlight';
   selectorHighlight.style.display = 'none';
   document.body.appendChild(selectorHighlight);
   
@@ -602,14 +602,14 @@ function startElementSelectorInIframe() {
   document.addEventListener('click', handleSelectorClick, {capture: true});
   document.addEventListener('keydown', handleSelectorKeyDown, {capture: true});
   
-  console.log('[Tab Hive] 元素选择器已启动，事件监听器已添加');
+  console.log('[全视界] 元素选择器已启动，事件监听器已添加');
 }
 
 /**
  * 停止元素选择器
  */
 function stopElementSelectorInIframe() {
-  console.log('[Tab Hive] 停止元素选择器');
+  console.log('[全视界] 停止元素选择器');
   
   // 移除事件监听器（使用相同的选项）
   document.removeEventListener('mouseover', handleSelectorMouseOver, {capture: true, passive: true});
@@ -625,10 +625,10 @@ function stopElementSelectorInIframe() {
   }
   
   // 移除样式中的 cursor: crosshair
-  const style = document.getElementById('tabhive-element-selector-styles');
+  const style = document.getElementById('quanshijie-element-selector-styles');
   if (style) {
     style.textContent = `
-      .tabhive-element-highlight {
+      .quanshijie-element-highlight {
         position: absolute !important;
         border: 2px solid #ff5c00 !important;
         background: rgba(255, 92, 0, 0.1) !important;
@@ -645,7 +645,7 @@ function stopElementSelectorInIframe() {
   // 不清空 currentHoveredElement，这样导航功能还能用
   // 不清空 selectorHighlight，保持高亮显示
   
-  console.log('[Tab Hive] 元素选择器已停止交互，但保留高亮和当前元素');
+  console.log('[全视界] 元素选择器已停止交互，但保留高亮和当前元素');
 }
 
 /**
@@ -676,7 +676,7 @@ function getElementInfo(element) {
       }
     };
   } catch (error) {
-    console.error('[Tab Hive] 获取元素信息失败:', error);
+    console.error('[全视界] 获取元素信息失败:', error);
     return {
       tagName: element.tagName.toLowerCase(),
       width: 0,
@@ -693,8 +693,8 @@ function handleSelectorMouseOver(event) {
   
   // 忽略我们自己的元素
   if (element === selectorOverlay || element === selectorHighlight ||
-      element.classList.contains('tabhive-selector-overlay') ||
-      element.classList.contains('tabhive-element-highlight')) {
+      element.classList.contains('quanshijie-selector-overlay') ||
+      element.classList.contains('quanshijie-element-highlight')) {
     return;
   }
   
@@ -706,7 +706,7 @@ function handleSelectorMouseOver(event) {
   currentHoveredElement = element;
   const selector = generateCssSelector(element);
   
-  console.log('[Tab Hive] 鼠标悬停元素:', element.tagName, selector);
+  console.log('[全视界] 鼠标悬停元素:', element.tagName, selector);
   
   // 更新高亮位置
   const rect = element.getBoundingClientRect();
@@ -725,7 +725,7 @@ function handleSelectorMouseOver(event) {
   // 发送选择器和详细信息到父页面
   try {
     window.parent.postMessage({
-      source: 'tab-hive-extension',
+      source: 'quanshijie-extension',
       action: 'elementHovered',
       selector: selector,
       rect: {
@@ -736,9 +736,9 @@ function handleSelectorMouseOver(event) {
       },
       elementInfo: elementInfo
     }, '*');
-    console.log('[Tab Hive] 已发送hover消息到父页面');
+    console.log('[全视界] 已发送hover消息到父页面');
   } catch (error) {
-    console.error('[Tab Hive] 发送hover消息失败:', error);
+    console.error('[全视界] 发送hover消息失败:', error);
   }
   
   event.stopPropagation();
@@ -751,19 +751,19 @@ function handleSelectorClick(event) {
   event.preventDefault();
   event.stopPropagation();
   
-  console.log('[Tab Hive] 点击事件触发', currentHoveredElement);
+  console.log('[全视界] 点击事件触发', currentHoveredElement);
   
   if (currentHoveredElement) {
     const selector = generateCssSelector(currentHoveredElement);
     const rect = currentHoveredElement.getBoundingClientRect();
     const elementInfo = getElementInfo(currentHoveredElement);
     
-    console.log('[Tab Hive] 选中元素:', selector);
+    console.log('[全视界] 选中元素:', selector);
     
     // 发送选择结果到父页面，包含矩形和详细信息
     try {
       window.parent.postMessage({
-        source: 'tab-hive-extension',
+        source: 'quanshijie-extension',
         action: 'elementSelected',
         selector: selector,
         rect: {
@@ -774,15 +774,15 @@ function handleSelectorClick(event) {
         },
         elementInfo: elementInfo
       }, '*');
-      console.log('[Tab Hive] 已发送选择消息到父页面');
+      console.log('[全视界] 已发送选择消息到父页面');
     } catch (error) {
-      console.error('[Tab Hive] 发送选择消息失败:', error);
+      console.error('[全视界] 发送选择消息失败:', error);
     }
     
     // 停止选择器
     stopElementSelectorInIframe();
   } else {
-    console.warn('[Tab Hive] 没有悬停的元素');
+    console.warn('[全视界] 没有悬停的元素');
   }
 }
 
@@ -796,7 +796,7 @@ function handleSelectorKeyDown(event) {
     
     // 发送取消消息到父页面
     window.parent.postMessage({
-      source: 'tab-hive-extension',
+      source: 'quanshijie-extension',
       action: 'elementSelectorCancelled'
     }, '*');
     
@@ -809,7 +809,7 @@ function handleSelectorKeyDown(event) {
  * 重新启动元素选择器（完全清空并重新开始）
  */
 function restartElementSelectorInIframe() {
-  console.log('[Tab Hive] 重新启动元素选择器，完全清理旧状态');
+  console.log('[全视界] 重新启动元素选择器，完全清理旧状态');
   
   // 移除事件监听器（如果存在）
   document.removeEventListener('mouseover', handleSelectorMouseOver, {capture: true, passive: true});
@@ -818,7 +818,7 @@ function restartElementSelectorInIframe() {
   
   // 完全移除高亮元素
   if (selectorHighlight) {
-    console.log('[Tab Hive] 移除旧的高亮框');
+    console.log('[全视界] 移除旧的高亮框');
     if (selectorHighlight.parentNode) {
       selectorHighlight.parentNode.removeChild(selectorHighlight);
     }
@@ -834,7 +834,7 @@ function restartElementSelectorInIframe() {
   }
   
   // 移除样式
-  const style = document.getElementById('tabhive-element-selector-styles');
+  const style = document.getElementById('quanshijie-element-selector-styles');
   if (style) {
     if (style.parentNode) {
       style.parentNode.removeChild(style);
@@ -844,7 +844,7 @@ function restartElementSelectorInIframe() {
   // 清空当前元素
   currentHoveredElement = null;
   
-  console.log('[Tab Hive] 清理完成，准备重新启动');
+  console.log('[全视界] 清理完成，准备重新启动');
   
   // 短暂延迟后重新启动
   setTimeout(() => {
@@ -856,7 +856,7 @@ function restartElementSelectorInIframe() {
  * 完全清理选择器（移除所有高亮和状态）
  */
 function completeCleanupInIframe() {
-  console.log('[Tab Hive] 完全清理选择器（移除所有高亮）');
+  console.log('[全视界] 完全清理选择器（移除所有高亮）');
   
   // 移除事件监听器
   document.removeEventListener('mouseover', handleSelectorMouseOver, {capture: true, passive: true});
@@ -880,7 +880,7 @@ function completeCleanupInIframe() {
   }
   
   // 移除样式
-  const style = document.getElementById('tabhive-element-selector-styles');
+  const style = document.getElementById('quanshijie-element-selector-styles');
   if (style) {
     if (style.parentNode) {
       style.parentNode.removeChild(style);
@@ -890,7 +890,7 @@ function completeCleanupInIframe() {
   // 清空当前元素
   currentHoveredElement = null;
   
-  console.log('[Tab Hive] 完全清理完成');
+  console.log('[全视界] 完全清理完成');
 }
 
 /**
@@ -898,7 +898,7 @@ function completeCleanupInIframe() {
  */
 function navigateToElement(direction) {
   if (!currentHoveredElement) {
-    console.warn('[Tab Hive] 没有当前元素可导航');
+    console.warn('[全视界] 没有当前元素可导航');
     return;
   }
   
@@ -908,7 +908,7 @@ function navigateToElement(direction) {
     // 导航到父元素
     newElement = currentHoveredElement.parentElement;
     if (!newElement || newElement.tagName === 'BODY' || newElement.tagName === 'HTML') {
-      console.warn('[Tab Hive] 已到达顶层元素');
+      console.warn('[全视界] 已到达顶层元素');
       return;
     }
   } else if (direction === 'child') {
@@ -918,7 +918,7 @@ function navigateToElement(direction) {
       !['SCRIPT', 'STYLE', 'LINK', 'META'].includes(child.tagName)
     );
     if (!newElement) {
-      console.warn('[Tab Hive] 没有可用的子元素');
+      console.warn('[全视界] 没有可用的子元素');
       return;
     }
   }
@@ -929,7 +929,7 @@ function navigateToElement(direction) {
     const rect = newElement.getBoundingClientRect();
     const elementInfo = getElementInfo(newElement);
     
-    console.log('[Tab Hive] 导航到新元素:', selector);
+    console.log('[全视界] 导航到新元素:', selector);
     
     // 更新高亮位置
     const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
@@ -946,7 +946,7 @@ function navigateToElement(direction) {
     // 发送更新到父页面
     try {
       window.parent.postMessage({
-        source: 'tab-hive-extension',
+        source: 'quanshijie-extension',
         action: 'elementHovered',
         selector: selector,
         rect: {
@@ -958,7 +958,7 @@ function navigateToElement(direction) {
         elementInfo: elementInfo
       }, '*');
     } catch (error) {
-      console.error('[Tab Hive] 发送导航消息失败:', error);
+      console.error('[全视界] 发送导航消息失败:', error);
     }
   }
 }

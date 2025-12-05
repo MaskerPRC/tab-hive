@@ -1,6 +1,6 @@
 # CSS选择器全屏功能
 
-Tab Hive现在支持在全屏时只显示iframe中指定CSS选择器的元素！
+全视界现在支持在全屏时只显示iframe中指定CSS选择器的元素！
 
 ## 功能概述
 
@@ -25,7 +25,7 @@ Tab Hive现在支持在全屏时只显示iframe中指定CSS选择器的元素！
 Electron版本通过IPC通信直接操作iframe内容，**无需安装任何扩展**。
 
 **使用步骤：**
-1. 打开Tab Hive Electron应用
+1. 打开全视界 Electron应用
 2. 添加/编辑网站时，填写"目标选择器"
 3. 全屏即可看到效果
 
@@ -34,8 +34,8 @@ Electron版本通过IPC通信直接操作iframe内容，**无需安装任何扩�
 网页版由于浏览器安全限制，需要安装Chrome扩展来实现此功能。
 
 **使用步骤：**
-1. 安装Tab Hive Chrome扩展（见下方）
-2. 在Tab Hive网页版中配置选择器
+1. 安装全视界 Chrome扩展（见下方）
+2. 在全视界网页版中配置选择器
 3. 全屏时扩展会自动应用选择器
 
 ## Chrome扩展安装
@@ -161,7 +161,7 @@ div:first-child
 1. 在Elements面板中找到目标元素
 2. 右键点击元素
 3. 选择 Copy → Copy selector
-4. 粘贴到Tab Hive的选择器输入框
+4. 粘贴到全视界的选择器输入框
 
 ## 工作原理
 
@@ -186,9 +186,9 @@ if (targetSelector) {
 ### Chrome扩展版本
 
 ```javascript
-// 1. Tab Hive发送postMessage
+// 1. 全视界发送postMessage
 window.postMessage({
-  source: 'tab-hive',
+  source: 'quanshijie',
   action: 'applySelectorFullscreen',
   selector: '#player'
 })
@@ -199,9 +199,9 @@ chrome.runtime.sendMessage({...})
 // 3. Background Script在iframe中执行脚本
 chrome.scripting.executeScript({...})
 
-// 4. 返回结果给Tab Hive
+// 4. 返回结果给全视界
 window.postMessage({
-  source: 'tab-hive-extension',
+  source: 'quanshijie-extension',
   action: 'response'
 })
 ```
@@ -267,8 +267,8 @@ setTimeout(async () => {
 
 ```javascript
 // 浏览器控制台
-[Tab Hive] 选择器全屏已应用: #player
-[Tab Hive Extension] 收到来自Tab Hive的消息
+[全视界] 选择器全屏已应用: #player
+[全视界 Extension] 收到来自全视界的消息
 ```
 
 ## 开发文档
@@ -291,7 +291,7 @@ window.electron.executeInIframe(iframeId, code);
 
 // 3. Chrome扩展环境
 window.postMessage({
-  source: 'tab-hive',
+  source: 'quanshijie',
   action: 'applySelectorFullscreen',
   selector: selector
 }, '*');
@@ -309,7 +309,7 @@ window.electron.executeInIframe(iframeId, code)
 ```javascript
 // 请求
 {
-  source: 'tab-hive',
+  source: 'quanshijie',
   action: 'applySelectorFullscreen',
   selector: string,
   requestId: string
@@ -317,7 +317,7 @@ window.electron.executeInIframe(iframeId, code)
 
 // 响应
 {
-  source: 'tab-hive-extension',
+  source: 'quanshijie-extension',
   action: 'applySelectorFullscreenResponse',
   requestId: string,
   response: {success: boolean, error?: string}

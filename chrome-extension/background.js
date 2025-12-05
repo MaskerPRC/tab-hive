@@ -1,5 +1,5 @@
 /**
- * Tab Hive - Chrome Extension Background Script
+ * 全视界 - Chrome Extension Background Script
  * 处理来自网页的消息，控制选择器全屏功能
  * 并拦截HTTP响应头以解决iframe检测问题
  */
@@ -33,10 +33,10 @@ chrome.declarativeNetRequest.updateDynamicRules({
     }
   ]
 }).catch(err => {
-  console.log('[Tab Hive Extension] 无法设置响应头拦截规则 (这在某些浏览器版本中是正常的):', err);
+  console.log('[全视界 Extension] 无法设置响应头拦截规则 (这在某些浏览器版本中是正常的):', err);
 });
 
-console.log('[Tab Hive Extension] HTTP响应头拦截已启用');
+console.log('[全视界 Extension] HTTP响应头拦截已启用');
 
 // ===========================================
 // 消息处理
@@ -44,7 +44,7 @@ console.log('[Tab Hive Extension] HTTP响应头拦截已启用');
 
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('[Tab Hive Extension] 收到消息:', request);
+  console.log('[全视界 Extension] 收到消息:', request);
 
   if (request.action === 'applySelectorFullscreen') {
     // 应用选择器全屏
@@ -76,7 +76,7 @@ async function handleApplySelectorFullscreen(request, sender, sendResponse) {
 
     sendResponse({ success: true, result: result[0]?.result });
   } catch (error) {
-    console.error('[Tab Hive Extension] 应用选择器全屏失败:', error);
+    console.error('[全视界 Extension] 应用选择器全屏失败:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
@@ -96,7 +96,7 @@ async function handleRestoreOriginalStyles(request, sender, sendResponse) {
 
     sendResponse({ success: true, result: result[0]?.result });
   } catch (error) {
-    console.error('[Tab Hive Extension] 恢复原始样式失败:', error);
+    console.error('[全视界 Extension] 恢复原始样式失败:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
@@ -106,17 +106,17 @@ async function handleRestoreOriginalStyles(request, sender, sendResponse) {
  */
 function applySelectorFullscreenInPage(selector) {
   try {
-    console.log('[Tab Hive iframe] 应用选择器:', selector);
+    console.log('[全视界 iframe] 应用选择器:', selector);
     
     const targetElement = document.querySelector(selector);
     
     if (!targetElement) {
-      console.warn('[Tab Hive iframe] 未找到选择器对应的元素:', selector);
+      console.warn('[全视界 iframe] 未找到选择器对应的元素:', selector);
       return { success: false, error: '未找到元素' };
     }
     
     // 输出调试信息
-    console.log('[Tab Hive iframe] 目标元素信息:', {
+    console.log('[全视界 iframe] 目标元素信息:', {
       tagName: targetElement.tagName,
       className: targetElement.className,
       id: targetElement.id,
@@ -137,7 +137,7 @@ function applySelectorFullscreenInPage(selector) {
           if (sibling !== current && 
               !['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE'].includes(sibling.tagName)) {
             sibling.style.display = 'none';
-            sibling.setAttribute('data-tabhive-hidden', 'true');
+            sibling.setAttribute('data-quanshijie-hidden', 'true');
             hiddenCount++;
           }
         });
@@ -145,10 +145,10 @@ function applySelectorFullscreenInPage(selector) {
       current = parent;
     }
     
-    console.log('[Tab Hive iframe] 已隐藏 ' + hiddenCount + ' 个兄弟元素');
+    console.log('[全视界 iframe] 已隐藏 ' + hiddenCount + ' 个兄弟元素');
     
     // 创建style标签，让目标元素填满
-    const styleId = 'tabhive-selector-style';
+    const styleId = 'quanshijie-selector-style';
     
     // 移除旧的style
     const oldStyle = document.getElementById(styleId);
@@ -159,7 +159,7 @@ function applySelectorFullscreenInPage(selector) {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
-      /* Tab Hive - 让选择器元素填满整个区域 */
+      /* 全视界 - 让选择器元素填满整个区域 */
       
       /* 重置body和html */
       html, body {
@@ -193,10 +193,10 @@ function applySelectorFullscreenInPage(selector) {
     
     document.head.appendChild(style);
     
-    console.log('[Tab Hive iframe] 选择器全屏已应用');
+    console.log('[全视界 iframe] 选择器全屏已应用');
     return { success: true };
   } catch (error) {
-    console.error('[Tab Hive iframe] 错误:', error);
+    console.error('[全视界 iframe] 错误:', error);
     return { success: false, error: error.message };
   }
 }
@@ -207,33 +207,33 @@ function applySelectorFullscreenInPage(selector) {
 function restoreOriginalStylesInPage() {
   try {
     // 移除注入的style标签
-    const styleId = 'tabhive-selector-style';
+    const styleId = 'quanshijie-selector-style';
     const style = document.getElementById(styleId);
     if (style) {
       style.remove();
-      console.log('[Tab Hive iframe] 样式已移除');
+      console.log('[全视界 iframe] 样式已移除');
     }
     
     // 恢复所有被隐藏的兄弟元素
-    const hiddenElements = document.querySelectorAll('[data-tabhive-hidden]');
+    const hiddenElements = document.querySelectorAll('[data-quanshijie-hidden]');
     let restoredCount = 0;
     hiddenElements.forEach(el => {
       el.style.display = '';
-      el.removeAttribute('data-tabhive-hidden');
+      el.removeAttribute('data-quanshijie-hidden');
       restoredCount++;
     });
-    console.log('[Tab Hive iframe] 已恢复 ' + restoredCount + ' 个元素');
+    console.log('[全视界 iframe] 已恢复 ' + restoredCount + ' 个元素');
     
-    console.log('[Tab Hive iframe] 原始样式已恢复');
+    console.log('[全视界 iframe] 原始样式已恢复');
     return { success: true };
   } catch (error) {
-    console.error('[Tab Hive iframe] 恢复原始样式时出错:', error);
+    console.error('[全视界 iframe] 恢复原始样式时出错:', error);
     return { success: false, error: error.message };
   }
 }
 
 // 扩展安装时的处理
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[Tab Hive Extension] 扩展已安装/更新');
+  console.log('[全视界 Extension] 扩展已安装/更新');
 });
 

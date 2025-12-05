@@ -12,15 +12,15 @@ export function generateAdBlockCode() {
     (function() {
       // 防止重复执行
       if (window.__tabHiveAdBlockInjected) {
-        console.log('[Tab Hive AdBlock] 已经注入过，跳过');
+        console.log('[全视界 AdBlock] 已经注入过，跳过');
         return { success: true, message: '已注入' };
       }
       window.__tabHiveAdBlockInjected = true;
       
-      console.log('[Tab Hive AdBlock] ========== 开始去广告 ==========');
+      console.log('[全视界 AdBlock] ========== 开始去广告 ==========');
       
       try {
-        const styleId = 'tabhive-adblock-style';
+        const styleId = 'quanshijie-adblock-style';
         
         // 移除旧样式
         const oldStyle = document.getElementById(styleId);
@@ -171,7 +171,7 @@ export function generateAdBlockCode() {
           '        }';
         
         document.head.appendChild(style);
-        console.log('[Tab Hive AdBlock] ✓ CSS 样式已注入');
+        console.log('[全视界 AdBlock] ✓ CSS 样式已注入');
         
         // 拦截广告请求（通过 MutationObserver 动态移除新加载的广告）
         const observer = new MutationObserver((mutations) => {
@@ -196,7 +196,7 @@ export function generateAdBlockCode() {
                 ));
                 
                 if (isAd) {
-                  console.log('[Tab Hive AdBlock] 检测到广告元素，已移除:', node);
+                  console.log('[全视界 AdBlock] 检测到广告元素，已移除:', node);
                   node.style.display = 'none';
                   node.remove();
                   return;
@@ -209,7 +209,7 @@ export function generateAdBlockCode() {
                                    /ad|banner|promo/i.test(node.src);
                   
                   if (isAdIframe) {
-                    console.log('[Tab Hive AdBlock] 检测到广告 iframe，已移除:', node.src);
+                    console.log('[全视界 AdBlock] 检测到广告 iframe，已移除:', node.src);
                     node.remove();
                     return;
                   }
@@ -221,7 +221,7 @@ export function generateAdBlockCode() {
                     adSelectors.forEach(selector => {
                       const adElements = node.querySelectorAll(selector);
                       adElements.forEach(el => {
-                        console.log('[Tab Hive AdBlock] 检测到子元素中的广告，已移除');
+                        console.log('[全视界 AdBlock] 检测到子元素中的广告，已移除');
                         el.style.display = 'none';
                         el.remove();
                       });
@@ -241,7 +241,7 @@ export function generateAdBlockCode() {
           subtree: true
         });
         
-        console.log('[Tab Hive AdBlock] ✓ MutationObserver 已启动');
+        console.log('[全视界 AdBlock] ✓ MutationObserver 已启动');
         
         // 拦截资源请求（通过重写 fetch 和 XMLHttpRequest）
         const originalFetch = window.fetch;
@@ -252,8 +252,8 @@ export function generateAdBlockCode() {
                               /doubleclick|googlesyndication|googleadservices|advertising|adsbygoogle/i.test(url);
             
             if (isAdRequest) {
-              console.log('[Tab Hive AdBlock] 拦截广告请求:', url);
-              return Promise.reject(new Error('Blocked by Tab Hive AdBlock'));
+              console.log('[全视界 AdBlock] 拦截广告请求:', url);
+              return Promise.reject(new Error('Blocked by 全视界 AdBlock'));
             }
           }
           return originalFetch.apply(this, args);
@@ -266,14 +266,14 @@ export function generateAdBlockCode() {
                               /doubleclick|googlesyndication|googleadservices|advertising|adsbygoogle/i.test(url);
             
             if (isAdRequest) {
-              console.log('[Tab Hive AdBlock] 拦截 XHR 广告请求:', url);
+              console.log('[全视界 AdBlock] 拦截 XHR 广告请求:', url);
               return;
             }
           }
           return originalXHROpen.apply(this, [method, url, ...args]);
         };
         
-        console.log('[Tab Hive AdBlock] ✓ 请求拦截已设置');
+        console.log('[全视界 AdBlock] ✓ 请求拦截已设置');
         
         // 移除页面加载时的广告
         const removeExistingAds = () => {
@@ -306,7 +306,7 @@ export function generateAdBlockCode() {
             }
           });
           
-          console.log('[Tab Hive AdBlock] ✓ 已移除', removedCount, '个现有广告元素');
+          console.log('[全视界 AdBlock] ✓ 已移除', removedCount, '个现有广告元素');
         };
         
         // 立即执行一次
@@ -324,7 +324,7 @@ export function generateAdBlockCode() {
           setTimeout(removeExistingAds, 1000);
         });
         
-        console.log('[Tab Hive AdBlock] ========== 去广告功能已启用 ==========');
+        console.log('[全视界 AdBlock] ========== 去广告功能已启用 ==========');
         
         return {
           success: true,
@@ -332,7 +332,7 @@ export function generateAdBlockCode() {
           removedAds: 0 // 将在后续更新中统计
         };
       } catch (e) {
-        console.error('[Tab Hive AdBlock] 错误:', e);
+        console.error('[全视界 AdBlock] 错误:', e);
         return { success: false, error: e.message };
       }
     })();
@@ -346,23 +346,23 @@ export function generateAdBlockCode() {
 export function generateRemoveAdBlockCode() {
   return `
     (function() {
-      console.log('[Tab Hive AdBlock] ========== 移除去广告功能 ==========');
+      console.log('[全视界 AdBlock] ========== 移除去广告功能 ==========');
       
       try {
         // 移除样式
-        const style = document.getElementById('tabhive-adblock-style');
+        const style = document.getElementById('quanshijie-adblock-style');
         if (style) {
           style.remove();
-          console.log('[Tab Hive AdBlock] ✓ 样式已移除');
+          console.log('[全视界 AdBlock] ✓ 样式已移除');
         }
         
         // 清除标记
         window.__tabHiveAdBlockInjected = false;
         
-        console.log('[Tab Hive AdBlock] ✓ 去广告功能已移除');
+        console.log('[全视界 AdBlock] ✓ 去广告功能已移除');
         return { success: true };
       } catch (e) {
-        console.error('[Tab Hive AdBlock] 移除错误:', e);
+        console.error('[全视界 AdBlock] 移除错误:', e);
         return { success: false, error: e.message };
       }
     })();

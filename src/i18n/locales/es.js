@@ -63,8 +63,8 @@ export default {
 
   // Nombre y título de la aplicación
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // Diálogo
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'Limpiar todas las configuraciones',
     windowManagement: 'Gestión de Ventanas',
     createNewWindow: 'Nueva Ventana',
-    createNewWindowHint: 'Crear una nueva ventana Tab Hive',
+    createNewWindowHint: 'Crear una nueva ventana 全视界',
     allWindows: 'Todas las Ventanas',
     window: 'Ventana',
     current: 'Actual',

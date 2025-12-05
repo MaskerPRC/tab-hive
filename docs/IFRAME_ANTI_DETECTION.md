@@ -8,7 +8,7 @@
 - ⚠️ 显示警告信息
 - 🔀 强制跳转到其他页面
 
-这会导致 Tab Hive 无法正常展示这些网站的内容。
+这会导致 全视界 无法正常展示这些网站的内容。
 
 ## 🔍 检测原理
 
@@ -44,7 +44,7 @@ Set-Cookie: session=xxx; SameSite=Strict
 
 ## ✅ 解决方案
 
-Tab Hive 提供了两种反检测方案：
+全视界 提供了两种反检测方案：
 
 ### 方案1: Chrome 扩展版本 🔌
 
@@ -61,7 +61,7 @@ Tab Hive 提供了两种反检测方案：
 3. 启用右上角的"开发者模式"
 4. 点击"加载已解压的扩展程序"
 5. 选择项目中的 `chrome-extension` 文件夹
-6. 刷新 Tab Hive 页面即可生效
+6. 刷新 全视界 页面即可生效
 
 #### 技术实现
 
@@ -115,7 +115,7 @@ Object.defineProperty(window, 'frameElement', {
 - ✅ 兼容性最佳
 
 #### 使用方法
-1. 下载并安装 Tab Hive 桌面客户端
+1. 下载并安装 全视界 桌面客户端
 2. 直接使用，无需任何额外配置
 3. 所有反检测功能自动启用
 
@@ -200,16 +200,16 @@ mainWindow.webContents.on('did-frame-navigate', (event, url, ..., isMainFrame) =
 ### Chrome 扩展调试
 1. 打开浏览器控制台（F12）
 2. 查找以下日志：
-   - `[Tab Hive Extension]` - 扩展主要日志
-   - `[Tab Hive Anti-Detection]` - 反检测措施日志
+   - `[全视界 Extension]` - 扩展主要日志
+   - `[全视界 Anti-Detection]` - 反检测措施日志
 3. 检查网络面板，确认响应头已被移除
 
 ### Electron 客户端调试
 1. Electron 会自动打开开发者工具（开发模式）
 2. 查找以下日志：
    - `[Electron Main]` - 主进程日志
-   - `[Tab Hive iframe]` - iframe 注入日志
-   - `[Tab Hive Anti-Detection]` - 反检测日志
+   - `[全视界 iframe]` - iframe 注入日志
+   - `[全视界 Anti-Detection]` - 反检测日志
 3. 检查每个反检测措施的状态（✓ 或 ✗）
 
 ## ⚠️ 局限性
@@ -230,7 +230,7 @@ mainWindow.webContents.on('did-frame-navigate', (event, url, ..., isMainFrame) =
 
 ### 安全提示
 - 反检测功能会降低浏览器的安全性
-- 建议只在 Tab Hive 中使用
+- 建议只在 全视界 中使用
 - 不要在 iframe 中访问敏感信息网站
 - Electron 版本的安全性相对更高（隔离环境）
 
@@ -244,7 +244,7 @@ A: 可能是以下原因：
 4. 建议尝试使用 Electron 桌面客户端
 
 ### Q: 扩展会影响其他网站吗？
-A: 不会。扩展只在包含 Tab Hive 的页面中生效，通过检测特定的消息来识别。
+A: 不会。扩展只在包含 全视界 的页面中生效，通过检测特定的消息来识别。
 
 ### Q: Electron 版本为什么更强大？
 A: 因为 Electron 拥有：

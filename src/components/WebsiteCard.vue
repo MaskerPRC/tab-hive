@@ -288,10 +288,10 @@ export default {
         } else {
           try {
             const removeCode = `(function() {
-              const style = document.getElementById('tabhive-adblock-style');
+              const style = document.getElementById('quanshijie-adblock-style');
               if (style) style.remove();
               window.__tabHiveAdBlockInjected = false;
-              console.log('[Tab Hive AdBlock] 去广告已关闭');
+              console.log('[全视界 AdBlock] 去广告已关闭');
             })();`
             await webviewRef.value.executeJavaScript(removeCode)
           } catch (error) {

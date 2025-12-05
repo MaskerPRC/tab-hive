@@ -204,21 +204,21 @@ contextBridge.exposeInMainWorld('electron', {
     },
 
     /**
-     * 为蜂巢启动代理
+     * 为视界启动代理
      */
     startForHive: (hiveId, proxyId) => {
       return ipcRenderer.invoke('proxy:start-for-hive', hiveId, proxyId)
     },
 
     /**
-     * 停止蜂巢代理
+     * 停止视界代理
      */
     stopForHive: (hiveId) => {
       return ipcRenderer.invoke('proxy:stop-for-hive', hiveId)
     },
 
     /**
-     * 获取蜂巢代理信息
+     * 获取视界代理信息
      */
     getHiveInfo: (hiveId) => {
       return ipcRenderer.invoke('proxy:get-hive-info', hiveId)

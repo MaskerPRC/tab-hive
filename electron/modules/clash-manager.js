@@ -12,7 +12,7 @@ const axios = require('axios')
 
 class ClashManager {
   constructor() {
-    // 存储每个蜂巢的 Clash 进程和配置
+    // 存储每个视界的 Clash 进程和配置
     // key: hiveId (网站ID), value: { process, port, controllerPort, secret }
     this.hiveClashProcesses = new Map()
 
@@ -26,7 +26,7 @@ class ClashManager {
   }
 
   /**
-   * 为蜂巢启动代理
+   * 为视界启动代理
    */
   async startProxyForHive(hiveId, proxy) {
     try {
@@ -100,7 +100,7 @@ class ClashManager {
       // 等待 Clash 启动
       await this.waitForClashReady(controllerPort, secret)
 
-      console.log(`[ClashManager] 蜂巢 ${hiveId} 的代理已启动，端口: ${httpPort}`)
+      console.log(`[ClashManager] 视界 ${hiveId} 的代理已启动，端口: ${httpPort}`)
 
       return {
         success: true,
@@ -111,13 +111,13 @@ class ClashManager {
         }
       }
     } catch (error) {
-      console.error('[ClashManager] 启动蜂巢代理失败:', error)
+      console.error('[ClashManager] 启动视界代理失败:', error)
       return { success: false, error: error.message }
     }
   }
 
   /**
-   * 停止蜂巢代理
+   * 停止视界代理
    */
   async stopProxyForHive(hiveId) {
     try {
@@ -137,17 +137,17 @@ class ClashManager {
 
       this.hiveClashProcesses.delete(hiveId)
 
-      console.log(`[ClashManager] 蜂巢 ${hiveId} 的代理已停止`)
+      console.log(`[ClashManager] 视界 ${hiveId} 的代理已停止`)
 
       return { success: true, message: '代理已停止' }
     } catch (error) {
-      console.error('[ClashManager] 停止蜂巢代理失败:', error)
+      console.error('[ClashManager] 停止视界代理失败:', error)
       return { success: false, error: error.message }
     }
   }
 
   /**
-   * 获取蜂巢代理信息
+   * 获取视界代理信息
    */
   getHiveProxyInfo(hiveId) {
     const clashInfo = this.hiveClashProcesses.get(hiveId)

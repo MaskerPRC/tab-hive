@@ -1,4 +1,4 @@
-# 🐝 Tab Hive - Electron 桌面应用
+# 🐝 全视界 - Electron 桌面应用
 
 ## 功能特性
 
@@ -71,9 +71,9 @@ npm run electron:build
 2. 在 GitHub 仓库创建新的 Release
 
 3. 上传 `release/` 目录下的安装包：
-   - `Tab Hive Setup x.x.x.exe` (Windows)
-   - `Tab Hive-x.x.x.dmg` (macOS)
-   - `Tab Hive-x.x.x.AppImage` (Linux)
+   - `全视界 Setup x.x.x.exe` (Windows)
+   - `全视界-x.x.x.dmg` (macOS)
+   - `全视界-x.x.x.AppImage` (Linux)
 
 ## CORS 限制说明
 

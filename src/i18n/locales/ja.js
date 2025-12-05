@@ -63,8 +63,8 @@ export default {
 
   // アプリ名とタイトル
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // ダイアログ
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'すべての設定をクリア',
     windowManagement: 'ウィンドウ管理',
     createNewWindow: '新しいウィンドウ',
-    createNewWindowHint: '新しいTab Hiveウィンドウを作成',
+    createNewWindowHint: '新しい全视界ウィンドウを作成',
     allWindows: 'すべてのウィンドウ',
     window: 'ウィンドウ',
     current: '現在',

@@ -1,6 +1,6 @@
 /**
  * 碰撞推开算法
- * 处理蜂巢之间的碰撞，当一个蜂巢调整大小或移动时，自动推开其他蜂巢
+ * 处理视界之间的碰撞，当一个视界调整大小或移动时，自动推开其他视界
  */
 
 // 最小间距（像素）
@@ -143,12 +143,12 @@ function calculateNewPosition(position, direction, distance) {
 
 /**
  * 执行碰撞推开算法
- * @param {number} activeIndex - 正在调整的蜂巢索引
- * @param {Object} activePosition - 正在调整的蜂巢位置
- * @param {Object} activeSize - 正在调整的蜂巢尺寸
- * @param {Object} itemPositions - 所有蜂巢的位置映射
- * @param {Object} itemSizes - 所有蜂巢的尺寸映射
- * @param {number} totalItems - 蜂巢总数
+ * @param {number} activeIndex - 正在调整的视界索引
+ * @param {Object} activePosition - 正在调整的视界位置
+ * @param {Object} activeSize - 正在调整的视界尺寸
+ * @param {Object} itemPositions - 所有视界的位置映射
+ * @param {Object} itemSizes - 所有视界的尺寸映射
+ * @param {number} totalItems - 视界总数
  * @param {number} depth - 递归深度（内部使用）
  * @param {Array} websites - 网站数组（可选，用于过滤空白项）
  * @returns {Object} - 更新后的位置映射
@@ -178,7 +178,7 @@ export function performCollisionPush(
   // 复制位置映射，避免直接修改原数据
   const newPositions = { ...itemPositions }
 
-  // 活动蜂巢的矩形
+  // 活动视界的矩形
   const activeRect = {
     x: activePosition.x,
     y: activePosition.y,
@@ -186,14 +186,14 @@ export function performCollisionPush(
     height: activeSize.height
   }
 
-  // 存储需要继续检查的蜂巢（被推动后可能推动其他蜂巢）
+  // 存储需要继续检查的视界（被推动后可能推动其他视界）
   const affectedIndices = []
 
-  // 检查所有其他蜂巢
+  // 检查所有其他视界
   for (let i = 0; i < totalItems; i++) {
     if (i === activeIndex) continue
 
-    // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸蜂巢）
+    // 如果提供了 websites 参数，跳过没有 URL 的项（僵尸视界）
     if (websites && websites[i] && !websites[i].url) continue
 
     const pos = newPositions[i]
@@ -212,7 +212,7 @@ export function performCollisionPush(
     const overlapInfo = calculateOverlap(activeRect, itemRect)
 
     if (overlapInfo.overlap) {
-      console.log(`[碰撞推开] 检测到碰撞 - 蜂巢 ${activeIndex} 与蜂巢 ${i}`, {
+      console.log(`[碰撞推开] 检测到碰撞 - 视界 ${activeIndex} 与视界 ${i}`, {
         direction: overlapInfo.direction,
         distance: overlapInfo.distance,
         oldPos: pos,
@@ -223,7 +223,7 @@ export function performCollisionPush(
       // 计算推开后的新位置（会自动吸附到网格）
       const newPos = calculateNewPosition(pos, overlapInfo.direction, overlapInfo.distance)
 
-      console.log(`[碰撞推开] 推开蜂巢 ${i}（已对齐到网格）`, {
+      console.log(`[碰撞推开] 推开视界 ${i}（已对齐到网格）`, {
         oldPos: pos,
         newPos: newPos,
         direction: overlapInfo.direction,
@@ -233,13 +233,13 @@ export function performCollisionPush(
       // 更新位置
       newPositions[i] = newPos
 
-      // 记录受影响的蜂巢，稍后递归处理
+      // 记录受影响的视界，稍后递归处理
       affectedIndices.push(i)
     }
   }
 
-  // 递归处理被推动的蜂巢，检查它们是否又推动了其他蜂巢
-  console.log(`[碰撞推开] 受影响的蜂巢数量: ${affectedIndices.length}`, affectedIndices)
+  // 递归处理被推动的视界，检查它们是否又推动了其他视界
+  console.log(`[碰撞推开] 受影响的视界数量: ${affectedIndices.length}`, affectedIndices)
 
   for (const affectedIndex of affectedIndices) {
     const affectedPos = newPositions[affectedIndex]
@@ -247,9 +247,9 @@ export function performCollisionPush(
 
     if (!affectedPos || !affectedSize) continue
 
-    console.log(`[碰撞推开] 递归处理受影响的蜂巢 ${affectedIndex}`)
+    console.log(`[碰撞推开] 递归处理受影响的视界 ${affectedIndex}`)
 
-    // 递归调用，将被推动的蜂巢作为新的活动蜂巢
+    // 递归调用，将被推动的视界作为新的活动视界
     const recursivePositions = performCollisionPush(
       affectedIndex,
       affectedPos,
@@ -271,12 +271,12 @@ export function performCollisionPush(
 }
 
 /**
- * 优化版本：批量处理多个蜂巢的推开
- * 适用于同时调整多个蜂巢的场景
- * @param {Array} activeIndices - 正在调整的蜂巢索引数组
- * @param {Object} itemPositions - 所有蜂巢的位置映射
- * @param {Object} itemSizes - 所有蜂巢的尺寸映射
- * @param {number} totalItems - 蜂巢总数
+ * 优化版本：批量处理多个视界的推开
+ * 适用于同时调整多个视界的场景
+ * @param {Array} activeIndices - 正在调整的视界索引数组
+ * @param {Object} itemPositions - 所有视界的位置映射
+ * @param {Object} itemSizes - 所有视界的尺寸映射
+ * @param {number} totalItems - 视界总数
  * @returns {Object} - 更新后的位置映射
  */
 export function performBatchCollisionPush(
@@ -287,7 +287,7 @@ export function performBatchCollisionPush(
 ) {
   let currentPositions = { ...itemPositions }
 
-  // 对每个活动蜂巢执行推开算法
+  // 对每个活动视界执行推开算法
   for (const activeIndex of activeIndices) {
     const activePos = currentPositions[activeIndex]
     const activeSize = itemSizes[activeIndex]
@@ -309,10 +309,10 @@ export function performBatchCollisionPush(
 }
 
 /**
- * 检测并返回所有碰撞的蜂巢对
- * @param {Object} itemPositions - 所有蜂巢的位置映射
- * @param {Object} itemSizes - 所有蜂巢的尺寸映射
- * @param {number} totalItems - 蜂巢总数
+ * 检测并返回所有碰撞的视界对
+ * @param {Object} itemPositions - 所有视界的位置映射
+ * @param {Object} itemSizes - 所有视界的尺寸映射
+ * @param {number} totalItems - 视界总数
  * @returns {Array} - 碰撞对数组 [{index1, index2, overlap}, ...]
  */
 export function detectAllCollisions(itemPositions, itemSizes, totalItems) {
@@ -346,10 +346,10 @@ export function detectAllCollisions(itemPositions, itemSizes, totalItems) {
 }
 
 /**
- * 智能布局优化：尝试将所有蜂巢排列成无碰撞的布局
- * @param {Object} itemPositions - 所有蜂巢的位置映射
- * @param {Object} itemSizes - 所有蜂巢的尺寸映射
- * @param {number} totalItems - 蜂巢总数
+ * 智能布局优化：尝试将所有视界排列成无碰撞的布局
+ * @param {Object} itemPositions - 所有视界的位置映射
+ * @param {Object} itemSizes - 所有视界的尺寸映射
+ * @param {number} totalItems - 视界总数
  * @param {number} maxIterations - 最大迭代次数
  * @returns {Object} - 优化后的位置映射
  */
@@ -372,7 +372,7 @@ export function optimizeLayout(itemPositions, itemSizes, totalItems, maxIteratio
       const pos2 = currentPositions[index2]
       if (!pos2) continue
 
-      // 推开第二个蜂巢
+      // 推开第二个视界
       currentPositions[index2] = calculateNewPosition(pos2, direction, distance)
     }
 

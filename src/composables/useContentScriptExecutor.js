@@ -104,7 +104,7 @@ export function useContentScriptExecutor() {
 
       const handler = (event) => {
         if (event.data && 
-            event.data.source === 'tab-hive-content-executor' && 
+            event.data.source === 'quanshijie-content-executor' && 
             event.data.requestId === requestId) {
           clearTimeout(timeout)
           window.removeEventListener('message', handler)
@@ -126,7 +126,7 @@ export function useContentScriptExecutor() {
       window.addEventListener('message', handler)
 
       iframe.contentWindow.postMessage({
-        source: 'tab-hive',
+        source: 'quanshijie',
         action: 'executeScript',
         requestId,
         script
@@ -159,7 +159,7 @@ export function useContentScriptExecutor() {
         };
         
         // 清除之前的高亮
-        const oldHighlights = document.querySelectorAll('.tabhive-highlight-overlay');
+        const oldHighlights = document.querySelectorAll('.quanshijie-highlight-overlay');
         oldHighlights.forEach(el => el.remove());
         
         // 为每个选择器创建高亮
@@ -177,7 +177,7 @@ export function useContentScriptExecutor() {
               const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
               
               const overlay = document.createElement('div');
-              overlay.className = 'tabhive-highlight-overlay';
+              overlay.className = 'quanshijie-highlight-overlay';
               overlay.style.cssText = \`
                 position: absolute;
                 left: \${rect.left + scrollLeft}px;
@@ -189,7 +189,7 @@ export function useContentScriptExecutor() {
                 pointer-events: none;
                 z-index: 999999;
                 transition: all 0.3s ease;
-                ${pulse ? 'animation: tabhive-pulse 1.5s ease-in-out infinite;' : ''}
+                ${pulse ? 'animation: quanshijie-pulse 1.5s ease-in-out infinite;' : ''}
               \`;
               
               // 添加标签
@@ -225,17 +225,17 @@ export function useContentScriptExecutor() {
             });
           } catch (error) {
             results.notFound.push(selector);
-            console.error('[Tab Hive] 高亮失败:', selector, error);
+            console.error('[全视界] 高亮失败:', selector, error);
           }
         });
         
         // 添加动画样式
         ${pulse ? `
-        if (!document.getElementById('tabhive-pulse-animation')) {
+        if (!document.getElementById('quanshijie-pulse-animation')) {
           const style = document.createElement('style');
-          style.id = 'tabhive-pulse-animation';
+          style.id = 'quanshijie-pulse-animation';
           style.textContent = \`
-            @keyframes tabhive-pulse {
+            @keyframes quanshijie-pulse {
               0%, 100% { opacity: 1; transform: scale(1); }
               50% { opacity: 0.7; transform: scale(1.02); }
             }
@@ -247,7 +247,7 @@ export function useContentScriptExecutor() {
         // 定时移除高亮
         ${duration > 0 ? `
         setTimeout(() => {
-          const highlights = document.querySelectorAll('.tabhive-highlight-overlay');
+          const highlights = document.querySelectorAll('.quanshijie-highlight-overlay');
           highlights.forEach(el => {
             el.style.opacity = '0';
             setTimeout(() => el.remove(), 300);
@@ -268,7 +268,7 @@ export function useContentScriptExecutor() {
   async function clearHighlights(target) {
     const script = `
       (function() {
-        const highlights = document.querySelectorAll('.tabhive-highlight-overlay');
+        const highlights = document.querySelectorAll('.quanshijie-highlight-overlay');
         let count = highlights.length;
         highlights.forEach(el => el.remove());
         return { cleared: count };
@@ -378,7 +378,7 @@ export function useContentScriptExecutor() {
               modifiedCount++;
             });
           } catch (error) {
-            console.error('[Tab Hive] 修改样式失败:', selector, error);
+            console.error('[全视界] 修改样式失败:', selector, error);
           }
         });
         
@@ -499,7 +499,7 @@ export function useContentScriptExecutor() {
           
           // 发送变化通知
           window.parent.postMessage({
-            source: 'tab-hive-content-executor',
+            source: 'quanshijie-content-executor',
             action: 'elementChanged',
             watcherId: watcherId,
             changes: changes
@@ -529,7 +529,7 @@ export function useContentScriptExecutor() {
     if (callback) {
       const handler = (event) => {
         if (event.data && 
-            event.data.source === 'tab-hive-content-executor' &&
+            event.data.source === 'quanshijie-content-executor' &&
             event.data.action === 'elementChanged' &&
             event.data.watcherId === watcherId) {
           callback(event.data.changes)

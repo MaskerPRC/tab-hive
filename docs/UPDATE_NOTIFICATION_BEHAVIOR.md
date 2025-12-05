@@ -2,7 +2,7 @@
 
 ## 概述
 
-本文档详细说明了 Tab Hive 的更新通知弹窗和左侧栏更新按钮的显示逻辑。
+本文档详细说明了 全视界 的更新通知弹窗和左侧栏更新按钮的显示逻辑。
 
 ## 核心原则
 
@@ -92,7 +92,7 @@
 
 ```javascript
 // 键名
-const IGNORED_VERSION_KEY = 'tab-hive-ignored-update-version'
+const IGNORED_VERSION_KEY = 'quanshijie-ignored-update-version'
 
 // 存储值
 // 只有用户点击"稍后提醒"时才会设置

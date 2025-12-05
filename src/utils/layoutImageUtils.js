@@ -149,7 +149,7 @@ export async function embedLayoutInImage(imageBlob, layoutData) {
     }
     
     // 创建tEXt块
-    const keyword = 'TabHiveLayout'
+    const keyword = 'QuanShiJieLayout'
     const textData = layoutJson
     const textChunk = createTextChunk(keyword, textData)
     
@@ -270,7 +270,7 @@ export async function extractLayoutFromImage(imageBlob) {
         const keyword = String.fromCharCode(...uint8Array.slice(offset, keywordEnd))
         console.log('[extractLayoutFromImage] tEXt块关键字:', keyword)
         
-        if (keyword === 'TabHiveLayout') {
+        if (keyword === 'QuanShiJieLayout') {
           // 读取文本数据
           const textStart = keywordEnd + 1
           const textEnd = offset + chunkLength
@@ -301,7 +301,7 @@ export async function extractLayoutFromImage(imageBlob) {
       }
     }
     
-    console.log('[extractLayoutFromImage] 未找到TabHiveLayout tEXt块。共检查了', chunkCount, '个块')
+    console.log('[extractLayoutFromImage] 未找到QuanShiJieLayout tEXt块。共检查了', chunkCount, '个块')
     return null
   } catch (error) {
     console.error('[extractLayoutFromImage] 提取布局数据失败:', error)

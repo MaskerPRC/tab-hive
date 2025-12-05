@@ -63,8 +63,8 @@ export default {
 
   // اسم وعنوان التطبيق
   app: {
-    name: 'Tab Hive',
-    title: 'Tab Hive'
+    name: '全视界',
+    title: '全视界'
   },
 
   // مربع الحوار
@@ -182,7 +182,7 @@ export default {
     clearConfigHint: 'مسح جميع التكوينات',
     windowManagement: 'إدارة النوافذ',
     createNewWindow: 'نافذة جديدة',
-    createNewWindowHint: 'إنشاء نافذة Tab Hive جديدة',
+    createNewWindowHint: 'إنشاء نافذة 全视界 جديدة',
     allWindows: 'جميع النوافذ',
     window: 'نافذة',
     current: 'الحالي',

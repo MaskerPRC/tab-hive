@@ -28,8 +28,8 @@
                 <h3>{{ $t('downloadModal.selectorPlugin.title') }}</h3>
                 <p class="option-desc">{{ $t('downloadModal.selectorPlugin.description') }}</p>
                 <a
-                  href="/tab-hive-selector-extension.zip"
-                  download="Tab-Hive-Selector-Extension.zip"
+                  href="/quanshijie-selector-extension.zip"
+                  download="QuanShiJie-Selector-Extension.zip"
                   class="download-button primary"
                 >
                   {{ $t('downloadModal.selectorPlugin.download') }}

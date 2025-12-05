@@ -26,7 +26,7 @@ const messages = {
 // 获取默认语言（优先从 localStorage，其次从浏览器语言）
 const getDefaultLocale = () => {
   try {
-    const saved = localStorage.getItem('tab-hive-locale')
+    const saved = localStorage.getItem('quanshijie-locale')
     if (saved && messages[saved]) {
       return saved
     }
@@ -74,7 +74,7 @@ export const setLocale = (locale) => {
   if (messages[locale]) {
     i18n.global.locale.value = locale
     try {
-      localStorage.setItem('tab-hive-locale', locale)
+      localStorage.setItem('quanshijie-locale', locale)
     } catch (e) {
       // localStorage 不可用，忽略
     }
