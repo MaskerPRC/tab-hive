@@ -25,41 +25,34 @@
       </svg>
     </div>
 
-    <!-- 工具栏头部 -->
+    <!-- 1. 头部标题栏 -->
     <div class="toolbar-header">
       <div class="toolbar-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 3L5 7l4 4M15 3l4 4-4 4M12 3v18"/>
-        </svg>
-        <span>{{ $t('selectorToolbar.title') }}</span>
+        <div class="title-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+            <path d="M13 13l6 6"/>
+          </svg>
+        </div>
+        <h3>{{ $t('selectorToolbar.elementCapture') }}</h3>
       </div>
       <div class="toolbar-actions">
         <button 
           class="toolbar-btn"
-          @click="toggleVisibility"
-          :title="isHidden ? $t('selectorToolbar.showHighlight') : $t('selectorToolbar.hideHighlight')"
+          @click="showSettings = !showSettings"
+          :title="$t('selectorToolbar.settings')"
         >
-          <svg v-if="isHidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-            <line x1="1" y1="1" x2="23" y2="23"/>
-          </svg>
-          <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
           </svg>
         </button>
         <button 
-          v-if="selector"
-          class="toolbar-btn toolbar-btn-confirm"
-          @click="$emit('confirm')"
-          :title="$t('selectorToolbar.confirm')"
+          class="toolbar-btn toolbar-btn-close"
+          @click="$emit('cancel')" 
+          :title="$t('selectorToolbar.cancel')"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </button>
-        <button class="toolbar-btn" @click="$emit('cancel')" :title="$t('selectorToolbar.cancel')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -67,43 +60,88 @@
       </div>
     </div>
 
-      <!-- 选择器显示和控制 -->
+    <!-- 2. 核心控制区 -->
     <div class="toolbar-content">
-      <!-- 多选模式切换 -->
-      <div class="multi-select-toggle">
-        <label class="toggle-option">
-          <input 
-            type="checkbox" 
-            :checked="multiSelectMode"
-            @change="$emit('toggle-multi-select', $event.target.checked)"
-          />
-          <span>{{ $t('selectorToolbar.multiSelectMode') }}</span>
-          <span class="toggle-hint">{{ $t('selectorToolbar.multiSelectHint') }}</span>
-        </label>
+      <!-- 多选模式开关 -->
+      <div 
+        class="multi-select-toggle"
+        @click="toggleMultiSelect"
+      >
+        <div class="toggle-left">
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            stroke-width="2"
+            :class="{ 'toggle-icon-active': multiSelectMode }"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span class="toggle-label">{{ $t('selectorToolbar.multiSelectMode') }}</span>
+        </div>
+        <!-- Toggle Switch -->
+        <div 
+          class="toggle-switch"
+          :class="{ 'toggle-switch-active': multiSelectMode }"
+        >
+          <div class="toggle-switch-thumb"></div>
+        </div>
       </div>
 
-      <!-- 单选模式：当前选择器 -->
-      <div v-if="!multiSelectMode" class="selector-input-wrapper">
-        <label class="input-label">{{ $t('selectorToolbar.cssSelector') }}</label>
-        <div class="selector-input-group">
-          <input
+      <!-- 选择器显示与层级导航 -->
+      <div class="selector-section">
+        <div class="selector-header">
+          <span class="selector-label">{{ $t('selectorToolbar.currentPath') }}</span>
+          <span v-if="elementDepth > 0" class="selector-depth">Depth: {{ elementDepth }}</span>
+        </div>
+        
+        <!-- CSS Selector Input Area -->
+        <div class="selector-input-wrapper">
+          <input 
             v-model="localSelector"
-            type="text"
+            type="text" 
             class="selector-input"
             :placeholder="$t('selectorToolbar.placeholder')"
             @input="$emit('update:selector', localSelector)"
             @focus="$emit('pause', true)"
             @blur="$emit('pause', false)"
           />
-          <button
+          <button 
             v-if="localSelector"
-            class="clear-btn"
-            @click="clearSelector"
-            :title="$t('selectorToolbar.clear')"
+            class="copy-btn"
+            @click="copySelector"
+            :title="$t('selectorToolbar.copySelector')"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- DOM Navigation (父/子元素切换) -->
+        <div v-if="localSelector" class="dom-navigation">
+          <button 
+            class="nav-btn nav-btn-parent"
+            @click="$emit('navigate', 'parent')"
+            :title="$t('selectorToolbar.selectParent')"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="18 15 12 9 6 15"/>
+            </svg>
+            <span>{{ $t('selectorToolbar.parentElement') }}</span>
+          </button>
+          <button 
+            class="nav-btn nav-btn-child"
+            @click="$emit('navigate', 'child')"
+            :title="$t('selectorToolbar.selectChild')"
+          >
+            <span>{{ $t('selectorToolbar.childElement') }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
         </div>
@@ -114,12 +152,12 @@
         <label class="input-label">{{ $t('selectorToolbar.selectedElements') }} ({{ localSelectors.length }})</label>
         <div class="selectors-list">
           <div 
-            v-for="(selector, index) in localSelectors" 
+            v-for="(sel, index) in localSelectors" 
             :key="index"
             class="selector-list-item"
           >
             <span class="selector-index">{{ index + 1 }}</span>
-            <span class="selector-value">{{ selector }}</span>
+            <span class="selector-value">{{ sel }}</span>
             <button
               class="remove-selector-btn"
               @click="removeSelector(index)"
@@ -132,52 +170,11 @@
             </button>
           </div>
         </div>
-        <div class="current-selection" v-if="localSelector">
-          <label class="input-label">{{ $t('selectorToolbar.currentSelector') }}</label>
-          <div class="current-selector">{{ localSelector }}</div>
+        <div v-if="localSelector && !localSelectors.includes(localSelector)" class="current-selection">
           <button class="add-selector-btn" @click="addCurrentSelector">
             ➕ {{ $t('selectorToolbar.addToList') }}
           </button>
         </div>
-      </div>
-
-      <!-- 元素导航 -->
-      <div v-if="localSelector" class="element-navigation">
-        <button class="nav-btn" @click="$emit('navigate', 'parent')" :title="$t('selectorToolbar.selectParent')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="18 15 12 9 6 15"/>
-          </svg>
-          {{ $t('selectorToolbar.parentElement') }}
-        </button>
-        <button class="nav-btn" @click="$emit('navigate', 'child')" :title="$t('selectorToolbar.selectChild')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-          {{ $t('selectorToolbar.childElement') }}
-        </button>
-        <button 
-          class="nav-btn nav-btn-reselect" 
-          @click="$emit('reselect')"
-          :title="$t('selectorToolbar.reselect')"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          {{ $t('selectorToolbar.reselectShort') }}
-        </button>
-        <button 
-          class="nav-btn settings-btn" 
-          @click="showSettings = !showSettings"
-          :class="{ active: showSettings }"
-          :title="$t('selectorToolbar.settings')"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
-          </svg>
-          {{ $t('common.settings') }}
-        </button>
       </div>
 
       <!-- 选择器设置面板 -->
@@ -203,68 +200,97 @@
         </div>
       </div>
 
-      <!-- 元素信息 -->
+      <!-- 详细信息面板 -->
       <div v-if="elementInfo" class="element-info">
-        <div class="info-row">
-          <span class="info-label">{{ $t('selectorToolbar.tag') }}:</span>
-          <span class="info-value">{{ elementInfo.tagName }}</span>
+        <!-- Tag -->
+        <div class="info-item">
+          <div class="info-icon info-icon-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+            </svg>
+          </div>
+          <div class="info-content">
+            <div class="info-label">{{ $t('selectorToolbar.tagName') }}</div>
+            <div class="info-value info-value-tag">
+              &lt;{{ elementInfo.tagName || elementInfo.tag }}&gt;
+            </div>
+          </div>
         </div>
-        <div v-if="elementInfo.id" class="info-row">
-          <span class="info-label">{{ $t('selectorToolbar.id') }}:</span>
-          <span class="info-value">{{ elementInfo.id }}</span>
+
+        <!-- Class -->
+        <div v-if="elementInfo.className || elementInfo.class" class="info-item">
+          <div class="info-icon info-icon-class">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="9" x2="20" y2="9"/>
+              <line x1="4" y1="15" x2="20" y2="15"/>
+              <line x1="10" y1="3" x2="8" y2="21"/>
+              <line x1="16" y1="3" x2="14" y2="21"/>
+            </svg>
+          </div>
+          <div class="info-content">
+            <div class="info-label">{{ $t('selectorToolbar.classList') }}</div>
+            <p class="info-value info-value-class">
+              {{ elementInfo.className || elementInfo.class }}
+            </p>
+          </div>
         </div>
-        <div v-if="elementInfo.className" class="info-row">
-          <span class="info-label">{{ $t('selectorToolbar.class') }}:</span>
-          <span class="info-value">{{ elementInfo.className }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">{{ $t('selectorToolbar.size') }}:</span>
-          <span class="info-value">{{ elementInfo.width }} × {{ elementInfo.height }}</span>
+
+        <!-- Size -->
+        <div class="info-item">
+          <div class="info-icon info-icon-size">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+            </svg>
+          </div>
+          <div class="info-content">
+            <div class="info-label">{{ $t('selectorToolbar.dimensions') }}</div>
+            <div class="info-value info-value-size">
+              <span>{{ elementInfo.width || 0 }} px</span>
+              <span class="separator">×</span>
+              <span>{{ elementInfo.height || 0 }} px</span>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- 确认按钮 -->
+    <!-- 3. 底部操作栏 -->
+    <div class="toolbar-footer">
       <button
         v-if="localSelector || (multiSelectMode && localSelectors.length > 0)"
         class="btn-confirm"
         @click="$emit('confirm')"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        {{ $t('selectorToolbar.confirmSelection') }}
+        <span>{{ $t('selectorToolbar.confirmSelection') }}</span>
       </button>
-
-      <!-- 提示信息 -->
-      <div class="toolbar-hint">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="16" x2="12" y2="12"/>
-          <line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
-        <template v-if="multiSelectMode">
-          <template v-if="!localSelector">
-            {{ $t('selectorToolbar.multiSelectModeHint') }}
-          </template>
-          <template v-else>
-            {{ $t('selectorToolbar.multiSelectModeSelected', { count: localSelectors.length }) }}
-          </template>
-        </template>
-        <template v-else>
-          <template v-if="!localSelector">
-            {{ $t('selectorToolbar.singleSelectModeHint') }}
-          </template>
-          <template v-else>
-            {{ $t('selectorToolbar.confirmSelectionHint') }}
-          </template>
-        </template>
+      
+      <div class="footer-actions">
+        <button 
+          class="footer-btn"
+          @click="$emit('reselect')"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          {{ $t('selectorToolbar.reselectShort') }}
+        </button>
+        <span class="footer-separator">|</span>
+        <p class="footer-hint">
+          {{ $t('selectorToolbar.shiftLockHint') }}
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, watch, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, watch, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 export default {
@@ -296,7 +322,6 @@ export default {
     const { t } = useI18n()
     const localSelector = ref(props.selector)
     const localSelectors = ref(props.selectors || [])
-    const isHidden = ref(false)
     const showSettings = ref(false)
     const isDragging = ref(false)
     const position = reactive({
@@ -317,6 +342,15 @@ export default {
       includeAttributes: false
     })
 
+    // 计算元素深度（从选择器路径估算）
+    const elementDepth = computed(() => {
+      if (!localSelector.value) return 0
+      // 简单估算：通过选择器中的 > 和空格数量
+      const depth = (localSelector.value.match(/>/g) || []).length + 
+                    (localSelector.value.match(/\s+/g) || []).length
+      return depth
+    })
+
     watch(() => props.selector, (newVal) => {
       localSelector.value = newVal
     })
@@ -325,9 +359,19 @@ export default {
       localSelectors.value = newVal || []
     }, { deep: true })
 
-    const clearSelector = () => {
-      localSelector.value = ''
-      emit('update:selector', '')
+    const toggleMultiSelect = () => {
+      emit('toggle-multi-select', !props.multiSelectMode)
+    }
+
+    const copySelector = async () => {
+      if (!localSelector.value) return
+      try {
+        await navigator.clipboard.writeText(localSelector.value)
+        // 可以添加一个提示
+        console.log('选择器已复制到剪贴板')
+      } catch (err) {
+        console.error('复制失败:', err)
+      }
     }
     
     // 添加当前选择器到列表
@@ -344,11 +388,6 @@ export default {
     const removeSelector = (index) => {
       localSelectors.value.splice(index, 1)
       emit('update:selectors', [...localSelectors.value])
-    }
-
-    const toggleVisibility = () => {
-      isHidden.value = !isHidden.value
-      // TODO: 发送事件到高亮组件
     }
 
     const startDrag = (event) => {
@@ -400,14 +439,14 @@ export default {
     return {
       localSelector,
       localSelectors,
-      isHidden,
       showSettings,
       position,
       settings,
-      clearSelector,
+      elementDepth,
+      toggleMultiSelect,
+      copySelector,
       addCurrentSelector,
       removeSelector,
-      toggleVisibility,
       startDrag
     }
   }
@@ -420,12 +459,25 @@ export default {
   top: 0;
   left: 0;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
   z-index: 10002;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   user-select: none;
-  backdrop-filter: blur(10px);
+  overflow: hidden;
+  animation: fadeInZoom 0.3s ease-out;
+}
+
+@keyframes fadeInZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .drag-handle {
@@ -443,7 +495,7 @@ export default {
   cursor: move;
   opacity: 0;
   transition: opacity 0.2s;
-  color: #666;
+  color: #64748b;
 }
 
 .selector-toolbar:hover .drag-handle {
@@ -451,33 +503,46 @@ export default {
 }
 
 .drag-handle:hover {
-  background: #f9f9f9;
+  background: #f8fafc;
 }
 
+/* 1. 头部标题栏 */
 .toolbar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #f1f5f9;
+  background: white;
 }
 
 .toolbar-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  color: #111827;
+  gap: 10px;
 }
 
-.toolbar-title svg {
-  color: #ff5c00;
+.title-icon {
+  padding: 6px;
+  background: #fff7ed;
+  color: #ea580c;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-title h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
 .toolbar-actions {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
 }
 
 .toolbar-btn {
@@ -490,305 +555,234 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #64748b;
   transition: all 0.2s;
 }
 
 .toolbar-btn:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: #f1f5f9;
+  color: #334155;
 }
 
-.toolbar-btn-confirm {
-  background: #10b981;
-  color: white;
+.toolbar-btn-close:hover {
+  background: #fef2f2;
+  color: #ef4444;
 }
 
-.toolbar-btn-confirm:hover {
-  background: #059669;
-  color: white;
-}
-
+/* 2. 核心控制区 */
 .toolbar-content {
-  padding: 16px 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.selector-input-wrapper {
-  margin-bottom: 12px;
-}
-
-.input-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 6px;
-}
-
-.selector-input-group {
-  position: relative;
-}
-
-.selector-input {
-  width: 100%;
-  padding: 10px 36px 10px 12px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: 'Monaco', 'Menlo', monospace;
-  color: #111827;
-  background: #f9fafb;
-  transition: all 0.2s;
-}
-
-.selector-input:focus {
-  outline: none;
-  border-color: #ff5c00;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.1);
-}
-
-.clear-btn {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
+/* 多选模式开关 */
+.multi-select-toggle {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  transition: all 0.2s;
-}
-
-.clear-btn:hover {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.element-navigation {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.nav-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1.5px solid #e5e7eb;
-  background: white;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition: all 0.2s;
-}
-
-.nav-btn:hover {
-  border-color: #ff5c00;
-  color: #ff5c00;
-  background: #fff7ed;
-}
-
-.settings-btn.active {
-  border-color: #ff5c00;
-  color: #ff5c00;
-  background: #fff7ed;
-}
-
-.nav-btn-reselect {
-  border-color: #3b82f6;
-  color: #3b82f6;
-}
-
-.nav-btn-reselect:hover {
-  border-color: #3b82f6;
-  color: white;
-  background: #3b82f6;
-}
-
-.settings-panel {
-  margin-bottom: 12px;
+  justify-content: space-between;
   padding: 12px;
-  background: #f9fafb;
+  background: #f8fafc;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.settings-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-  margin: 0 0 10px 0;
+.multi-select-toggle:hover {
+  border-color: #fed7aa;
 }
 
-.settings-options {
+.toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-icon-active {
+  color: #ea580c;
+}
+
+.toggle-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.toggle-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #cbd5e1;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.toggle-switch-active {
+  background: #ea580c;
+}
+
+.toggle-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.toggle-switch-active .toggle-switch-thumb {
+  transform: translateX(16px);
+}
+
+/* 选择器区域 */
+.selector-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.setting-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #4b5563;
-  cursor: pointer;
-}
-
-.setting-option input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #ff5c00;
-}
-
-.element-info {
-  margin-bottom: 12px;
-  padding: 12px;
-  background: #f0f9ff;
-  border-radius: 8px;
-  border: 1px solid #bfdbfe;
-}
-
-.info-row {
+.selector-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 12px;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.info-row:last-child {
-  margin-bottom: 0;
+.selector-depth {
+  font-size: 10px;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #64748b;
 }
 
-.info-label {
-  font-weight: 500;
-  color: #1e40af;
-}
-
-.info-value {
-  color: #1e3a8a;
-  font-family: 'Monaco', 'Menlo', monospace;
-  word-break: break-all;
-}
-
-.toolbar-hint {
+.selector-input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: #6b7280;
-  padding: 10px 12px;
-  background: #f9fafb;
-  border-radius: 6px;
 }
 
-.toolbar-hint svg {
-  flex-shrink: 0;
-}
-
-.toolbar-hint kbd {
-  padding: 2px 6px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.toolbar-hint strong {
-  color: #10b981;
-  font-weight: 600;
-}
-
-.btn-confirm {
+.selector-input {
   width: 100%;
-  padding: 12px 20px;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: none;
+  padding: 10px 36px 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  color: #475569;
+  transition: all 0.2s;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.selector-input:focus {
+  outline: none;
+  border-color: #ea580c;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+.copy-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
   cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selector-input-wrapper:hover .copy-btn {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+/* DOM 导航 */
+.dom-navigation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.nav-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-}
-
-.btn-confirm:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  transform: translateY(-1px);
-}
-
-.btn-confirm:active {
-  transform: translateY(0);
-}
-
-/* 多选模式切换 */
-.multi-select-toggle {
-  margin-bottom: 12px;
-  padding: 10px;
-  background: #f0f9ff;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  border: 1px solid #bfdbfe;
-}
-
-.toggle-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
   font-weight: 500;
-  color: #1e40af;
-  cursor: pointer;
 }
 
-.toggle-option input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #ff5c00;
+.nav-btn:hover {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #ea580c;
 }
 
-.toggle-hint {
-  font-size: 11px;
-  color: #6b7280;
-  font-weight: normal;
+.nav-btn:active {
+  transform: scale(0.98);
+}
+
+.nav-btn svg {
+  color: #94a3b8;
+  transition: color 0.2s;
+}
+
+.nav-btn:hover svg {
+  color: #ea580c;
 }
 
 /* 选择器列表 */
 .selectors-list-wrapper {
-  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
 }
 
 .selectors-list {
   max-height: 200px;
   overflow-y: auto;
-  background: #f9fafb;
-  border: 1.5px solid #e5e7eb;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
   border-radius: 8px;
   padding: 8px;
-  margin-bottom: 12px;
 }
 
 .selector-list-item {
@@ -797,7 +791,7 @@ export default {
   gap: 8px;
   padding: 8px;
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
   margin-bottom: 6px;
   font-size: 12px;
@@ -809,7 +803,7 @@ export default {
 }
 
 .selector-list-item:hover {
-  border-color: #ff5c00;
+  border-color: #ea580c;
   background: #fff7ed;
 }
 
@@ -817,7 +811,7 @@ export default {
   flex: 0 0 24px;
   width: 24px;
   height: 24px;
-  background: #ff5c00;
+  background: #ea580c;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -829,8 +823,8 @@ export default {
 
 .selector-value {
   flex: 1;
-  color: #111827;
-  font-family: 'Monaco', 'Menlo', monospace;
+  color: #1e293b;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -857,25 +851,13 @@ export default {
 }
 
 .current-selection {
-  margin-top: 12px;
-}
-
-.current-selector {
-  padding: 10px 12px;
-  background: #fff7ed;
-  border: 1.5px solid #ff5c00;
-  border-radius: 6px;
-  font-size: 12px;
-  font-family: 'Monaco', 'Menlo', monospace;
-  color: #111827;
-  margin-bottom: 8px;
-  word-break: break-all;
+  margin-top: 8px;
 }
 
 .add-selector-btn {
   width: 100%;
   padding: 10px 16px;
-  background: linear-gradient(135deg, #ff5c00 0%, #ff7a1c 100%);
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -887,17 +869,225 @@ export default {
   justify-content: center;
   gap: 6px;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
 }
 
 .add-selector-btn:hover {
-  background: linear-gradient(135deg, #e65100 0%, #ff6a00 100%);
-  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
   transform: translateY(-1px);
 }
 
 .add-selector-btn:active {
   transform: translateY(0);
 }
-</style>
 
+/* 设置面板 */
+.settings-panel {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.settings-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 10px 0;
+}
+
+.settings-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.setting-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #ea580c;
+}
+
+/* 详细信息面板 */
+.element-info {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  gap: 12px;
+}
+
+.info-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-icon-tag {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.info-icon-class {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.info-icon-size {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.info-content {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.info-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-size: 12px;
+  color: #475569;
+  word-break: break-word;
+}
+
+.info-value-tag {
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  background: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+}
+
+.info-value-class {
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.5;
+  user-select: all;
+}
+
+.info-value-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.separator {
+  color: #cbd5e1;
+}
+
+/* 3. 底部操作栏 */
+.toolbar-footer {
+  padding: 20px;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-confirm {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ea580c;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.2);
+}
+
+.btn-confirm:hover {
+  background: #c2410c;
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.3);
+}
+
+.btn-confirm:active {
+  transform: scale(0.98);
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.footer-btn:hover {
+  color: #ea580c;
+}
+
+.footer-separator {
+  color: #cbd5e1;
+}
+
+.footer-hint {
+  font-size: 10px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.footer-hint kbd {
+  font-family: inherit;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+}
+</style>

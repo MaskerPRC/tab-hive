@@ -380,6 +380,7 @@ export default {
   // Selector toolbar
   selectorToolbar: {
     title: 'Element Selector',
+    elementCapture: 'Element Capture',
     dragHandle: 'Drag to move panel',
     showHighlight: 'Show Highlight',
     hideHighlight: 'Hide Highlight',
@@ -388,6 +389,9 @@ export default {
     multiSelectMode: 'Multi-select Mode',
     multiSelectHint: '(Keep multiple elements)',
     cssSelector: 'CSS Selector',
+    currentPath: 'Current Path',
+    depth: 'Depth',
+    copySelector: 'Copy Selector',
     placeholder: 'Click page elements to select...',
     clear: 'Clear Selector',
     selectedElements: 'Selected Elements',
@@ -408,14 +412,18 @@ export default {
     includeTag: 'Include Tag Name',
     includeAttributes: 'Include Attributes',
     tag: 'Tag',
+    tagName: 'Tag Name',
     id: 'ID',
     class: 'Class',
+    classList: 'Class List',
     size: 'Size',
+    dimensions: 'Dimensions',
     confirmSelection: 'Confirm Selection',
     multiSelectModeHint: 'Multi-select mode: Click elements to add to list | Press ESC to cancel',
     multiSelectModeSelected: 'Multi-select mode: {count} elements selected | Click "Add to List" to continue | "Confirm Selection" to save all',
     singleSelectModeHint: 'Click elements to select | Press ESC to cancel',
-    confirmSelectionHint: 'You can continue adjusting the selection | Click "Confirm Selection" to save | Press ESC to cancel'
+    confirmSelectionHint: 'You can continue adjusting the selection | Click "Confirm Selection" to save | Press ESC to cancel',
+    shiftLockHint: 'Hold Shift to lock selection area'
   },
 
   // Fullscreen bar

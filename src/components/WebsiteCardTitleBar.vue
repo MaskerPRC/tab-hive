@@ -72,6 +72,16 @@
           <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
         </svg>
       </button>
+      <!-- 全屏按钮 -->
+      <button
+        class="title-bar-btn"
+        @click="$emit('fullscreen')"
+        :title="$t('floatingActions.fullscreen') || '全屏查看'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
       <!-- 更多操作菜单 -->
       <div class="title-bar-more">
         <button
@@ -93,7 +103,6 @@
           @copy="$emit('copy')"
           @script="$emit('open-script-panel')"
           @edit="$emit('edit')"
-          @fullscreen="$emit('fullscreen')"
           @remove="$emit('remove')"
         />
       </div>
