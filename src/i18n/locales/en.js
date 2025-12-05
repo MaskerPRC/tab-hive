@@ -177,6 +177,8 @@ export default {
     globalMutedHint: 'Mute/Unmute all websites globally',
     adBlockEnabled: 'Ad Block',
     adBlockEnabledHint: 'Enable to automatically block ads on all websites',
+    customCodeEnabled: 'Custom Code',
+    customCodeEnabledHint: 'Enable to show script executor button in floating actions',
     instanceManagement: 'Instance Management',
     instanceManagementHint: 'Manage Cookie shared instances',
     help: 'Help',

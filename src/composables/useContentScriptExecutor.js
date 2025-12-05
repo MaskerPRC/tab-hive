@@ -26,15 +26,50 @@ export function useContentScriptExecutor() {
 
     try {
       if (isElectron.value) {
-        // Electron 环境：使用 IPC
-        const result = await window.electron.executeInIframe(target.id, script)
-        executionResults.value.push({
-          timestamp: Date.now(),
-          success: result.success,
-          result: result.result,
-          error: result.error
-        })
-        return result
+        // Electron 环境：target 是 webview 元素，直接使用 executeJavaScript
+        if (target.executeJavaScript) {
+          try {
+            const result = await target.executeJavaScript(script)
+            const executionResult = {
+              success: true,
+              result: result
+            }
+            executionResults.value.push({
+              timestamp: Date.now(),
+              success: true,
+              result: result,
+              error: null
+            })
+            return executionResult
+          } catch (error) {
+            const executionResult = {
+              success: false,
+              result: null,
+              error: error.message
+            }
+            executionResults.value.push({
+              timestamp: Date.now(),
+              success: false,
+              result: null,
+              error: error.message
+            })
+            return executionResult
+          }
+        } else {
+          // 如果 target 没有 executeJavaScript 方法，尝试使用 IPC（兼容旧代码）
+          if (window.electron?.executeInIframe && target.id) {
+            const result = await window.electron.executeInIframe(target.id, script)
+            executionResults.value.push({
+              timestamp: Date.now(),
+              success: result.success,
+              result: result.result,
+              error: result.error
+            })
+            return result
+          } else {
+            throw new Error('无法执行脚本：webview 元素不支持 executeJavaScript 方法')
+          }
+        }
       } else {
         // 浏览器环境：使用 postMessage
         return await executeScriptViaPostMessage(target, script)
@@ -52,7 +87,19 @@ export function useContentScriptExecutor() {
       const requestId = `exec-${Date.now()}-${Math.random()}`
       const timeout = setTimeout(() => {
         window.removeEventListener('message', handler)
-        reject(new Error('执行超时'))
+        const error = new Error('执行超时')
+        const result = {
+          success: false,
+          result: null,
+          error: error.message
+        }
+        executionResults.value.push({
+          timestamp: Date.now(),
+          success: false,
+          result: null,
+          error: error.message
+        })
+        reject(error)
       }, 10000)
 
       const handler = (event) => {
@@ -61,7 +108,18 @@ export function useContentScriptExecutor() {
             event.data.requestId === requestId) {
           clearTimeout(timeout)
           window.removeEventListener('message', handler)
-          resolve(event.data.result)
+          const result = event.data.result || {
+            success: true,
+            result: event.data.result,
+            error: null
+          }
+          executionResults.value.push({
+            timestamp: Date.now(),
+            success: result.success !== false,
+            result: result.result,
+            error: result.error
+          })
+          resolve(result)
         }
       }
 

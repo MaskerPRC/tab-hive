@@ -42,6 +42,7 @@
       :showTitles="layoutManager.globalSettings.value.showTitles"
       :globalMuted="layoutManager.globalSettings.value.globalMuted"
       :adBlockEnabled="layoutManager.globalSettings.value.adBlockEnabled"
+      :customCodeEnabled="layoutManager.globalSettings.value.customCodeEnabled"
       :showUpdateButton="showUpdateButton"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
@@ -52,6 +53,7 @@
       @toggle-titles="handleToggleTitles"
       @toggle-global-mute="handleToggleGlobalMute"
       @toggle-ad-block="handleToggleAdBlock"
+      @toggle-custom-code="handleToggleCustomCode"
       @manage-sessions="handleManageSessions"
       @manage-proxy="handleManageProxy"
       @show-update="handleShowUpdate"
@@ -77,6 +79,7 @@
         @remove-website="(index) => layout.id === currentLayoutId ? handleRemoveWebsite(index) : null"
         @update-website="(data) => layout.id === currentLayoutId ? handleUpdateWebsite(data) : null"
         @update-drawings="(drawings) => handleUpdateDrawings(drawings)"
+        @open-script-panel="(iframe) => openContentScriptPanel(iframe)"
       />
     </template>
 
@@ -105,6 +108,13 @@
       :websites="websites"
       @close="closeSessionManager"
     />
+
+    <!-- 内容脚本面板 -->
+    <ContentScriptPanel
+      :visible="showContentScriptPanel"
+      :target-iframe="contentScriptTargetIframe"
+      @close="closeContentScriptPanel"
+    />
   </div>
 </template>
 
@@ -119,6 +129,7 @@ import ImportModeDialog from './components/ImportModeDialog.vue'
 import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
 import ProxyManager from './components/ProxyManager.vue'
+import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useWebsiteManager } from './composables/useWebsiteManager'
@@ -135,7 +146,8 @@ export default {
     ImportModeDialog,
     SessionInstanceManager,
     UpdateNotification,
-    ProxyManager
+    ProxyManager,
+    ContentScriptPanel
   },
   setup() {
     const { t } = useI18n()
@@ -172,6 +184,10 @@ export default {
 
     // 代理节点管理对话框显示状态
     const showProxyManager = ref(false)
+
+    // 内容脚本面板显示状态
+    const showContentScriptPanel = ref(false)
+    const contentScriptTargetIframe = ref(null)
 
     // 打开Session实例管理对话框
     const handleManageSessions = () => {
@@ -336,6 +352,23 @@ export default {
       // 注意：去广告设置变化后，WebsiteCard 组件会自动检测并重新应用
       // 通过 watch 监听 adBlockEnabled prop 的变化
       // 不需要手动刷新所有网站
+    }
+
+    // 切换自定义代码
+    const handleToggleCustomCode = (customCodeEnabled) => {
+      layoutManager.updateGlobalSettings({ customCodeEnabled })
+    }
+
+    // 打开内容脚本面板
+    const openContentScriptPanel = (iframe) => {
+      contentScriptTargetIframe.value = iframe
+      showContentScriptPanel.value = true
+    }
+
+    // 关闭内容脚本面板
+    const closeContentScriptPanel = () => {
+      showContentScriptPanel.value = false
+      contentScriptTargetIframe.value = null
     }
 
     // 切换布局
@@ -505,6 +538,11 @@ export default {
       handleManageProxy,
       closeProxyManager,
       showProxyManager,
+      handleToggleCustomCode,
+      showContentScriptPanel,
+      contentScriptTargetIframe,
+      openContentScriptPanel,
+      closeContentScriptPanel,
       handleShowUpdate,
       handleCloseUpdateNotification,
       handleIgnoreUpdate,

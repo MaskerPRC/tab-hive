@@ -26,7 +26,7 @@
       v-html="ICONS.copy"
     />
     <button
-      v-if="false"
+      v-if="customCodeEnabled"
       class="btn-action btn-script"
       @click="$emit('open-script-panel')"
       :title="$t('floatingActions.script')"
@@ -71,6 +71,10 @@ export default {
     isModifierPressed: {
       type: Boolean,
       default: false
+    },
+    customCodeEnabled: {
+      type: Boolean,
+      default: true
     }
   },
   emits: ['refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove'],

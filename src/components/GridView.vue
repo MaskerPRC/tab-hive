@@ -92,6 +92,7 @@
           :refresh-on-fullscreen-toggle="false"
           :global-muted="globalSettings?.globalMuted"
           :ad-block-enabled="globalSettings?.adBlockEnabled"
+          :custom-code-enabled="globalSettings?.customCodeEnabled"
           @drag-start="startDrag($event, index)"
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
@@ -102,6 +103,7 @@
           @fullscreen="handleFullscreenToggle(index)"
           @remove="handleRemoveWebsite"
           @toggle-mute="handleToggleMute"
+          @open-script-panel="handleOpenScriptPanel"
           @update-url="handleUpdateUrl"
           @resize-start="startResize($event, index, $event)"
         />
@@ -219,7 +221,7 @@ export default {
       default: () => []
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'open-script-panel'],
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
     const allWebsites = computed(() => {
@@ -656,6 +658,13 @@ export default {
     }
 
     /**
+     * 处理打开脚本面板
+     */
+    const handleOpenScriptPanel = (iframe) => {
+      emit('open-script-panel', iframe)
+    }
+
+    /**
      * 处理全屏模式下的刷新
      */
     const handleFullscreenRefresh = () => {
@@ -832,6 +841,7 @@ export default {
       handleRefreshWebsite,
       handleToggleMute,
       handleUpdateUrl,
+      handleOpenScriptPanel,
       handleEditWebsite,
       handleGridMouseMove,
       handleFullscreenBarLeave,

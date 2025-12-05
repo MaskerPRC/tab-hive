@@ -99,9 +99,11 @@
         :muted="item.muted || false"
         :require-modifier="requireModifierForActions"
         :is-modifier-pressed="isModifierPressed"
+        :custom-code-enabled="customCodeEnabled"
         @refresh="handleManualRefresh"
         @toggle-mute="handleToggleMute"
         @copy="$emit('copy', index)"
+        @open-script-panel="handleOpenScriptPanel"
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
@@ -221,9 +223,13 @@ export default {
     adBlockEnabled: {
       type: Boolean,
       default: false
+    },
+    customCodeEnabled: {
+      type: Boolean,
+      default: true
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel'],
   setup(props, { emit }) {
     console.log('[WebsiteCard] ========== 组件初始化 ==========')
     console.log('[WebsiteCard] 网站标题:', props.item.title)
@@ -517,6 +523,13 @@ export default {
       handleToggleMuteBase(emit, props.index)
     }
 
+    // 打开脚本面板
+    const handleOpenScriptPanel = () => {
+      // 获取目标 iframe/webview
+      const targetIframe = isElectron.value ? webviewRef.value : iframeRef.value
+      emit('open-script-panel', targetIframe)
+    }
+
     // 使用当前 URL
     const handleUseCurrentUrl = () => {
       handleUseCurrentUrlBase(emit, props.index)
@@ -614,6 +627,7 @@ export default {
       // 事件处理方法
       handleManualRefresh,
       handleToggleMute,
+      handleOpenScriptPanel,
       handleUseCurrentUrl,
       
       // 修饰键状态

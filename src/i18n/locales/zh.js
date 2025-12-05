@@ -177,6 +177,8 @@ export default {
     globalMutedHint: '全局静音/取消静音所有网页',
     adBlockEnabled: '去广告',
     adBlockEnabledHint: '启用后，所有网页将自动拦截广告',
+    customCodeEnabled: '自定义代码',
+    customCodeEnabledHint: '启用后，可以在浮动按钮中看到脚本执行器按钮',
     instanceManagement: '实例管理',
     instanceManagementHint: '管理Cookie共享实例',
     help: '使用帮助',

@@ -160,7 +160,8 @@ export function useLayoutManager() {
     showTitles: false, // 默认不显示标题
     refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的蜂巢
     globalMuted: false, // 默认不全局静音
-    adBlockEnabled: false // 默认不启用去广告
+    adBlockEnabled: false, // 默认不启用去广告
+    customCodeEnabled: true // 默认启用自定义代码功能
   }
   const globalSettings = ref(savedConfig?.globalSettings 
     ? { ...defaultGlobalSettings, ...savedConfig.globalSettings }
@@ -171,6 +172,10 @@ export function useLayoutManager() {
     if (savedConfig.globalSettings.adBlockEnabled === undefined) {
       globalSettings.value.adBlockEnabled = false
       console.log('[useLayoutManager] 检测到旧配置，初始化 adBlockEnabled 为 false')
+    }
+    if (savedConfig.globalSettings.customCodeEnabled === undefined) {
+      globalSettings.value.customCodeEnabled = true
+      console.log('[useLayoutManager] 检测到旧配置，初始化 customCodeEnabled 为 true')
     }
   }
 
