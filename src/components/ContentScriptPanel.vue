@@ -353,9 +353,25 @@ export default {
     }
 
     const formatResult = (result) => {
+      if (!result) return '无结果'
       if (!result.success) return result.error || '执行失败'
-      if (typeof result.result === 'string') return result.result.substring(0, 50)
-      return JSON.stringify(result.result).substring(0, 50) + '...'
+      
+      // 处理 result.result 可能为 undefined、null 或其他类型的情况
+      if (result.result === undefined || result.result === null) {
+        return '无返回值'
+      }
+      
+      if (typeof result.result === 'string') {
+        return result.result.substring(0, 50) + (result.result.length > 50 ? '...' : '')
+      }
+      
+      try {
+        const jsonStr = JSON.stringify(result.result)
+        if (!jsonStr) return '空结果'
+        return jsonStr.substring(0, 50) + (jsonStr.length > 50 ? '...' : '')
+      } catch (error) {
+        return String(result.result).substring(0, 50) + '...'
+      }
     }
 
     return {
