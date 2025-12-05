@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container" @mousemove="handleMouseMove">
+  <div class="app-container">
     <!-- 下载插件/客户端提醒弹窗 -->
     <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
 
@@ -21,16 +21,22 @@
       @retry-download="handleRetryDownload"
     />
 
-    <!-- 左侧检测区域和展开标签 -->
-    <div
-      v-if="fullscreenIndex === null"
-      class="left-trigger-area"
-      @mouseenter="showPanel = true"
-    >
-      <div class="sidebar-toggle-indicator" :class="{ 'hidden': showPanel }">
+    <!-- 侧边栏切换按钮和当前布局名称 -->
+    <div v-if="fullscreenIndex === null" class="sidebar-header" :class="{ 'panel-visible': showPanel }">
+      <button
+        class="sidebar-toggle-btn"
+        @click="showPanel = !showPanel"
+        :title="showPanel ? '隐藏侧边栏' : '显示侧边栏'"
+      >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"/>
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
         </svg>
+      </button>
+      <div class="current-layout-title">
+        {{ currentLayoutName }}
       </div>
     </div>
 
@@ -58,14 +64,14 @@
       @manage-proxy="handleManageProxy"
       @show-update="handleShowUpdate"
       @clear-config="handleClearConfig"
-      @mouseenter="showPanel = true"
-      @mouseleave="handlePanelLeave"
+      @close-sidebar="showPanel = false"
+      @show-shared-modal="handleShowSharedModal"
     />
     <!-- 网格视图 -->
     <template v-for="layout in layouts" :key="`layout-${layout.id}`">
       <GridView
         v-if="layout.id === currentLayoutId || layout.keepAlive"
-        :class="{ 'layout-hidden': layout.id !== currentLayoutId }"
+        :class="{ 'layout-hidden': layout.id !== currentLayoutId, 'panel-visible': showPanel && layout.id === currentLayoutId }"
         :websites="layout.id === currentLayoutId ? websites : layout.websites"
         :rows="2"
         :cols="2"
@@ -115,11 +121,23 @@
       :target-iframe="contentScriptTargetIframe"
       @close="closeContentScriptPanel"
     />
+
+    <!-- 分享布局弹窗 -->
+    <SharedLayoutModal
+      :visible="showSharedModal"
+      :shared-layouts="sharedLayouts.sharedLayouts.value"
+      :loading="sharedLayouts.loadingShared.value"
+      :search-query="sharedLayouts.searchQuery.value"
+      @close="showSharedModal = false"
+      @import-layout="handleImportLayout"
+      @search="handleSearchShared"
+      @sort="handleSortShared"
+    />
   </div>
 </template>
 
 <script>
-import { ref, watch, onMounted, provide } from 'vue'
+import { ref, watch, onMounted, provide, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
@@ -130,11 +148,13 @@ import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
 import ProxyManager from './components/ProxyManager.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
+import SharedLayoutModal from './components/SharedLayoutModal.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useWebsiteManager } from './composables/useWebsiteManager'
 import { useImportExport } from './composables/useImportExport'
 import { useUpdateChecker } from './composables/useUpdateChecker'
+import { useSharedLayouts } from './composables/useSharedLayouts'
 
 export default {
   name: 'App',
@@ -147,7 +167,8 @@ export default {
     SessionInstanceManager,
     UpdateNotification,
     ProxyManager,
-    ContentScriptPanel
+    ContentScriptPanel,
+    SharedLayoutModal
   },
   setup() {
     const { t } = useI18n()
@@ -157,6 +178,22 @@ export default {
     const layoutManager = useLayoutManager()
     const importExport = useImportExport()
     const updateChecker = useUpdateChecker()
+    
+    // 检测是否在 Electron 环境中
+    const isElectron = computed(() => {
+      return typeof window !== 'undefined' &&
+        (window.electron !== undefined ||
+         (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
+    })
+
+    // 获取当前布局名称
+    const currentLayoutName = computed(() => {
+      const layout = layoutManager.layouts.value.find(l => l.id === layoutManager.currentLayoutId.value)
+      return layout ? layout.name : '未命名布局'
+    })
+    
+    // 共享布局管理
+    const sharedLayouts = useSharedLayouts(isElectron.value)
 
     // 初始化网站管理器
     const websiteManager = useWebsiteManager(layoutManager.currentLayout.value.websites)
@@ -188,6 +225,9 @@ export default {
     // 内容脚本面板显示状态
     const showContentScriptPanel = ref(false)
     const contentScriptTargetIframe = ref(null)
+
+    // 分享布局弹窗显示状态
+    const showSharedModal = ref(false)
 
     // 打开Session实例管理对话框
     const handleManageSessions = () => {
@@ -277,23 +317,9 @@ export default {
       fullscreenIndex.value = null
     }
 
-    const handleMouseMove = (event) => {
-      // 鼠标在左侧 5px 区域时显示面板
-      if (event.clientX < 5) {
-        showPanel.value = true
-      }
-    }
-
-    const handlePanelLeave = () => {
-      // 检查是否有输入框正在使用（重命名输入框或搜索框）
-      const activeElement = document.activeElement
-      if (activeElement && (
-        activeElement.classList.contains('rename-input') ||
-        activeElement.classList.contains('search-input')
-      )) {
-        return // 不隐藏面板
-      }
-      showPanel.value = false
+    // 切换侧边栏显示状态
+    const toggleSidebar = () => {
+      showPanel.value = !showPanel.value
     }
 
     const handleAddWebsite = (websiteData) => {
@@ -369,6 +395,31 @@ export default {
     const closeContentScriptPanel = () => {
       showContentScriptPanel.value = false
       contentScriptTargetIframe.value = null
+    }
+
+    // 显示分享布局弹窗
+    const handleShowSharedModal = () => {
+      showSharedModal.value = true
+      sharedLayouts.loadSharedLayouts()
+    }
+
+    // 导入布局
+    const handleImportLayout = (layout) => {
+      showSharedModal.value = false
+      // 使用导入模式对话框
+      importExport.showImportModeDialog(layout)
+    }
+
+    // 搜索共享布局
+    const handleSearchShared = (query) => {
+      sharedLayouts.searchQuery.value = query
+      sharedLayouts.searchSharedLayouts(query)
+    }
+
+    // 排序共享布局
+    const handleSortShared = (sortType) => {
+      // TODO: 实现排序逻辑
+      console.log('Sort shared layouts:', sortType)
     }
 
     // 切换布局
@@ -509,6 +560,7 @@ export default {
       websites: websiteManager.websites,
       layouts: layoutManager.layouts,
       currentLayoutId: layoutManager.currentLayoutId,
+      currentLayoutName,
       layoutManager,
       // 更新检测状态
       showUpdateNotification: updateChecker.showUpdateNotification,
@@ -552,8 +604,7 @@ export default {
       handleRetryDownload,
       handleFullscreen,
       exitFullscreen,
-      handleMouseMove,
-      handlePanelLeave,
+      toggleSidebar,
       handleAddWebsite,
       handleCopyWebsite,
       handleRemoveWebsite,
@@ -567,7 +618,13 @@ export default {
       handleToggleGlobalMute,
       handleToggleAdBlock,
       handleClearConfig,
-      handleUpdateDrawings
+      handleUpdateDrawings,
+      showSharedModal,
+      handleShowSharedModal,
+      handleImportLayout,
+      handleSearchShared,
+      handleSortShared,
+      sharedLayouts
     }
   }
 }
@@ -594,58 +651,69 @@ export default {
   z-index: -1;
 }
 
-.left-trigger-area {
+.sidebar-header {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 5px;
-  height: 100%;
-  z-index: 1000;
-  pointer-events: all;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 30;
+  transition: all 0.3s ease-out;
 }
 
-.sidebar-toggle-indicator {
-  position: fixed;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 30px;
-  height: 80px;
-  background: var(--primary-color);
-  border-radius: 0 8px 8px 0;
+.sidebar-header.panel-visible {
+  left: 300px; /* 左栏宽度 288px + 12px 间距 */
+}
+
+.sidebar-toggle-btn {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease-out;
-  opacity: 0.7;
-  z-index: 998;
+  color: #64748b;
+  flex-shrink: 0;
 }
 
-.sidebar-toggle-indicator:hover {
+.sidebar-toggle-btn:hover {
+  background: #f8fafc;
+  color: #f97316;
+  border-color: #f97316;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+}
+
+.sidebar-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.current-layout-title {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  transition: all 0.3s ease-out;
   opacity: 1;
-  width: 35px;
-  box-shadow: 2px 0 12px rgba(255, 92, 0, 0.3);
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
-.sidebar-toggle-indicator svg {
-  color: white;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.sidebar-toggle-indicator.hidden {
+.sidebar-header.panel-visible .current-layout-title {
   opacity: 0;
+  transform: translateX(-10px);
   pointer-events: none;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(3px);
-  }
 }
 
 .app-container :deep(.config-panel) {
@@ -653,12 +721,26 @@ export default {
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: 999;
+  z-index: 20;
   transform: translateX(-100%);
-  transition: transform 0.3s ease-out;
+  transition: transform 0.3s ease-in-out;
+  opacity: 0;
+  overflow: hidden;
 }
 
 .app-container :deep(.config-panel.panel-visible) {
   transform: translateX(0);
+  opacity: 1;
+}
+
+/* 当侧边栏显示时，主内容区域向右移动 */
+.app-container :deep(.grid-view.panel-visible) {
+  margin-left: 288px;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+.app-container :deep(.grid-view:not(.panel-visible)) {
+  margin-left: 0;
+  transition: margin-left 0.3s ease-in-out;
 }
 </style>

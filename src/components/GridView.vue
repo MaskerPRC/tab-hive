@@ -34,12 +34,6 @@
       class="drag-overlay"
     ></div>
 
-    <!-- 添加网站浮动按钮 -->
-    <AddWebsiteButton
-      :visible="fullscreenIndex === null"
-      @click="startAddWebsite(-1)"
-    />
-
     <!-- 普通网站编辑对话框 -->
     <WebsiteEditDialog
       :show="editingSlot !== null && editingDialogType === 'website'"
@@ -166,6 +160,7 @@
       @update-color="setDrawingColor"
       @update-width="setDrawingWidth"
       @clear-drawings="clearAllDrawings"
+      @add-website="startAddWebsite(-1)"
     />
   </div>
 </template>
@@ -179,7 +174,6 @@ import DesktopCaptureEditDialog from './DesktopCaptureEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
 import ElementSelector from './ElementSelector.vue'
 import CanvasControls from './CanvasControls.vue'
-import AddWebsiteButton from './AddWebsiteButton.vue'
 // Composables
 import { useCollisionDetection } from '../composables/useCollisionDetection'
 import { useGridLayout } from '../composables/useGridLayout'
@@ -201,8 +195,7 @@ export default {
     DesktopCaptureEditDialog,
     WebsiteCard,
     ElementSelector,
-    CanvasControls,
-    AddWebsiteButton
+    CanvasControls
   },
   props: {
     websites: {
@@ -657,6 +650,14 @@ export default {
       })
     }
 
+    // 刷新所有网站
+    const handleRefreshAll = () => {
+      console.log('[GridView] 刷新所有网站')
+      allWebsites.value.forEach((site, index) => {
+        handleRefreshWebsite(index)
+      })
+    }
+
     // ========== 键盘快捷键 ==========
     
     useKeyboardShortcuts({
@@ -788,6 +789,7 @@ export default {
       zoomOut,
       resetTransform,
       handleAutoArrange,
+      handleRefreshAll,
       handleFullscreenToggle,
       handleFullscreenRefresh,
       handleFullscreenGoBack,
@@ -813,12 +815,25 @@ export default {
   flex: 1;
   width: 100%;
   height: 100%;
-  padding: 15px;
+  padding: 0;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  background: #f8fafc;
+}
+
+.grid-view::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .grid-view::-webkit-scrollbar {
@@ -847,6 +862,7 @@ export default {
   position: relative;
   overflow: hidden;
   cursor: default;
+  z-index: 1;
 }
 
 .canvas-wrapper.panning {
@@ -874,12 +890,7 @@ export default {
 
 .grid-container.free-layout {
   position: relative;
-  background-image:
-    linear-gradient(to right, rgba(255, 92, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 92, 0, 0.05) 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-position: 0 0;
-  background-repeat: repeat;
+  background: transparent;
 }
 
 .grid-container.is-dragging .website-iframe {

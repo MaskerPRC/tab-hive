@@ -183,6 +183,8 @@ export default {
     instanceManagementHint: 'Manage Cookie shared instances',
     help: 'Help',
     helpHint: 'User guide',
+    proxy: 'Proxy',
+    proxyHint: 'Manage proxy settings',
     downloadPlugin: 'Download Plugin',
     downloadPluginHint: 'Download desktop client or plugin',
     clearConfig: 'Clear Config',

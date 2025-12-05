@@ -1,65 +1,131 @@
 <template>
-  <div class="config-panel" @mouseleave="handlePanelMouseLeave">
-    <div class="sidebar-content">
-      <!-- Logo 和标题 -->
-      <div class="logo-section">
+  <div class="config-panel">
+    <!-- Logo 和标题（固定在顶部） -->
+    <div class="logo-section">
+      <div class="logo-icon">
         <img src="/128x128.png" alt="Tab Hive Logo" class="logo-img" />
-        <h2 class="app-title">Tab Hive</h2>
       </div>
+      <h1 class="app-title">Tab Hive</h1>
+    </div>
 
+    <!-- 可滚动内容区 -->
+    <div class="sidebar-content">
       <!-- 布局选择器 -->
       <div class="layout-section">
-        <LayoutDropdown
-          :visible="showLayoutDropdown"
-          :layouts="layouts"
-          :currentLayoutId="currentLayoutId"
-          :currentLayoutName="currentLayoutName()"
-          :editingLayoutId="operations.editingLayoutId.value"
-          :editingLayoutName="operations.editingLayoutName.value"
-          :sharedLayouts="sharedLayouts.sharedLayouts.value"
-          :loadingShared="sharedLayouts.loadingShared.value"
-          :searchQuery="sharedLayouts.searchQuery.value"
-          @toggle="toggleLayoutDropdown"
-          @select-layout="selectLayout"
-          @create-layout="handleCreateLayout"
-          @start-rename="handleStartRename"
-          @confirm-rename="handleConfirmRename"
-          @cancel-rename="operations.cancelRename"
-          @delete-layout="handleDeleteLayout"
-          @toggle-keep-alive="$emit('toggle-keep-alive', $event)"
-          @share-layout="handleShareLayout"
-          @sync-template="handleSyncTemplate"
-          @switch-to-shared="handleSwitchToShared"
-          @search-shared="handleSearchShared"
-          @import-layout="handleImportLayout"
-          @clear-hide-timer="clearHideTimer"
-          @start-hide-timer="handleDropdownLeave"
-          @update:editingLayoutName="operations.editingLayoutName.value = $event"
-          @update:searchQuery="sharedLayouts.searchQuery.value = $event"
-        />
+        <div class="layout-list-header">
+          <span class="section-label">我的空间</span>
+          <button class="btn-new-layout" @click="handleCreateLayout" title="新建布局">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="layout-list">
+          <div
+            v-for="layout in layouts"
+            :key="layout.id"
+            class="layout-item"
+            :class="{ 'active': layout.id === currentLayoutId }"
+            @click="selectLayout(layout.id)"
+          >
+            <div class="layout-item-content">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="layout-icon">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              <span class="layout-item-name">{{ layout.name }}</span>
+            </div>
+            <div v-if="layout.id === currentLayoutId" class="layout-indicator"></div>
+          </div>
+        </div>
       </div>
 
       <!-- 设置和操作按钮 -->
       <div class="actions-section">
-        <!-- 窗口管理区域（仅 Electron 环境） -->
-        <div v-if="isElectron" class="window-management">
-          <div class="section-title">{{ $t('configPanel.windowManagement') }}</div>
-          
-          <button
-            @click="handleCreateNewWindow"
-            class="sidebar-btn btn-window"
-            :title="$t('configPanel.createNewWindowHint')"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <line x1="12" y1="8" x2="12" y2="16"/>
-              <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            <span>{{ $t('configPanel.createNewWindow') }}</span>
-          </button>
+        <!-- 配置开关区 -->
+        <div class="settings-section">
+          <span class="section-label">当前视图设置</span>
+          <div class="settings-container">
+            <SwitchItem
+              :icon="showTitles ? 'eye' : 'eye-off'"
+              :label="$t('configPanel.showTitles')"
+              :checked="showTitles"
+              @change="handleToggleTitles"
+            />
+            <SwitchItem
+              :icon="globalMuted ? 'volume-x' : 'volume-2'"
+              :label="$t('configPanel.globalMuted')"
+              :checked="globalMuted"
+              @change="handleToggleGlobalMute"
+            />
+            <SwitchItem
+              icon="zap"
+              :label="$t('configPanel.adBlockEnabled')"
+              :checked="adBlockEnabled"
+              @change="handleToggleAdBlock"
+            />
+            <!-- 语言选择 -->
+            <div class="language-selector-item">
+              <div class="language-selector-left">
+                <span class="language-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </span>
+                <span class="language-label">{{ $t('configPanel.language') }}</span>
+              </div>
+              <select
+                :value="currentLocale"
+                @change="handleLanguageChange($event.target.value)"
+                class="language-select"
+                :title="$t('configPanel.languageHint')"
+              >
+                <option value="zh">🇨🇳 中文</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="bn">🇧🇩 বাংলা</option>
+                <option value="hi">🇮🇳 हिन्दी</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="de">🇩🇪 Deutsch</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <div v-if="windowManager.windows.value.length > 1" class="window-list">
-            <div class="window-list-title">{{ $t('configPanel.allWindows') }} ({{ windowManager.windows.value.length }})</div>
+      <!-- 窗口管理区域（仅 Electron 环境） -->
+      <div v-if="isElectron" class="window-management">
+        <div class="window-management-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="window-management-icon">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          </svg>
+          <span class="window-management-title">{{ $t('configPanel.windowManagement') }}</span>
+        </div>
+
+        <button
+          @click="handleCreateNewWindow"
+          class="btn-create-window"
+          :title="$t('configPanel.createNewWindowHint')"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>{{ $t('configPanel.createNewWindow') }}</span>
+        </button>
+
+        <div v-if="windowManager.windows.value.length > 1" class="window-list">
+          <div class="window-list-title">{{ $t('configPanel.allWindows') }} ({{ windowManager.windows.value.length }})</div>
+          <div class="window-list-items">
             <button
               v-for="win in windowManager.windows.value"
               :key="win.id"
@@ -71,153 +137,47 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               </svg>
-              <span>{{ $t('configPanel.window') }} {{ win.id }}</span>
+              <span class="window-item-text">{{ $t('configPanel.window') }} {{ win.id }}</span>
               <span v-if="win.id === windowManager.currentWindowId.value" class="current-badge">{{ $t('configPanel.current') }}</span>
             </button>
           </div>
         </div>
-
-        <div class="section-divider"></div>
-
-        <!-- 语言选择 -->
-        <div class="language-selector">
-          <label class="language-label">{{ $t('configPanel.language') }}:</label>
-          <select 
-            :value="currentLocale" 
-            @change="handleLanguageChange($event.target.value)"
-            class="language-select"
-            :title="$t('configPanel.languageHint')"
-          >
-            <option value="zh">🇨🇳 中文</option>
-            <option value="en">🇺🇸 English</option>
-            <option value="es">🇪🇸 Español</option>
-            <option value="bn">🇧🇩 বাংলা</option>
-            <option value="hi">🇮🇳 हिन्दी</option>
-            <option value="ar">🇸🇦 العربية</option>
-            <option value="pt">🇧🇷 Português</option>
-            <option value="ru">🇷🇺 Русский</option>
-            <option value="ja">🇯🇵 日本語</option>
-            <option value="de">🇩🇪 Deutsch</option>
-          </select>
-        </div>
-
-        <div class="section-divider"></div>
-
-        <label class="toggle-control" :title="$t('configPanel.showTitlesHint')">
-          <span class="toggle-label">{{ $t('configPanel.showTitles') }}</span>
-          <input
-            type="checkbox"
-            :checked="showTitles"
-            @change="handleToggleTitles"
-            class="toggle-checkbox"
-          />
-          <span class="toggle-slider"></span>
-        </label>
-
-        <label class="toggle-control" :title="$t('configPanel.globalMutedHint')">
-          <span class="toggle-label">{{ $t('configPanel.globalMuted') }}</span>
-          <input
-            type="checkbox"
-            :checked="globalMuted"
-            @change="handleToggleGlobalMute"
-            class="toggle-checkbox"
-          />
-          <span class="toggle-slider"></span>
-        </label>
-
-        <label class="toggle-control" :title="$t('configPanel.adBlockEnabledHint')">
-          <span class="toggle-label">{{ $t('configPanel.adBlockEnabled') }}</span>
-          <input
-            type="checkbox"
-            :checked="adBlockEnabled"
-            @change="handleToggleAdBlock"
-            class="toggle-checkbox"
-          />
-          <span class="toggle-slider"></span>
-        </label>
-
-        <label class="toggle-control" :title="$t('configPanel.customCodeEnabledHint')">
-          <span class="toggle-label">{{ $t('configPanel.customCodeEnabled') }}</span>
-          <input
-            type="checkbox"
-            :checked="customCodeEnabled"
-            @change="handleToggleCustomCode"
-            class="toggle-checkbox"
-          />
-          <span class="toggle-slider"></span>
-        </label>
-
-        <button
-          @click="$emit('manage-sessions')"
-          class="sidebar-btn btn-sessions"
-          :title="$t('configPanel.instanceManagementHint')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          <span>{{ $t('configPanel.instanceManagement') }}</span>
-        </button>
-
-        <button
-          v-if="isElectron"
-          @click="$emit('manage-proxy')"
-          class="sidebar-btn btn-proxy"
-          :title="'代理节点管理'"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-          </svg>
-          <span>代理节点管理</span>
-        </button>
-
-        <button
-          @click="openHelp"
-          class="sidebar-btn btn-help"
-          :title="$t('configPanel.helpHint')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          <span>{{ $t('configPanel.help') }}</span>
-        </button>
-
-        <button
-          v-if="!isElectron"
-          class="sidebar-btn btn-download"
-          @click="$emit('show-download-modal')"
-          :title="$t('configPanel.downloadPluginHint')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span>{{ $t('configPanel.downloadPlugin') }}</span>
-        </button>
-
-        <button class="sidebar-btn btn-clear" @click="clearConfig" :title="$t('configPanel.clearConfigHint')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-          <span>{{ $t('configPanel.clearConfig') }}</span>
-        </button>
-
-        <!-- 更新按钮 -->
-        <UpdateButton
-          :visible="showUpdateButton"
-          @click="$emit('show-update')"
-        />
       </div>
     </div>
 
-    <!-- 右侧边缘提示条 -->
-    <div class="sidebar-edge-indicator"></div>
+    <!-- 底部操作区（固定） -->
+    <div class="bottom-actions">
+      <button
+        @click="$emit('show-shared-modal')"
+        class="btn-explore"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        探索网友布局
+      </button>
+      
+      <div class="action-buttons">
+        <IconButton
+          v-if="isElectron"
+          icon="monitor"
+          :label="$t('configPanel.proxy') || '代理'"
+          @click="$emit('manage-proxy')"
+        />
+        <IconButton
+          icon="help-circle"
+          :label="$t('configPanel.help')"
+          @click="openHelp"
+        />
+        <IconButton
+          icon="trash-2"
+          :label="$t('configPanel.clearConfig')"
+          danger
+          @click="clearConfig"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -227,6 +187,8 @@ import { useI18n } from 'vue-i18n'
 import { setLocale } from '../i18n/index.js'
 import LayoutDropdown from './LayoutDropdown.vue'
 import UpdateButton from './UpdateButton.vue'
+import SwitchItem from './SwitchItem.vue'
+import IconButton from './IconButton.vue'
 import { useSharedLayouts } from '../composables/useSharedLayouts'
 import { useLayoutOperations } from '../composables/useLayoutOperations'
 import { useWindowManager } from '../composables/useWindowManager'
@@ -235,7 +197,9 @@ export default {
   name: 'ConfigPanel',
   components: {
     LayoutDropdown,
-    UpdateButton
+    UpdateButton,
+    SwitchItem,
+    IconButton
   },
   props: {
     layouts: {
@@ -267,7 +231,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'manage-sessions', 'manage-proxy', 'show-update'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal'],
   setup(props, { emit }) {
     const { t, locale } = useI18n()
     const showLayoutDropdown = ref(false)
@@ -331,15 +295,6 @@ export default {
       startHideTimer()
     }
 
-    // 处理顶栏鼠标离开（顶栏隐藏时关闭下拉菜单）
-    const handlePanelMouseLeave = () => {
-      // 如果正在编辑布局名称，不隐藏面板
-      if (operations.editingLayoutId.value !== null) {
-        return
-      }
-      showLayoutDropdown.value = false
-      clearHideTimer()
-    }
 
     onMounted(() => {
       document.addEventListener('click', handleClickOutside)
@@ -432,11 +387,6 @@ export default {
       sharedLayouts.searchSharedLayouts(query)
     }
 
-    // 导入布局
-    const handleImportLayout = (layout) => {
-      showLayoutDropdown.value = false
-      showImportModeDialog(layout)
-    }
 
     // 分享布局
     const handleShareLayout = async (layout, event) => {
@@ -451,23 +401,23 @@ export default {
     }
 
     // 切换标题显示
-    const handleToggleTitles = (event) => {
-      emit('toggle-titles', event.target.checked)
+    const handleToggleTitles = () => {
+      emit('toggle-titles', !props.showTitles)
     }
 
     // 切换全局静音
-    const handleToggleGlobalMute = (event) => {
-      emit('toggle-global-mute', event.target.checked)
+    const handleToggleGlobalMute = () => {
+      emit('toggle-global-mute', !props.globalMuted)
     }
 
     // 切换去广告
-    const handleToggleAdBlock = (event) => {
-      emit('toggle-ad-block', event.target.checked)
+    const handleToggleAdBlock = () => {
+      emit('toggle-ad-block', !props.adBlockEnabled)
     }
 
     // 切换自定义代码
-    const handleToggleCustomCode = (event) => {
-      emit('toggle-custom-code', event.target.checked)
+    const handleToggleCustomCode = () => {
+      emit('toggle-custom-code', !props.customCodeEnabled)
     }
 
     // 创建新窗口
@@ -500,10 +450,8 @@ export default {
       handleDropdownLeave,
       clearHideTimer,
       startHideTimer,
-      handlePanelMouseLeave,
       handleSwitchToShared,
       handleSearchShared,
-      handleImportLayout,
       handleShareLayout,
       handleSyncTemplate,
       handleToggleTitles,
@@ -523,12 +471,14 @@ export default {
 <style scoped>
 .config-panel {
   background: white;
-  width: 280px;
+  width: 288px;
   height: 100%;
-  border-right: 3px solid var(--primary-color);
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid #e2e8f0;
   display: flex;
+  flex-direction: column;
   position: relative;
+  z-index: 20;
+  overflow: hidden;
 }
 
 .sidebar-content {
@@ -537,175 +487,355 @@ export default {
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px;
-  gap: 25px;
+  padding: 1.5rem;
+  gap: 1.5rem;
+  min-height: 0;
 }
 
-/* Logo 区域 */
+.sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+
+/* Logo 区域（固定在顶部） */
 .logo-section {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+  background: white;
+  z-index: 10;
+}
+
+.logo-icon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
 .logo-img {
-  width: 64px;
-  height: 64px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
 .app-title {
-  color: var(--primary-color);
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #1e293b, #475569);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
-  text-align: center;
 }
 
 /* 布局选择器区域 */
 .layout-section {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.layout-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-new-layout {
+  padding: 0.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-new-layout:hover {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.layout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.layout-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475569;
+}
+
+.layout-item:hover {
+  background: #f1f5f9;
+}
+
+.layout-item.active {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.layout-item.active .layout-icon {
+  color: #f97316;
+}
+
+.layout-item.active .layout-item-name {
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.layout-item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow: hidden;
   flex: 1;
+  min-width: 0;
+}
+
+.layout-icon {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.layout-item-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layout-indicator {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #f97316;
+  flex-shrink: 0;
 }
 
 /* 操作按钮区域 */
 .actions-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 2px solid #f0f0f0;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.settings-container {
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 /* 窗口管理区域 */
 .window-management {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.section-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-}
-
-.section-divider {
-  height: 1px;
-  background: #e0e0e0;
-  margin: 8px 0;
-}
-
-/* 语言选择器样式 */
-.language-selector {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 8px;
-  background: #f8f8f8;
-  transition: background 0.3s;
-}
-
-.language-selector:hover {
-  background: #fff5f0;
-}
-
-.language-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  gap: 0.75rem;
+  padding: 0 0.5rem;
+  margin-top: 0.5rem;
   flex-shrink: 0;
 }
 
-.language-select {
-  flex: 1;
-  padding: 6px 10px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
+.window-management-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.window-management-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.window-management-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 语言选择器样式（在设置容器内，与SwitchItem保持一致） */
+.language-selector-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+}
+
+.language-selector-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #475569;
+}
+
+.language-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.language-label {
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #333;
+}
+
+.language-select {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
   background: white;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   outline: none;
   font-family: inherit;
+  min-width: 100px;
 }
 
 .language-select:hover {
-  border-color: var(--primary-color);
-  background: #fff5f0;
+  border-color: #f97316;
+  background: #fff7ed;
 }
 
 .language-select:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.1);
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
-.btn-window {
-  background: var(--primary-color);
-  color: white;
+.btn-create-window {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 0.5rem;
+  color: #ea580c;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
-.btn-window:hover {
-  background: var(--primary-hover);
-  transform: translateX(2px);
-  box-shadow: 0 4px 8px rgba(255, 92, 0, 0.3);
+.btn-create-window:hover {
+  background: #ffedd5;
+  border-color: #f97316;
+  color: #c2410c;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
 }
 
-.btn-window svg {
+.btn-create-window svg {
   stroke: currentColor;
+  flex-shrink: 0;
 }
 
 .window-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .window-list-title {
-  font-size: 12px;
-  color: #999;
+  font-size: 0.75rem;
+  color: #94a3b8;
   font-weight: 500;
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
+}
+
+.window-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .window-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.875rem;
   font-weight: 500;
   font-family: inherit;
   transition: all 0.2s;
-  border: 1px solid #e0e0e0;
-  background: white;
-  color: #666;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475569;
 }
 
 .window-item:hover {
-  background: #f8f8f8;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  transform: translateX(2px);
+  background: #f1f5f9;
+  color: #f97316;
 }
 
 .window-item.active {
-  background: #fff5f0;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #ea580c;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .window-item svg {
@@ -713,14 +843,18 @@ export default {
   flex-shrink: 0;
 }
 
+.window-item-text {
+  flex: 1;
+}
+
 .current-badge {
-  margin-left: auto;
-  font-size: 11px;
-  padding: 2px 6px;
-  background: var(--primary-color);
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  background: #f97316;
   color: white;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 /* 开关控件样式 */
@@ -871,42 +1005,50 @@ export default {
   stroke: currentColor;
 }
 
-/* 右侧边缘提示条 */
-.sidebar-edge-indicator {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 60px;
-  background: var(--primary-color);
-  border-radius: 4px 0 0 4px;
-  opacity: 0.6;
-  transition: all 0.3s;
+/* 底部操作区 */
+.bottom-actions {
+  padding: 1rem;
+  border-top: 1px solid #f1f5f9;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
-.config-panel:hover .sidebar-edge-indicator {
-  opacity: 0.9;
-  height: 80px;
+.btn-explore {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #1e293b;
+  color: white;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* 滚动条样式 */
-.sidebar-content::-webkit-scrollbar {
-  width: 6px;
+.btn-explore:hover {
+  background: #0f172a;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.sidebar-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+.btn-explore svg {
+  width: 1rem;
+  height: 1rem;
 }
 
-.sidebar-content::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-
-.sidebar-content::-webkit-scrollbar-thumb:hover {
-  background: #999;
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
 }
 
 /* 响应式设计 */
@@ -914,16 +1056,16 @@ export default {
   .config-panel {
     width: 240px;
   }
-  
+
   .sidebar-content {
     padding: 15px;
   }
-  
+
   .logo-img {
     width: 48px;
     height: 48px;
   }
-  
+
   .app-title {
     font-size: 20px;
   }

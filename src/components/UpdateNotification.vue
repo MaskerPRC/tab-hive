@@ -128,7 +128,7 @@ export default {
     },
     latestVersion: {
       type: String,
-      required: true
+      default: null
     },
     updateInfo: {
       type: Object,
