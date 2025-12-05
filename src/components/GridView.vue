@@ -30,18 +30,10 @@
     ></div>
 
     <!-- 添加网站浮动按钮 -->
-    <button
-      v-if="fullscreenIndex === null"
-      class="btn-add-website-float"
+    <AddWebsiteButton
+      :visible="fullscreenIndex === null"
       @click="startAddWebsite(-1)"
-      title="添加新网站"
-    >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="16"/>
-        <line x1="8" y1="12" x2="16" y2="12"/>
-      </svg>
-    </button>
+    />
 
     <!-- 普通网站编辑对话框 -->
     <WebsiteEditDialog
@@ -49,7 +41,7 @@
       :editing-index="editingSlot"
       :website="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : newWebsite"
       :websites="websites"
-      @confirm="confirmAddWebsite"
+      @confirm="onConfirmAddWebsite"
       @cancel="cancelAddWebsite"
     />
     
@@ -58,7 +50,7 @@
       :show="editingSlot !== null && editingDialogType === 'desktop-capture'"
       :editing-index="editingSlot"
       :desktop-capture="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : {}"
-      @confirm="confirmAddWebsite"
+      @confirm="onConfirmAddWebsite"
       @cancel="cancelAddWebsite"
     />
 
@@ -146,54 +138,24 @@
     </div>
 
     <!-- 画布控制按钮 -->
-    <div class="canvas-controls">
-      <button
-        class="canvas-control-btn"
-        @click="zoomIn"
-        title="放大 (Ctrl + Plus)"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="11" y1="8" x2="11" y2="14"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
-      </button>
-      <button
-        class="canvas-control-btn"
-        @click="zoomOut"
-        title="缩小 (Ctrl + Minus)"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
-      </button>
-      <div class="canvas-zoom-display">
-        {{ zoomPercentage }}%
-      </div>
-      <button
-        class="canvas-control-btn"
-        @click="resetTransform"
-        title="重置视图 (Ctrl + 0)"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-          <path d="M21 3v5h-5"/>
-          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-          <path d="M3 21v-5h5"/>
-        </svg>
-      </button>
-    </div>
+    <CanvasControls
+      :zoom-percentage="zoomPercentage"
+      @zoom-in="zoomIn"
+      @zoom-out="zoomOut"
+      @reset="resetTransform"
+    />
   </div>
 </template>
 
 <script>
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
 import DesktopCaptureEditDialog from './DesktopCaptureEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
 import ElementSelector from './ElementSelector.vue'
+import CanvasControls from './CanvasControls.vue'
+import AddWebsiteButton from './AddWebsiteButton.vue'
 import { useCollisionDetection } from '../composables/useCollisionDetection'
 import { useGridLayout } from '../composables/useGridLayout'
 import { useItemDrag } from '../composables/useItemDrag'
@@ -201,6 +163,8 @@ import { useItemResize } from '../composables/useItemResize'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useUrlDrop } from '../composables/useUrlDrop'
 import { useCanvasTransform } from '../composables/useCanvasTransform'
+import { useWebsiteOperations } from '../composables/useWebsiteOperations'
+import { useElementSelection } from '../composables/useElementSelection'
 
 export default {
   name: 'GridView',
@@ -209,7 +173,9 @@ export default {
     WebsiteEditDialog,
     DesktopCaptureEditDialog,
     WebsiteCard,
-    ElementSelector
+    ElementSelector,
+    CanvasControls,
+    AddWebsiteButton
   },
   props: {
     websites: {
@@ -235,27 +201,6 @@ export default {
   },
   emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website'],
   setup(props, { emit }) {
-    // 编辑网站状态
-    const editingSlot = ref(null)
-    const editingDialogType = ref('website') // 'website' 或 'desktop-capture'
-    const newWebsite = ref({
-      title: '',
-      url: '',
-      deviceType: 'desktop',
-      targetSelector: '',
-      targetSelectors: [],
-      autoRefreshInterval: 0,
-      sessionInstance: 'default',
-      padding: 10,
-      muted: false,
-      darkMode: false,
-      requireModifierForActions: false
-    })
-
-    // 元素选择器状态
-    const isSelectingElement = ref(false)
-    const fullscreenIframe = ref(null)
-
     // 所有网站列表（过滤掉空白项，防止僵尸蜂巢）
     const allWebsites = computed(() => {
       console.log('[GridView] ========== allWebsites 计算开始 ==========')
@@ -268,23 +213,6 @@ export default {
       console.log('[GridView] 过滤后的网站列表:', filtered)
       console.log('[GridView] ========== allWebsites 计算结束 ==========')
       return filtered
-    })
-
-    // 当前全屏网站配置
-    const currentFullscreenWebsite = computed(() => {
-      console.log('[GridView] currentFullscreenWebsite 计算:', {
-        fullscreenIndex: props.fullscreenIndex,
-        websitesLength: props.websites?.length,
-        targetWebsite: props.websites?.[props.fullscreenIndex]
-      })
-      
-      if (props.fullscreenIndex !== null && props.websites[props.fullscreenIndex]) {
-        const website = props.websites[props.fullscreenIndex]
-        console.log('[GridView] 返回全屏网站配置:', website)
-        return website
-      }
-      console.log('[GridView] 返回 null（无全屏网站）')
-      return null
     })
 
     // 碰撞检测
@@ -352,6 +280,33 @@ export default {
       handleDrop
     } = useUrlDrop()
 
+    // 网站操作
+    const {
+      editingSlot,
+      editingDialogType,
+      newWebsite,
+      startAddWebsite,
+      startAddDesktopCapture,
+      confirmAddWebsite,
+      cancelAddWebsite,
+      handleCopyWebsite,
+      handleRemoveWebsite,
+      handleToggleMute,
+      handleUpdateUrl,
+      handleRefreshWebsite,
+      handleEditWebsite
+    } = useWebsiteOperations(props, emit)
+
+    // 元素选择
+    const {
+      isSelectingElement,
+      fullscreenIframe,
+      currentFullscreenWebsite,
+      startElementSelection,
+      handleElementSelected,
+      cancelElementSelection
+    } = useElementSelection(props, emit)
+
     // 计算缩放百分比（用于显示）
     const zoomPercentage = computed(() => {
       return Math.round((canvasTransform.value?.zoom || 1) * 100)
@@ -373,213 +328,10 @@ export default {
     }
 
     /**
-     * 开始添加网站
+     * 确认添加网站包装器（传入刷新回调）
      */
-    const startAddWebsite = (index) => {
-      editingSlot.value = index
-      editingDialogType.value = 'website' // 默认是普通网站
-      newWebsite.value = {
-        title: '',
-        url: '',
-        deviceType: 'desktop',
-        targetSelector: '',
-        targetSelectors: [],
-        autoRefreshInterval: 0,
-        sessionInstance: 'default',
-        padding: 10,
-        muted: false,
-        darkMode: false,
-        requireModifierForActions: false
-      }
-    }
-    
-    /**
-     * 开始添加桌面捕获（从快捷按钮触发）
-     */
-    const startAddDesktopCapture = () => {
-      editingSlot.value = -1
-      editingDialogType.value = 'desktop-capture'
-    }
-
-    /**
-     * 确认添加网站
-     */
-    const confirmAddWebsite = (websiteData) => {
-      console.log('[GridView] ========== 确认添加/更新网站 ==========')
-      console.log('[GridView] editingSlot:', editingSlot.value)
-      console.log('[GridView] websiteData:', websiteData)
-      
-      // 如果提交的是桌面捕获类型，确保对话框类型正确（用于后续编辑）
-      if (websiteData.type === 'desktop-capture') {
-        editingDialogType.value = 'desktop-capture'
-      } else {
-        editingDialogType.value = 'website'
-      }
-      
-      // 如果是编辑模式
-      if (editingSlot.value !== -1 && editingSlot.value !== null) {
-        console.log('[GridView] 模式：编辑现有网站')
-        
-        // 检查是否需要刷新（选择器或暗色模式变化）
-        const oldWebsite = props.websites[editingSlot.value]
-        let needsRefresh = false
-        
-        if (oldWebsite) {
-          // 检查暗色模式是否变化
-          if (websiteData.darkMode !== oldWebsite.darkMode) {
-            console.log('[GridView] 暗色模式已变化，需要刷新')
-            needsRefresh = true
-          }
-          
-          // 检查选择器是否变化
-          const oldSelectors = oldWebsite.targetSelectors || (oldWebsite.targetSelector ? [oldWebsite.targetSelector] : [])
-          const newSelectors = websiteData.targetSelectors || []
-          
-          // 比较选择器数组
-          if (oldSelectors.length !== newSelectors.length ||
-              !oldSelectors.every((sel, idx) => sel === newSelectors[idx])) {
-            console.log('[GridView] 选择器已变化，需要刷新')
-            console.log('[GridView] 旧选择器:', oldSelectors)
-            console.log('[GridView] 新选择器:', newSelectors)
-            needsRefresh = true
-          }
-        }
-        
-        const websiteIndex = editingSlot.value
-        
-        emit('update-website', {
-          index: websiteIndex,
-          ...websiteData
-        })
-        
-        // 如果需要刷新，延迟一小段时间后自动刷新
-        if (needsRefresh) {
-          console.log('[GridView] 将在更新后自动刷新网站')
-          setTimeout(() => {
-            handleRefreshWebsite(websiteIndex)
-          }, 100)
-        }
-      } else {
-        // 添加模式
-        console.log('[GridView] 模式：添加新网站')
-        emit('add-website', websiteData)
-      }
-
-      // 关闭对话框并重置状态
-      editingSlot.value = null
-      editingDialogType.value = 'website'
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default', padding: 10, muted: false, darkMode: false, requireModifierForActions: false }
-      console.log('[GridView] ========== 添加/更新流程完成 ==========')
-    }
-
-    /**
-     * 取消添加网站
-     */
-    const cancelAddWebsite = () => {
-      editingSlot.value = null
-      editingDialogType.value = 'website'
-      newWebsite.value = { title: '', url: '', deviceType: 'desktop', targetSelector: '', targetSelectors: [], autoRefreshInterval: 0, sessionInstance: 'default', padding: 10, muted: false, darkMode: false, requireModifierForActions: false }
-    }
-
-    /**
-     * 复制网站
-     */
-    const handleCopyWebsite = (index) => {
-      emit('copy-website', index)
-    }
-
-    /**
-     * 删除网站
-     */
-    const handleRemoveWebsite = (index) => {
-      if (confirm(`确定要删除 "${props.websites[index].title}" 吗？`)) {
-        emit('remove-website', index)
-      }
-    }
-
-    /**
-     * 切换网站静音状态
-     */
-    const handleToggleMute = (index) => {
-      const website = props.websites[index]
-      if (website) {
-        emit('update-website', {
-          index,
-          updates: {
-            muted: !website.muted
-          }
-        })
-      }
-    }
-
-    /**
-     * 更新网站URL
-     */
-    const handleUpdateUrl = (index, newUrl) => {
-      console.log('[GridView] 更新网站 URL:', { index, newUrl })
-      emit('update-website', {
-        index,
-        updates: {
-          url: newUrl
-        }
-      })
-    }
-
-    /**
-     * 刷新网站
-     */
-    const handleRefreshWebsite = (index) => {
-      console.log('[GridView] ========== handleRefreshWebsite 被调用 ==========')
-      console.log('[GridView] 刷新网站索引:', index)
-      
-      // 注意：WebsiteCard 组件内部已经处理了双缓冲刷新
-      // GridView 不需要直接操作 DOM，避免与内部刷新机制冲突
-      
-      // 处理 iframe 刷新（非 Electron 环境）
-      const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
-      if (iframe) {
-        console.log('[GridView] 刷新 iframe')
-        // 通过重新设置src来刷新iframe
-        const currentSrc = iframe.src
-        iframe.src = 'about:blank'
-        // 使用setTimeout确保浏览器识别到URL变化
-        setTimeout(() => {
-          iframe.src = currentSrc
-        }, 10)
-      }
-      
-      // Webview 刷新由 WebsiteCard 内部的双缓冲机制处理
-      // 不再直接操作 webview DOM
-    }
-
-    /**
-     * 编辑网站
-     */
-    const handleEditWebsite = (index) => {
-      const website = props.websites[index]
-      if (website) {
-        // 根据网站类型决定显示哪个对话框
-        editingDialogType.value = website.type === 'desktop-capture' ? 'desktop-capture' : 'website'
-        editingSlot.value = index
-        newWebsite.value = {
-          title: website.title,
-          url: website.url,
-          deviceType: website.deviceType || 'desktop',
-          targetSelector: website.targetSelector || '',
-          targetSelectors: website.targetSelectors || [],
-          autoRefreshInterval: website.autoRefreshInterval || 0,
-          sessionInstance: website.sessionInstance || 'default',
-          padding: website.padding !== undefined ? website.padding : 10,
-          muted: website.muted || false,
-          darkMode: website.darkMode || false,
-          requireModifierForActions: website.requireModifierForActions || false
-        }
-        console.log('[GridView] 编辑网站:', {
-          title: website.title,
-          sessionInstance: newWebsite.value.sessionInstance,
-          targetSelectors: newWebsite.value.targetSelectors
-        })
-      }
+    const onConfirmAddWebsite = (websiteData) => {
+      confirmAddWebsite(websiteData, handleRefreshWebsite)
     }
 
     /**
@@ -602,109 +354,6 @@ export default {
       } else if (target.classList.contains('resize-s')) {
         startResizeItem(event, index, 's')
       }
-    }
-
-    /**
-     * 开始元素选择
-     */
-    const startElementSelection = () => {
-      if (props.fullscreenIndex === null) {
-        console.warn('只能在全屏模式下选择元素')
-        return
-      }
-
-      // 根据环境获取全屏 webview 或 iframe
-      const isElectron = window.electron?.isElectron
-      
-      if (isElectron) {
-        // Electron 环境：查找 webview
-        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-        if (webviewElements[props.fullscreenIndex]) {
-          fullscreenIframe.value = webviewElements[props.fullscreenIndex]
-          isSelectingElement.value = true
-          console.log('[Tab Hive] 开始元素选择模式 (webview)')
-        } else {
-          console.error('[Tab Hive] 未找到全屏 webview')
-        }
-      } else {
-        // 浏览器环境：查找 iframe
-        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-        if (iframeElements[props.fullscreenIndex]) {
-          fullscreenIframe.value = iframeElements[props.fullscreenIndex]
-          isSelectingElement.value = true
-          console.log('[Tab Hive] 开始元素选择模式 (iframe)')
-        } else {
-          console.error('[Tab Hive] 未找到全屏 iframe')
-        }
-      }
-    }
-
-    /**
-     * 处理元素选择完成
-     */
-    const handleElementSelected = (data) => {
-      const { selector, selectors, multiSelect } = data
-      
-      // 支持多选和单选模式
-      const finalSelectors = multiSelect ? selectors : (selectors || [selector])
-      
-      console.log('选中元素选择器:', multiSelect ? `多选 ${finalSelectors.length} 个` : selector)
-      
-      if (props.fullscreenIndex !== null && props.websites[props.fullscreenIndex]) {
-        const website = props.websites[props.fullscreenIndex]
-        
-        // 尝试获取当前 webview/iframe 的 URL
-        let currentUrl = website.url
-        try {
-          // 查找当前全屏的 webview
-          const webview = document.querySelector(`#webview-${website.id}`)
-          if (webview && window.electron?.isElectron) {
-            const url = webview.getURL()
-            // 移除 __webview_id__ 参数
-            currentUrl = url.replace(/[?&]__webview_id__=[^&]+/, '').replace(/\?$/, '')
-            console.log('[GridView] 获取当前 URL:', currentUrl)
-          }
-        } catch (error) {
-          console.warn('[GridView] 无法获取当前 URL，使用原 URL:', error)
-        }
-        
-        // 同时更新网站的 URL 和选择器
-        const updates = {
-          url: currentUrl,
-          targetSelectors: finalSelectors,
-          targetSelector: finalSelectors.length > 0 ? finalSelectors[0] : '' // 兼容旧版
-        }
-        
-        console.log('[GridView] ========== 准备发送 update-website 事件 ==========')
-        console.log('[GridView] updates 对象:', updates)
-        console.log('[GridView] 完整事件数据:', {
-          index: props.fullscreenIndex,
-          updates
-        })
-        
-        emit('update-website', {
-          index: props.fullscreenIndex,
-          updates
-        })
-        
-        if (multiSelect) {
-          alert(`已设置 ${finalSelectors.length} 个元素选择器：\n${finalSelectors.join('\n')}\n\n网页地址已更新为：${currentUrl}\n\n退出全屏后将同时显示所有选中的元素。`)
-        } else {
-          alert(`已设置元素选择器：\n${selector}\n\n网页地址已更新为：${currentUrl}\n\n退出全屏后将自动应用该选择器。`)
-        }
-      }
-      
-      isSelectingElement.value = false
-      fullscreenIframe.value = null
-    }
-
-    /**
-     * 取消元素选择
-     */
-    const cancelElementSelection = () => {
-      console.log('取消元素选择')
-      isSelectingElement.value = false
-      fullscreenIframe.value = null
     }
 
     /**
@@ -858,7 +507,7 @@ export default {
       fullscreenIframe,
       startAddWebsite,
       startAddDesktopCapture,
-      confirmAddWebsite,
+      onConfirmAddWebsite,
       cancelAddWebsite,
       handleCopyWebsite,
       handleRemoveWebsite,
@@ -929,36 +578,6 @@ export default {
   cursor: move;
 }
 
-/* 添加网站浮动按钮 */
-.btn-add-website-float {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 60px;
-  height: 60px;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 4px 16px rgba(255, 92, 0, 0.4);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-  z-index: 100;
-}
-
-.btn-add-website-float:hover {
-  background: var(--primary-hover);
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(255, 92, 0, 0.5);
-}
-
-.btn-add-website-float svg {
-  display: block;
-}
-
 /* 画布包装器 */
 .canvas-wrapper {
   width: 100%;
@@ -1010,58 +629,5 @@ export default {
 /* 全局拖动或调整大小时，禁用所有iframe的鼠标事件 */
 .grid-container.is-dragging .website-iframe {
   pointer-events: none;
-}
-
-/* 画布控制按钮 */
-.canvas-controls {
-  position: fixed;
-  bottom: 100px;
-  right: 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 200;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
-}
-
-.canvas-control-btn {
-  width: 40px;
-  height: 40px;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  padding: 0;
-}
-
-.canvas-control-btn:hover {
-  background: var(--primary-hover);
-  transform: scale(1.05);
-}
-
-.canvas-control-btn:active {
-  transform: scale(0.95);
-}
-
-.canvas-control-btn svg {
-  display: block;
-}
-
-.canvas-zoom-display {
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
-  padding: 4px 0;
-  min-width: 40px;
 }
 </style>
