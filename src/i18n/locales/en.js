@@ -364,6 +364,8 @@ export default {
   // Floating actions
   floatingActions: {
     refresh: 'Refresh Page',
+    goBack: 'Go Back',
+    goForward: 'Go Forward',
     mute: 'Mute',
     unmute: 'Unmute',
     copy: 'Copy Honeycomb',
@@ -418,6 +420,8 @@ export default {
   fullscreenBar: {
     selectElement: 'Select Element',
     refresh: 'Refresh',
+    goBack: 'Go Back',
+    goForward: 'Go Forward',
     exitFullscreen: 'Exit Fullscreen'
   },
 

@@ -7,11 +7,31 @@
     }"
   >
     <button
+      class="btn-action btn-back"
+      @click="$emit('goBack')"
+      :disabled="!canGoBack"
+      :title="$t('floatingActions.goBack')"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button
       class="btn-action btn-refresh"
       @click="$emit('refresh')"
       :title="$t('floatingActions.refresh')"
       v-html="ICONS.refresh"
     />
+    <button
+      class="btn-action btn-forward"
+      @click="$emit('goForward')"
+      :disabled="!canGoForward"
+      :title="$t('floatingActions.goForward')"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
     <button
       class="btn-action btn-mute"
       :class="{ 'muted': muted }"
@@ -75,9 +95,17 @@ export default {
     customCodeEnabled: {
       type: Boolean,
       default: true
+    },
+    canGoBack: {
+      type: Boolean,
+      default: false
+    },
+    canGoForward: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove'],
+  emits: ['refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove', 'goBack', 'goForward'],
   setup() {
     const { t } = useI18n()
     return {
@@ -121,9 +149,14 @@ export default {
   backdrop-filter: blur(4px);
 }
 
-.btn-action:hover {
+.btn-action:hover:not(:disabled) {
   background: rgba(255, 92, 0, 0.9);
   transform: scale(1.1);
+}
+
+.btn-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .btn-action :deep(svg) {
@@ -184,6 +217,16 @@ export default {
 
 .btn-script:hover {
   background: rgba(103, 58, 183, 0.9) !important;
+}
+
+.btn-back,
+.btn-forward {
+  background: rgba(66, 133, 244, 0.7) !important;
+}
+
+.btn-back:hover:not(:disabled),
+.btn-forward:hover:not(:disabled) {
+  background: rgba(66, 133, 244, 0.9) !important;
 }
 </style>
 

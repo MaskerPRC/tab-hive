@@ -713,5 +713,53 @@ window.addEventListener('load', () => {
   }, 0)
 })
 
+// ==================== 鼠标前进/后退按钮支持 ====================
+
+/**
+ * 监听鼠标按钮事件，支持前进/后退导航
+ * button 3 = 后退按钮（通常是鼠标侧边的 Back 按钮）
+ * button 4 = 前进按钮（通常是鼠标侧边的 Forward 按钮）
+ */
+document.addEventListener('mousedown', (event) => {
+  // 如果在元素选择器模式，不处理
+  if (isSelectingElement) return
+  
+  // button 3 = 后退按钮
+  if (event.button === 3) {
+    console.log('[Webview Preload] 鼠标后退按钮被点击')
+    event.preventDefault()
+    if (window.history.length > 1) {
+      window.history.back()
+    }
+  }
+  // button 4 = 前进按钮
+  else if (event.button === 4) {
+    console.log('[Webview Preload] 鼠标前进按钮被点击')
+    event.preventDefault()
+    window.history.forward()
+  }
+}, true) // 使用捕获阶段确保优先处理
+
+// 也监听 auxclick 事件作为备用（某些浏览器可能使用这个事件）
+document.addEventListener('auxclick', (event) => {
+  // 如果在元素选择器模式，不处理
+  if (isSelectingElement) return
+  
+  // button 3 = 后退按钮
+  if (event.button === 3) {
+    console.log('[Webview Preload] auxclick 后退按钮被点击')
+    event.preventDefault()
+    if (window.history.length > 1) {
+      window.history.back()
+    }
+  }
+  // button 4 = 前进按钮
+  else if (event.button === 4) {
+    console.log('[Webview Preload] auxclick 前进按钮被点击')
+    event.preventDefault()
+    window.history.forward()
+  }
+}, true)
+
 console.log('[Webview Preload] Preload script 加载完成')
 

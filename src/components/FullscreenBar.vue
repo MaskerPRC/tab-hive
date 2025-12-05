@@ -15,18 +15,40 @@
       </svg>
       <span>{{ $t('fullscreenBar.selectElement') }}</span>
     </button>
-    <button
-      class="btn-refresh"
-      @click="$emit('refresh')"
-      :title="$t('fullscreenBar.refresh')"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="23 4 23 10 17 10"/>
-        <polyline points="1 20 1 14 7 14"/>
-        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
-      </svg>
-      <span>{{ $t('fullscreenBar.refresh') }}</span>
-    </button>
+    <!-- 前进后退和刷新按钮组（紧凑区域） -->
+    <div class="navigation-group">
+      <button
+        class="btn-nav btn-back"
+        @click="$emit('goBack')"
+        :disabled="!canGoBack"
+        :title="$t('fullscreenBar.goBack')"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <button
+        class="btn-nav btn-refresh"
+        @click="$emit('refresh')"
+        :title="$t('fullscreenBar.refresh')"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+      </button>
+      <button
+        class="btn-nav btn-forward"
+        @click="$emit('goForward')"
+        :disabled="!canGoForward"
+        :title="$t('fullscreenBar.goForward')"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
     <button
       class="btn-exit-fullscreen"
       @click="$emit('exit')"
@@ -48,9 +70,17 @@ export default {
     show: {
       type: Boolean,
       required: true
+    },
+    canGoBack: {
+      type: Boolean,
+      default: false
+    },
+    canGoForward: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['exit', 'leave', 'selectElement', 'refresh'],
+  emits: ['exit', 'leave', 'selectElement', 'refresh', 'goBack', 'goForward'],
   setup() {
     const { t } = useI18n()
     return { t }
@@ -86,8 +116,54 @@ export default {
   }
 }
 
+/* 前进后退和刷新按钮组（紧凑区域） */
+.navigation-group {
+  display: flex;
+  gap: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+/* 前进后退按钮稍微宽一点 */
+.btn-nav.btn-back,
+.btn-nav.btn-forward {
+  padding: 12px 20px;
+}
+
+/* 刷新按钮稍窄一点 */
+.btn-nav.btn-refresh {
+  padding: 12px 18px;
+}
+
+.btn-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-nav:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-back {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-refresh {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .btn-selector,
-.btn-refresh,
 .btn-exit-fullscreen {
   display: flex;
   align-items: center;
@@ -104,10 +180,6 @@ export default {
 }
 
 .btn-selector {
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-refresh {
   border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 

@@ -364,6 +364,8 @@ export default {
   // 浮动操作按钮
   floatingActions: {
     refresh: '刷新页面',
+    goBack: '后退',
+    goForward: '前进',
     mute: '静音',
     unmute: '取消静音',
     copy: '复制蜂巢',
@@ -418,6 +420,8 @@ export default {
   fullscreenBar: {
     selectElement: '选择元素',
     refresh: '刷新',
+    goBack: '后退',
+    goForward: '前进',
     exitFullscreen: '退出全屏'
   },
 

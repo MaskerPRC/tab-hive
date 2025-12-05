@@ -9,10 +9,14 @@
     <!-- 全屏模式下的顶部退出按钮条 -->
     <FullscreenBar
       :show="fullscreenIndex !== null && showFullscreenBar"
+      :can-go-back="fullscreenCanGoBack"
+      :can-go-forward="fullscreenCanGoForward"
       @exit="$emit('exitFullscreen')"
       @leave="handleFullscreenBarLeave"
       @selectElement="startElementSelection"
       @refresh="handleFullscreenRefresh"
+      @go-back="handleFullscreenGoBack"
+      @go-forward="handleFullscreenGoForward"
     />
 
     <!-- 元素选择器覆盖层 -->
@@ -167,7 +171,7 @@
 </template>
 
 <script>
-import { computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, watch, onMounted, onUnmounted, nextTick, ref } from 'vue'
 // 子组件
 import FullscreenBar from './FullscreenBar.vue'
 import WebsiteEditDialog from './WebsiteEditDialog.vue'
@@ -489,6 +493,128 @@ export default {
       }
     }
 
+    // 全屏模式下的前进后退状态
+    const fullscreenCanGoBack = ref(false)
+    const fullscreenCanGoForward = ref(false)
+
+    // 检查全屏模式下的导航状态
+    const checkFullscreenNavigationState = () => {
+      if (props.fullscreenIndex === null) {
+        fullscreenCanGoBack.value = false
+        fullscreenCanGoForward.value = false
+        return
+      }
+
+      const website = allWebsites.value[props.fullscreenIndex]
+      if (!website || website.type === 'desktop-capture') {
+        fullscreenCanGoBack.value = false
+        fullscreenCanGoForward.value = false
+        return
+      }
+
+      const isElectron = window.electron?.isElectron
+      if (isElectron) {
+        // Electron 环境：查找 webview
+        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
+        const webview = webviewElements[props.fullscreenIndex]
+        if (webview) {
+          try {
+            fullscreenCanGoBack.value = webview.canGoBack()
+            fullscreenCanGoForward.value = webview.canGoForward()
+          } catch (error) {
+            console.error('[GridView] 检查全屏导航状态失败:', error)
+            fullscreenCanGoBack.value = false
+            fullscreenCanGoForward.value = false
+          }
+        }
+      } else {
+        // 浏览器环境：查找 iframe
+        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
+        const iframe = iframeElements[props.fullscreenIndex]
+        if (iframe) {
+          try {
+            const iframeWindow = iframe.contentWindow
+            if (iframeWindow && iframeWindow.history) {
+              // 对于 iframe，我们无法直接检查，假设可以前进后退
+              fullscreenCanGoBack.value = true
+              fullscreenCanGoForward.value = true
+            } else {
+              fullscreenCanGoBack.value = false
+              fullscreenCanGoForward.value = false
+            }
+          } catch (error) {
+            // 跨域 iframe 无法访问
+            fullscreenCanGoBack.value = false
+            fullscreenCanGoForward.value = false
+          }
+        }
+      }
+    }
+
+    // 全屏模式下的后退
+    const handleFullscreenGoBack = () => {
+      if (props.fullscreenIndex === null) return
+
+      const website = allWebsites.value[props.fullscreenIndex]
+      if (!website || website.type === 'desktop-capture') return
+
+      const isElectron = window.electron?.isElectron
+      if (isElectron) {
+        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
+        const webview = webviewElements[props.fullscreenIndex]
+        if (webview && webview.canGoBack()) {
+          webview.goBack()
+          setTimeout(checkFullscreenNavigationState, 100)
+        }
+      } else {
+        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
+        const iframe = iframeElements[props.fullscreenIndex]
+        if (iframe) {
+          try {
+            const iframeWindow = iframe.contentWindow
+            if (iframeWindow && iframeWindow.history) {
+              iframeWindow.history.back()
+              setTimeout(checkFullscreenNavigationState, 100)
+            }
+          } catch (error) {
+            console.error('[GridView] 全屏 iframe 后退失败:', error)
+          }
+        }
+      }
+    }
+
+    // 全屏模式下的前进
+    const handleFullscreenGoForward = () => {
+      if (props.fullscreenIndex === null) return
+
+      const website = allWebsites.value[props.fullscreenIndex]
+      if (!website || website.type === 'desktop-capture') return
+
+      const isElectron = window.electron?.isElectron
+      if (isElectron) {
+        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
+        const webview = webviewElements[props.fullscreenIndex]
+        if (webview && webview.canGoForward()) {
+          webview.goForward()
+          setTimeout(checkFullscreenNavigationState, 100)
+        }
+      } else {
+        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
+        const iframe = iframeElements[props.fullscreenIndex]
+        if (iframe) {
+          try {
+            const iframeWindow = iframe.contentWindow
+            if (iframeWindow && iframeWindow.history) {
+              iframeWindow.history.forward()
+              setTimeout(checkFullscreenNavigationState, 100)
+            }
+          } catch (error) {
+            console.error('[GridView] 全屏 iframe 前进失败:', error)
+          }
+        }
+      }
+    }
+
     // 绘制鼠标按下包装器
     const handleDrawingMouseDownWrapper = (event) => {
       handleDrawingMouseDown(event, props.fullscreenIndex)
@@ -547,6 +673,24 @@ export default {
     watch(() => props.fullscreenIndex, (newVal, oldVal) => {
       if (newVal !== null && oldVal === null) {
         resetCanvasTransform()
+      }
+      // 检查导航状态
+      if (newVal !== null) {
+        // 延迟检查，等待 webview/iframe 加载
+        setTimeout(checkFullscreenNavigationState, 200)
+        // 定期检查导航状态（因为导航可能发生在 webview 内部）
+        const interval = setInterval(() => {
+          if (props.fullscreenIndex === newVal) {
+            checkFullscreenNavigationState()
+          } else {
+            clearInterval(interval)
+          }
+        }, 500)
+        // 5秒后清除定时器
+        setTimeout(() => clearInterval(interval), 5000)
+      } else {
+        fullscreenCanGoBack.value = false
+        fullscreenCanGoForward.value = false
       }
     })
 
@@ -646,6 +790,10 @@ export default {
       handleAutoArrange,
       handleFullscreenToggle,
       handleFullscreenRefresh,
+      handleFullscreenGoBack,
+      handleFullscreenGoForward,
+      fullscreenCanGoBack,
+      fullscreenCanGoForward,
       // 绘制方法
       toggleDrawingMode,
       handleDrawingMouseDownWrapper,

@@ -100,6 +100,8 @@
         :require-modifier="requireModifierForActions"
         :is-modifier-pressed="isModifierPressed"
         :custom-code-enabled="customCodeEnabled"
+        :can-go-back="canGoBack"
+        :can-go-forward="canGoForward"
         @refresh="handleManualRefresh"
         @toggle-mute="handleToggleMute"
         @copy="$emit('copy', index)"
@@ -107,6 +109,8 @@
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
+        @go-back="handleGoBack"
+        @go-forward="handleGoForward"
       />
       <!-- 桌面捕获类型禁用刷新（因为不支持） -->
 
@@ -230,7 +234,7 @@ export default {
       default: true
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward'],
   setup(props, { emit }) {
     console.log('[WebsiteCard] ========== 组件初始化 ==========')
     console.log('[WebsiteCard] 网站标题:', props.item.title)
@@ -452,9 +456,14 @@ export default {
                 console.log('[WebsiteCard] 跳过应用选择器/内边距，原因:', 
                   props.isFullscreen ? '处于全屏状态' : '没有选择器且无内边距')
               }
+              
+              // 加载完成后检查导航状态
+              checkNavigationState()
             },
             onNavigate: (url) => {
               checkUrlChange(url)
+              // 导航后检查导航状态
+              checkNavigationState()
             }
           })
       }
@@ -536,6 +545,104 @@ export default {
       handleUseCurrentUrlBase(emit, props.index)
     }
 
+    // ==================== 前进后退功能 ====================
+    const canGoBack = ref(false)
+    const canGoForward = ref(false)
+
+    // 检查是否可以前进/后退
+    const checkNavigationState = async () => {
+      if (props.item.type === 'desktop-capture') {
+        canGoBack.value = false
+        canGoForward.value = false
+        return
+      }
+
+      if (isElectron.value && webviewRef.value) {
+        try {
+          canGoBack.value = webviewRef.value.canGoBack()
+          canGoForward.value = webviewRef.value.canGoForward()
+        } catch (error) {
+          console.error('[WebsiteCard] 检查导航状态失败:', error)
+          canGoBack.value = false
+          canGoForward.value = false
+        }
+      } else if (iframeRef.value) {
+        // iframe 无法直接检查历史记录，尝试访问 history 对象
+        try {
+          const iframeWindow = iframeRef.value.contentWindow
+          if (iframeWindow && iframeWindow.history) {
+            // 对于 iframe，我们无法直接检查，假设可以前进后退
+            // 实际使用时如果失败会被捕获
+            canGoBack.value = true
+            canGoForward.value = true
+          } else {
+            canGoBack.value = false
+            canGoForward.value = false
+          }
+        } catch (error) {
+          // 跨域 iframe 无法访问，设置为 false
+          canGoBack.value = false
+          canGoForward.value = false
+        }
+      }
+    }
+
+    // 后退
+    const handleGoBack = () => {
+      if (props.item.type === 'desktop-capture') return
+
+      if (isElectron.value && webviewRef.value) {
+        try {
+          if (webviewRef.value.canGoBack()) {
+            webviewRef.value.goBack()
+            // 延迟检查状态更新
+            setTimeout(checkNavigationState, 100)
+          }
+        } catch (error) {
+          console.error('[WebsiteCard] 后退失败:', error)
+        }
+      } else if (iframeRef.value) {
+        try {
+          const iframeWindow = iframeRef.value.contentWindow
+          if (iframeWindow && iframeWindow.history) {
+            iframeWindow.history.back()
+            // 延迟检查状态更新
+            setTimeout(checkNavigationState, 100)
+          }
+        } catch (error) {
+          console.error('[WebsiteCard] iframe 后退失败:', error)
+        }
+      }
+    }
+
+    // 前进
+    const handleGoForward = () => {
+      if (props.item.type === 'desktop-capture') return
+
+      if (isElectron.value && webviewRef.value) {
+        try {
+          if (webviewRef.value.canGoForward()) {
+            webviewRef.value.goForward()
+            // 延迟检查状态更新
+            setTimeout(checkNavigationState, 100)
+          }
+        } catch (error) {
+          console.error('[WebsiteCard] 前进失败:', error)
+        }
+      } else if (iframeRef.value) {
+        try {
+          const iframeWindow = iframeRef.value.contentWindow
+          if (iframeWindow && iframeWindow.history) {
+            iframeWindow.history.forward()
+            // 延迟检查状态更新
+            setTimeout(checkNavigationState, 100)
+          }
+        } catch (error) {
+          console.error('[WebsiteCard] iframe 前进失败:', error)
+        }
+      }
+    }
+
     // ==================== 修饰键状态管理 ====================
     const isModifierPressed = ref(false)
 
@@ -568,6 +675,15 @@ export default {
 
     // ==================== 监听器 ====================
     
+    // 监听 iframe 加载完成（非 Electron 环境）
+    watch(iframeRef, (newIframe) => {
+      if (newIframe && !isElectron.value) {
+        newIframe.addEventListener('load', () => {
+          checkNavigationState()
+        })
+      }
+    }, { immediate: true })
+
     // 监听 URL 变化，更新 webview
     watch(() => props.item.url, (newUrl, oldUrl) => {
       // 只在 URL 真正变化时更新（不是初始化时）
@@ -652,6 +768,12 @@ export default {
       handleOpenScriptPanel,
       handleUseCurrentUrl,
       
+      // 前进后退
+      canGoBack,
+      canGoForward,
+      handleGoBack,
+      handleGoForward,
+      
       // 修饰键状态
       isModifierPressed,
       requireModifierForActions
@@ -734,6 +856,8 @@ export default {
   width: 100%;
   height: 100%;
   border: none;
+  /* 确保 webview 总是能接收所有鼠标事件（右键菜单、前进后退等） */
+  pointer-events: auto !important;
 }
 
 /* Iframe 样式(非 Electron 环境) */
@@ -741,6 +865,8 @@ export default {
   width: 100%;
   height: 100%;
   border: none;
+  /* 确保 iframe 总是能接收所有鼠标事件 */
+  pointer-events: auto !important;
 }
 
 /* 内边距现在在网页内部应用，不再需要外侧样式 */
@@ -750,7 +876,7 @@ export default {
 .grid-item.resizing .website-webview,
 .grid-item.dragging .website-iframe,
 .grid-item.resizing .website-iframe {
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
 .website-webview.mobile-view,
