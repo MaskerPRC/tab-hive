@@ -74,134 +74,26 @@
       </template>
       
       <!-- 窗口标题栏 -->
-      <div v-if="showTitle" class="window-title-bar">
-        <div class="title-bar-left">
-          <img 
-            v-if="getFaviconUrl()" 
-            :src="getFaviconUrl()" 
-            class="title-bar-icon" 
-            alt="icon"
-            @error="handleFaviconError"
-          />
-          <div v-else class="title-bar-icon-fallback">
-            <span class="icon-fallback-text">{{ getInitialLetter() }}</span>
-          </div>
-          <div class="title-bar-info">
-            <span class="title-bar-text">{{ item.title || '未命名' }}</span>
-            <span v-if="item.url && item.type !== 'desktop-capture'" class="title-bar-url">{{ getDisplayUrl() }}</span>
-          </div>
-        </div>
-        <div class="title-bar-actions">
-          <!-- 导航按钮 -->
-          <button
-            v-if="item.type !== 'desktop-capture'"
-            class="title-bar-btn"
-            :class="{ 'disabled': !canGoBack }"
-            @click="handleGoBack"
-            :disabled="!canGoBack"
-            :title="$t('floatingActions.goBack') || '后退'"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <button
-            v-if="item.type !== 'desktop-capture'"
-            class="title-bar-btn"
-            :class="{ 'disabled': !canGoForward }"
-            @click="handleGoForward"
-            :disabled="!canGoForward"
-            :title="$t('floatingActions.goForward') || '前进'"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-          <!-- 刷新按钮 -->
-          <button
-            v-if="item.type !== 'desktop-capture'"
-            class="title-bar-btn"
-            @click="handleManualRefresh"
-            :title="$t('floatingActions.refresh') || '刷新'"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-          </button>
-          <!-- 静音按钮 -->
-          <button
-            class="title-bar-btn"
-            :class="{ 'active': item.muted || false }"
-            @click="handleToggleMute"
-            :title="(item.muted || false) ? ($t('floatingActions.unmute') || '取消静音') : ($t('floatingActions.mute') || '静音')"
-          >
-            <svg v-if="item.muted || false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <line x1="23" y1="9" x2="17" y2="15"/>
-              <line x1="17" y1="9" x2="23" y2="15"/>
-            </svg>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            </svg>
-          </button>
-          <!-- 更多操作菜单 -->
-          <div class="title-bar-more">
-            <button
-              class="title-bar-btn"
-              @click.stop.prevent="toggleMoreMenu"
-              :title="'更多操作'"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="1"/>
-                <circle cx="19" cy="12" r="1"/>
-                <circle cx="5" cy="12" r="1"/>
-              </svg>
-            </button>
-            <Teleport to="body">
-              <div v-if="showMoreMenu" class="more-menu" :style="moreMenuStyle" @click.stop>
-              <button class="more-menu-item" @click.stop="handleCopy">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                </svg>
-                <span>{{ $t('floatingActions.copy') || '复制' }}</span>
-              </button>
-              <button v-if="customCodeEnabled" class="more-menu-item" @click.stop="handleOpenScriptPanel">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="16 18 22 12 16 6"/>
-                  <polyline points="8 6 2 12 8 18"/>
-                </svg>
-                <span>{{ $t('floatingActions.script') || '脚本' }}</span>
-              </button>
-              <button class="more-menu-item" @click.stop="handleEdit">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                <span>{{ $t('floatingActions.edit') || '编辑' }}</span>
-              </button>
-              <button class="more-menu-item" @click.stop="handleFullscreen">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                </svg>
-                <span>{{ $t('floatingActions.fullscreen') || '全屏' }}</span>
-              </button>
-              <div class="more-menu-divider"></div>
-              <button class="more-menu-item danger" @click.stop="handleRemove">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-                <span>{{ $t('floatingActions.remove') || '删除' }}</span>
-              </button>
-              </div>
-            </Teleport>
-          </div>
-        </div>
-      </div>
+      <WebsiteCardTitleBar
+        v-if="showTitle"
+        :title="item.title"
+        :url="item.url"
+        :favicon="item.favicon"
+        :muted="item.muted || false"
+        :can-go-back="canGoBack"
+        :can-go-forward="canGoForward"
+        :is-desktop-capture="item.type === 'desktop-capture'"
+        :custom-code-enabled="customCodeEnabled"
+        @go-back="handleGoBack"
+        @go-forward="handleGoForward"
+        @refresh="handleManualRefresh"
+        @toggle-mute="handleToggleMute"
+        @copy="$emit('copy', index)"
+        @open-script-panel="handleOpenScriptPanel"
+        @edit="$emit('edit', index)"
+        @fullscreen="$emit('fullscreen', index)"
+        @remove="$emit('remove', index)"
+      />
       
       <!-- 拖动手柄 -->
       <div class="drag-handle-container">
@@ -244,14 +136,14 @@
 </template>
 
 <script>
-import { computed, toRef, watch, ref, onUnmounted, nextTick } from 'vue'
-import FloatingActions from './FloatingActions.vue'
+import { computed, toRef, watch } from 'vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
 import RefreshTimer from './RefreshTimer.vue'
 import UrlChangeHint from './UrlChangeHint.vue'
 import DesktopCaptureView from './DesktopCaptureView.vue'
+import WebsiteCardTitleBar from './WebsiteCardTitleBar.vue'
 import { useAutoRefresh } from '../composables/useAutoRefresh.js'
 import { useIframeSelector } from '../composables/useIframeSelector.js'
 import { useWebview } from '../composables/useWebview.js'
@@ -266,13 +158,13 @@ import { useWebviewSetup } from '../composables/useWebviewSetup.js'
 export default {
   name: 'WebsiteCard',
   components: {
-    FloatingActions,
     DragHandle,
     ResizeHandles,
     DropZone,
     RefreshTimer,
     UrlChangeHint,
-    DesktopCaptureView
+    DesktopCaptureView,
+    WebsiteCardTitleBar
   },
   props: {
     item: {
@@ -350,8 +242,6 @@ export default {
     console.log('[WebsiteCard] 网站标题:', props.item.title)
     console.log('[WebsiteCard] 网站URL:', props.item.url)
     console.log('[WebsiteCard] 网站ID:', props.item.id)
-    console.log('[WebsiteCard] 索引:', props.index)
-    console.log('[WebsiteCard] 完整item:', props.item)
     
     // ==================== Webview/Iframe 管理 ====================
     const {
@@ -371,7 +261,6 @@ export default {
     // ==================== Iframe 选择器 (非 Electron) ====================
     const {
       setIframeRef: setIframeRefFromComposable,
-      applySelector: applyIframeSelector,
       getWebsiteUrl: getIframeWebsiteUrl
     } = useIframeSelector(props)
 
@@ -385,7 +274,6 @@ export default {
     const {
       applyDarkMode,
       applySelector,
-      restoreOriginalStyles,
       watchFullscreenToggle,
       applyAdBlock,
       applyPadding
@@ -396,10 +284,8 @@ export default {
       console.log('[WebsiteCard] 去广告配置变化:', newVal)
       if (isElectron.value && webviewRef.value) {
         if (newVal) {
-          // 启用去广告
           await applyAdBlock(webviewRef.value)
         } else {
-          // 关闭去广告 - 移除样式和标记
           try {
             const removeCode = `(function() {
               const style = document.getElementById('tabhive-adblock-style');
@@ -445,7 +331,6 @@ export default {
 
     // 计算网站 URL
     const websiteUrl = computed(() => {
-      // 桌面捕获类型不需要URL
       if (props.item.type === 'desktop-capture') {
         return ''
       }
@@ -454,12 +339,10 @@ export default {
       
       let url = props.item.url
       
-      // Electron 环境下，为 webview 添加 ID 参数
       if (isElectron.value) {
         const separator = url.includes('?') ? '&' : '?'
         url = `${url}${separator}__webview_id__=${props.item.id}`
       } else {
-        // 非 Electron 环境，使用 iframe URL 处理
         url = getIframeWebsiteUrl()
       }
       
@@ -472,27 +355,24 @@ export default {
         websiteUrl.value,
         partitionName.value,
         () => {
-          // 直接设置 webview 的 src 来刷新，避免调用 reload() 导致重新初始化
           if (webviewRef.value) {
             webviewRef.value.src = websiteUrl.value
           }
         }
       )
       
-      // 设置缓冲 webview 加载完成回调
       const needSelector = !props.isFullscreen && (
         (props.item.targetSelectors && props.item.targetSelectors.length > 0) ||
         (props.item.targetSelector && props.item.targetSelector.trim())
       )
       setupBufferWebview(() => {
-        // 直接设置 webview 的 src 来刷新，避免调用 reload() 导致重新初始化
         if (webviewRef.value) {
           webviewRef.value.src = websiteUrl.value
         }
       }, needSelector)
     }
 
-    const { remainingTime, resetTimer, pauseTimer, resumeTimer } = useAutoRefresh({
+    const { remainingTime, pauseTimer, resumeTimer } = useAutoRefresh({
       item: itemRef,
       onRefresh: handleDoubleBufferRefresh
     })
@@ -513,7 +393,6 @@ export default {
       watchIframeLoad
     } = useNavigation(props, { isElectron, webviewRef, iframeRef })
 
-    // 初始化 iframe 加载监听
     watchIframeLoad()
 
     // ==================== Webview 设置 ====================
@@ -537,17 +416,12 @@ export default {
     })
 
     // ==================== 计算属性 ====================
-
-    // 计算样式（内边距现在在网页内部应用）
     const computedItemStyle = computed(() => {
       return { ...props.itemStyle }
     })
 
     // ==================== 事件处理 ====================
-
-    // 手动刷新
     const handleManualRefresh = () => {
-      // 桌面捕获类型不支持刷新
       if (props.item.type === 'desktop-capture') {
         return
       }
@@ -555,10 +429,8 @@ export default {
       console.log('[WebsiteCard] 手动刷新')
       
       if (isElectron.value && webviewRef.value) {
-        // 使用双缓冲刷新
         handleDoubleBufferRefresh()
       } else if (iframeRef.value) {
-        // iframe 刷新 - 直接重新加载 iframe
         const currentSrc = iframeRef.value.src
         iframeRef.value.src = 'about:blank'
         setTimeout(() => {
@@ -567,155 +439,29 @@ export default {
       }
     }
     
-    // 切换静音
     const handleToggleMute = () => {
       handleToggleMuteBase(emit, props.index)
     }
 
-    // 打开脚本面板
     const handleOpenScriptPanel = () => {
-      showMoreMenu.value = false
-      // 获取目标 iframe/webview
       const targetIframe = isElectron.value ? webviewRef.value : iframeRef.value
       emit('open-script-panel', targetIframe)
     }
 
-    // 使用当前 URL
     const handleUseCurrentUrl = () => {
       handleUseCurrentUrlBase(emit, props.index)
     }
 
-    // 处理favicon加载错误
-    const handleFaviconError = (event) => {
-      event.target.style.display = 'none'
-    }
-
-    // 获取favicon URL
-    const getFaviconUrl = () => {
-      if (props.item.favicon) {
-        return props.item.favicon
-      }
-      if (props.item.url) {
-        try {
-          const url = new URL(props.item.url)
-          return `${url.protocol}//${url.host}/favicon.ico`
-        } catch (e) {
-          return null
-        }
-      }
-      return null
-    }
-
-    // 获取首字母作为图标
-    const getInitialLetter = () => {
-      const title = props.item.title || props.item.url || '?'
-      return title.charAt(0).toUpperCase()
-    }
-
-    // 显示URL（简化显示）
-    const getDisplayUrl = () => {
-      if (!props.item.url) return ''
-      try {
-        const url = new URL(props.item.url)
-        return url.hostname + (url.pathname !== '/' ? url.pathname : '')
-      } catch (e) {
-        return props.item.url
-      }
-    }
-
-    // 更多菜单显示状态
-    const showMoreMenu = ref(false)
-    const moreMenuStyle = ref({})
-
-    // 切换更多菜单
-    const toggleMoreMenu = (event) => {
-      if (event) {
-        event.stopPropagation()
-        event.preventDefault()
-      }
-      const newValue = !showMoreMenu.value
-      showMoreMenu.value = newValue
-      console.log('[WebsiteCard] Toggle more menu:', newValue, 'showMoreMenu:', showMoreMenu.value)
-      
-      // 如果打开菜单，计算菜单位置
-      if (newValue && event) {
-        nextTick(() => {
-          const moreBtn = event.target.closest('.title-bar-more')?.querySelector('.title-bar-btn')
-          if (moreBtn) {
-            const rect = moreBtn.getBoundingClientRect()
-            moreMenuStyle.value = {
-              top: `${rect.bottom + 4}px`,
-              right: `${window.innerWidth - rect.right}px`
-            }
-            console.log('[WebsiteCard] Menu position:', moreMenuStyle.value)
-          }
-        })
-      } else {
-        moreMenuStyle.value = {}
-      }
-    }
-
-    // 处理复制
-    const handleCopy = () => {
-      showMoreMenu.value = false
-      emit('copy', props.index)
-    }
-
-    // 处理编辑
-    const handleEdit = () => {
-      showMoreMenu.value = false
-      emit('edit', props.index)
-    }
-
-    // 处理全屏
-    const handleFullscreen = () => {
-      showMoreMenu.value = false
-      emit('fullscreen', props.index)
-    }
-
-    // 处理删除
-    const handleRemove = () => {
-      showMoreMenu.value = false
-      emit('remove', props.index)
-    }
-
-    // 点击外部关闭菜单
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.title-bar-more')) {
-        showMoreMenu.value = false
-      }
-    }
-
-    // 监听点击事件
-    watch(showMoreMenu, (isOpen) => {
-      if (isOpen) {
-        document.addEventListener('click', handleClickOutside)
-      } else {
-        document.removeEventListener('click', handleClickOutside)
-      }
-    })
-
-    // 组件卸载时清理
-    onUnmounted(() => {
-      document.removeEventListener('click', handleClickOutside)
-    })
-
     // ==================== 监听器 ====================
-
-    // 监听 URL 变化，更新 webview
     watch(() => props.item.url, (newUrl, oldUrl) => {
-      // 只在 URL 真正变化时更新（不是初始化时）
       if (newUrl && newUrl !== oldUrl && oldUrl !== undefined) {
         console.log('[WebsiteCard] URL 已更新，刷新 webview:', { oldUrl, newUrl })
         
         if (isElectron.value && webviewRef.value) {
-          // 更新 webview 的 src
           const newWebsiteUrl = websiteUrl.value
           console.log('[WebsiteCard] 设置新的 webview src:', newWebsiteUrl)
-          // 直接设置新的 URL
           webviewRef.value.src = newWebsiteUrl
         } else if (!isElectron.value && iframeRef.value) {
-          // 更新 iframe 的 src
           const newWebsiteUrl = websiteUrl.value
           console.log('[WebsiteCard] 设置新的 iframe src:', newWebsiteUrl)
           iframeRef.value.src = newWebsiteUrl
@@ -723,64 +469,33 @@ export default {
       }
     })
     
-    // 监听静音状态变化
     watchMuteState()
-
-    // 监听全屏状态变化
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
 
     return {
-      // 计算属性
       isElectron,
       webviewPreloadPath,
       websiteUrl,
       partitionName,
       computedItemStyle,
-      
-      // 双缓冲状态
       isBufferLoading,
       isBufferReady,
       bufferUrl,
-      
-      // 自动刷新
       remainingTime,
-      
-      // URL 变化提示
       showUrlChangeHint,
-      
-      // Ref 设置方法
       setWebviewRef,
       setBufferWebviewRef,
       setIframeRef,
-      
-      // 事件处理方法
       handleManualRefresh,
       handleToggleMute,
       handleOpenScriptPanel,
       handleUseCurrentUrl,
-      
-      // 前进后退
       canGoBack,
       canGoForward,
       handleGoBack,
       handleGoForward,
-      
-      // 修饰键状态
       isModifierPressed,
-      requireModifierForActions,
-      
-      // Favicon处理
-      handleFaviconError,
-      getFaviconUrl,
-      getInitialLetter,
-      getDisplayUrl,
-      showMoreMenu,
-      moreMenuStyle,
-      toggleMoreMenu,
-      handleCopy,
-      handleEdit,
-      handleFullscreen,
-      handleRemove
+      requireModifierForActions
     }
   }
 }
@@ -799,7 +514,6 @@ export default {
   flex-direction: column;
 }
 
-/* 暗色模式下的背景 */
 .grid-item.dark-mode {
   background: #1a1a1a;
 }
@@ -808,7 +522,6 @@ export default {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* 拖动和调整大小时禁用所有动画 */
 .grid-item.dragging,
 .grid-item.resizing {
   transition: none !important;
@@ -822,7 +535,6 @@ export default {
   z-index: 9999 !important;
 }
 
-/* 碰撞时的视觉反馈 */
 .grid-item.colliding {
   box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5) !important;
   animation: shake 0.3s ease-in-out;
@@ -857,29 +569,22 @@ export default {
   box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
 }
 
-/* Webview 样式 */
 .website-webview {
   width: 100%;
   flex: 1;
   border: none;
-  /* 确保 webview 总是能接收所有鼠标事件（右键菜单、前进后退等） */
   pointer-events: auto !important;
   min-height: 0;
 }
 
-/* Iframe 样式(非 Electron 环境) */
 .website-iframe {
   width: 100%;
   flex: 1;
   border: none;
-  /* 确保 iframe 总是能接收所有鼠标事件 */
   pointer-events: auto !important;
   min-height: 0;
 }
 
-/* 内边距现在在网页内部应用，不再需要外侧样式 */
-
-/* 拖动或调整大小时,禁用 webview/iframe 的鼠标事件 */
 .grid-item.dragging .website-webview,
 .grid-item.resizing .website-webview,
 .grid-item.dragging .website-iframe,
@@ -896,191 +601,6 @@ export default {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* 窗口标题栏 */
-.window-title-bar {
-  height: 2.5rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 0.75rem;
-  flex-shrink: 0;
-  gap: 0.75rem;
-  position: relative;
-  z-index: 100;
-}
-
-.title-bar-left {
-  cursor: move;
-}
-
-.title-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.title-bar-icon {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  border-radius: 0.125rem;
-}
-
-.title-bar-icon-fallback {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.125rem;
-  background: #3b82f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 0.625rem;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.icon-fallback-text {
-  line-height: 1;
-  font-size: 0.625rem;
-}
-
-.title-bar-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.title-bar-text {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #1e293b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.title-bar-url {
-  font-size: 0.625rem;
-  color: #64748b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.title-bar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
-  cursor: default;
-}
-
-.title-bar-btn {
-  width: 1.75rem;
-  height: 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 0.25rem;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-  padding: 0;
-  position: relative;
-  z-index: 101;
-  pointer-events: auto;
-}
-
-.title-bar-btn:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.title-bar-btn:disabled,
-.title-bar-btn.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.title-bar-btn.active {
-  color: #f97316;
-  background: #fff7ed;
-}
-
-.title-bar-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.title-bar-more {
-  position: relative;
-  z-index: 102;
-}
-
-.more-menu {
-  position: fixed;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  min-width: 10rem;
-  z-index: 10000;
-  padding: 0.25rem;
-  pointer-events: auto;
-}
-
-.more-menu-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: transparent;
-  border: none;
-  border-radius: 0.375rem;
-  color: #475569;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.more-menu-item:hover {
-  background: #f1f5f9;
-  color: #1e293b;
-}
-
-.more-menu-item.danger {
-  color: #dc2626;
-}
-
-.more-menu-item.danger:hover {
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-.more-menu-item svg {
-  flex-shrink: 0;
-}
-
-.more-menu-divider {
-  height: 1px;
-  background: #e2e8f0;
-  margin: 0.25rem 0;
-}
-
-/* 拖动手柄容器 */
 .drag-handle-container {
   position: absolute;
   top: 0.5rem;
@@ -1093,19 +613,16 @@ export default {
   pointer-events: all;
 }
 
-/* 悬停时显示拖动手柄 */
 .grid-item:hover :deep(.drag-handle) {
   opacity: 1;
 }
 
-/* 如果需要修饰键但未按下，即使在悬停时也不显示拖动手柄和标题 */
 .grid-item.require-modifier:not(.modifier-pressed):hover :deep(.drag-handle),
 .grid-item.require-modifier:not(.modifier-pressed):hover .website-title {
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-/* 拖动时保持手柄和标题可见（不受修饰键影响） */
 .grid-item.dragging :deep(.drag-handle),
 .grid-item.resizing :deep(.resize-handle) {
   opacity: 1 !important;
@@ -1116,50 +633,41 @@ export default {
   opacity: 1;
 }
 
-/* 全屏模式下隐藏拖动手柄和标题栏 */
 .grid-item.fullscreen :deep(.drag-handle),
 .grid-item.fullscreen .window-title-bar {
   display: none;
 }
 
-
-/* 悬停时显示调整大小手柄 */
 .grid-item:hover :deep(.resize-handle) {
   opacity: 0.8;
 }
 
-/* 如果需要修饰键但未按下，即使在悬停时也不显示调整大小手柄 */
 .grid-item.require-modifier:not(.modifier-pressed):hover :deep(.resize-handle) {
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-/* 悬停时显示倒计时和URL提示 */
 .grid-item:hover :deep(.refresh-timer),
 .grid-item:hover :deep(.url-change-hint) {
   opacity: 1;
 }
 
-/* 如果需要修饰键但未按下，即使在悬停时也不显示倒计时和URL提示 */
 .grid-item.require-modifier:not(.modifier-pressed):hover :deep(.refresh-timer),
 .grid-item.require-modifier:not(.modifier-pressed):hover :deep(.url-change-hint) {
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-/* 全屏模式下隐藏倒计时和URL提示 */
 .grid-item.fullscreen :deep(.refresh-timer),
 .grid-item.fullscreen :deep(.url-change-hint) {
   display: none;
 }
 
-/* 拖动或调整大小时降低倒计时透明度 */
 .grid-item.dragging :deep(.refresh-timer),
 .grid-item.resizing :deep(.refresh-timer) {
   opacity: 0.3;
 }
 
-/* 双缓冲 webview 样式 */
 .buffer-webview {
   position: absolute;
   top: 0;
