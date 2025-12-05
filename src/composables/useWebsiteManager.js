@@ -52,7 +52,7 @@ export function useWebsiteManager(initialWebsites = []) {
       targetSelectors: websiteData.targetSelectors || [],
       autoRefreshInterval: websiteData.autoRefreshInterval || 0,
       sessionInstance: websiteData.sessionInstance || 'default', // Session实例ID
-      padding: websiteData.padding !== undefined ? websiteData.padding : 10,
+      padding: websiteData.padding !== undefined ? websiteData.padding : 0,
       muted: websiteData.muted || false,
       darkMode: websiteData.darkMode || false,
       requireModifierForActions: websiteData.requireModifierForActions || false,

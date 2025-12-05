@@ -392,7 +392,7 @@ export default {
           autoRefresh: false, // 已移除自动刷新功能
           fitScreen: options.fitScreen || false // 默认false
         },
-          padding: 10,
+          padding: 0,
           muted: false,
           targetSelectors: [],
           targetSelector: ''

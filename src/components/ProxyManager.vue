@@ -32,6 +32,22 @@
             </svg>
             刷新
           </button>
+          <div class="batch-actions" v-if="selectedProxies.length > 0">
+            <span class="selected-count">已选择 {{ selectedProxies.length }} 项</span>
+            <button class="btn-success" @click="batchEnable" :disabled="batchOperating">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              批量启用
+            </button>
+            <button class="btn-danger" @click="batchDelete" :disabled="batchOperating">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              批量删除
+            </button>
+          </div>
         </div>
 
         <!-- 代理列表 -->
@@ -52,6 +68,14 @@
           <table v-else-if="!loading" class="proxy-table">
             <thead>
               <tr>
+                <th class="checkbox-column">
+                  <input 
+                    type="checkbox" 
+                    :checked="isAllSelected" 
+                    @change="toggleSelectAll"
+                    class="checkbox-input"
+                  />
+                </th>
                 <th>名称</th>
                 <th>类型</th>
                 <th>地址</th>
@@ -61,6 +85,14 @@
             </thead>
             <tbody>
               <tr v-for="proxy in proxyList" :key="proxy.id">
+                <td class="checkbox-column">
+                  <input 
+                    type="checkbox" 
+                    :checked="selectedProxies.includes(proxy.id)"
+                    @change="toggleSelectProxy(proxy.id)"
+                    class="checkbox-input"
+                  />
+                </td>
                 <td>{{ proxy.name }}</td>
                 <td>
                   <span class="proxy-type" :class="`type-${proxy.type}`">
@@ -192,7 +224,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 export default {
   name: 'ProxyManager',
@@ -213,6 +245,8 @@ export default {
     const showImportSubDialog = ref(false)
     const editingProxy = ref(null)
     const subscriptionUrl = ref('')
+    const selectedProxies = ref([])
+    const batchOperating = ref(false)
 
     const proxyForm = ref({
       name: '',
@@ -381,6 +415,130 @@ export default {
       }
     }
 
+    // 全选/取消全选
+    const toggleSelectAll = (event) => {
+      if (event.target.checked) {
+        selectedProxies.value = proxyList.value.map(proxy => proxy.id)
+      } else {
+        selectedProxies.value = []
+      }
+    }
+
+    // 切换单个代理的选择状态
+    const toggleSelectProxy = (proxyId) => {
+      const index = selectedProxies.value.indexOf(proxyId)
+      if (index > -1) {
+        selectedProxies.value.splice(index, 1)
+      } else {
+        selectedProxies.value.push(proxyId)
+      }
+    }
+
+    // 计算是否全选
+    const isAllSelected = computed(() => {
+      return proxyList.value.length > 0 && selectedProxies.value.length === proxyList.value.length
+    })
+
+    // 批量启用
+    const batchEnable = async () => {
+      if (selectedProxies.value.length === 0) {
+        alert('请先选择要启用的代理')
+        return
+      }
+      if (!confirm(`确定要启用选中的 ${selectedProxies.value.length} 个代理吗？`)) return
+      if (!window.electron?.proxy) return
+
+      batchOperating.value = true
+      let successCount = 0
+      let failCount = 0
+
+      try {
+        for (const proxyId of selectedProxies.value) {
+          const proxy = proxyList.value.find(p => p.id === proxyId)
+          if (!proxy) continue
+
+          try {
+            // 确保字段名正确映射，与 editProxy 保持一致
+            const updateData = {
+              ...proxy,
+              plugin: proxy.plugin || '',
+              pluginOpts: proxy.plugin_opts || proxy.pluginOpts || '',
+              udp: proxy.udp || false,
+              tfo: proxy.tfo || false,
+              is_enabled: true
+            }
+            const result = await window.electron.proxy.update(proxyId, updateData)
+            if (result.success) {
+              successCount++
+            } else {
+              failCount++
+            }
+          } catch (error) {
+            console.error(`启用代理 ${proxyId} 失败:`, error)
+            failCount++
+          }
+        }
+
+        selectedProxies.value = []
+        loadProxyList()
+        
+        if (failCount === 0) {
+          alert(`成功启用 ${successCount} 个代理`)
+        } else {
+          alert(`启用完成：成功 ${successCount} 个，失败 ${failCount} 个`)
+        }
+      } catch (error) {
+        console.error('批量启用失败:', error)
+        alert('批量启用失败: ' + error.message)
+      } finally {
+        batchOperating.value = false
+      }
+    }
+
+    // 批量删除
+    const batchDelete = async () => {
+      if (selectedProxies.value.length === 0) {
+        alert('请先选择要删除的代理')
+        return
+      }
+      if (!confirm(`确定要删除选中的 ${selectedProxies.value.length} 个代理吗？此操作不可恢复！`)) return
+      if (!window.electron?.proxy) return
+
+      batchOperating.value = true
+      let successCount = 0
+      let failCount = 0
+
+      try {
+        for (const proxyId of selectedProxies.value) {
+          try {
+            const result = await window.electron.proxy.delete(proxyId)
+            if (result.success) {
+              successCount++
+            } else {
+              failCount++
+            }
+          } catch (error) {
+            console.error(`删除代理 ${proxyId} 失败:`, error)
+            failCount++
+          }
+        }
+
+        selectedProxies.value = []
+        loadProxyList()
+        
+        if (failCount === 0) {
+          alert(`成功删除 ${successCount} 个代理`)
+        } else {
+          alert(`删除完成：成功 ${successCount} 个，失败 ${failCount} 个`)
+        }
+      } catch (error) {
+        console.error('批量删除失败:', error)
+        alert('批量删除失败: ' + error.message)
+      } finally {
+        batchOperating.value = false
+      }
+    }
+
     // 处理遮罩点击
     const handleOverlayMouseDown = (e) => {
       if (e.target === e.currentTarget) {
@@ -404,7 +562,17 @@ export default {
     watch(() => props.show, (newVal) => {
       if (newVal) {
         loadProxyList()
+      } else {
+        // 关闭对话框时清空选择
+        selectedProxies.value = []
       }
+    })
+
+    // 监听代理列表变化，清空已删除的代理选择
+    watch(proxyList, (newList) => {
+      selectedProxies.value = selectedProxies.value.filter(id => 
+        newList.some(proxy => proxy.id === id)
+      )
     })
 
     return {
@@ -418,6 +586,9 @@ export default {
       editingProxy,
       subscriptionUrl,
       proxyForm,
+      selectedProxies,
+      batchOperating,
+      isAllSelected,
       loadProxyList,
       showAddDialog,
       editProxy,
@@ -426,6 +597,10 @@ export default {
       testProxy,
       showImportDialog,
       importSubscription,
+      toggleSelectAll,
+      toggleSelectProxy,
+      batchEnable,
+      batchDelete,
       handleOverlayMouseDown,
       handleOverlayClick
     }
@@ -537,6 +712,81 @@ export default {
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  padding-left: 12px;
+  border-left: 1px solid #e0e0e0;
+}
+
+.selected-count {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.btn-success {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  background: #4caf50;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  background: #f44336;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #da190b;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color, #FF5C00);
 }
 
 .empty-state {

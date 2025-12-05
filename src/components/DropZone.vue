@@ -4,9 +4,9 @@
     <div
       v-if="isExternalDragging"
       class="drop-zone"
-      @dragover.prevent="$emit('drag-over')"
-      @dragleave.prevent="$emit('drag-leave')"
-      @drop.prevent="$emit('drop', $event)"
+      @dragover.prevent.stop="$emit('drag-over')"
+      @dragleave.prevent.stop="$emit('drag-leave')"
+      @drop.prevent.stop="$emit('drop', $event)"
     ></div>
     
     <!-- 拖放提示框 -->

@@ -61,7 +61,9 @@
       :class="{ 'panning': isPanning || false, 'dragging-item': isDraggingItem || isResizing }"
       @mousedown="handleCanvasMouseDown"
       @wheel="handleCanvasWheel"
-      @contextmenu.prevent
+      @contextmenu="handleContextMenu"
+      @drop.prevent="handleDropOnEmpty"
+      @dragover.prevent="handleDragOverOnEmpty"
     >
       <!-- 画布内容 -->
       <div
@@ -300,12 +302,50 @@ export default {
       handleViewDragLeave,
       handleDragOver,
       handleDragLeave,
-      handleDrop: handleDropBase
+      handleDrop: handleDropBase,
+      handleDropOnEmpty: handleDropOnEmptyBase,
+      extractUrlFromText
     } = useUrlDrop()
 
     // 包装 handleDrop，传递正确的参数
     const handleDrop = (event, index) => {
       handleDropBase(event, index, allWebsites.value, emit)
+    }
+
+    // 处理空白区域的拖放
+    const handleDragOverOnEmpty = (event) => {
+      // 检查是否是从外部拖入链接
+      const types = event.dataTransfer.types
+      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
+        const target = event.target
+        
+        // 如果鼠标在网站卡片上，不处理（让网站卡片自己处理）
+        if (target.closest('.grid-item')) {
+          return
+        }
+        
+        // 允许在空白区域拖放
+        event.preventDefault()
+        // 清除之前经过的网站卡片的拖放指示（只在真正在空白区域时）
+        dragOverIndex.value = null
+      }
+    }
+
+    const handleDropOnEmpty = (event) => {
+      // 检查是否是从外部拖入链接
+      const types = event.dataTransfer.types
+      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
+        const target = event.target
+        
+        // 如果拖放到网站卡片上，不处理（让网站卡片自己处理，避免重复处理）
+        if (target.closest('.grid-item')) {
+          console.log('[GridView] 拖放到网站卡片上，跳过空白区域处理')
+          return
+        }
+        
+        console.log('[GridView] 在空白区域拖放链接，创建新网站')
+        handleDropOnEmptyBase(event, emit)
+      }
     }
 
     // 网站操作
@@ -613,6 +653,25 @@ export default {
     }
 
     /**
+     * 处理右键菜单事件
+     * 只在空白区域阻止右键菜单，允许 webview/iframe 内的右键菜单
+     */
+    const handleContextMenu = (event) => {
+      const target = event.target
+      
+      // 如果点击的是 webview、iframe 或网站卡片内的元素，不阻止右键菜单
+      if (target.closest('webview') || 
+          target.closest('iframe') || 
+          target.closest('.grid-item')) {
+        // 允许右键菜单显示
+        return
+      }
+      
+      // 只在空白区域阻止右键菜单
+      event.preventDefault()
+    }
+
+    /**
      * 处理画布滚轮（缩放）
      */
     const handleCanvasWheel = (event) => {
@@ -728,7 +787,7 @@ export default {
     }
 
     // 键盘快捷键
-    const handleKeyDown = (event) => {
+    const handleKeyDown = async (event) => {
       // 如果全屏模式，禁用画布缩放快捷键
       if (props.fullscreenIndex !== null) {
         return
@@ -748,6 +807,39 @@ export default {
       if (event.ctrlKey && event.key === '0') {
         event.preventDefault()
         resetTransform()
+      }
+
+      // Ctrl+V 或 Cmd+V 粘贴链接
+      if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+        // 检查是否在输入框中（不应该触发粘贴创建网站）
+        const activeElement = document.activeElement
+        if (activeElement && (
+          activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.isContentEditable
+        )) {
+          return // 在输入框中，不处理
+        }
+
+        // 延迟一下，等待浏览器完成默认粘贴操作
+        setTimeout(async () => {
+          try {
+            // 从剪贴板读取文本
+            const text = await navigator.clipboard.readText()
+            if (text) {
+              // 尝试提取 URL
+              const urlData = extractUrlFromText(text)
+              if (urlData) {
+                console.log('[GridView] 从剪贴板检测到 URL:', urlData)
+                // 创建新网站
+                emit('add-website', { title: urlData.title, url: urlData.url })
+              }
+            }
+          } catch (error) {
+            // 如果无法读取剪贴板（可能是权限问题），静默失败
+            console.warn('[GridView] 无法读取剪贴板，可能需要用户授权:', error)
+          }
+        }, 50)
       }
     }
 
@@ -855,6 +947,9 @@ export default {
       handleDragOver,
       handleDragLeave,
       handleDrop,
+      handleDropOnEmpty,
+      handleDragOverOnEmpty,
+      handleContextMenu,
       startDrag,
       startResize,
       startElementSelection,

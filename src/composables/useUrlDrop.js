@@ -44,19 +44,16 @@ export function useUrlDrop() {
    */
   const handleDragLeave = (event) => {
     // 检查是否真的离开了当前元素
-    if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) {
+    // 如果 relatedTarget 是 null 或者不在当前元素内，清除拖放指示
+    if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
       dragOverIndex.value = null
     }
   }
 
   /**
-   * 处理放置事件
+   * 从拖放事件中提取 URL 和标题
    */
-  const handleDrop = (event, index, websites, emit) => {
-    isDragging.value = false
-    dragOverIndex.value = null
-
-    // 获取拖放的数据
+  const extractUrlFromDropEvent = (event) => {
     let url = ''
     let title = ''
 
@@ -79,19 +76,70 @@ export function useUrlDrop() {
     // 清理URL（移除可能的换行符）
     url = url.trim().split('\n')[0]
 
-    if (!url || !url.startsWith('http')) {
-      alert('请拖入有效的网址')
-      return
+    // 验证并规范化 URL
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url
     }
 
     // 如果没有标题，尝试从URL提取
-    if (!title) {
+    if (!title && url) {
       try {
         const urlObj = new URL(url)
         title = urlObj.hostname.replace('www.', '')
       } catch (e) {
         title = '新网站'
       }
+    }
+
+    return { url, title }
+  }
+
+  /**
+   * 从文本中提取 URL
+   */
+  const extractUrlFromText = (text) => {
+    if (!text) return null
+
+    // 清理文本
+    text = text.trim()
+
+    // 检查是否是 URL
+    let url = text
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      // 尝试添加 https://
+      url = 'https://' + url
+    }
+
+    // 验证 URL 格式
+    try {
+      new URL(url)
+      // 提取标题
+      let title = ''
+      try {
+        const urlObj = new URL(url)
+        title = urlObj.hostname.replace('www.', '')
+      } catch (e) {
+        title = '新网站'
+      }
+      return { url, title }
+    } catch (e) {
+      // 不是有效的 URL
+      return null
+    }
+  }
+
+  /**
+   * 处理放置事件（在网站卡片上）
+   */
+  const handleDrop = (event, index, websites, emit) => {
+    isDragging.value = false
+    dragOverIndex.value = null
+
+    const { url, title } = extractUrlFromDropEvent(event)
+
+    if (!url || !url.startsWith('http')) {
+      alert('请拖入有效的网址')
+      return
     }
 
     // 如果已有网站，提示用户
@@ -106,6 +154,23 @@ export function useUrlDrop() {
     }
   }
 
+  /**
+   * 处理空白区域的放置事件（创建新网站）
+   */
+  const handleDropOnEmpty = (event, emit) => {
+    isDragging.value = false
+    dragOverIndex.value = null
+
+    const { url, title } = extractUrlFromDropEvent(event)
+
+    if (!url || !url.startsWith('http')) {
+      return // 静默失败，不显示错误
+    }
+
+    // 直接添加新网站
+    emit('add-website', { title, url })
+  }
+
   return {
     dragOverIndex,
     isDragging,
@@ -113,7 +178,9 @@ export function useUrlDrop() {
     handleViewDragLeave,
     handleDragOver,
     handleDragLeave,
-    handleDrop
+    handleDrop,
+    handleDropOnEmpty,
+    extractUrlFromText
   }
 }
 

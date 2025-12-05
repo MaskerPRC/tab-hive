@@ -22,7 +22,7 @@ export function useWebsiteOperations(props, emit) {
       targetSelectors: [],
       autoRefreshInterval: 0,
       sessionInstance: 'default',
-      padding: 10,
+      padding: 0,
       muted: false,
       darkMode: false,
       requireModifierForActions: false
@@ -214,7 +214,7 @@ export function useWebsiteOperations(props, emit) {
         targetSelectors: website.targetSelectors || [],
         autoRefreshInterval: website.autoRefreshInterval || 0,
         sessionInstance: website.sessionInstance || 'default',
-        padding: website.padding !== undefined ? website.padding : 10,
+        padding: website.padding !== undefined ? website.padding : 0,
         muted: website.muted || false,
         darkMode: website.darkMode || false,
         requireModifierForActions: website.requireModifierForActions || false
