@@ -118,13 +118,60 @@ export function useGridLayout(websites) {
     }
   }
 
+  /**
+   * 自动排布所有卡片
+   * 将卡片按照网格方式整齐排列
+   * @returns {Object} 包含所有卡片新位置和大小的对象
+   */
+  const autoArrange = () => {
+    const container = document.querySelector('.grid-container')
+    if (!container) {
+      console.warn('[自动排布] 未找到容器')
+      return {}
+    }
+
+    const containerWidth = container.clientWidth
+    const defaultItemWidth = 400
+    const defaultItemHeight = 300
+    const spacing = 20
+
+    // 计算每行可以放置多少个项目
+    const itemsPerRow = Math.max(1, Math.floor(containerWidth / (defaultItemWidth + spacing)))
+    
+    // 计算所有卡片的新位置和大小
+    const updates = {}
+    
+    websites.value.forEach((item, index) => {
+      const row = Math.floor(index / itemsPerRow)
+      const col = index % itemsPerRow
+
+      const x = snapToGrid(col * (defaultItemWidth + spacing) + spacing)
+      const y = snapToGrid(row * (defaultItemHeight + spacing) + spacing)
+
+      // 更新位置和大小
+      itemPositions.value[index] = { x, y }
+      itemSizes.value[index] = { width: defaultItemWidth, height: defaultItemHeight }
+      
+      updates[index] = {
+        position: { x, y },
+        size: { width: defaultItemWidth, height: defaultItemHeight }
+      }
+    })
+
+    console.log('[自动排布] 完成，共排布', websites.value.length, '个卡片')
+    console.log('[自动排布] 每行', itemsPerRow, '个卡片')
+    
+    return updates
+  }
+
   return {
     itemPositions,
     itemSizes,
     GRID_SIZE,
     snapToGrid,
     initializeGridLayout,
-    getItemStyle
+    getItemStyle,
+    autoArrange
   }
 }
 

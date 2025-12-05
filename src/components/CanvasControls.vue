@@ -36,6 +36,18 @@
         <path d="M3 21v-5h5"/>
       </svg>
     </button>
+    <button
+      class="canvas-control-btn"
+      @click="$emit('auto-arrange')"
+      title="自动排布"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/>
+        <rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -48,7 +60,7 @@ export default {
       required: true
     }
   },
-  emits: ['zoom-in', 'zoom-out', 'reset']
+  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange']
 }
 </script>
 

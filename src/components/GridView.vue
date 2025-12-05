@@ -143,6 +143,7 @@
       @zoom-in="zoomIn"
       @zoom-out="zoomOut"
       @reset="resetTransform"
+      @auto-arrange="handleAutoArrange"
     />
   </div>
 </template>
@@ -228,7 +229,8 @@ export default {
       itemSizes,
       snapToGrid,
       initializeGridLayout,
-      getItemStyle
+      getItemStyle,
+      autoArrange
     } = useGridLayout(allWebsites)
 
     // 画布变换（平移和缩放）- 需要先初始化，因为拖拽和调整大小会用到
@@ -409,6 +411,52 @@ export default {
       resetCanvasTransform()
     }
 
+    /**
+     * 处理自动排布
+     */
+    const handleAutoArrange = () => {
+      // 执行自动排布算法（基于 allWebsites，即过滤后的列表）
+      const updates = autoArrange()
+      
+      // 创建索引映射：从 allWebsites 索引到 props.websites 索引
+      // allWebsites 是 props.websites 的过滤版本，需要找到每个有效网站在原始列表中的索引
+      const indexMap = new Map()
+      let originalIndex = 0
+      
+      allWebsites.value.forEach((site, filteredIndex) => {
+        // 在原始列表中查找对应的网站
+        while (originalIndex < props.websites.length) {
+          const originalSite = props.websites[originalIndex]
+          if (originalSite && 
+              ((originalSite.url && originalSite.url === site.url) || 
+               (originalSite.id && originalSite.id === site.id) ||
+               (originalSite.type === 'desktop-capture' && site.type === 'desktop-capture'))) {
+            indexMap.set(filteredIndex, originalIndex)
+            originalIndex++
+            break
+          }
+          originalIndex++
+        }
+      })
+      
+      // 更新所有网站的位置和大小（使用原始索引）
+      Object.keys(updates).forEach(indexStr => {
+        const filteredIndex = parseInt(indexStr)
+        const originalIndex = indexMap.get(filteredIndex)
+        const update = updates[filteredIndex]
+        
+        if (update && originalIndex !== undefined) {
+          emit('update-website', {
+            index: originalIndex,
+            position: update.position,
+            size: update.size
+          })
+        }
+      })
+      
+      console.log('[GridView] 自动排布完成，已更新', Object.keys(updates).length, '个网站')
+    }
+
     // 键盘快捷键
     const handleKeyDown = (event) => {
       // Ctrl + Plus 放大
@@ -537,7 +585,8 @@ export default {
       handleCanvasWheel,
       zoomIn,
       zoomOut,
-      resetTransform
+      resetTransform,
+      handleAutoArrange
     }
   }
 }
