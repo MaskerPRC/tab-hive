@@ -13,18 +13,110 @@ export function useLayoutManager() {
   const loadFromStorage = () => {
     try {
       let saved
+      
+      // 尝试从多个可能的 key 读取数据（兼容性处理）
+      const possibleKeys = [
+        'iframe-all-config',  // 当前使用的 key
+        'tab-hive-config',     // 可能的旧 key
+        'tabhive-config',      // 可能的旧 key
+        'quanshijie-config'    // 可能的旧 key（虽然不应该存在，但为了完整性）
+      ]
+      
+      // 辅助函数：验证是否是有效的配置数据
+      const isValidConfig = (data) => {
+        try {
+          const parsed = typeof data === 'string' ? JSON.parse(data) : data
+          return parsed && (parsed.layouts || parsed.websites || parsed.currentLayoutId !== undefined)
+        } catch (e) {
+          return false
+        }
+      }
+      
+      // 辅助函数：扫描所有 localStorage key，查找可能包含布局数据的 key
+      const scanAllKeys = () => {
+        const candidates = []
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && (key.includes('config') || key.includes('layout') || key.includes('iframe'))) {
+              const value = localStorage.getItem(key)
+              if (value && isValidConfig(value)) {
+                candidates.push({ key, value })
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[useLayoutManager] 扫描 localStorage 失败:', e)
+        }
+        return candidates
+      }
+      
       if (windowManager && windowManager.windowStorage) {
         // 使用窗口独立的存储
         saved = windowManager.windowStorage.getItem('iframe-all-config')
         
-        // 如果是第一个窗口且没有找到数据，尝试从原来的名称加载（向后兼容）
+        // 如果是第一个窗口且没有找到数据，尝试从所有可能的 key 读取（向后兼容）
         if (!saved && windowManager.currentWindowId.value === 1) {
-          saved = localStorage.getItem('iframe-all-config')
-          console.log('[useLayoutManager] 第一个窗口尝试从原始名称加载配置')
+          // 首先尝试已知的可能 key
+          for (const key of possibleKeys) {
+            const candidate = localStorage.getItem(key)
+            if (candidate && isValidConfig(candidate)) {
+              saved = candidate
+              console.log(`[useLayoutManager] 从旧 key "${key}" 加载配置`)
+              // 迁移到新 key
+              localStorage.setItem('iframe-all-config', candidate)
+              console.log(`[useLayoutManager] 已迁移配置到新 key "iframe-all-config"`)
+              break
+            }
+          }
+          
+          // 如果还没找到，扫描所有 key
+          if (!saved) {
+            const candidates = scanAllKeys()
+            if (candidates.length > 0) {
+              // 优先选择包含 'config' 的 key
+              const configKey = candidates.find(c => c.key.includes('config'))
+              const selected = configKey || candidates[0]
+              saved = selected.value
+              console.log(`[useLayoutManager] 从扫描到的 key "${selected.key}" 加载配置`)
+              // 迁移到新 key
+              localStorage.setItem('iframe-all-config', selected.value)
+              console.log(`[useLayoutManager] 已迁移配置到新 key "iframe-all-config"`)
+            }
+          }
         }
       } else {
-        // 降级到普通 localStorage
-        saved = localStorage.getItem('iframe-all-config')
+        // 降级到普通 localStorage，尝试从所有可能的 key 读取
+        for (const key of possibleKeys) {
+          const candidate = localStorage.getItem(key)
+          if (candidate && isValidConfig(candidate)) {
+            saved = candidate
+            console.log(`[useLayoutManager] 从 key "${key}" 加载配置`)
+            // 如果不是当前 key，迁移到新 key
+            if (key !== 'iframe-all-config') {
+              localStorage.setItem('iframe-all-config', candidate)
+              console.log(`[useLayoutManager] 已迁移配置到新 key "iframe-all-config"`)
+            }
+            break
+          }
+        }
+        
+        // 如果还没找到，扫描所有 key
+        if (!saved) {
+          const candidates = scanAllKeys()
+          if (candidates.length > 0) {
+            // 优先选择包含 'config' 的 key
+            const configKey = candidates.find(c => c.key.includes('config'))
+            const selected = configKey || candidates[0]
+            saved = selected.value
+            console.log(`[useLayoutManager] 从扫描到的 key "${selected.key}" 加载配置`)
+            // 迁移到新 key
+            if (selected.key !== 'iframe-all-config') {
+              localStorage.setItem('iframe-all-config', selected.value)
+              console.log(`[useLayoutManager] 已迁移配置到新 key "iframe-all-config"`)
+            }
+          }
+        }
       }
       
       if (saved) {
