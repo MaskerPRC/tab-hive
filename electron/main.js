@@ -22,6 +22,191 @@ setupDatabase().then(() => {
 // 设置 User-Agent
 app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 (KHTML, like Gecko) Safari/537.36'
 
+// ========== 证书错误处理 ==========
+// 为所有 session 自动接受证书错误（支持自签名证书）
+function setupCertificateErrorHandler(sessionInstance) {
+  sessionInstance.setCertificateVerifyProc((request, callback) => {
+    const { hostname, certificate, verificationResult } = request
+    
+    // 检查证书验证结果
+    // verificationResult: 0 或 'net::OK' = 成功, 其他值 = 证书错误
+    // 只检测真正的证书错误，忽略正常的证书
+    // 注意：verificationResult 可能是数字 0（成功）或字符串错误码
+    const isCertificateError = verificationResult !== 0 && 
+                               verificationResult !== 'net::OK' &&
+                               verificationResult !== undefined &&
+                               verificationResult !== null &&
+                               (typeof verificationResult === 'string' && 
+                                (verificationResult.includes('ERR_CERT') || 
+                                 verificationResult.includes('CERT') ||
+                                 verificationResult.startsWith('net::ERR_CERT')))
+    
+    if (isCertificateError && certificate) {
+      // 获取 partition（对于默认 session，partition 可能是 undefined，需要特殊处理）
+      const partition = sessionInstance.partition || 'default'
+      
+      // 计算证书指纹（使用 SHA-256）
+      // 优先使用 issuerName + subjectName + hostname 的组合，因为这样更稳定
+      // certificate.data 可能每次都不一样，导致哈希不一致
+      let certificateHash = ''
+      try {
+        const crypto = require('crypto')
+        const issuerName = certificate.issuerName || ''
+        const subjectName = certificate.subjectName || ''
+        
+        // 使用 issuerName + subjectName + hostname 的组合作为稳定的标识
+        // 这样即使证书对象不同，只要这些信息相同，哈希就会一致
+        const stableIdentifier = `${issuerName}:${subjectName}:${hostname}`
+        certificateHash = crypto.createHash('sha256').update(stableIdentifier).digest('hex')
+        
+        console.log('[证书处理] 证书哈希计算:', {
+          issuerName: issuerName.substring(0, 50),
+          subjectName: subjectName.substring(0, 50),
+          hostname,
+          hash: certificateHash
+        })
+      } catch (err) {
+        console.error('[证书处理] 计算证书哈希失败:', err.message)
+        // 使用备用方法
+        const crypto = require('crypto')
+        certificateHash = crypto.createHash('sha256')
+          .update(`${certificate.issuerName || ''}:${certificate.subjectName || ''}:${hostname}`)
+          .digest('hex')
+      }
+      
+      console.log('[证书处理] 检测到证书问题:', {
+        hostname,
+        verificationResult,
+        issuerName: certificate?.issuerName,
+        subjectName: certificate?.subjectName,
+        partition: partition,
+        certificateHash: certificateHash
+      })
+      
+      // 通知所有窗口有证书错误（即使接受了证书，也要显示提示）
+      windows.forEach((window) => {
+        if (window && !window.isDestroyed()) {
+          try {
+            const url = `https://${hostname}`
+            console.log('[证书处理] 发送证书错误通知:', {
+              url,
+              hostname,
+              partition: partition,
+              certificateHash: certificateHash
+            })
+            window.webContents.send('certificate-error-detected', {
+              url: url,
+              error: `Certificate verification failed: ${verificationResult}`,
+              partition: partition,
+              hostname: hostname,
+              certificateHash: certificateHash
+            })
+          } catch (err) {
+            console.error('[证书处理] 发送证书错误通知失败:', err.message)
+          }
+        }
+      })
+    }
+    
+    // 自动接受所有证书（包括自签名证书）
+    callback(0) // 0 表示接受证书
+  })
+
+  // 监听证书错误事件，自动接受
+  sessionInstance.on('certificate-error', (event, url, error, certificate, callback) => {
+    // 获取 partition（对于默认 session，partition 可能是 undefined）
+    const partition = sessionInstance.partition || 'default'
+    
+    // 从 URL 中提取 hostname
+    let hostname = ''
+    try {
+      const urlObj = new URL(url)
+      hostname = urlObj.hostname
+    } catch (e) {
+      // URL 解析失败，尝试从错误信息中提取
+      hostname = url.split('/')[2]?.split(':')[0] || ''
+    }
+    
+    // 计算证书指纹
+    let certificateHash = ''
+    if (certificate) {
+      try {
+        const crypto = require('crypto')
+        const certData = certificate.data || certificate.issuerCert?.data || ''
+        if (certData) {
+          certificateHash = crypto.createHash('sha256').update(certData).digest('hex')
+        } else {
+          certificateHash = crypto.createHash('sha256')
+            .update(`${certificate.issuerName || ''}:${certificate.subjectName || ''}:${hostname}`)
+            .digest('hex')
+        }
+      } catch (err) {
+        console.error('[证书处理] 计算证书哈希失败:', err.message)
+        const crypto = require('crypto')
+        certificateHash = crypto.createHash('sha256')
+          .update(`${certificate.issuerName || ''}:${certificate.subjectName || ''}:${hostname}`)
+          .digest('hex')
+      }
+    }
+    
+    console.log('[证书处理] certificate-error 事件检测到证书错误:', {
+      url,
+      error,
+      issuerName: certificate?.issuerName,
+      subjectName: certificate?.subjectName,
+      partition: partition,
+      certificateHash: certificateHash.substring(0, 16) + '...'
+    })
+    
+    // 通知所有窗口有证书错误（即使接受了证书，也要显示提示）
+    windows.forEach((window) => {
+      if (window && !window.isDestroyed()) {
+        try {
+          window.webContents.send('certificate-error-detected', {
+            url,
+            error,
+            partition: partition,
+            hostname: hostname,
+            certificateHash: certificateHash
+          })
+        } catch (err) {
+          console.error('[证书处理] 发送证书错误通知失败:', err.message)
+        }
+      }
+    })
+    
+    // 自动接受证书错误（允许自签名证书）
+    event.preventDefault()
+    callback(true) // true 表示接受证书
+  })
+}
+
+// 为默认 session 设置证书错误处理
+app.whenReady().then(() => {
+  const defaultSession = session.defaultSession
+  setupCertificateErrorHandler(defaultSession)
+  console.log('[证书处理] ✓ 默认 session 证书错误处理已设置')
+})
+
+// 存储已设置证书处理的 session
+const certificateHandledSessions = new Set()
+
+// 为指定 partition 的 session 设置证书错误处理
+function ensureCertificateErrorHandler(partition) {
+  if (!partition || certificateHandledSessions.has(partition)) {
+    return
+  }
+
+  try {
+    const webviewSession = session.fromPartition(partition)
+    setupCertificateErrorHandler(webviewSession)
+    certificateHandledSessions.add(partition)
+    console.log(`[证书处理] ✓ Partition ${partition} 证书错误处理已设置`)
+  } catch (error) {
+    console.error(`[证书处理] ✗ 设置 partition ${partition} 证书错误处理失败:`, error.message)
+  }
+}
+
 let mainWindow
 // 多窗口管理
 const windows = new Map() // key: windowId, value: BrowserWindow
@@ -751,6 +936,21 @@ ipcMain.handle('proxy:get-hive-info', async (event, hiveId) => {
 })
 
 /**
+ * 为指定 partition 确保证书错误处理已设置
+ */
+ipcMain.handle('ensure-certificate-error-handler', async (event, partition) => {
+  console.log(`[证书处理] 请求确保证书错误处理 - partition: ${partition}`)
+  ensureCertificateErrorHandler(partition)
+  return { success: true }
+})
+
+// 记录证书信任操作
+ipcMain.handle('certificate:trust', async (event, certificateHash) => {
+  console.log('[证书处理] 用户信任证书:', certificateHash)
+  return { success: true }
+})
+
+/**
  * 为 webview session 设置代理
  */
 ipcMain.handle('proxy:set-session-proxy', async (event, partition, hiveId, proxyId) => {
@@ -777,6 +977,8 @@ ipcMain.handle('proxy:set-session-proxy', async (event, partition, hiveId, proxy
       if (result.success) {
         // 为 session 设置代理
         const webviewSession = session.fromPartition(partition)
+        // 确保证书错误处理已设置
+        ensureCertificateErrorHandler(partition)
         const proxyConfig = {
           proxyRules: `http=127.0.0.1:${result.data.httpPort};https=127.0.0.1:${result.data.httpPort};socks4=127.0.0.1:${result.data.socksPort};socks5=127.0.0.1:${result.data.socksPort}`,
           proxyBypassRules: 'localhost,127.0.0.1'
@@ -792,6 +994,8 @@ ipcMain.handle('proxy:set-session-proxy', async (event, partition, hiveId, proxy
       // 清除代理
       console.log(`[Proxy] 清除代理 - partition: ${partition}, hiveId: ${hiveId}`)
       const webviewSession = session.fromPartition(partition)
+      // 确保证书错误处理已设置
+      ensureCertificateErrorHandler(partition)
       // 使用空对象完全清除代理设置，而不是使用 'DIRECT'
       await webviewSession.setProxy({})
       await proxyManager.stopProxyForHive(hiveId)

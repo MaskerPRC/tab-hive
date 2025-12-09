@@ -19,6 +19,7 @@ import { ref } from 'vue'
  * @param {Function} options.applyPadding - 应用内边距的函数
  * @param {Function} options.checkNavigationState - 检查导航状态的函数
  * @param {Function} options.checkUrlChange - 检查 URL 变化的函数
+ * @param {Function} options.onLoadFail - 加载失败回调函数
  * @returns {Object} webview 设置方法
  */
 export function useWebviewSetup(props, {
@@ -34,7 +35,8 @@ export function useWebviewSetup(props, {
   applySelector,
   applyPadding,
   checkNavigationState,
-  checkUrlChange
+  checkUrlChange,
+  onLoadFail
 }) {
   // 跟踪已设置的主 webview
   let lastMainWebview = null
@@ -104,11 +106,63 @@ export function useWebviewSetup(props, {
           
           // 加载完成后检查导航状态
           checkNavigationState()
+          
+          // 检查证书错误（延迟检查，确保页面完全加载）
+          if (onLoadFail) {
+            setTimeout(async () => {
+              try {
+                const currentUrl = webview.getURL()
+                if (currentUrl && currentUrl.startsWith('chrome-error://')) {
+                  console.log('[useWebviewSetup] 检测到 chrome-error 页面，可能是证书错误')
+                  onLoadFail({
+                    type: 'certificate',
+                    errorCode: -202,
+                    errorDescription: 'ERR_CERT_AUTHORITY_INVALID',
+                    url: currentUrl
+                  })
+                }
+              } catch (error) {
+                console.log('[useWebviewSetup] 检查证书错误时出错:', error.message)
+              }
+            }, 500)
+          }
         },
         onNavigate: (url) => {
           checkUrlChange(url)
           // 导航后检查导航状态
           checkNavigationState()
+        },
+        onLoadFail: (event) => {
+          // 检测证书错误
+          const isCertificateError = event.errorCode === -202 || 
+                                    event.errorCode === -200 ||
+                                    event.errorDescription?.includes('CERT') ||
+                                    event.errorDescription === 'ERR_CERT_AUTHORITY_INVALID' ||
+                                    event.errorDescription === 'ERR_CERT_INVALID' ||
+                                    event.errorDescription === 'ERR_CERT_REVOKED' ||
+                                    event.errorDescription === 'ERR_CERT_DATE_INVALID'
+          
+          if (isCertificateError && onLoadFail) {
+            console.log('[useWebviewSetup] 检测到证书错误:', {
+              errorCode: event.errorCode,
+              errorDescription: event.errorDescription,
+              url: event.validatedURL
+            })
+            onLoadFail({
+              type: 'certificate',
+              errorCode: event.errorCode,
+              errorDescription: event.errorDescription,
+              url: event.validatedURL
+            })
+          } else if (onLoadFail) {
+            // 其他类型的错误
+            onLoadFail({
+              type: 'other',
+              errorCode: event.errorCode,
+              errorDescription: event.errorDescription,
+              url: event.validatedURL
+            })
+          }
         }
       })
     }

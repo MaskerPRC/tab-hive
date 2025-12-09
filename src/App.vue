@@ -49,6 +49,7 @@
       :globalMuted="layoutManager.globalSettings.value.globalMuted"
       :adBlockEnabled="layoutManager.globalSettings.value.adBlockEnabled"
       :customCodeEnabled="layoutManager.globalSettings.value.customCodeEnabled"
+      :showCertificateErrorShadow="layoutManager.globalSettings.value.showCertificateErrorShadow"
       :showUpdateButton="showUpdateButton"
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
@@ -60,6 +61,7 @@
       @toggle-global-mute="handleToggleGlobalMute"
       @toggle-ad-block="handleToggleAdBlock"
       @toggle-custom-code="handleToggleCustomCode"
+      @toggle-certificate-error-shadow="handleToggleCertificateErrorShadow"
       @manage-sessions="handleManageSessions"
       @manage-proxy="handleManageProxy"
       @show-update="handleShowUpdate"
@@ -386,6 +388,10 @@ export default {
     // 切换自定义代码
     const handleToggleCustomCode = (customCodeEnabled) => {
       layoutManager.updateGlobalSettings({ customCodeEnabled })
+    }
+
+    const handleToggleCertificateErrorShadow = (showCertificateErrorShadow) => {
+      layoutManager.updateGlobalSettings({ showCertificateErrorShadow })
     }
 
     // 打开内容脚本面板
@@ -761,6 +767,7 @@ export default {
       handleToggleTitles,
       handleToggleGlobalMute,
       handleToggleAdBlock,
+      handleToggleCertificateErrorShadow,
       handleClearConfig,
       handleUpdateDrawings,
       showSharedModal,

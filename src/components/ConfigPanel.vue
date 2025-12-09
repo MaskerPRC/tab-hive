@@ -44,6 +44,12 @@
               :checked="adBlockEnabled"
               @change="handleToggleAdBlock"
             />
+            <SwitchItem
+              icon="shield-alert"
+              :label="$t('configPanel.showCertificateErrorShadow')"
+              :checked="showCertificateErrorShadow"
+              @change="handleToggleCertificateErrorShadow"
+            />
             <!-- 语言选择 -->
             <LanguageSelector />
           </div>
@@ -107,12 +113,16 @@ export default {
       type: Boolean,
       default: true
     },
+    showCertificateErrorShadow: {
+      type: Boolean,
+      default: true
+    },
     showUpdateButton: {
       type: Boolean,
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
   setup(props, { emit }) {
     const { t } = useI18n()
 
@@ -164,6 +174,11 @@ export default {
       emit('toggle-ad-block', !props.adBlockEnabled)
     }
 
+    // 切换证书错误阴影
+    const handleToggleCertificateErrorShadow = () => {
+      emit('toggle-certificate-error-shadow', !props.showCertificateErrorShadow)
+    }
+
     return {
       isElectron,
       selectLayout,
@@ -171,7 +186,8 @@ export default {
       clearConfig,
       handleToggleTitles,
       handleToggleGlobalMute,
-      handleToggleAdBlock
+      handleToggleAdBlock,
+      handleToggleCertificateErrorShadow
     }
   }
 }

@@ -253,7 +253,8 @@ export function useLayoutManager() {
     refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的视界
     globalMuted: false, // 默认不全局静音
     adBlockEnabled: false, // 默认不启用去广告
-    customCodeEnabled: true // 默认启用自定义代码功能
+    customCodeEnabled: true, // 默认启用自定义代码功能
+    showCertificateErrorShadow: true // 默认显示证书错误红色阴影
   }
   const globalSettings = ref(savedConfig?.globalSettings 
     ? { ...defaultGlobalSettings, ...savedConfig.globalSettings }
@@ -268,6 +269,10 @@ export function useLayoutManager() {
     if (savedConfig.globalSettings.customCodeEnabled === undefined) {
       globalSettings.value.customCodeEnabled = true
       console.log('[useLayoutManager] 检测到旧配置，初始化 customCodeEnabled 为 true')
+    }
+    if (savedConfig.globalSettings.showCertificateErrorShadow === undefined) {
+      globalSettings.value.showCertificateErrorShadow = true
+      console.log('[useLayoutManager] 检测到旧配置，初始化 showCertificateErrorShadow 为 true')
     }
   }
 

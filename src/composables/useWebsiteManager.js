@@ -21,8 +21,8 @@ export function useWebsiteManager(initialWebsites = []) {
     console.log('[useWebsiteManager] 接收到的网站数据:', websiteData)
     console.log('[useWebsiteManager] 当前网站数量:', websites.value.length)
     
-    const defaultWidth = 400
-    const defaultHeight = 300
+    const defaultWidth = 667  // 400 * 5/3 ≈ 667 (变大3分之2)
+    const defaultHeight = 500  // 300 * 5/3 = 500 (变大3分之2)
     const spacing = 20
 
     // 查找所有现有网站的最大Y坐标

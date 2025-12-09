@@ -232,6 +232,18 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // IPC 通信 API
+  ipc: {
+    /**
+     * 调用主进程方法
+     * @param {string} channel - 通道名称
+     * @param {...any} args - 参数
+     */
+    invoke: (channel, ...args) => {
+      return ipcRenderer.invoke(channel, ...args)
+    }
+  },
+
   // 事件监听
   on: (channel, callback) => {
     const validChannels = [
@@ -239,7 +251,8 @@ contextBridge.exposeInMainWorld('electron', {
       'update-download-progress',
       'update-download-complete',
       'update-download-error',
-      'desktop-capture-source-selected'
+      'desktop-capture-source-selected',
+      'certificate-error-detected'
     ]
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args))

@@ -94,6 +94,7 @@
           :global-muted="globalSettings?.globalMuted"
           :ad-block-enabled="globalSettings?.adBlockEnabled"
           :custom-code-enabled="globalSettings?.customCodeEnabled"
+          :show-certificate-error-shadow="globalSettings?.showCertificateErrorShadow"
           @drag-start="startDrag($event, index)"
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"

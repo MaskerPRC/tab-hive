@@ -100,6 +100,17 @@ export function useWebview(props, emit) {
     // 检查 webview 是否已经有 src（比如从双缓冲刷新过来的）
     const hasExistingSrc = webview.src && webview.src !== '' && webview.src !== 'about:blank'
     
+    // 确保证书错误处理已设置（支持自签名证书）
+    if (isElectron.value && window.electron?.ipc) {
+      try {
+        const partition = partitionName.value
+        await window.electron.ipc.invoke('ensure-certificate-error-handler', partition)
+        console.log(`[useWebview] 确保证书错误处理已设置 - partition: ${partition}`)
+      } catch (error) {
+        console.warn('[useWebview] 设置证书错误处理失败:', error)
+      }
+    }
+    
     // 设置代理
     const proxySetupSuccess = await setupProxyIfNeeded()
 
@@ -357,6 +368,25 @@ export function useWebview(props, emit) {
         if (webviewId === props.item.id && emit) {
           console.log('[useWebview] 收到主进程刷新命令')
           emit('refresh-from-main')
+        }
+      })
+      
+      // 监听证书错误事件
+      window.electron.on('certificate-error-detected', (data) => {
+        const partition = partitionName.value
+        const currentUrl = props.item.url || ''
+        // 检查是否是当前 webview 的证书错误
+        if (data.partition === partition && (data.url === currentUrl || currentUrl.includes(new URL(data.url).hostname))) {
+          console.log('[useWebview] 检测到证书错误:', data)
+          // 通过 emit 通知父组件
+          if (emit) {
+            emit('certificate-error', {
+              type: 'certificate',
+              errorCode: -202,
+              errorDescription: data.error || 'ERR_CERT_AUTHORITY_INVALID',
+              url: data.url
+            })
+          }
         }
       })
     }
