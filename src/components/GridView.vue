@@ -714,7 +714,8 @@ export default {
       zoomOut,
       resetTransform,
       extractUrlFromText,
-      emit
+      emit,
+      canvasTransform
     })
 
     // ========== 监听器 ==========
