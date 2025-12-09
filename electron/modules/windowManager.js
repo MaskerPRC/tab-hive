@@ -3,7 +3,7 @@
  * 负责创建和管理应用窗口
  */
 
-const { BrowserWindow } = require('electron')
+const { BrowserWindow, app } = require('electron')
 const path = require('path')
 
 // 多窗口管理
@@ -80,7 +80,10 @@ function createWindow(windowId = null, options = {}) {
     window.webContents.openDevTools()
   } else {
     console.log('[Electron Main] 生产模式,加载本地文件')
-    const indexPath = path.join(__dirname, '../dist/index.html')
+    // 使用 app.getAppPath() 获取应用路径，这在打包后也能正确工作
+    const appPath = app.getAppPath()
+    const indexPath = path.join(appPath, 'dist', 'index.html')
+    console.log('[Electron Main] 应用路径:', appPath)
     console.log('[Electron Main] 文件路径:', indexPath)
     const query = {}
     urlParams.split('&').forEach(param => {

@@ -165,9 +165,6 @@ export default {
     const handleDelete = async () => {
       if (!selectedLayout.value) return
       
-      // 立即关闭菜单
-      closeContextMenu()
-      
       if (props.layouts.length <= 1) {
         if (showAlert) {
           await showAlert({
@@ -177,6 +174,7 @@ export default {
         } else {
           alert(t('layout.atLeastOne'))
         }
+        closeContextMenu()
         return
       }
 
@@ -187,6 +185,7 @@ export default {
       if (confirmed) {
         emit('delete-layout', selectedLayout.value.id)
       }
+      closeContextMenu()
     }
 
     const handleToggleKeepAlive = () => {
@@ -199,9 +198,6 @@ export default {
     const handleRename = async () => {
       if (!selectedLayout.value) return
       
-      // 立即关闭菜单
-      closeContextMenu()
-      
       const newName = await showPrompt({
         title: t('layout.renameLayout'),
         message: t('layout.rename'),
@@ -212,6 +208,7 @@ export default {
       if (newName && newName.trim() && newName.trim() !== selectedLayout.value.name) {
         emit('rename-layout', selectedLayout.value.id, newName.trim())
       }
+      closeContextMenu()
     }
 
     // 拖拽处理函数

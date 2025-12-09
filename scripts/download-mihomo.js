@@ -59,6 +59,9 @@ const PLATFORM_CONFIG = {
  * 获取文件锁（简单实现）
  */
 async function acquireLock(maxWait = 30000, checkInterval = 500) {
+  // 确保目录存在
+  fs.mkdirSync(CACHE_DIR, { recursive: true })
+  
   const startTime = Date.now()
   
   while (Date.now() - startTime < maxWait) {
@@ -92,6 +95,10 @@ async function acquireLock(maxWait = 30000, checkInterval = 500) {
         }
         // 等待一段时间后重试
         await new Promise(resolve => setTimeout(resolve, checkInterval))
+      } else if (error.code === 'ENOENT') {
+        // 目录不存在，创建目录后重试
+        fs.mkdirSync(CACHE_DIR, { recursive: true })
+        continue
       } else {
         throw error
       }
