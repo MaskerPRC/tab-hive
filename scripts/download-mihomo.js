@@ -20,6 +20,10 @@ const __dirname = dirname(__filename)
 
 const MIHOMO_REPO = 'MetaCubeX/mihomo'
 const RESOURCES_DIR = path.join(__dirname, '../resources')
+const CACHE_DIR = path.join(__dirname, '../temp')
+const CACHE_FILE = path.join(CACHE_DIR, 'mihomo-release-cache.json')
+const LOCK_FILE = path.join(CACHE_DIR, 'mihomo-release-lock')
+const CACHE_TTL = 5 * 60 * 1000 // 缓存有效期：5分钟
 
 // 支持的平台配置
 const PLATFORM_CONFIG = {
@@ -52,9 +56,101 @@ const PLATFORM_CONFIG = {
 }
 
 /**
- * 获取最新的 release 信息（带重试）
+ * 获取文件锁（简单实现）
  */
-async function getLatestRelease(retries = 3, delay = 5000) {
+async function acquireLock(maxWait = 30000, checkInterval = 500) {
+  const startTime = Date.now()
+  
+  while (Date.now() - startTime < maxWait) {
+    try {
+      // 尝试创建锁文件（使用 fs.openSync 的独占模式）
+      const fd = fs.openSync(LOCK_FILE, 'wx')
+      fs.closeSync(fd)
+      // 写入当前进程 ID 和时间戳
+      fs.writeFileSync(LOCK_FILE, JSON.stringify({
+        pid: process.pid,
+        timestamp: Date.now()
+      }))
+      return true
+    } catch (error) {
+      if (error.code === 'EEXIST') {
+        // 锁文件已存在，检查是否过期（超过30秒认为过期）
+        try {
+          const lockData = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'))
+          const lockAge = Date.now() - lockData.timestamp
+          if (lockAge > 30000) {
+            // 锁过期，删除并重试
+            fs.unlinkSync(LOCK_FILE)
+            continue
+          }
+        } catch {
+          // 锁文件损坏，删除并重试
+          try {
+            fs.unlinkSync(LOCK_FILE)
+          } catch {}
+          continue
+        }
+        // 等待一段时间后重试
+        await new Promise(resolve => setTimeout(resolve, checkInterval))
+      } else {
+        throw error
+      }
+    }
+  }
+  
+  throw new Error('获取文件锁超时')
+}
+
+/**
+ * 释放文件锁
+ */
+function releaseLock() {
+  try {
+    if (fs.existsSync(LOCK_FILE)) {
+      fs.unlinkSync(LOCK_FILE)
+    }
+  } catch (error) {
+    // 忽略错误
+  }
+}
+
+/**
+ * 读取缓存
+ */
+function readCache() {
+  try {
+    if (fs.existsSync(CACHE_FILE)) {
+      const cacheData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'))
+      const cacheAge = Date.now() - cacheData.timestamp
+      if (cacheAge < CACHE_TTL) {
+        return cacheData.release
+      }
+    }
+  } catch (error) {
+    // 缓存读取失败，忽略
+  }
+  return null
+}
+
+/**
+ * 写入缓存
+ */
+function writeCache(release) {
+  try {
+    fs.mkdirSync(CACHE_DIR, { recursive: true })
+    fs.writeFileSync(CACHE_FILE, JSON.stringify({
+      timestamp: Date.now(),
+      release: release
+    }))
+  } catch (error) {
+    // 缓存写入失败，忽略
+  }
+}
+
+/**
+ * 从 GitHub API 获取最新的 release 信息（带重试）
+ */
+async function fetchLatestReleaseFromAPI(retries = 3, delay = 5000) {
   const url = `https://api.github.com/repos/${MIHOMO_REPO}/releases/latest`
   
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -107,6 +203,57 @@ async function getLatestRelease(retries = 3, delay = 5000) {
       } else {
         throw error
       }
+    }
+  }
+}
+
+/**
+ * 获取最新的 release 信息（带缓存和文件锁）
+ */
+async function getLatestRelease(retries = 3, delay = 5000) {
+  // 首先尝试从缓存读取
+  const cachedRelease = readCache()
+  if (cachedRelease) {
+    console.log(`📦 使用缓存中的 release 信息: ${cachedRelease.tag_name}`)
+    return cachedRelease
+  }
+  
+  // 缓存无效或不存在，需要获取锁并调用 API
+  let lockAcquired = false
+  try {
+    // 尝试获取锁
+    await acquireLock()
+    lockAcquired = true
+    
+    // 获取锁后，再次检查缓存（可能其他进程已经更新了）
+    const cachedReleaseAfterLock = readCache()
+    if (cachedReleaseAfterLock) {
+      console.log(`📦 使用缓存中的 release 信息: ${cachedReleaseAfterLock.tag_name}`)
+      return cachedReleaseAfterLock
+    }
+    
+    // 调用 API 获取最新 release
+    console.log('📡 从 GitHub API 获取最新 release 信息...')
+    const release = await fetchLatestReleaseFromAPI(retries, delay)
+    
+    // 更新缓存
+    writeCache(release)
+    console.log(`✅ 最新版本: ${release.tag_name}\n`)
+    
+    return release
+  } catch (error) {
+    // 如果获取锁失败，尝试使用缓存（即使可能过期）
+    if (!lockAcquired) {
+      const staleCache = readCache()
+      if (staleCache) {
+        console.log(`⚠️  无法获取锁，使用可能过期的缓存: ${staleCache.tag_name}`)
+        return staleCache
+      }
+    }
+    throw error
+  } finally {
+    if (lockAcquired) {
+      releaseLock()
     }
   }
 }
