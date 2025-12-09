@@ -3,7 +3,15 @@
     <div v-if="visible" class="dialog-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
       <div class="dialog-box" @click.stop @mousedown.stop>
         <div class="dialog-header">
-          <h3>{{ title || $t('dialog.title') }}</h3>
+          <div class="dialog-title-wrapper">
+            <h3>{{ title || $t('dialog.title') }}</h3>
+          </div>
+          <button v-if="type === 'alert'" class="dialog-close" @click="handleConfirm" title="关闭">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
         <div class="dialog-body">
           <p v-if="message">{{ message }}</p>
@@ -19,7 +27,7 @@
           />
         </div>
         <div class="dialog-footer">
-          <button class="btn-cancel" @click="handleCancel">{{ $t('common.cancel') }}</button>
+          <button v-if="type !== 'alert'" class="btn-cancel" @click="handleCancel">{{ $t('common.cancel') }}</button>
           <button class="btn-confirm" @click="handleConfirm">{{ $t('common.confirm') }}</button>
         </div>
       </div>
@@ -40,8 +48,8 @@ export default {
     },
     type: {
       type: String,
-      default: 'confirm', // 'confirm' or 'prompt'
-      validator: (value) => ['confirm', 'prompt'].includes(value)
+      default: 'confirm', // 'confirm', 'prompt', or 'alert'
+      validator: (value) => ['confirm', 'prompt', 'alert'].includes(value)
     },
     title: {
       type: String,
@@ -91,8 +99,10 @@ export default {
     }
 
     const handleCancel = () => {
-      emit('cancel')
-      emit('update:visible', false)
+      if (props.type !== 'alert') {
+        emit('cancel')
+        emit('update:visible', false)
+      }
     }
 
     const handleOverlayMouseDown = (event) => {
@@ -107,7 +117,11 @@ export default {
     const handleOverlayClick = (event) => {
       // 只有当 mousedown 和 click 都发生在 overlay 上时才关闭
       if (event.target === event.currentTarget && mouseDownOnOverlay.value) {
-        handleCancel()
+        if (props.type === 'alert') {
+          handleConfirm()
+        } else {
+          handleCancel()
+        }
       }
       mouseDownOnOverlay.value = false
     }
@@ -132,30 +146,31 @@ export default {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 20vh; /* 向下偏移 */
   z-index: 10001; /* 确保在其他对话框之上 */
 }
 
 .dialog-box {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  min-width: 400px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  min-width: 420px;
   max-width: 500px;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: dialog-in 0.2s ease-out;
+  animation: dialog-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
 }
 
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: scale(0.9) translateY(-20px);
+    transform: scale(0.9) translateY(-10px);
   }
   to {
     opacity: 1;
@@ -165,8 +180,16 @@ export default {
 
 .dialog-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
-  background: var(--primary-light, #fff5f0);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, var(--primary-light, #fff5f0) 0%, #ffffff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.dialog-title-wrapper {
+  flex: 1;
 }
 
 .dialog-header h3 {
@@ -174,10 +197,36 @@ export default {
   font-size: 18px;
   font-weight: 600;
   color: var(--primary-color, #ff5c00);
+  letter-spacing: -0.01em;
+}
+
+.dialog-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.dialog-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.dialog-close:active {
+  transform: scale(0.95);
 }
 
 .dialog-body {
-  padding: 24px;
+  padding: 28px 24px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
@@ -208,65 +257,87 @@ export default {
 }
 
 .dialog-body p {
-  margin: 0 0 16px 0;
-  color: #333;
-  font-size: 14px;
+  margin: 0;
+  color: #1e293b;
+  font-size: 15px;
   line-height: 1.6;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .dialog-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #e2e8f0;
   border-radius: 8px;
   font-size: 14px;
   outline: none;
-  transition: border-color 0.3s;
+  transition: all 0.2s;
   box-sizing: border-box;
+  background: #ffffff;
+  color: #1e293b;
 }
 
 .dialog-input:focus {
   border-color: var(--primary-color, #ff5c00);
+  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.1);
+}
+
+.dialog-input::placeholder {
+  color: #94a3b8;
 }
 
 .dialog-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   flex-shrink: 0;
+  background: #fafafa;
 }
 
 .dialog-footer button {
   padding: 10px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  min-width: 80px;
 }
 
 .btn-cancel {
-  background: #f5f5f5;
-  color: #666;
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 .btn-cancel:hover {
-  background: #e0e0e0;
+  background: #e2e8f0;
+  color: #475569;
+  transform: translateY(-1px);
+}
+
+.btn-cancel:active {
+  transform: translateY(0);
 }
 
 .btn-confirm {
   background: var(--primary-color, #ff5c00);
   color: white;
+  box-shadow: 0 2px 8px rgba(255, 92, 0, 0.2);
 }
 
 .btn-confirm:hover {
   background: var(--primary-hover, #e64e00);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 92, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 92, 0, 0.35);
+}
+
+.btn-confirm:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 92, 0, 0.25);
 }
 
 /* 过渡动画 */
@@ -295,7 +366,7 @@ export default {
   }
   to {
     opacity: 0;
-    transform: scale(0.9) translateY(-20px);
+    transform: scale(0.95) translateY(-10px);
   }
 }
 </style>

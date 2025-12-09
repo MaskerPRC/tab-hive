@@ -40,7 +40,6 @@
           class="website-webview"
           :class="{ 'mobile-view': item.deviceType === 'mobile' }"
           :preload="webviewPreloadPath"
-          allowpopups
           webpreferences="allowRunningInsecureContent"
         ></webview>
 
@@ -56,7 +55,6 @@
           class="website-webview buffer-webview"
           :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
           :preload="webviewPreloadPath"
-          allowpopups
           webpreferences="allowRunningInsecureContent"
         ></webview>
 

@@ -49,7 +49,7 @@ function notifyCertificateError(errorData) {
 // ========== 为默认 session 设置证书错误处理 ==========
 app.whenReady().then(() => {
   console.log('[Electron Main] ========== 应用已就绪 ==========')
-  
+
   const defaultSession = session.defaultSession
   setupCertificateErrorHandler(defaultSession, notifyCertificateError)
   console.log('[证书处理] ✓ 默认 session 证书错误处理已设置')

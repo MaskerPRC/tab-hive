@@ -172,6 +172,86 @@ export function useWebview(props, emit) {
     console.log('[useWebview] 首次设置 webview 事件监听')
     setupWebviewsSet.add(webview)
 
+    // 立即设置new-window事件监听（必须在dom-ready之前）
+    const handleNewWindow = (event) => {
+      console.log('[useWebview] ========== Webview new-window 事件 ==========')
+      console.log('[useWebview] URL:', event.url)
+      console.log('[useWebview] frameName:', event.frameName)
+      console.log('[useWebview] disposition:', event.disposition)
+      console.log('[useWebview] webview ID:', webview?.id)
+      console.log('[useWebview] 堆栈跟踪:', new Error().stack)
+      
+      // 阻止默认行为（打开新窗口）
+      event.preventDefault()
+      console.log('[useWebview] ✓ 已阻止默认行为')
+      
+      if (event.url) {
+        console.log('[useWebview] 拦截new-window，在当前webview中导航:', event.url)
+        
+        // 获取当前URL，判断是否同根域名
+        try {
+          const currentUrl = webview.getURL()
+          console.log('[useWebview] 当前webview URL:', currentUrl)
+          
+          // 判断是否同根域名
+          function getRootDomain(hostname) {
+            if (!hostname) return ''
+            hostname = hostname.split(':')[0]
+            if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return hostname
+            if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
+            const parts = hostname.split('.')
+            if (parts.length >= 2) {
+              return parts.slice(-2).join('.')
+            }
+            return hostname
+          }
+          
+          function isSameRootDomain(url1, url2) {
+            try {
+              const urlObj1 = new URL(url1)
+              const urlObj2 = new URL(url2)
+              const rootDomain1 = getRootDomain(urlObj1.hostname)
+              const rootDomain2 = getRootDomain(urlObj2.hostname)
+              const isSame = rootDomain1 === rootDomain2 && rootDomain1 !== ''
+              console.log('[useWebview] 域名比较:', {
+                url1: urlObj1.hostname,
+                url2: urlObj2.hostname,
+                rootDomain1,
+                rootDomain2,
+                isSame
+              })
+              return isSame
+            } catch (e) {
+              console.error('[useWebview] URL解析失败:', e)
+              return false
+            }
+          }
+          
+          // 如果同根域名，在当前webview中导航
+          if (currentUrl && isSameRootDomain(currentUrl, event.url)) {
+            console.log('[useWebview] ✓ 同根域名，在当前webview中导航')
+            webview.src = event.url
+          } else {
+            // 不同根域名，触发事件打开模态框
+            console.log('[useWebview] ✗ 不同根域名，打开模态框')
+            window.dispatchEvent(new CustomEvent('open-external-url-modal', {
+              detail: { url: event.url }
+            }))
+          }
+        } catch (error) {
+          console.error('[useWebview] 处理new-window失败:', error)
+          // 出错时也打开模态框
+          window.dispatchEvent(new CustomEvent('open-external-url-modal', {
+            detail: { url: event.url }
+          }))
+        }
+      }
+    }
+    
+    // 立即注册new-window事件监听器（必须在webview加载前）
+    webview.addEventListener('new-window', handleNewWindow)
+    console.log('[useWebview] ✓ 已注册new-window事件监听器')
+
     // 使用 Promise 来确保 DOM 就绪
     let domReadyPromise = new Promise((resolve) => {
       let resolved = false
@@ -264,10 +344,12 @@ export function useWebview(props, emit) {
       }
     })
 
-    // 监听新窗口打开
+    // 注意：new-window事件监听器已经在上面定义并注册了
+
+    // 监听新窗口打开 - IPC消息
     webview.addEventListener('ipc-message', (event) => {
       if (event.channel === 'webview-open-url') {
-        console.log('[useWebview] Webview 尝试打开新窗口:', event.args[0])
+        console.log('[useWebview] Webview 尝试打开新窗口 (IPC):', event.args[0])
         const { url } = event.args[0]
         if (url) {
           webview.src = url

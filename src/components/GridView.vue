@@ -223,9 +223,13 @@ export default {
     drawings: {
       type: Array,
       default: () => []
+    },
+    canvasTransform: {
+      type: Object,
+      default: null
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'open-script-panel', 'import-layout-from-image'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'update-canvas-transform', 'open-script-panel', 'import-layout-from-image'],
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸视界）
     const allWebsites = computed(() => {
@@ -256,6 +260,8 @@ export default {
     } = useGridLayout(allWebsites)
 
     // 画布变换（平移和缩放）
+    // 从 props 中恢复保存的变换状态，如果没有则使用默认值
+    const initialTransform = props.canvasTransform || null
     const {
       canvasTransform,
       isPanning,
@@ -264,7 +270,7 @@ export default {
       setZoom,
       resetTransform: resetCanvasTransform,
       getTransformStyle
-    } = useCanvasTransform()
+    } = useCanvasTransform(initialTransform)
 
     // 拖拽
     const {
@@ -750,6 +756,40 @@ export default {
         initializeGridLayout()
       })
     }, { immediate: false })
+
+    // 标记是否正在从 props 恢复状态，避免触发保存
+    const isRestoringTransform = ref(false)
+
+    // 监听 canvasTransform 的变化，保存到布局
+    watch(canvasTransform, (newTransform) => {
+      // 如果正在恢复状态，不触发保存
+      if (isRestoringTransform.value) {
+        return
+      }
+      // 总是保存 canvasTransform，包括默认值，以便正确恢复状态
+      if (newTransform) {
+        emit('update-canvas-transform', { ...newTransform })
+      }
+    }, { deep: true })
+
+    // 监听 props.canvasTransform 的变化（切换布局时）
+    watch(() => props.canvasTransform, (newTransform) => {
+      if (newTransform) {
+        isRestoringTransform.value = true
+        canvasTransform.value = { ...newTransform }
+        // 使用 nextTick 确保状态更新完成后再重置标记
+        nextTick(() => {
+          isRestoringTransform.value = false
+        })
+      } else {
+        // 如果没有保存的变换，重置为默认值
+        isRestoringTransform.value = true
+        canvasTransform.value = { x: 0, y: 0, zoom: 1 }
+        nextTick(() => {
+          isRestoringTransform.value = false
+        })
+      }
+    }, { immediate: true })
 
     // ========== 生命周期 ==========
     

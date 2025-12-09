@@ -88,6 +88,15 @@ contextBridge.exposeInMainWorld('electron', {
      */
     getId: () => {
       return ipcRenderer.invoke('get-window-id')
+    },
+
+    /**
+     * 打开单个网站到新窗口
+     * @param {Object} websiteData - 网站数据
+     */
+    openWebsite: (websiteData) => {
+      console.log('[Preload] openWebsite:', websiteData)
+      return ipcRenderer.invoke('open-website-in-window', websiteData)
     }
   },
 

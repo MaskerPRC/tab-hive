@@ -481,9 +481,27 @@ export function useLayoutManager() {
     if (layout) {
       layout.keepAlive = !layout.keepAlive
       console.log(`[LayoutManager] 布局 "${layout.name}" 后台运行: ${layout.keepAlive ? '开启' : '关闭'}`)
+      saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
       return layout.keepAlive
     }
     return false
+  }
+
+  /**
+   * 重新排序布局列表
+   * @param {number} fromIndex - 源索引
+   * @param {number} toIndex - 目标索引
+   */
+  const reorderLayouts = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return
+    
+    const layoutsArray = [...layouts.value]
+    const [movedLayout] = layoutsArray.splice(fromIndex, 1)
+    layoutsArray.splice(toIndex, 0, movedLayout)
+    
+    layouts.value = layoutsArray
+    saveToStorage(layouts.value, currentLayoutId.value, globalSettings.value)
+    console.log(`[LayoutManager] 布局已重新排序: ${fromIndex} -> ${toIndex}`)
   }
 
   /**
@@ -523,6 +541,7 @@ export function useLayoutManager() {
     deleteLayout,
     renameLayout,
     toggleKeepAlive,
+    reorderLayouts,
     updateGlobalSettings,
     checkTemplateUpdate,
     syncTemplateUpdate,

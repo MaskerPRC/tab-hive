@@ -87,12 +87,45 @@ export function useDialog() {
   }
 
   /**
+   * 显示 alert 对话框（只有确定按钮）
+   * @param {string|Object} messageOrOptions - 提示消息字符串或选项对象
+   * @returns {Promise<void>} 用户点击确定后 resolve
+   */
+  const showAlert = (messageOrOptions) => {
+    // 支持对象参数和字符串参数两种方式
+    let title, message
+    
+    if (typeof messageOrOptions === 'object') {
+      // 对象参数方式
+      title = messageOrOptions.title || '提示'
+      message = messageOrOptions.message || ''
+    } else {
+      // 字符串参数方式（向后兼容）
+      title = '提示'
+      message = messageOrOptions
+    }
+
+    // 使用自定义对话框
+    return new Promise((resolve) => {
+      dialogType.value = 'alert'
+      dialogTitle.value = title
+      dialogMessage.value = message
+      dialogVisible.value = true
+      dialogResolve = resolve
+    })
+  }
+
+  /**
    * 处理对话框确认
-   * @param {*} value - 确认的值（prompt 返回字符串，confirm 返回 true）
+   * @param {*} value - 确认的值（prompt 返回字符串，confirm 返回 true，alert 返回 undefined）
    */
   const handleDialogConfirm = (value) => {
     if (dialogResolve) {
-      dialogResolve(value)
+      if (dialogType.value === 'alert') {
+        dialogResolve()
+      } else {
+        dialogResolve(value)
+      }
       dialogResolve = null
     }
   }
@@ -119,6 +152,7 @@ export function useDialog() {
     // 方法
     showPrompt,
     showConfirm,
+    showAlert,
     handleDialogConfirm,
     handleDialogCancel
   }

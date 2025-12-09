@@ -54,8 +54,9 @@
       @switch-layout="handleSwitchLayout"
       @create-layout="handleCreateLayout"
       @delete-layout="handleDeleteLayout"
-      @rename-layout="renameLayout"
+      @rename-layout="handleRenameLayout"
       @toggle-keep-alive="handleToggleKeepAlive"
+      @reorder-layout="handleReorderLayout"
       @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
       @toggle-global-mute="handleToggleGlobalMute"
@@ -82,6 +83,7 @@
         :fullscreenIndex="layout.id === currentLayoutId ? fullscreenIndex : null"
         :globalSettings="layoutManager.globalSettings.value"
         :drawings="layout.id === currentLayoutId ? (layout.drawings || []) : (layout.drawings || [])"
+        :canvasTransform="layout.canvasTransform || null"
         @fullscreen="layout.id === currentLayoutId ? handleFullscreen($event) : null"
         @exitFullscreen="exitFullscreen"
         @add-website="(data) => layout.id === currentLayoutId ? handleAddWebsite(data) : null"
@@ -89,6 +91,7 @@
         @remove-website="(index) => layout.id === currentLayoutId ? handleRemoveWebsite(index) : null"
         @update-website="(data) => layout.id === currentLayoutId ? handleUpdateWebsite(data) : null"
         @update-drawings="(drawings) => handleUpdateDrawings(drawings)"
+        @update-canvas-transform="(transform) => handleUpdateCanvasTransform(transform, layout.id)"
         @open-script-panel="(iframe) => openContentScriptPanel(iframe)"
         @import-layout-from-image="(layoutData) => handleImportLayoutFromImage(layoutData)"
       />
@@ -138,11 +141,18 @@
       @search="handleSearchShared"
       @sort="handleSortShared"
     />
+
+    <!-- 外部链接模态框 -->
+    <ExternalUrlModal
+      :visible="showExternalUrlModal"
+      :url="externalUrl"
+      @close="closeExternalUrlModal"
+    />
   </div>
 </template>
 
 <script>
-import { ref, watch, onMounted, provide, computed } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, provide, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
@@ -154,6 +164,7 @@ import UpdateNotification from './components/UpdateNotification.vue'
 import ProxyManager from './components/ProxyManager.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import SharedLayoutModal from './components/SharedLayoutModal.vue'
+import ExternalUrlModal from './components/ExternalUrlModal.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useWebsiteManager } from './composables/useWebsiteManager'
@@ -173,7 +184,8 @@ export default {
     UpdateNotification,
     ProxyManager,
     ContentScriptPanel,
-    SharedLayoutModal
+    SharedLayoutModal,
+    ExternalUrlModal
   },
   setup() {
     const { t } = useI18n()
@@ -220,6 +232,9 @@ export default {
 
     // 侧边栏显示状态
     const showPanel = ref(false)
+    
+    // 保存全屏前的侧边栏状态，用于退出全屏时恢复
+    const panelStateBeforeFullscreen = ref(null)
 
     // Session实例管理对话框显示状态
     const showSessionManager = ref(false)
@@ -233,6 +248,10 @@ export default {
 
     // 分享布局弹窗显示状态
     const showSharedModal = ref(false)
+
+    // 外部链接模态框显示状态
+    const showExternalUrlModal = ref(false)
+    const externalUrl = ref('')
 
     // 打开Session实例管理对话框
     const handleManageSessions = () => {
@@ -315,11 +334,20 @@ export default {
     }
 
     const handleFullscreen = (index) => {
+      // 保存当前侧边栏状态
+      panelStateBeforeFullscreen.value = showPanel.value
+      // 进入全屏时强制隐藏侧边栏
+      showPanel.value = false
       fullscreenIndex.value = index
     }
 
     const exitFullscreen = () => {
       fullscreenIndex.value = null
+      // 退出全屏时恢复之前的侧边栏状态
+      if (panelStateBeforeFullscreen.value !== null) {
+        showPanel.value = panelStateBeforeFullscreen.value
+        panelStateBeforeFullscreen.value = null
+      }
     }
 
     // 切换侧边栏显示状态
@@ -595,9 +623,12 @@ export default {
     }
 
     // 删除布局
-    const handleDeleteLayout = (layoutId) => {
+    const handleDeleteLayout = async (layoutId) => {
       if (layoutManager.layouts.value.length <= 1) {
-        alert(t('layout.atLeastOne'))
+        await dialog.showAlert({
+          title: t('layout.warning') || '提示',
+          message: t('layout.atLeastOne')
+        })
         return
       }
 
@@ -610,15 +641,28 @@ export default {
     }
 
     // 切换布局后台运行状态
-    const handleToggleKeepAlive = (layoutId) => {
+    const handleToggleKeepAlive = async (layoutId) => {
       const newState = layoutManager.toggleKeepAlive(layoutId)
       const layout = layoutManager.layouts.value.find(l => l.id === layoutId)
       if (layout) {
         const message = newState
           ? t('layout.keepAliveEnabled', { name: layout.name })
           : t('layout.keepAliveDisabled', { name: layout.name })
-        alert(message)
+        await dialog.showAlert({
+          title: t('layout.success') || '提示',
+          message: message
+        })
       }
+    }
+
+    // 重命名布局
+    const handleRenameLayout = (layoutId, newName) => {
+      layoutManager.renameLayout(layoutId, newName)
+    }
+
+    // 重新排序布局
+    const handleReorderLayout = (fromIndex, toIndex) => {
+      layoutManager.reorderLayouts(fromIndex, toIndex)
     }
 
     // 处理导入模式选择
@@ -640,6 +684,7 @@ export default {
     // 提供给子组件使用
     provide('showPrompt', dialog.showPrompt)
     provide('showConfirm', dialog.showConfirm)
+    provide('showAlert', dialog.showAlert)
     provide('checkTemplateUpdate', (layoutId) =>
       layoutManager.checkTemplateUpdate(layoutId, dialog.isElectron.value)
     )
@@ -673,8 +718,108 @@ export default {
       }
     }
 
+    // 更新画布变换数据
+    const handleUpdateCanvasTransform = (transform, layoutId) => {
+      const layout = layoutManager.layouts.value.find(l => l.id === layoutId)
+      if (layout) {
+        layout.canvasTransform = { ...transform }
+        layoutManager.saveCurrentLayout(websiteManager.websites.value)
+      }
+    }
+
+    // 打开外部链接模态框
+    const openExternalUrlModal = (url) => {
+      console.log('[App] ========== 打开外部链接模态框 ==========')
+      console.log('[App] URL:', url)
+      externalUrl.value = url
+      showExternalUrlModal.value = true
+      console.log('[App] 模态框状态已更新')
+    }
+
+    // 关闭外部链接模态框
+    const closeExternalUrlModal = () => {
+      showExternalUrlModal.value = false
+      externalUrl.value = ''
+    }
+
     // 页面加载时自动显示左侧栏，然后隐藏
     onMounted(() => {
+      // 监听打开外部链接模态框事件
+      const handleOpenExternalUrlModal = (event) => {
+        console.log('[App] ========== 收到open-external-url-modal事件 ==========')
+        console.log('[App] event:', event)
+        console.log('[App] event.detail:', event.detail)
+        const url = event.detail?.url
+        if (url) {
+          console.log('[App] ✓ 有效URL，打开模态框:', url)
+          openExternalUrlModal(url)
+        } else {
+          console.warn('[App] ✗ 无效URL，忽略事件')
+        }
+      }
+      
+      console.log('[App] 注册open-external-url-modal事件监听器')
+      window.addEventListener('open-external-url-modal', handleOpenExternalUrlModal)
+      
+      // 组件卸载时清理事件监听器
+      onBeforeUnmount(() => {
+        window.removeEventListener('open-external-url-modal', handleOpenExternalUrlModal)
+      })
+      
+      // 检查是否是从双击打开的单网站窗口
+      // 检查是否是从双击打开的单网站窗口
+      const urlParams = new URLSearchParams(window.location.search)
+      const websiteDataParam = urlParams.get('websiteData')
+      
+      if (websiteDataParam) {
+        try {
+          const websiteData = JSON.parse(decodeURIComponent(websiteDataParam))
+          console.log('[App] 检测到单网站窗口模式，网站数据:', websiteData)
+          
+          // 隐藏侧边栏
+          showPanel.value = false
+          
+          // 创建只包含这个网站的布局
+          const singleWebsiteLayout = {
+            id: Date.now(),
+            name: websiteData.title || websiteData.url || '单网站窗口',
+            websites: [{
+              id: websiteData.id || Date.now(),
+              url: websiteData.url,
+              title: websiteData.title || websiteData.url,
+              type: websiteData.type || 'website',
+              deviceType: websiteData.deviceType || 'desktop',
+              targetSelector: websiteData.targetSelector,
+              targetSelectors: websiteData.targetSelectors,
+              padding: websiteData.padding,
+              muted: websiteData.muted || false,
+              darkMode: websiteData.darkMode || false,
+              autoRefreshInterval: websiteData.autoRefreshInterval || 0,
+              desktopCaptureSourceId: websiteData.desktopCaptureSourceId,
+              desktopCaptureOptions: websiteData.desktopCaptureOptions,
+              position: { x: 0, y: 0 },
+              size: { width: 1000, height: 700 }
+            }],
+            drawings: []
+          }
+          
+          // 切换到单网站布局
+          layoutManager.createLayout(singleWebsiteLayout.name, singleWebsiteLayout)
+          layoutManager.switchLayout(singleWebsiteLayout.id)
+          
+          // 自动全屏显示这个网站
+          setTimeout(() => {
+            if (websiteManager.websites.value.length > 0) {
+              handleFullscreen(0)
+            }
+          }, 500)
+          
+          return // 单网站窗口模式，不执行后续逻辑
+        } catch (error) {
+          console.error('[App] 解析网站数据失败:', error)
+        }
+      }
+
       // 首先尝试从 URL 参数导入布局
       const importedLayout = importExport.importLayoutFromUrlParams()
       if (importedLayout) {
@@ -763,6 +908,8 @@ export default {
       handleCreateLayout,
       handleDeleteLayout,
       handleToggleKeepAlive,
+      handleRenameLayout,
+      handleReorderLayout,
       renameLayout: layoutManager.renameLayout,
       handleToggleTitles,
       handleToggleGlobalMute,
@@ -770,6 +917,7 @@ export default {
       handleToggleCertificateErrorShadow,
       handleClearConfig,
       handleUpdateDrawings,
+      handleUpdateCanvasTransform,
       showSharedModal,
       handleShowSharedModal,
       handleImportLayout,
@@ -778,7 +926,11 @@ export default {
       sharedLayouts,
       handleShareLayout,
       handleExportLayout,
-      handleImportLayoutFromImage
+      handleImportLayoutFromImage,
+      showExternalUrlModal,
+      externalUrl,
+      openExternalUrlModal,
+      closeExternalUrlModal
     }
   }
 }

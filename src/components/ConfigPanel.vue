@@ -18,6 +18,10 @@
         @select-layout="selectLayout"
         @share-layout="$emit('share-layout', $event)"
         @export-layout="$emit('export-layout', $event)"
+        @delete-layout="(id) => $emit('delete-layout', id)"
+        @toggle-keep-alive="(id) => $emit('toggle-keep-alive', id)"
+        @rename-layout="(id, name) => $emit('rename-layout', id, name)"
+        @reorder-layout="(fromIndex, toIndex) => $emit('reorder-layout', fromIndex, toIndex)"
       />
 
       <!-- 设置和操作按钮 -->
@@ -122,7 +126,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
   setup(props, { emit }) {
     const { t } = useI18n()
 

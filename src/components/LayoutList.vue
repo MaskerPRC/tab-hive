@@ -12,33 +12,61 @@
 
     <div class="layout-list">
       <div
-        v-for="layout in layouts"
+        v-for="(layout, index) in layouts"
         :key="layout.id"
         class="layout-item"
-        :class="{ 'active': layout.id === currentLayoutId }"
+        :class="{ 
+          'active': layout.id === currentLayoutId,
+          'dragging': draggedIndex === index,
+          'drag-over': dragOverIndex === index
+        }"
+        draggable="true"
         @click="$emit('select-layout', layout.id)"
         @contextmenu.prevent="handleContextMenu($event, layout)"
+        @dragstart="handleDragStart($event, index)"
+        @dragend="handleDragEnd"
+        @dragover.prevent="handleDragOver($event, index)"
+        @dragenter.prevent="handleDragEnter($event, index)"
+        @dragleave="handleDragLeave"
+        @drop.prevent="handleDrop($event, index)"
       >
         <div class="layout-item-content">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="layout-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="layout-icon drag-handle">
             <rect x="3" y="3" width="7" height="7"/>
             <rect x="14" y="3" width="7" height="7"/>
             <rect x="14" y="14" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/>
           </svg>
           <span class="layout-item-name">{{ layout.name }}</span>
+          <span v-if="layout.keepAlive" class="keep-alive-badge" title="后台运行中">❄️</span>
         </div>
         <div v-if="layout.id === currentLayoutId" class="layout-indicator"></div>
       </div>
     </div>
 
-    <!-- 右键菜单 -->
-    <div
-      v-if="contextMenuVisible"
-      class="context-menu"
-      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
-      @click.stop
-    >
+    <!-- 右键菜单 - 使用 Teleport 渲染到 body 避免被父容器裁剪 -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenuVisible"
+        class="context-menu"
+        :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+        @click.stop
+      >
+      <div class="context-menu-item" @click="handleRename">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        <span>{{ $t('layout.renameLayout') }}</span>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-item" @click="handleToggleKeepAlive">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        <span>{{ selectedLayout && selectedLayout.keepAlive ? $t('layout.disableKeepAlive') : $t('layout.enableKeepAlive') }}</span>
+      </div>
+      <div class="context-menu-divider"></div>
       <div class="context-menu-item" @click="handleShare">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="18" cy="5" r="3"/>
@@ -57,12 +85,26 @@
         </svg>
         <span>{{ $t('layout.exportLayout') }}</span>
       </div>
-    </div>
+      <div class="context-menu-divider"></div>
+      <div 
+        class="context-menu-item context-menu-item-danger" 
+        @click="handleDelete"
+        :class="{ 'disabled': layouts.length <= 1 }"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        <span>{{ $t('layout.deleteLayout') }}</span>
+      </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'LayoutList',
@@ -76,12 +118,21 @@ export default {
       required: true
     }
   },
-  emits: ['create-layout', 'select-layout', 'share-layout', 'export-layout'],
+  emits: ['create-layout', 'select-layout', 'share-layout', 'export-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout'],
   setup(props, { emit }) {
+    const { t } = useI18n()
+    const showPrompt = inject('showPrompt')
+    const showConfirm = inject('showConfirm')
+    const showAlert = inject('showAlert')
+    
     const contextMenuVisible = ref(false)
     const contextMenuX = ref(0)
     const contextMenuY = ref(0)
     const selectedLayout = ref(null)
+    
+    // 拖拽相关状态
+    const draggedIndex = ref(-1)
+    const dragOverIndex = ref(-1)
 
     const handleContextMenu = (event, layout) => {
       event.preventDefault()
@@ -111,6 +162,111 @@ export default {
       closeContextMenu()
     }
 
+    const handleDelete = async () => {
+      if (!selectedLayout.value) return
+      
+      // 立即关闭菜单
+      closeContextMenu()
+      
+      if (props.layouts.length <= 1) {
+        if (showAlert) {
+          await showAlert({
+            title: t('layout.warning') || '提示',
+            message: t('layout.atLeastOne')
+          })
+        } else {
+          alert(t('layout.atLeastOne'))
+        }
+        return
+      }
+
+      const confirmed = await showConfirm(
+        t('layout.delete', { name: selectedLayout.value.name })
+      )
+      
+      if (confirmed) {
+        emit('delete-layout', selectedLayout.value.id)
+      }
+    }
+
+    const handleToggleKeepAlive = () => {
+      if (selectedLayout.value) {
+        emit('toggle-keep-alive', selectedLayout.value.id)
+      }
+      closeContextMenu()
+    }
+
+    const handleRename = async () => {
+      if (!selectedLayout.value) return
+      
+      // 立即关闭菜单
+      closeContextMenu()
+      
+      const newName = await showPrompt({
+        title: t('layout.renameLayout'),
+        message: t('layout.rename'),
+        placeholder: selectedLayout.value.name,
+        defaultValue: selectedLayout.value.name
+      })
+      
+      if (newName && newName.trim() && newName.trim() !== selectedLayout.value.name) {
+        emit('rename-layout', selectedLayout.value.id, newName.trim())
+      }
+    }
+
+    // 拖拽处理函数
+    const handleDragStart = (event, index) => {
+      draggedIndex.value = index
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/html', index)
+      // 添加拖拽时的样式
+      event.target.style.opacity = '0.5'
+    }
+
+    const handleDragEnd = (event) => {
+      event.target.style.opacity = ''
+      draggedIndex.value = -1
+      dragOverIndex.value = -1
+    }
+
+    const handleDragOver = (event, index) => {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+      if (draggedIndex.value !== index) {
+        dragOverIndex.value = index
+      }
+    }
+
+    const handleDragEnter = (event, index) => {
+      event.preventDefault()
+      if (draggedIndex.value !== index) {
+        dragOverIndex.value = index
+      }
+    }
+
+    const handleDragLeave = (event) => {
+      // 只有当离开整个元素时才清除 dragOverIndex
+      const rect = event.currentTarget.getBoundingClientRect()
+      const x = event.clientX
+      const y = event.clientY
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        dragOverIndex.value = -1
+      }
+    }
+
+    const handleDrop = (event, dropIndex) => {
+      event.preventDefault()
+      const dragIndex = draggedIndex.value
+      
+      if (dragIndex !== -1 && dragIndex !== dropIndex) {
+        emit('reorder-layout', dragIndex, dropIndex)
+      }
+      
+      draggedIndex.value = -1
+      dragOverIndex.value = -1
+      event.target.style.opacity = ''
+    }
+
     const handleClickOutside = (event) => {
       if (contextMenuVisible.value && !event.target.closest('.context-menu')) {
         closeContextMenu()
@@ -129,9 +285,21 @@ export default {
       contextMenuVisible,
       contextMenuX,
       contextMenuY,
+      selectedLayout,
+      draggedIndex,
+      dragOverIndex,
       handleContextMenu,
       handleShare,
-      handleExport
+      handleExport,
+      handleDelete,
+      handleToggleKeepAlive,
+      handleRename,
+      handleDragStart,
+      handleDragEnd,
+      handleDragOver,
+      handleDragEnter,
+      handleDragLeave,
+      handleDrop
     }
   }
 }
@@ -196,10 +364,31 @@ export default {
   border: 1px solid transparent;
   background: transparent;
   color: #475569;
+  position: relative;
+  user-select: none;
 }
 
 .layout-item:hover {
   background: #f1f5f9;
+}
+
+.layout-item.dragging {
+  opacity: 0.5;
+}
+
+.layout-item.drag-over {
+  border-color: #f97316;
+  background: #fff7ed;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+}
+
+.drag-handle {
+  cursor: grab;
+}
+
+.layout-item:active .drag-handle {
+  cursor: grabbing;
 }
 
 .layout-item.active {
@@ -239,6 +428,12 @@ export default {
   white-space: nowrap;
 }
 
+.keep-alive-badge {
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+  flex-shrink: 0;
+}
+
 .layout-indicator {
   width: 0.375rem;
   height: 0.375rem;
@@ -253,7 +448,7 @@ export default {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 10003;
   min-width: 160px;
   padding: 4px;
 }
@@ -277,6 +472,30 @@ export default {
 .context-menu-item svg {
   flex-shrink: 0;
   color: #64748b;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+.context-menu-item-danger {
+  color: #dc2626;
+}
+
+.context-menu-item-danger:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.context-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+  background: transparent;
 }
 </style>
 

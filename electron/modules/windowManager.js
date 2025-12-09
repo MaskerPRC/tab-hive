@@ -65,67 +65,172 @@ function createWindow(windowId = null, options = {}) {
 
   console.log('[Electron Main] ✓ 窗口创建完成')
 
-  // 加载页面，带上窗口 ID
+  // 加载页面，带上窗口 ID 和网站数据（如果有）
+  let urlParams = `windowId=${wid}`
+  if (options.websiteData) {
+    // 将网站数据编码为 JSON 并添加到 URL 参数
+    const websiteDataJson = encodeURIComponent(JSON.stringify(options.websiteData))
+    urlParams += `&websiteData=${websiteDataJson}`
+    console.log('[Electron Main] 传递网站数据到新窗口:', options.websiteData.title || options.websiteData.url)
+  }
+
   if (process.env.NODE_ENV === 'development') {
     console.log('[Electron Main] 开发模式,加载 http://localhost:3000')
-    window.loadURL(`http://localhost:3000?windowId=${wid}`)
+    window.loadURL(`http://localhost:3000?${urlParams}`)
     window.webContents.openDevTools()
   } else {
     console.log('[Electron Main] 生产模式,加载本地文件')
     const indexPath = path.join(__dirname, '../dist/index.html')
     console.log('[Electron Main] 文件路径:', indexPath)
-    window.loadFile(indexPath, { query: { windowId: wid.toString() } })
+    const query = {}
+    urlParams.split('&').forEach(param => {
+      const [key, value] = param.split('=')
+      query[key] = decodeURIComponent(value)
+    })
+    window.loadFile(indexPath, { query })
   }
 
   console.log('[Electron Main] ========== 设置 CORS 和 Cookie 处理 ==========')
+
+  // 完全禁用菜单栏，防止Alt键显示菜单栏导致窗口偏移
+  window.setMenuBarVisibility(false)
+  window.setMenu(null)
 
   window.once('ready-to-show', () => {
     console.log('[Electron Main] ✓ 窗口准备完成,显示窗口')
     window.show()
   })
 
-  // 拦截新窗口打开 - 在webview中导航而不是打开新窗口
+  // 拦截新窗口打开 - 根据域名判断是导航还是打开模态框
   window.webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
-    console.log('[Window Open Guard] 拦截新窗口打开:', { url, frameName, disposition })
+    console.log('[Window Open Guard] ========== 拦截新窗口打开 ==========')
+    console.log('[Window Open Guard] URL:', url)
+    console.log('[Window Open Guard] frameName:', frameName)
+    console.log('[Window Open Guard] disposition:', disposition)
+    console.log('[Window Open Guard] 窗口ID:', wid)
+    console.log('[Window Open Guard] 堆栈跟踪:', new Error().stack)
 
-    // 发送消息到渲染进程，让它在最近点击的webview中导航
+    // 发送消息到渲染进程，让它判断是导航还是打开模态框
     window.webContents.executeJavaScript(`
       (function() {
-        console.log('[Window Open Guard] 尝试在webview中打开:', '${url.replace(/'/g, "\\'")}');
+        const newUrl = '${url.replace(/'/g, "\\'")}';
+        console.log('[Window Open Guard Renderer] ========== 开始处理新URL ==========');
+        console.log('[Window Open Guard Renderer] 新URL:', newUrl);
+        console.log('[Window Open Guard Renderer] document.activeElement:', document.activeElement?.tagName);
         
         // 查找最近获得焦点的webview
+        let activeWebview = null;
         const activeElement = document.activeElement;
         if (activeElement && activeElement.tagName === 'WEBVIEW') {
-          console.log('[Window Open Guard] 找到活动webview，在其中导航');
-          try {
-            activeElement.src = '${url.replace(/'/g, "\\'")}';
-            return true;
-          } catch (e) {
-            console.log('[Window Open Guard] 导航失败:', e.message);
-          }
+          activeWebview = activeElement;
+          console.log('[Window Open Guard Renderer] 找到活动webview (activeElement)');
         }
         
         // 如果没有找到活动webview，尝试在最后一个webview中打开
-        const webviews = document.querySelectorAll('webview:not(.buffer-webview)');
-        if (webviews.length > 0) {
-          const lastWebview = webviews[webviews.length - 1];
-          console.log('[Window Open Guard] 在最后一个webview中导航');
-          try {
-            lastWebview.src = '${url.replace(/'/g, "\\'")}';
-            return true;
-          } catch (e) {
-            console.log('[Window Open Guard] 导航失败:', e.message);
+        if (!activeWebview) {
+          const webviews = document.querySelectorAll('webview:not(.buffer-webview)');
+          console.log('[Window Open Guard Renderer] 找到webview数量:', webviews.length);
+          if (webviews.length > 0) {
+            activeWebview = webviews[webviews.length - 1];
+            console.log('[Window Open Guard Renderer] 使用最后一个webview');
           }
         }
         
-        console.log('[Window Open Guard] 未找到可用webview');
-        return false;
+        if (activeWebview) {
+          try {
+            const currentUrl = activeWebview.getURL();
+            console.log('[Window Open Guard Renderer] 当前webview URL:', currentUrl);
+            console.log('[Window Open Guard Renderer] 新URL:', newUrl);
+            
+            // 判断是否同根域名
+            function getRootDomain(hostname) {
+              if (!hostname) return '';
+              hostname = hostname.split(':')[0];
+              if (/^\\d+\\.\\d+\\.\\d+\\.\\d+$/.test(hostname)) return hostname;
+              if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname;
+              const parts = hostname.split('.');
+              if (parts.length >= 2) {
+                return parts.slice(-2).join('.');
+              }
+              return hostname;
+            }
+            
+            function isSameRootDomain(url1, url2) {
+              try {
+                const urlObj1 = new URL(url1);
+                const urlObj2 = new URL(url2);
+                const rootDomain1 = getRootDomain(urlObj1.hostname);
+                const rootDomain2 = getRootDomain(urlObj2.hostname);
+                console.log('[Window Open Guard Renderer] 域名比较:', {
+                  url1: urlObj1.hostname,
+                  url2: urlObj2.hostname,
+                  rootDomain1: rootDomain1,
+                  rootDomain2: rootDomain2,
+                  isSame: rootDomain1 === rootDomain2 && rootDomain1 !== ''
+                });
+                return rootDomain1 === rootDomain2 && rootDomain1 !== '';
+              } catch (e) {
+                console.error('[Window Open Guard Renderer] URL解析失败:', e);
+                return false;
+              }
+            }
+            
+            // 如果同根域名，在当前webview中导航
+            if (currentUrl && isSameRootDomain(currentUrl, newUrl)) {
+              console.log('[Window Open Guard Renderer] ✓ 同根域名，在当前webview中导航');
+              activeWebview.src = newUrl;
+              return { action: 'navigate', success: true };
+            } else {
+              // 不同根域名，通过IPC发送消息打开模态框
+              console.log('[Window Open Guard Renderer] ✗ 不同根域名，打开模态框');
+              console.log('[Window Open Guard Renderer] window.electron存在:', !!window.electron);
+              if (window.electron && window.electron.ipc) {
+                console.log('[Window Open Guard Renderer] 触发CustomEvent: open-external-url-modal');
+                // 触发自定义事件，让App.vue监听
+                const event = new CustomEvent('open-external-url-modal', {
+                  detail: { url: newUrl }
+                });
+                window.dispatchEvent(event);
+                console.log('[Window Open Guard Renderer] CustomEvent已触发');
+              } else {
+                console.error('[Window Open Guard Renderer] window.electron不存在，无法打开模态框');
+              }
+              return { action: 'modal', success: true };
+            }
+          } catch (e) {
+            console.error('[Window Open Guard Renderer] 处理失败:', e.message, e.stack);
+            // 出错时也打开模态框
+            if (window.electron && window.electron.ipc) {
+              console.log('[Window Open Guard Renderer] 出错时触发CustomEvent');
+              window.dispatchEvent(new CustomEvent('open-external-url-modal', {
+                detail: { url: newUrl }
+              }));
+            }
+            return { action: 'modal', success: true };
+          }
+        } else {
+          // 没有找到webview，打开模态框
+          console.log('[Window Open Guard Renderer] ✗ 未找到可用webview，打开模态框');
+          if (window.electron && window.electron.ipc) {
+            console.log('[Window Open Guard Renderer] 触发CustomEvent: open-external-url-modal');
+            window.dispatchEvent(new CustomEvent('open-external-url-modal', {
+              detail: { url: newUrl }
+            }));
+          } else {
+            console.error('[Window Open Guard Renderer] window.electron不存在，无法打开模态框');
+          }
+          return { action: 'modal', success: true };
+        }
       })();
-    `).catch(err => {
-      console.log('[Window Open Guard] 执行失败:', err.message)
+    `).then(result => {
+      console.log('[Window Open Guard] executeJavaScript结果:', result)
+    }).catch(err => {
+      console.error('[Window Open Guard] ✗ executeJavaScript执行失败:', err.message)
+      console.error('[Window Open Guard] 错误堆栈:', err.stack)
     })
 
     // 阻止打开新窗口
+    console.log('[Window Open Guard] 返回 deny，阻止打开新窗口')
     return { action: 'deny' }
   })
 

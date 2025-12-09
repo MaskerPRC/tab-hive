@@ -4,13 +4,15 @@
  */
 import { ref } from 'vue'
 
-export function useCanvasTransform() {
+export function useCanvasTransform(initialTransform = null) {
   // 画布变换状态
-  const canvasTransform = ref({
-    x: 0,      // 平移 X
-    y: 0,      // 平移 Y
-    zoom: 1    // 缩放比例
-  })
+  const canvasTransform = ref(
+    initialTransform || {
+      x: 0,      // 平移 X
+      y: 0,      // 平移 Y
+      zoom: 1    // 缩放比例
+    }
+  )
 
   // 是否正在拖动画布
   const isPanning = ref(false)

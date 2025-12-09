@@ -102,6 +102,34 @@ function registerIpcHandlers(createWindowFn, proxyManager, ensureCertificateHand
     return { success: true, windowId }
   })
 
+  /**
+   * 打开单个网站到新窗口
+   */
+  ipcMain.handle('open-website-in-window', (event, websiteData) => {
+    console.log('[窗口管理] 打开网站到新窗口:', websiteData)
+
+    // 获取当前窗口的位置，新窗口稍微偏移
+    const currentWindow = BrowserWindow.fromWebContents(event.sender)
+    const bounds = currentWindow.getBounds()
+
+    // 创建新窗口，传递网站数据
+    const result = createWindowFn(null, {
+      x: bounds.x + 30,
+      y: bounds.y + 30,
+      width: bounds.width,
+      height: bounds.height,
+      websiteData: websiteData // 传递网站数据
+    })
+
+    console.log('[窗口管理] ✓ 新窗口已创建, ID:', result.windowId)
+
+    return {
+      success: true,
+      windowId: result.windowId,
+      totalWindows: getAllWindows().size
+    }
+  })
+
   // ========== Webview 管理 ==========
 
   /**
