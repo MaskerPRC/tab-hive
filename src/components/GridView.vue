@@ -188,6 +188,9 @@ import { useWebsiteOperations } from '../composables/useWebsiteOperations'
 import { useElementSelection } from '../composables/useElementSelection'
 import { useDrawing } from '../composables/useDrawing'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
+import { useFullscreenNavigation } from '../composables/useFullscreenNavigation'
+import { useFileDrop } from '../composables/useFileDrop'
+import { useCanvasEventHandlers } from '../composables/useCanvasEventHandlers'
 
 export default {
   name: 'GridView',
@@ -356,6 +359,41 @@ export default {
       setDrawingWidth
     } = useDrawing(props, emit, canvasTransform)
 
+    // 全屏导航功能
+    const {
+      fullscreenCanGoBack,
+      fullscreenCanGoForward,
+      checkFullscreenNavigationState,
+      handleFullscreenGoBack,
+      handleFullscreenGoForward
+    } = useFullscreenNavigation(fullscreenIndexRef, allWebsites)
+
+    // 文件拖放功能
+    const {
+      handleDragOverOnEmpty: handleDragOverOnEmptyFiles,
+      handleDragEnterForFiles,
+      handleDropOnEmpty: handleDropOnEmptyFiles
+    } = useFileDrop()
+
+    // 画布事件处理器
+    const {
+      handleCanvasMouseDown,
+      handleContextMenu,
+      handleCanvasWheel,
+      zoomIn,
+      zoomOut,
+      resetTransform
+    } = useCanvasEventHandlers(props, {
+      isDraggingItem,
+      isResizing,
+      isDrawingMode,
+      startPan,
+      handleWheelZoom,
+      setZoom,
+      resetCanvasTransform,
+      canvasTransform
+    })
+
     // ========== 计算属性 ==========
     
     const zoomPercentage = computed(() => {
@@ -371,75 +409,13 @@ export default {
       handleDropBase(event, index, allWebsites.value, emit)
     }
 
-    // 处理空白区域的拖放
+    // 处理空白区域的拖放（整合文件拖放和URL拖放）
     const handleDragOverOnEmpty = (event) => {
-      const types = event.dataTransfer.types
-      // 支持文件拖拽和URL拖拽
-      if (types.includes('Files') || types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
-        const target = event.target
-        if (target.closest('.grid-item')) {
-          return
-        }
-        event.preventDefault()
-        dragOverIndex.value = null
-      }
-    }
-    
-    // 处理文件拖拽进入
-    const handleDragEnterForFiles = (event) => {
-      const types = event.dataTransfer.types
-      if (types.includes('Files')) {
-        event.preventDefault()
-        console.log('[GridView] 文件拖拽进入画布')
-      }
+      handleDragOverOnEmptyFiles(event, dragOverIndex)
     }
 
     const handleDropOnEmpty = async (event) => {
-      console.log('[GridView] handleDropOnEmpty 被调用')
-      const types = event.dataTransfer.types
-      console.log('[GridView] 拖拽类型:', types)
-      
-      const target = event.target
-      if (target.closest('.grid-item')) {
-        console.log('[GridView] 拖拽到卡片上，跳过')
-        return
-      }
-      
-      // 检查是否是文件拖拽（图片文件）
-      if (types.includes('Files')) {
-        console.log('[GridView] 检测到文件拖拽')
-        const files = event.dataTransfer.files
-        if (files.length > 0) {
-          const file = files[0]
-          console.log('[GridView] 文件:', file.name, file.type, file.size)
-          
-          // 检查是否是图片文件
-          if (file.type.startsWith('image/')) {
-            console.log('[GridView] 是图片文件，尝试提取布局数据')
-            try {
-              const { extractLayoutFromImage } = await import('../utils/layoutImageUtils.js')
-              const layoutData = await extractLayoutFromImage(file)
-              
-              console.log('[GridView] 从拖拽图片提取的布局数据:', layoutData)
-              
-              if (layoutData && layoutData.websites && Array.isArray(layoutData.websites)) {
-                console.log('[GridView] 从拖拽图片检测到布局数据，触发导入事件')
-                emit('import-layout-from-image', layoutData)
-                return
-              } else {
-                console.log('[GridView] 图片中没有找到布局数据')
-              }
-            } catch (error) {
-              console.error('[GridView] 处理拖拽图片失败:', error)
-            }
-          }
-        }
-      }
-      
-      // 处理URL拖拽
-      if (types.includes('text/uri-list') || types.includes('text/plain') || types.includes('text/x-moz-url')) {
-        handleDropOnEmptyBase(event, emit)
-      }
+      await handleDropOnEmptyFiles(event, emit, handleDropOnEmptyBase)
     }
 
     // 判断某个索引的网站是否应该隐藏
@@ -472,53 +448,7 @@ export default {
       }
     }
 
-    // 处理画布鼠标按下（开始平移）
-    const handleCanvasMouseDown = (event) => {
-      if (props.fullscreenIndex !== null) return
-      if (isDraggingItem.value || isResizing.value) return
-
-      const target = event.target
-      if (target.closest('.grid-item') || 
-          target.closest('.btn-add-website-float') || 
-          target.closest('.canvas-controls') ||
-          target.closest('.drawing-toolbar')) {
-        return
-      }
-
-      if (event.button === 1) {
-        startPan(event)
-        return
-      }
-
-      if (isDrawingMode.value && event.button === 0) {
-        return
-      }
-
-      startPan(event)
-    }
-
-    // 处理右键菜单事件
-    const handleContextMenu = (event) => {
-      const target = event.target
-      if (target.closest('webview') || 
-          target.closest('iframe') || 
-          target.closest('.grid-item')) {
-        return
-      }
-      event.preventDefault()
-    }
-
-    // 处理画布滚轮（缩放）
-    const handleCanvasWheel = (event) => {
-      if (props.fullscreenIndex !== null) return
-      if (isDraggingItem.value || isResizing.value) return
-      handleWheelZoom(event)
-    }
-
-    // 缩放控制
-    const zoomIn = () => setZoom(canvasTransform.value.zoom + 0.1)
-    const zoomOut = () => setZoom(canvasTransform.value.zoom - 0.1)
-    const resetTransform = () => resetCanvasTransform()
+    // 画布控制方法已通过 useCanvasEventHandlers 提供
 
     // 处理全屏切换
     const handleFullscreenToggle = (index) => {
@@ -541,127 +471,7 @@ export default {
       }
     }
 
-    // 全屏模式下的前进后退状态
-    const fullscreenCanGoBack = ref(false)
-    const fullscreenCanGoForward = ref(false)
-
-    // 检查全屏模式下的导航状态
-    const checkFullscreenNavigationState = () => {
-      if (props.fullscreenIndex === null) {
-        fullscreenCanGoBack.value = false
-        fullscreenCanGoForward.value = false
-        return
-      }
-
-      const website = allWebsites.value[props.fullscreenIndex]
-      if (!website || website.type === 'desktop-capture') {
-        fullscreenCanGoBack.value = false
-        fullscreenCanGoForward.value = false
-        return
-      }
-
-      const isElectron = window.electron?.isElectron
-      if (isElectron) {
-        // Electron 环境：查找 webview
-        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-        const webview = webviewElements[props.fullscreenIndex]
-        if (webview) {
-          try {
-            fullscreenCanGoBack.value = webview.canGoBack()
-            fullscreenCanGoForward.value = webview.canGoForward()
-          } catch (error) {
-            console.error('[GridView] 检查全屏导航状态失败:', error)
-            fullscreenCanGoBack.value = false
-            fullscreenCanGoForward.value = false
-          }
-        }
-      } else {
-        // 浏览器环境：查找 iframe
-        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-        const iframe = iframeElements[props.fullscreenIndex]
-        if (iframe) {
-          try {
-            const iframeWindow = iframe.contentWindow
-            if (iframeWindow && iframeWindow.history) {
-              // 对于 iframe，我们无法直接检查，假设可以前进后退
-              fullscreenCanGoBack.value = true
-              fullscreenCanGoForward.value = true
-            } else {
-              fullscreenCanGoBack.value = false
-              fullscreenCanGoForward.value = false
-            }
-          } catch (error) {
-            // 跨域 iframe 无法访问
-            fullscreenCanGoBack.value = false
-            fullscreenCanGoForward.value = false
-          }
-        }
-      }
-    }
-
-    // 全屏模式下的后退
-    const handleFullscreenGoBack = () => {
-      if (props.fullscreenIndex === null) return
-
-      const website = allWebsites.value[props.fullscreenIndex]
-      if (!website || website.type === 'desktop-capture') return
-
-      const isElectron = window.electron?.isElectron
-      if (isElectron) {
-        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-        const webview = webviewElements[props.fullscreenIndex]
-        if (webview && webview.canGoBack()) {
-          webview.goBack()
-          setTimeout(checkFullscreenNavigationState, 100)
-        }
-      } else {
-        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-        const iframe = iframeElements[props.fullscreenIndex]
-        if (iframe) {
-          try {
-            const iframeWindow = iframe.contentWindow
-            if (iframeWindow && iframeWindow.history) {
-              iframeWindow.history.back()
-              setTimeout(checkFullscreenNavigationState, 100)
-            }
-          } catch (error) {
-            console.error('[GridView] 全屏 iframe 后退失败:', error)
-          }
-        }
-      }
-    }
-
-    // 全屏模式下的前进
-    const handleFullscreenGoForward = () => {
-      if (props.fullscreenIndex === null) return
-
-      const website = allWebsites.value[props.fullscreenIndex]
-      if (!website || website.type === 'desktop-capture') return
-
-      const isElectron = window.electron?.isElectron
-      if (isElectron) {
-        const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-        const webview = webviewElements[props.fullscreenIndex]
-        if (webview && webview.canGoForward()) {
-          webview.goForward()
-          setTimeout(checkFullscreenNavigationState, 100)
-        }
-      } else {
-        const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-        const iframe = iframeElements[props.fullscreenIndex]
-        if (iframe) {
-          try {
-            const iframeWindow = iframe.contentWindow
-            if (iframeWindow && iframeWindow.history) {
-              iframeWindow.history.forward()
-              setTimeout(checkFullscreenNavigationState, 100)
-            }
-          } catch (error) {
-            console.error('[GridView] 全屏 iframe 前进失败:', error)
-          }
-        }
-      }
-    }
+    // 全屏导航方法已通过 useFullscreenNavigation 提供
 
     // 绘制鼠标按下包装器
     const handleDrawingMouseDownWrapper = (event) => {
