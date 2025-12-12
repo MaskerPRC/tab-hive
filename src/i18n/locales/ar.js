@@ -357,10 +357,13 @@ export default {
   // الإجراءات العائمة
   floatingActions: {
     refresh: 'تحديث الصفحة',
+    goBack: 'رجوع',
+    goForward: 'تقدم',
     mute: 'كتم الصوت',
     unmute: 'إلغاء كتم الصوت',
     copy: 'نسخ خلية العسل',
     script: 'منفذ البرنامج النصي',
+    devtools: 'أدوات المطور',
     edit: 'تحرير الرابط',
     fullscreen: 'عرض ملء الشاشة',
     remove: 'إزالة الموقع'

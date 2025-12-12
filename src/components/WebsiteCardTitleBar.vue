@@ -99,9 +99,12 @@
           :show="showMoreMenu"
           :menu-style="moreMenuStyle"
           :custom-code-enabled="customCodeEnabled"
+          :is-electron="isElectron"
+          :is-desktop-capture="isDesktopCapture"
           @close="showMoreMenu = false"
           @copy="$emit('copy')"
           @script="$emit('open-script-panel')"
+          @devtools="$emit('open-devtools')"
           @edit="$emit('edit')"
           @remove="$emit('remove')"
         />
@@ -151,9 +154,13 @@ export default {
     customCodeEnabled: {
       type: Boolean,
       default: true
+    },
+    isElectron: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['go-back', 'go-forward', 'refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove'],
+  emits: ['go-back', 'go-forward', 'refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove', 'open-devtools'],
   setup(props) {
     const showMoreMenu = ref(false)
     const moreMenuStyle = ref({})

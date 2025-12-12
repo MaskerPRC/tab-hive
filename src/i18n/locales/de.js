@@ -357,10 +357,13 @@ export default {
   // Schwebende Aktionen
   floatingActions: {
     refresh: 'Seite aktualisieren',
+    goBack: 'Zurück',
+    goForward: 'Vorwärts',
     mute: 'Stumm schalten',
     unmute: 'Stumm aufheben',
     copy: 'Wabe kopieren',
     script: 'Skript-Ausführer',
+    devtools: 'Entwicklertools',
     edit: 'Link bearbeiten',
     fullscreen: 'Vollbild-Ansicht',
     remove: 'Website entfernen'

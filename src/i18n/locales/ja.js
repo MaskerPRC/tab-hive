@@ -357,10 +357,13 @@ export default {
   // フローティングアクション
   floatingActions: {
     refresh: 'ページを更新',
+    goBack: '戻る',
+    goForward: '進む',
     mute: 'ミュート',
     unmute: 'ミュート解除',
     copy: 'ハニカムをコピー',
     script: 'スクリプトエグゼキュータ',
+    devtools: '開発者ツール',
     edit: 'リンクを編集',
     fullscreen: 'フルスクリーンビュー',
     remove: 'ウェブサイトを削除'

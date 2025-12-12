@@ -62,6 +62,8 @@
         <iframe
           v-if="!isElectron"
           :ref="setIframeRef"
+          :id="`iframe-${item.id}`"
+          :data-website-id="item.id"
           :src="websiteUrl"
           frameborder="0"
           sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
@@ -82,6 +84,7 @@
         :can-go-back="canGoBack"
         :can-go-forward="canGoForward"
         :is-desktop-capture="item.type === 'desktop-capture'"
+        :is-electron="isElectron"
         :custom-code-enabled="customCodeEnabled"
         @go-back="handleGoBack"
         @go-forward="handleGoForward"
@@ -89,6 +92,7 @@
         @toggle-mute="handleToggleMute"
         @copy="$emit('copy', index)"
         @open-script-panel="handleOpenScriptPanel"
+        @open-devtools="handleOpenDevTools"
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
@@ -491,6 +495,17 @@ export default {
       handleManualRefresh()
     }
 
+    const handleOpenDevTools = () => {
+      if (isElectron.value && webviewRef.value) {
+        console.log('[WebsiteCard] 打开 DevTools')
+        try {
+          webviewRef.value.openDevTools()
+        } catch (error) {
+          console.error('[WebsiteCard] 打开 DevTools 失败:', error)
+        }
+      }
+    }
+
     // ==================== 监听器 ====================
     watch(() => props.item.url, (newUrl, oldUrl) => {
       if (newUrl && newUrl !== oldUrl && oldUrl !== undefined) {
@@ -531,6 +546,7 @@ export default {
       handleManualRefresh,
       handleToggleMute,
       handleOpenScriptPanel,
+      handleOpenDevTools,
       handleUseCurrentUrl,
       handleIgnoreCertificateError,
       handleReload,

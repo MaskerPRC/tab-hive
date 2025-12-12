@@ -35,28 +35,37 @@ export function useElementSelection(props, emit) {
       return
     }
 
+    // 获取全屏网站配置
+    const website = props.websites[props.fullscreenIndex]
+    if (!website) {
+      console.error('[全视界] 未找到全屏网站配置')
+      return
+    }
+
     // 根据环境获取全屏 webview 或 iframe
     const isElectron = window.electron?.isElectron
 
     if (isElectron) {
-      // Electron 环境：查找 webview
-      const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-      if (webviewElements[props.fullscreenIndex]) {
-        fullscreenIframe.value = webviewElements[props.fullscreenIndex]
+      // Electron 环境：通过 ID 精确查找 webview（而不是使用索引）
+      const webview = document.querySelector(`#webview-${website.id}`)
+      if (webview) {
+        fullscreenIframe.value = webview
         isSelectingElement.value = true
-        console.log('[全视界] 开始元素选择模式 (webview)')
+        console.log('[全视界] 开始元素选择模式 (webview)，ID:', website.id)
       } else {
-        console.error('[全视界] 未找到全屏 webview')
+        console.error('[全视界] 未找到全屏 webview，ID:', website.id)
+        console.error('[全视界] 页面上所有 webview:', Array.from(document.querySelectorAll('webview')).map(w => w.id))
       }
     } else {
-      // 浏览器环境：查找 iframe
-      const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-      if (iframeElements[props.fullscreenIndex]) {
-        fullscreenIframe.value = iframeElements[props.fullscreenIndex]
+      // 浏览器环境：通过 ID 精确查找 iframe（而不是使用索引）
+      const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
+      if (iframe) {
+        fullscreenIframe.value = iframe
         isSelectingElement.value = true
-        console.log('[全视界] 开始元素选择模式 (iframe)')
+        console.log('[全视界] 开始元素选择模式 (iframe)，ID:', website.id)
       } else {
-        console.error('[全视界] 未找到全屏 iframe')
+        console.error('[全视界] 未找到全屏 iframe，ID:', website.id)
+        console.error('[全视界] 页面上所有 iframe:', Array.from(document.querySelectorAll('iframe')).map(i => i.getAttribute('data-website-id')))
       }
     }
   }

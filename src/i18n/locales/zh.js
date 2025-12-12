@@ -406,6 +406,7 @@ export default {
     unmute: '取消静音',
     copy: '复制视界',
     script: '脚本执行器',
+    devtools: '开发者工具',
     edit: '编辑链接',
     fullscreen: '全屏查看',
     remove: '删除网站'

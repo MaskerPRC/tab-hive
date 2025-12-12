@@ -357,10 +357,13 @@ export default {
   // Ações flutuantes
   floatingActions: {
     refresh: 'Atualizar Página',
+    goBack: 'Voltar',
+    goForward: 'Avançar',
     mute: 'Silenciar',
     unmute: 'Ativar Som',
     copy: 'Copiar Favo',
     script: 'Executor de Script',
+    devtools: 'Ferramentas de Desenvolvimento',
     edit: 'Editar Link',
     fullscreen: 'Visualização em Tela Cheia',
     remove: 'Remover Site'

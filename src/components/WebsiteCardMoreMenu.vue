@@ -15,6 +15,13 @@
         </svg>
         <span>{{ $t('floatingActions.script') || '脚本' }}</span>
       </button>
+      <button v-if="isElectron && !isDesktopCapture" class="more-menu-item" @click.stop="handleDevTools">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 17 10 11 4 5"></polyline>
+          <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>
+        <span>{{ $t('floatingActions.devtools') || '开发者工具' }}</span>
+      </button>
       <button class="more-menu-item" @click.stop="handleEdit">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -49,9 +56,17 @@ export default {
     customCodeEnabled: {
       type: Boolean,
       default: true
+    },
+    isElectron: {
+      type: Boolean,
+      default: false
+    },
+    isDesktopCapture: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['copy', 'script', 'edit', 'remove', 'close'],
+  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close'],
   setup(props, { emit }) {
     const handleCopy = () => {
       emit('close')
@@ -61,6 +76,11 @@ export default {
     const handleScript = () => {
       emit('close')
       emit('script')
+    }
+
+    const handleDevTools = () => {
+      emit('close')
+      emit('devtools')
     }
 
     const handleEdit = () => {
@@ -76,6 +96,7 @@ export default {
     return {
       handleCopy,
       handleScript,
+      handleDevTools,
       handleEdit,
       handleRemove
     }

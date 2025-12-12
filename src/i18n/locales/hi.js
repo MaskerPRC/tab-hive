@@ -357,10 +357,13 @@ export default {
   // फ्लोटिंग क्रियाएं
   floatingActions: {
     refresh: 'पृष्ठ रीफ्रेश करें',
+    goBack: 'पीछे जाएं',
+    goForward: 'आगे बढ़ें',
     mute: 'म्यूट करें',
     unmute: 'अनम्यूट करें',
     copy: 'हनीकॉम्ब कॉपी करें',
     script: 'स्क्रिप्ट निष्पादक',
+    devtools: 'डेवलपर टूल्स',
     edit: 'लिंक संपादित करें',
     fullscreen: 'पूर्ण स्क्रीन दृश्य',
     remove: 'वेबसाइट हटाएं'

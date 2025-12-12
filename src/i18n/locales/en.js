@@ -389,6 +389,7 @@ export default {
     unmute: 'Unmute',
     copy: 'Copy Honeycomb',
     script: 'Script Executor',
+    devtools: 'Developer Tools',
     edit: 'Edit Link',
     fullscreen: 'Fullscreen View',
     remove: 'Remove Website'

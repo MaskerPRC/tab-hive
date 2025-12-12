@@ -357,10 +357,13 @@ export default {
   // ফ্লোটিং অ্যাকশন
   floatingActions: {
     refresh: 'পৃষ্ঠা রিফ্রেশ করুন',
+    goBack: 'ফিরে যান',
+    goForward: 'এগিয়ে যান',
     mute: 'মুট',
     unmute: 'মুট বাতিল করুন',
     copy: 'হানি কম্ব কপি করুন',
     script: 'স্ক্রিপ্ট এক্সিকিউটর',
+    devtools: 'ডেভেলপার টুলস',
     edit: 'লিঙ্ক সম্পাদনা করুন',
     fullscreen: 'ফুলস্ক্রিন ভিউ',
     remove: 'ওয়েবসাইট সরান'

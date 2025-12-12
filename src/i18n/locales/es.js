@@ -357,10 +357,13 @@ export default {
   // Acciones flotantes
   floatingActions: {
     refresh: 'Actualizar Página',
+    goBack: 'Volver',
+    goForward: 'Avanzar',
     mute: 'Silenciar',
     unmute: 'Activar Sonido',
     copy: 'Copiar Panel',
     script: 'Ejecutor de Scripts',
+    devtools: 'Herramientas de Desarrollo',
     edit: 'Editar Enlace',
     fullscreen: 'Vista de Pantalla Completa',
     remove: 'Eliminar Sitio Web'

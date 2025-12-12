@@ -28,9 +28,8 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
 
     const isElectron = window.electron?.isElectron
     if (isElectron) {
-      // Electron 环境：查找 webview
-      const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-      const webview = webviewElements[fullscreenIndexRef.value]
+      // Electron 环境：通过 ID 精确查找 webview（而不是使用索引）
+      const webview = document.querySelector(`#webview-${website.id}`)
       if (webview) {
         try {
           fullscreenCanGoBack.value = webview.canGoBack()
@@ -40,11 +39,14 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
           fullscreenCanGoBack.value = false
           fullscreenCanGoForward.value = false
         }
+      } else {
+        console.warn('[useFullscreenNavigation] 未找到 webview，ID:', website.id)
+        fullscreenCanGoBack.value = false
+        fullscreenCanGoForward.value = false
       }
     } else {
-      // 浏览器环境：查找 iframe
-      const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-      const iframe = iframeElements[fullscreenIndexRef.value]
+      // 浏览器环境：通过 ID 精确查找 iframe（而不是使用索引）
+      const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
       if (iframe) {
         try {
           const iframeWindow = iframe.contentWindow
@@ -61,6 +63,10 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
           fullscreenCanGoBack.value = false
           fullscreenCanGoForward.value = false
         }
+      } else {
+        console.warn('[useFullscreenNavigation] 未找到 iframe，ID:', website.id)
+        fullscreenCanGoBack.value = false
+        fullscreenCanGoForward.value = false
       }
     }
   }
@@ -76,15 +82,15 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
 
     const isElectron = window.electron?.isElectron
     if (isElectron) {
-      const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-      const webview = webviewElements[fullscreenIndexRef.value]
+      // 通过 ID 精确查找 webview（而不是使用索引）
+      const webview = document.querySelector(`#webview-${website.id}`)
       if (webview && webview.canGoBack()) {
         webview.goBack()
         setTimeout(checkFullscreenNavigationState, 100)
       }
     } else {
-      const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-      const iframe = iframeElements[fullscreenIndexRef.value]
+      // 通过 ID 精确查找 iframe（而不是使用索引）
+      const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
       if (iframe) {
         try {
           const iframeWindow = iframe.contentWindow
@@ -110,15 +116,15 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
 
     const isElectron = window.electron?.isElectron
     if (isElectron) {
-      const webviewElements = document.querySelectorAll('.grid-item webview:not(.buffer-webview)')
-      const webview = webviewElements[fullscreenIndexRef.value]
+      // 通过 ID 精确查找 webview（而不是使用索引）
+      const webview = document.querySelector(`#webview-${website.id}`)
       if (webview && webview.canGoForward()) {
         webview.goForward()
         setTimeout(checkFullscreenNavigationState, 100)
       }
     } else {
-      const iframeElements = document.querySelectorAll('.grid-item iframe:not(.buffer-iframe)')
-      const iframe = iframeElements[fullscreenIndexRef.value]
+      // 通过 ID 精确查找 iframe（而不是使用索引）
+      const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
       if (iframe) {
         try {
           const iframeWindow = iframe.contentWindow
