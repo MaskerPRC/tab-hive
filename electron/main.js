@@ -9,14 +9,18 @@ console.log('[Electron Main] ========== 全视界 启动 (Webview 架构) ======
 
 // ========== 初始化代理管理器 ==========
 let proxyManager = null
-setupDatabase().then(() => {
+
+// 数据库初始化 Promise
+const databaseReady = setupDatabase().then(() => {
   // 数据库初始化完成后，初始化代理管理器
   proxyManager = new ProxyManager()
   console.log('[Electron Main] 代理管理器已初始化')
+  return proxyManager
 }).catch((err) => {
   console.error('[Electron Main] 数据库初始化失败:', err)
   // 即使数据库初始化失败，也创建代理管理器（可能无法使用数据库功能）
   proxyManager = new ProxyManager()
+  return proxyManager
 })
 
 // ========== 设置 User-Agent ==========
@@ -47,17 +51,21 @@ function notifyCertificateError(errorData) {
 }
 
 // ========== 为默认 session 设置证书错误处理 ==========
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   console.log('[Electron Main] ========== 应用已就绪 ==========')
 
   const defaultSession = session.defaultSession
   setupCertificateErrorHandler(defaultSession, notifyCertificateError)
   console.log('[证书处理] ✓ 默认 session 证书错误处理已设置')
 
+  // 等待数据库和代理管理器初始化完成
+  await databaseReady
+  console.log('[Electron Main] ✓ 数据库和代理管理器初始化完成')
+
   // 创建主窗口
   createWindow()
 
-  // 注册所有 IPC 处理器
+  // 注册所有 IPC 处理器（此时 proxyManager 已确保初始化完成）
   registerIpcHandlers(
     createWindow,
     proxyManager,
