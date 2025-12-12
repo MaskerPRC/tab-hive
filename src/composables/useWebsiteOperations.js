@@ -25,7 +25,8 @@ export function useWebsiteOperations(props, emit) {
       padding: 0,
       muted: false,
       darkMode: false,
-      requireModifierForActions: false
+      requireModifierForActions: false,
+      openExternalInModal: false
     }
   }
 
@@ -159,13 +160,17 @@ export function useWebsiteOperations(props, emit) {
 
   /**
    * 更新网站URL
+   * 当URL变化时，清除选择器配置，因为选择器是针对特定页面的
    */
   const handleUpdateUrl = (index, newUrl) => {
     console.log('[GridView] 更新网站 URL:', { index, newUrl })
+    console.log('[GridView] 同时清除选择器配置（URL已变化，原选择器不再适用）')
     emit('update-website', {
       index,
       updates: {
-        url: newUrl
+        url: newUrl,
+        targetSelector: '',
+        targetSelectors: []
       }
     })
   }

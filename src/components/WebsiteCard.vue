@@ -257,11 +257,6 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error'],
   setup(props, { emit }) {
-    console.log('[WebsiteCard] ========== 组件初始化 ==========')
-    console.log('[WebsiteCard] 网站标题:', props.item.title)
-    console.log('[WebsiteCard] 网站URL:', props.item.url)
-    console.log('[WebsiteCard] 网站ID:', props.item.id)
-    
     // ==================== Webview/Iframe 管理 ====================
     const {
       isElectron,
@@ -335,7 +330,7 @@ export default {
       showUrlChangeHint,
       checkUrlChange,
       handleUseCurrentUrl: handleUseCurrentUrlBase
-    } = useUrlChangeDetector(props, { isElectron, getCurrentUrl })
+    } = useUrlChangeDetector(props, { isElectron, getCurrentUrl, webviewRef, executeJavaScript })
 
     // ==================== 音频控制 ====================
     const {

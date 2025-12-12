@@ -123,6 +123,14 @@ export default {
     requireModifierForActionsHint: '💡 勾选后，需要按住 Ctrl 或 Alt 键才会显示操作按钮，避免干扰网页操作'
   },
 
+  // 高级设置
+  advancedSettings: {
+    externalLinks: '外部链接处理',
+    externalLinksDesc: '配置跨域链接的打开方式',
+    openExternalInModal: '在弹窗中打开外部链接',
+    openExternalInModalHint: '💡 启用后，跨域链接将在模态框中打开，而不是在当前页面跳转。默认关闭'
+  },
+
   // Session实例选择器
   sessionInstance: {
     title: 'Cookie共享实例：',

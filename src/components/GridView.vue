@@ -236,10 +236,8 @@ export default {
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸视界）
     const allWebsites = computed(() => {
-      console.log('[GridView] ========== allWebsites 计算开始 ==========')
       const sites = props.websites || []
       const filtered = sites.filter(site => site && (site.url || site.type === 'desktop-capture'))
-      console.log('[GridView] 过滤后的网站数量:', filtered.length)
       return filtered
     })
 

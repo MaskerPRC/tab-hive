@@ -1,9 +1,6 @@
 <template>
   <div class="window-management">
     <div class="window-management-header">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="window-management-icon">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-      </svg>
       <span class="window-management-title">{{ $t('configPanel.windowManagement') }}</span>
     </div>
 
@@ -84,11 +81,6 @@ export default {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.25rem;
-}
-
-.window-management-icon {
-  color: #94a3b8;
-  flex-shrink: 0;
 }
 
 .window-management-title {

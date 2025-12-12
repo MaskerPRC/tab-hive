@@ -9,11 +9,13 @@ const { ipcRenderer } = require('electron')
 console.log('[Webview Preload] Preload script 开始加载...')
 console.log('[Webview Preload] 当前 URL:', window.location.href)
 
-// 从 URL 参数中获取 webview ID
+// 从 URL 参数中获取 webview ID 和配置
 const urlParams = new URLSearchParams(window.location.search)
 const webviewId = urlParams.get('__webview_id__') || 'unknown'
+const openExternalInModal = urlParams.get('__open_external_in_modal__') === '1'
 
 console.log('[Webview Preload] Webview ID:', webviewId)
+console.log('[Webview Preload] 外部链接在模态框中打开:', openExternalInModal)
 
 // 向主进程注册当前 webview
 ipcRenderer.invoke('webview-register', webviewId).then(() => {
@@ -612,10 +614,16 @@ window.__webviewAPI__ = {
 // 拦截 window.open,根据域名判断是导航还是打开模态框
 const originalOpen = window.open
 window.open = function(url, target, features) {
-  console.log('[Webview Preload] 拦截 window.open:', url, target)
+  console.log('========================================')
+  console.log('[Webview Preload] ========== window.open 被调用 ==========')
+  console.log('[Webview Preload] URL:', url)
+  console.log('[Webview Preload] Target:', target)
+  console.log('[Webview Preload] Features:', features)
+  console.log('[Webview Preload] 调用堆栈:', new Error().stack)
   
   // 如果没有URL，使用原始行为
   if (!url) {
+    console.log('[Webview Preload] ⚠️ 没有URL，使用原始window.open')
     return originalOpen.call(this, url, target, features)
   }
   
@@ -638,9 +646,20 @@ window.open = function(url, target, features) {
       const urlObj2 = new URL(url2)
       const rootDomain1 = getRootDomain(urlObj1.hostname)
       const rootDomain2 = getRootDomain(urlObj2.hostname)
-      return rootDomain1 === rootDomain2 && rootDomain1 !== ''
+      const isSame = rootDomain1 === rootDomain2 && rootDomain1 !== ''
+      
+      console.log('[Webview Preload] 域名比较详情:')
+      console.log('  - URL1:', url1)
+      console.log('  - URL2:', url2)
+      console.log('  - Hostname1:', urlObj1.hostname)
+      console.log('  - Hostname2:', urlObj2.hostname)
+      console.log('  - RootDomain1:', rootDomain1)
+      console.log('  - RootDomain2:', rootDomain2)
+      console.log('  - 是否相同:', isSame)
+      
+      return isSame
     } catch (e) {
-      console.error('[Webview Preload] URL解析失败:', e)
+      console.error('[Webview Preload] ❌ URL解析失败:', e)
       return false
     }
   }
@@ -649,18 +668,32 @@ window.open = function(url, target, features) {
     const currentUrl = window.location.href
     const targetUrl = url.startsWith('http') ? url : new URL(url, currentUrl).href
     
-    console.log('[Webview Preload] 当前URL:', currentUrl)
+    console.log('[Webview Preload] 当前页面URL:', currentUrl)
     console.log('[Webview Preload] 目标URL:', targetUrl)
+    console.log('[Webview Preload] 开始域名比较...')
     
     // 如果是同根域名，在当前webview中导航
-    if (isSameRootDomain(currentUrl, targetUrl)) {
-      console.log('[Webview Preload] ✓ 同根域名，在当前webview中导航')
+    const isSame = isSameRootDomain(currentUrl, targetUrl)
+    
+    if (isSame) {
+      console.log('[Webview Preload] ✅ 判断结果：同根域名')
+      console.log('[Webview Preload] 🔄 执行操作：在当前webview中导航')
+      console.log('[Webview Preload] 设置 window.location.href =', targetUrl)
       window.location.href = targetUrl
+      console.log('[Webview Preload] ✓ 导航完成')
+      console.log('========================================')
       return window
     } else {
-      // 不同根域名，通知渲染进程打开模态框
-      console.log('[Webview Preload] ✗ 不同根域名，请求打开模态框')
+      console.log('[Webview Preload] ✅ 判断结果：不同根域名')
+      console.log('[Webview Preload] 📤 执行操作：发送IPC消息打开模态框')
+      console.log('[Webview Preload] 发送消息通道: webview-open-external-url')
+      console.log('[Webview Preload] 消息内容:', { url: targetUrl })
+      
       ipcRenderer.sendToHost('webview-open-external-url', { url: targetUrl })
+      
+      console.log('[Webview Preload] ✓ IPC消息已发送')
+      console.log('[Webview Preload] 返回模拟window对象')
+      console.log('========================================')
       
       // 返回一个模拟的window对象
       return {
@@ -671,92 +704,136 @@ window.open = function(url, target, features) {
       }
     }
   } catch (error) {
-    console.error('[Webview Preload] window.open处理失败:', error)
+    console.error('[Webview Preload] ❌❌❌ window.open处理失败 ❌❌❌')
+    console.error('[Webview Preload] 错误信息:', error.message)
+    console.error('[Webview Preload] 错误堆栈:', error.stack)
+    console.log('[Webview Preload] ⚠️ 降级处理：在当前页面打开')
+    console.log('========================================')
     // 出错时在当前页面打开
     window.location.href = url
     return window
   }
 }
 
-// 修改所有target="_blank"的链接，让它们在当前webview中打开
-const processedLinks = new WeakSet() // 用于跟踪已处理的链接
+// ==================== 全局链接拦截处理器 ====================
 
-const modifyLinks = () => {
-  const links = document.querySelectorAll('a[target="_blank"]')
-  links.forEach(link => {
-    // 如果已经处理过，跳过
-    if (processedLinks.has(link)) {
-      return
+/**
+ * 处理链接导航的统一函数
+ */
+function handleLinkNavigation(href, event) {
+  console.log('========================================')
+  console.log('[Webview Preload] ========== 链接导航处理 ==========')
+  console.log('[Webview Preload] 链接 href:', href)
+  console.log('[Webview Preload] 外部链接在模态框中打开配置:', openExternalInModal)
+  
+  if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+    console.log('[Webview Preload] ℹ️ 锚点链接或特殊链接，不处理')
+    console.log('========================================')
+    return false // 不阻止默认行为
+  }
+  
+  try {
+    // 转换为绝对URL
+    const absoluteUrl = href.startsWith('http') || href.startsWith('//') 
+      ? href 
+      : new URL(href, window.location.href).href
+    
+    const currentUrl = window.location.href
+    
+    console.log('[Webview Preload] 当前页面URL:', currentUrl)
+    console.log('[Webview Preload] 目标绝对URL:', absoluteUrl)
+    
+    // 判断域名函数
+    function getRootDomain(hostname) {
+      if (!hostname) return ''
+      hostname = hostname.split(':')[0]
+      if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return hostname
+      if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
+      const parts = hostname.split('.')
+      if (parts.length >= 2) {
+        return parts.slice(-2).join('.')
+      }
+      return hostname
     }
     
-    link.setAttribute('target', '_self')
-    processedLinks.add(link)
+    const currentDomain = getRootDomain(new URL(currentUrl).hostname)
+    const targetDomain = getRootDomain(new URL(absoluteUrl).hostname)
     
-    // 添加点击事件监听，确保在当前webview中打开
-    const handleClick = (e) => {
-      const href = link.getAttribute('href')
-      if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//'))) {
-        e.preventDefault()
-        console.log('[Webview Preload] 拦截target="_blank"链接，在当前webview中打开:', href)
-        window.location.href = href
-      } else if (href && !href.startsWith('#')) {
-        // 相对路径也要在当前webview中打开
-        e.preventDefault()
-        try {
-          const absoluteUrl = new URL(href, window.location.href).href
-          console.log('[Webview Preload] 拦截相对链接，在当前webview中打开:', absoluteUrl)
-          window.location.href = absoluteUrl
-        } catch (error) {
-          console.log('[Webview Preload] URL解析失败:', error.message)
-        }
+    console.log('[Webview Preload] 当前域名:', currentDomain)
+    console.log('[Webview Preload] 目标域名:', targetDomain)
+    
+    if (currentDomain === targetDomain && currentDomain !== '') {
+      console.log('[Webview Preload] ✅ 同根域名，允许默认导航')
+      console.log('========================================')
+      return false // 不阻止默认行为，让浏览器正常导航
+    } else {
+      console.log('[Webview Preload] ✅ 不同根域名')
+      
+      if (openExternalInModal) {
+        console.log('[Webview Preload] 🛑 配置启用：阻止导航，发送IPC消息打开模态框')
+        if (event) event.preventDefault()
+        
+        console.log('[Webview Preload] 发送消息: webview-open-external-url')
+        console.log('[Webview Preload] 消息内容:', { url: absoluteUrl })
+        ipcRenderer.sendToHost('webview-open-external-url', { url: absoluteUrl })
+        
+        console.log('[Webview Preload] ✓ IPC消息已发送')
+        console.log('========================================')
+        return true // 阻止了默认行为
+      } else {
+        console.log('[Webview Preload] ℹ️ 配置未启用：允许在当前页面跳转')
+        console.log('========================================')
+        return false // 允许默认行为
       }
     }
-    
-    link.addEventListener('click', handleClick, true)
-  })
+  } catch (error) {
+    console.error('[Webview Preload] ❌ 处理失败:', error)
+    console.log('[Webview Preload] 允许默认导航')
+    console.log('========================================')
+    return false // 出错时允许默认行为
+  }
 }
 
-// 立即执行一次（如果DOM已加载）
-if (document.body) {
-  modifyLinks()
-}
-
-// 监听DOM变化，动态修改新添加的链接
-if (document.body) {
-  const observer = new MutationObserver(() => {
-    modifyLinks()
-  })
+/**
+ * 全局链接点击拦截器
+ */
+document.addEventListener('click', (event) => {
+  // 找到被点击的链接元素
+  let target = event.target
+  while (target && target.tagName !== 'A') {
+    target = target.parentElement
+  }
   
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['target']
-  })
-}
+  if (target && target.tagName === 'A') {
+    const href = target.getAttribute('href')
+    console.log('[Webview Preload] 🖱️ 检测到链接点击:', href)
+    console.log('[Webview Preload] 链接 target 属性:', target.getAttribute('target'))
+    
+    // 处理链接，如果返回true表示已阻止默认行为
+    const handled = handleLinkNavigation(href, event)
+    
+    // 如果没有阻止，对于 target="_blank" 的链接，改为在当前页面打开
+    if (!handled && target.getAttribute('target') === '_blank') {
+      console.log('[Webview Preload] 修改 target="_blank" 为当前页面导航')
+      event.preventDefault()
+      window.location.href = href.startsWith('http') || href.startsWith('//') 
+        ? href 
+        : new URL(href, window.location.href).href
+    }
+  }
+}, true) // 使用捕获阶段，确保优先处理
 
-// 页面加载完成后通知宿主并处理链接
+// ==================== 页面加载事件 ====================
+
+// 页面加载完成后通知宿主
 window.addEventListener('DOMContentLoaded', () => {
-  console.log('[Webview Preload] DOMContentLoaded')
-  // 延迟执行，确保DOM完全加载
-  setTimeout(() => {
-    modifyLinks()
-  }, 0)
-  setTimeout(() => {
-    modifyLinks()
-  }, 50)
-  setTimeout(() => {
-    modifyLinks()
-  }, 200)
+  console.log('[Webview Preload] DOMContentLoaded - 页面DOM已加载')
   window.__webviewAPI__.notifyReady()
 })
 
-// 页面完全加载后再次处理链接
+// 页面完全加载完成
 window.addEventListener('load', () => {
-  console.log('[Webview Preload] 页面加载完成')
-  setTimeout(() => {
-    modifyLinks()
-  }, 0)
+  console.log('[Webview Preload] Load - 页面完全加载完成（包括所有资源）')
 })
 
 // ==================== 鼠标前进/后退按钮支持 ====================

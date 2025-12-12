@@ -48,21 +48,14 @@ export function useWebviewSetup(props, {
    * @param {HTMLElement} el - webview 元素
    */
   const setWebviewRef = (el) => {
-    console.log('[useWebviewSetup] ========== setWebviewRef 被调用 ==========')
-    console.log('[useWebviewSetup] 新的 webview 元素:', el?.id)
-    console.log('[useWebviewSetup] 上次的 webview 元素:', lastMainWebview?.id)
-    console.log('[useWebviewSetup] 是否为新元素:', lastMainWebview !== el)
-    
     // 更新 webview ref
     if (lastMainWebview !== el) {
-      console.log('[useWebviewSetup] webview 元素已改变')
       lastMainWebview = el
       setWebviewRefBase(el)
     }
     
     // 每次都设置/更新 webview 事件回调（即使元素没变，callbacks 也可能需要更新）
     if (el) {
-      console.log('[useWebviewSetup] 设置/更新 webview 事件回调')
       // 设置 webview 事件监听，传入回调
       setupWebviewEvents(el, {
         onLoad: async (webview) => {

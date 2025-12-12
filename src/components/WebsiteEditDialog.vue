@@ -143,6 +143,31 @@
                 v-model="localWebsite.autoRefreshInterval"
                 @enter="handleConfirm"
               />
+              
+              <!-- 外部链接配置 -->
+              <div class="advanced-option-card">
+                <div class="option-header">
+                  <div class="option-icon">
+                    <i class="fa-solid fa-external-link-alt"></i>
+                  </div>
+                  <div class="option-content">
+                    <h3 class="option-title">{{ $t('advancedSettings.externalLinks') }}</h3>
+                    <p class="option-description">{{ $t('advancedSettings.externalLinksDesc') }}</p>
+                  </div>
+                </div>
+                <div class="option-body">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      v-model="localWebsite.openExternalInModal"
+                      class="checkbox-input"
+                    />
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">{{ $t('advancedSettings.openExternalInModal') }}</span>
+                  </label>
+                  <p class="option-hint">{{ $t('advancedSettings.openExternalInModalHint') }}</p>
+                </div>
+              </div>
             </div>
           </details>
         </section>
@@ -216,7 +241,8 @@ export default {
         padding: 10,
         muted: false,
         darkMode: false,
-        requireModifierForActions: false
+        requireModifierForActions: false,
+        openExternalInModal: false
       })
     },
     // 所有网站列表，用于检查代理冲突
@@ -789,6 +815,113 @@ export default {
   flex-direction: column;
   gap: 2rem;
   animation: fadeIn 0.3s ease-out;
+}
+
+/* 高级选项卡片 */
+.advanced-option-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.option-header {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-bottom: 1px solid #e0e7ff;
+}
+
+.option-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: white;
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 0.25rem 0;
+}
+
+.option-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.option-body {
+  padding: 1rem 1.25rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.75rem;
+}
+
+.checkbox-input {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #d1d5db;
+  border-radius: 0.25rem;
+  position: relative;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.checkbox-input:checked + .checkbox-custom {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.checkbox-input:checked + .checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 0.375rem;
+  top: 0.125rem;
+  width: 0.375rem;
+  height: 0.625rem;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.option-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+  padding-left: 2rem;
+  line-height: 1.5;
 }
 
 /* 底部按钮栏 */
