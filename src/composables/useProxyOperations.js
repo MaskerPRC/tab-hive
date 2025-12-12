@@ -3,8 +3,15 @@ import { ref, computed, watch } from 'vue'
 /**
  * 代理操作 composable
  * 处理代理节点的 CRUD 和批量操作
+ * @param {Object} options - 配置选项
+ * @param {Function} options.showAlert - 显示 alert 对话框的函数
+ * @param {Function} options.showConfirm - 显示 confirm 对话框的函数
  */
-export function useProxyOperations() {
+export function useProxyOperations(options = {}) {
+  // 默认使用原生对话框，可被外部覆盖
+  const showAlert = options.showAlert || ((msg) => { alert(msg) })
+  const showConfirm = options.showConfirm || ((msg) => confirm(msg))
+
   // 状态
   const loading = ref(false)
   const saving = ref(false)
@@ -20,22 +27,23 @@ export function useProxyOperations() {
   })
 
   /**
-   * 加载代理列表
+   * 加载代理列表（不分页，加载全部）
    */
   const loadProxyList = async () => {
     if (!window.electron?.proxy) return
     
     loading.value = true
     try {
-      const result = await window.electron.proxy.getList(1, 100)
+      // 加载全部代理，不分页
+      const result = await window.electron.proxy.getList(1, 10000)
       if (result.success) {
         proxyList.value = result.data.list || []
       } else {
-        alert('加载失败: ' + result.error)
+        showAlert('加载失败: ' + result.error)
       }
     } catch (error) {
       console.error('加载代理列表失败:', error)
-      alert('加载失败: ' + error.message)
+      showAlert('加载失败: ' + error.message)
     } finally {
       loading.value = false
     }
@@ -53,20 +61,27 @@ export function useProxyOperations() {
       if (editingProxy) {
         result = await window.electron.proxy.update(editingProxy.id, proxyForm)
       } else {
-        result = await window.electron.proxy.add(proxyForm)
+        // 添加代理时设置5秒超时
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('代理添加超时，请稍后重试')), 5000)
+        })
+        result = await Promise.race([
+          window.electron.proxy.add(proxyForm),
+          timeoutPromise
+        ])
       }
       
       if (result.success) {
         await loadProxyList()
-        alert(editingProxy ? '更新成功' : '添加成功')
+        showAlert(editingProxy ? '更新成功' : '添加成功')
         return true
       } else {
-        alert('保存失败: ' + result.error)
+        showAlert('保存失败: ' + result.error)
         return false
       }
     } catch (error) {
       console.error('保存代理失败:', error)
-      alert('保存失败: ' + error.message)
+      showAlert('保存失败: ' + error.message)
       return false
     } finally {
       saving.value = false
@@ -77,22 +92,23 @@ export function useProxyOperations() {
    * 删除代理
    */
   const deleteProxy = async (proxyId) => {
-    if (!confirm('确定要删除这个代理吗？')) return false
+    const confirmed = await showConfirm('确定要删除这个代理吗？')
+    if (!confirmed) return false
     if (!window.electron?.proxy) return false
     
     try {
       const result = await window.electron.proxy.delete(proxyId)
       if (result.success) {
         await loadProxyList()
-        alert('删除成功')
+        showAlert('删除成功')
         return true
       } else {
-        alert('删除失败: ' + result.error)
+        showAlert('删除失败: ' + result.error)
         return false
       }
     } catch (error) {
       console.error('删除代理失败:', error)
-      alert('删除失败: ' + error.message)
+      showAlert('删除失败: ' + error.message)
       return false
     }
   }
@@ -107,13 +123,13 @@ export function useProxyOperations() {
     try {
       const result = await window.electron.proxy.test(proxyId)
       if (result.success) {
-        alert('代理连接成功')
+        showAlert('代理连接成功')
       } else {
-        alert('代理连接失败: ' + result.error)
+        showAlert('代理连接失败: ' + result.error)
       }
     } catch (error) {
       console.error('测试代理失败:', error)
-      alert('测试失败: ' + error.message)
+      showAlert('测试失败: ' + error.message)
     } finally {
       testingId.value = null
     }
@@ -124,7 +140,7 @@ export function useProxyOperations() {
    */
   const importSubscription = async (subscriptionUrl) => {
     if (!subscriptionUrl.trim()) {
-      alert('请输入订阅链接')
+      showAlert('请输入订阅链接')
       return false
     }
     if (!window.electron?.proxy) return false
@@ -134,15 +150,15 @@ export function useProxyOperations() {
       const result = await window.electron.proxy.importSubscription(subscriptionUrl.trim())
       if (result.success) {
         await loadProxyList()
-        alert(`导入成功！共导入 ${result.data.imported} 个代理节点`)
+        showAlert(`导入成功！共导入 ${result.data.imported} 个代理节点`)
         return true
       } else {
-        alert('导入失败: ' + result.error)
+        showAlert('导入失败: ' + result.error)
         return false
       }
     } catch (error) {
       console.error('导入订阅链接失败:', error)
-      alert('导入失败: ' + error.message)
+      showAlert('导入失败: ' + error.message)
       return false
     } finally {
       importing.value = false
@@ -177,10 +193,11 @@ export function useProxyOperations() {
    */
   const batchEnable = async () => {
     if (selectedProxies.value.length === 0) {
-      alert('请先选择要启用的代理')
+      showAlert('请先选择要启用的代理')
       return
     }
-    if (!confirm(`确定要启用选中的 ${selectedProxies.value.length} 个代理吗？`)) return
+    const confirmed = await showConfirm(`确定要启用选中的 ${selectedProxies.value.length} 个代理吗？`)
+    if (!confirmed) return
     if (!window.electron?.proxy) return
 
     batchOperating.value = true
@@ -217,13 +234,13 @@ export function useProxyOperations() {
       await loadProxyList()
       
       if (failCount === 0) {
-        alert(`成功启用 ${successCount} 个代理`)
+        showAlert(`成功启用 ${successCount} 个代理`)
       } else {
-        alert(`启用完成：成功 ${successCount} 个，失败 ${failCount} 个`)
+        showAlert(`启用完成：成功 ${successCount} 个，失败 ${failCount} 个`)
       }
     } catch (error) {
       console.error('批量启用失败:', error)
-      alert('批量启用失败: ' + error.message)
+      showAlert('批量启用失败: ' + error.message)
     } finally {
       batchOperating.value = false
     }
@@ -234,10 +251,11 @@ export function useProxyOperations() {
    */
   const batchDelete = async () => {
     if (selectedProxies.value.length === 0) {
-      alert('请先选择要删除的代理')
+      showAlert('请先选择要删除的代理')
       return
     }
-    if (!confirm(`确定要删除选中的 ${selectedProxies.value.length} 个代理吗？此操作不可恢复！`)) return
+    const confirmed = await showConfirm(`确定要删除选中的 ${selectedProxies.value.length} 个代理吗？此操作不可恢复！`)
+    if (!confirmed) return
     if (!window.electron?.proxy) return
 
     batchOperating.value = true
@@ -263,13 +281,13 @@ export function useProxyOperations() {
       await loadProxyList()
       
       if (failCount === 0) {
-        alert(`成功删除 ${successCount} 个代理`)
+        showAlert(`成功删除 ${successCount} 个代理`)
       } else {
-        alert(`删除完成：成功 ${successCount} 个，失败 ${failCount} 个`)
+        showAlert(`删除完成：成功 ${successCount} 个，失败 ${failCount} 个`)
       }
     } catch (error) {
       console.error('批量删除失败:', error)
-      alert('批量删除失败: ' + error.message)
+      showAlert('批量删除失败: ' + error.message)
     } finally {
       batchOperating.value = false
     }

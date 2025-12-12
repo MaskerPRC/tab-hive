@@ -132,7 +132,7 @@ export function useLayoutManager() {
             }],
             currentLayoutId: 1,
             globalSettings: {
-              showTitles: false, // 默认不显示标题
+              showTitles: true, // 默认显示标题
               refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的视界
               globalMuted: false, // 默认不全局静音
               adBlockEnabled: false // 默认不启用去广告
@@ -143,7 +143,7 @@ export function useLayoutManager() {
         // 确保有全局设置
         if (!config.globalSettings) {
           config.globalSettings = {
-            showTitles: false, // 默认不显示标题
+            showTitles: true, // 默认显示标题
             refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的视界
             globalMuted: false, // 默认不全局静音
             adBlockEnabled: false // 默认不启用去广告
@@ -249,7 +249,7 @@ export function useLayoutManager() {
 
   // 全局设置 - 确保合并保存的配置和默认值
   const defaultGlobalSettings = {
-    showTitles: false, // 默认不显示标题
+    showTitles: true, // 默认显示标题
     refreshOnFullscreenToggle: true, // 默认全屏切换时刷新选择器类型的视界
     globalMuted: false, // 默认不全局静音
     adBlockEnabled: false, // 默认不启用去广告

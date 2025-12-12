@@ -218,7 +218,7 @@ export default {
     },
     globalSettings: {
       type: Object,
-      default: () => ({ showTitles: false })
+      default: () => ({ showTitles: true })
     },
     drawings: {
       type: Array,

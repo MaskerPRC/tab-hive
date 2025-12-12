@@ -14,7 +14,7 @@
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            添加代理
+            <span class="btn-text">添加代理</span>
           </button>
           <button class="btn-primary" @click="showImportSubDialog = true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -22,7 +22,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            导入订阅链接
+            <span class="btn-text">导入订阅</span>
           </button>
           <button class="btn-secondary" @click="loadProxyList" :disabled="loading">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -30,42 +30,44 @@
               <polyline points="1 20 1 14 7 14"/>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
             </svg>
-            刷新
+            <span class="btn-text">刷新</span>
           </button>
           
           <!-- 批量操作 -->
           <div class="batch-actions" v-if="selectedProxies.length > 0">
-            <span class="selected-count">已选择 {{ selectedProxies.length }} 项</span>
+            <span class="selected-count">已选 {{ selectedProxies.length }} 项</span>
             <button class="btn-success" @click="batchEnable" :disabled="batchOperating">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              批量启用
+              <span class="btn-text">启用</span>
             </button>
             <button class="btn-danger" @click="batchDelete" :disabled="batchOperating">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"/>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               </svg>
-              批量删除
+              <span class="btn-text">删除</span>
             </button>
           </div>
         </div>
 
         <!-- 代理列表 -->
-        <ProxyTable
-          :loading="loading"
-          :proxy-list="proxyList"
-          :selected-proxies="selectedProxies"
-          :is-all-selected="isAllSelected"
-          :testing-id="testingId"
-          @add="showEditDialog = true; editingProxy = null"
-          @edit="handleEdit"
-          @delete="deleteProxy"
-          @test="testProxy"
-          @toggle-select="toggleSelectProxy"
-          @toggle-select-all="toggleSelectAll"
-        />
+        <div class="proxy-table-wrapper">
+          <ProxyTable
+            :loading="loading"
+            :proxy-list="proxyList"
+            :selected-proxies="selectedProxies"
+            :is-all-selected="isAllSelected"
+            :testing-id="testingId"
+            @add="showEditDialog = true; editingProxy = null"
+            @edit="handleEdit"
+            @delete="deleteProxy"
+            @test="testProxy"
+            @toggle-select="toggleSelectProxy"
+            @toggle-select-all="toggleSelectAll"
+          />
+        </div>
       </div>
     </div>
 
@@ -85,6 +87,17 @@
       @close="showImportSubDialog = false"
       @import="handleImport"
     />
+
+    <!-- 应用风格对话框 -->
+    <Dialog
+      :visible="dialogVisible"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+      @confirm="handleDialogConfirm"
+      @cancel="handleDialogCancel"
+      @update:visible="dialogVisible = $event"
+    />
   </div>
 </template>
 
@@ -93,14 +106,17 @@ import { ref, onMounted, watch } from 'vue'
 import ProxyTable from './ProxyTable.vue'
 import ProxyEditDialog from './ProxyEditDialog.vue'
 import ProxyImportDialog from './ProxyImportDialog.vue'
+import Dialog from './Dialog.vue'
 import { useProxyOperations } from '../composables/useProxyOperations'
+import { useDialog } from '../composables/useDialog'
 
 export default {
   name: 'ProxyManager',
   components: {
     ProxyTable,
     ProxyEditDialog,
-    ProxyImportDialog
+    ProxyImportDialog,
+    Dialog
   },
   props: {
     show: {
@@ -115,7 +131,19 @@ export default {
     const showImportSubDialog = ref(false)
     const editingProxy = ref(null)
 
-    // 使用 composable
+    // 使用应用风格的对话框
+    const {
+      dialogVisible,
+      dialogType,
+      dialogTitle,
+      dialogMessage,
+      showAlert,
+      showConfirm,
+      handleDialogConfirm,
+      handleDialogCancel
+    } = useDialog()
+
+    // 使用 composable，传入应用风格的对话框函数
     const {
       loading,
       saving,
@@ -135,7 +163,10 @@ export default {
       batchEnable,
       batchDelete,
       clearSelection
-    } = useProxyOperations()
+    } = useProxyOperations({
+      showAlert,
+      showConfirm
+    })
 
     // 处理编辑
     const handleEdit = (proxy) => {
@@ -193,6 +224,13 @@ export default {
       showEditDialog,
       showImportSubDialog,
       editingProxy,
+      // 应用风格对话框状态
+      dialogVisible,
+      dialogType,
+      dialogTitle,
+      dialogMessage,
+      handleDialogConfirm,
+      handleDialogCancel,
       // Composable 状态
       loading,
       saving,
@@ -231,19 +269,20 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 10100;
   backdrop-filter: blur(5px);
 }
 
 .proxy-manager-dialog {
   background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 900px;
+  border-radius: 16px;
+  width: 800px;
+  max-width: 90vw;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .dialog-header {
@@ -251,56 +290,71 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, var(--primary-light, #fff5f0) 0%, #ffffff 100%);
+  flex-shrink: 0;
 }
 
 .dialog-header h3 {
   margin: 0;
   color: var(--primary-color, #FF5C00);
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .close-btn {
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
   color: #999;
   line-height: 1;
   padding: 0;
   width: 32px;
   height: 32px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-btn:hover {
   color: #333;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .dialog-content {
   flex: 1;
-  overflow-y: auto;
-  padding: 24px;
+  overflow: hidden;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .toolbar {
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary,
 .btn-secondary {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: 4px;
+  padding: 8px 12px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -310,6 +364,7 @@ export default {
 
 .btn-primary:hover {
   background: var(--primary-hover, #e64e00);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -325,68 +380,114 @@ export default {
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+}
+
+.btn-text {
+  display: inline;
 }
 
 .batch-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-left: auto;
   padding-left: 12px;
   border-left: 1px solid #e0e0e0;
+  flex-shrink: 0;
 }
 
 .selected-count {
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .btn-success {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: 4px;
+  padding: 8px 12px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
   background: #4caf50;
   color: white;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-success:hover:not(:disabled) {
   background: #45a049;
+  transform: translateY(-1px);
 }
 
 .btn-success:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .btn-danger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: 4px;
+  padding: 8px 12px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
   background: #f44336;
   color: white;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-danger:hover:not(:disabled) {
   background: #da190b;
+  transform: translateY(-1px);
 }
 
 .btn-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+}
+
+/* 代理表格包装器 - 带圆角滚动条 */
+.proxy-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  border-radius: 8px;
+  /* 自定义滚动条样式 */
+  scrollbar-width: auto;
+  scrollbar-color: var(--primary-color, #FF5C00) transparent;
+}
+
+.proxy-table-wrapper::-webkit-scrollbar {
+  width: 12px;
+}
+
+.proxy-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 6px;
+  margin: 8px 0; /* 上下留出圆角空间 */
+}
+
+.proxy-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--primary-color, #FF5C00);
+  border-radius: 6px;
+}
+
+.proxy-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover, #e64e00);
 }
 </style>

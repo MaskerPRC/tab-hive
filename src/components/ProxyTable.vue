@@ -19,7 +19,7 @@
     <table v-else class="proxy-table">
       <thead>
         <tr>
-          <th class="checkbox-column">
+          <th class="col-checkbox">
             <input 
               type="checkbox" 
               :checked="isAllSelected" 
@@ -27,16 +27,16 @@
               class="checkbox-input"
             />
           </th>
-          <th>名称</th>
-          <th>类型</th>
-          <th>地址</th>
-          <th>状态</th>
-          <th>操作</th>
+          <th class="col-name">名称</th>
+          <th class="col-type">类型</th>
+          <th class="col-address">地址</th>
+          <th class="col-status">状态</th>
+          <th class="col-actions">操作</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="proxy in proxyList" :key="proxy.id">
-          <td class="checkbox-column">
+          <td class="col-checkbox">
             <input 
               type="checkbox" 
               :checked="selectedProxies.includes(proxy.id)"
@@ -44,28 +44,35 @@
               class="checkbox-input"
             />
           </td>
-          <td>{{ proxy.name }}</td>
-          <td>
+          <td class="col-name">
+            <span class="text-ellipsis" :title="proxy.name">{{ proxy.name }}</span>
+          </td>
+          <td class="col-type">
             <span class="proxy-type" :class="`type-${proxy.type}`">
               {{ proxy.type.toUpperCase() }}
             </span>
           </td>
-          <td>{{ proxy.host }}:{{ proxy.port }}</td>
-          <td>
+          <td class="col-address">
+            <span class="text-ellipsis" :title="`${proxy.host}:${proxy.port}`">{{ proxy.host }}:{{ proxy.port }}</span>
+          </td>
+          <td class="col-status">
             <span class="status-badge" :class="proxy.is_enabled ? 'enabled' : 'disabled'">
               {{ proxy.is_enabled ? '启用' : '禁用' }}
             </span>
           </td>
-          <td class="actions">
-            <button 
-              class="btn-small btn-test" 
-              @click="$emit('test', proxy.id)"
-              :disabled="testingId === proxy.id"
-            >
-              {{ testingId === proxy.id ? '测试中...' : '测试' }}
-            </button>
-            <button class="btn-small btn-edit" @click="$emit('edit', proxy)">编辑</button>
-            <button class="btn-small btn-delete" @click="$emit('delete', proxy.id)">删除</button>
+          <td class="col-actions">
+            <div class="actions-row">
+              <button 
+                class="btn-small btn-test" 
+                @click="$emit('test', proxy.id)"
+                :disabled="testingId === proxy.id"
+                :title="testingId === proxy.id ? '测试中...' : '测试连接'"
+              >
+                {{ testingId === proxy.id ? '测试中' : '测试' }}
+              </button>
+              <button class="btn-small btn-edit" @click="$emit('edit', proxy)" title="编辑代理">编辑</button>
+              <button class="btn-small btn-delete" @click="$emit('delete', proxy.id)" title="删除代理">删除</button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -155,39 +162,74 @@ export default {
 .proxy-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .proxy-table th {
   text-align: left;
-  padding: 12px;
+  padding: 10px 8px;
   background: #f8f8f8;
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #e0e0e0;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .proxy-table td {
-  padding: 12px;
+  padding: 10px 8px;
   border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  vertical-align: middle;
 }
 
-.checkbox-column {
-  width: 40px;
+/* 固定列宽 */
+.col-checkbox {
+  width: 36px;
   text-align: center;
 }
 
+.col-name {
+  width: 140px;
+}
+
+.col-type {
+  width: 70px;
+}
+
+.col-address {
+  width: 180px;
+}
+
+.col-status {
+  width: 60px;
+}
+
+.col-actions {
+  width: 150px;
+}
+
+/* 文本省略号 */
+.text-ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .checkbox-input {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
   accent-color: var(--primary-color, #FF5C00);
 }
 
 .proxy-type {
   display: inline-block;
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -199,9 +241,9 @@ export default {
 
 .status-badge {
   display: inline-block;
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .status-badge.enabled {
@@ -214,18 +256,28 @@ export default {
   color: #999;
 }
 
-.actions {
+/* 操作按钮横向排列 */
+.actions-row {
   display: flex;
-  gap: 8px;
+  flex-direction: row;
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
 .btn-small {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 4px;
   border: none;
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.3s;
+  font-size: 11px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-small:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-test {
@@ -233,7 +285,7 @@ export default {
   color: #1976d2;
 }
 
-.btn-test:hover {
+.btn-test:hover:not(:disabled) {
   background: #bbdefb;
 }
 
@@ -242,7 +294,7 @@ export default {
   color: #f57c00;
 }
 
-.btn-edit:hover {
+.btn-edit:hover:not(:disabled) {
   background: #ffe0b2;
 }
 
@@ -251,7 +303,7 @@ export default {
   color: #d32f2f;
 }
 
-.btn-delete:hover {
+.btn-delete:hover:not(:disabled) {
   background: #ffcdd2;
 }
 

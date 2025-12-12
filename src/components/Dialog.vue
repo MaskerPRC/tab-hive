@@ -150,7 +150,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10001; /* 确保在其他对话框之上 */
+  z-index: 10200; /* 确保在其他对话框之上 */
 }
 
 .dialog-box {

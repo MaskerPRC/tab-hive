@@ -114,9 +114,9 @@ export function useWebview(props, emit) {
     // 设置代理
     const proxySetupSuccess = await setupProxyIfNeeded()
 
-    // 延迟一下确保代理完全就绪
+    // 延迟一下确保代理完全就绪（缩短延迟时间）
     if (props.item.proxyId && proxySetupSuccess) {
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 200))
     }
 
     // 只有在 webview 没有 src 的情况下才加载页面（首次初始化）
@@ -126,24 +126,10 @@ export function useWebview(props, emit) {
       // 为 webview 添加 ID 参数
       const separator = url.includes('?') ? '&' : '?'
       url = `${url}${separator}__webview_id__=${props.item.id}`
-      console.log(`[useWebview] 代理设置完成，加载页面: ${url}`)
+      console.log(`[useWebview] 代理设置完成，直接加载页面: ${url}`)
 
-      // 如果有代理，先加载测试页面验证代理是否工作
-      if (props.item.proxyId && proxySetupSuccess && props.item.testProxyFirst !== false) {
-        console.log(`[useWebview] 先加载测试页面验证代理`)
-        webview.src = 'https://httpbin.org/ip'
-
-        // 等待测试页面加载
-        const testLoadHandler = () => {
-          console.log(`[useWebview] 测试页面加载完成，现在加载目标页面: ${url}`)
-          setTimeout(() => {
-            webview.src = url
-          }, 1000)
-        }
-        webview.addEventListener('did-finish-load', testLoadHandler, { once: true })
-      } else {
-        webview.src = url
-      }
+      // 直接加载目标页面，不进行 IP 检测
+      webview.src = url
     }
   }
 
