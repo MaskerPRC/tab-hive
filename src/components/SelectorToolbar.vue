@@ -381,6 +381,10 @@ export default {
         emit('update:selectors', [...localSelectors.value])
         localSelector.value = '' // 清空当前选择器，准备选择下一个
         emit('update:selector', '')
+        
+        // 添加到列表后，重新启动选择，进入hover状态
+        console.log('[SelectorToolbar] 添加到列表后，触发重新选择')
+        emit('reselect')
       }
     }
     

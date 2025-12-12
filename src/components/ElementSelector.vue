@@ -445,15 +445,31 @@ export default {
      * 切换多选模式
      */
     const toggleMultiSelectMode = (enabled) => {
+      console.log('[全视界] 切换多选模式:', enabled, '当前hoveredSelector:', hoveredSelector.value)
+      
       multiSelectMode.value = enabled
       if (enabled) {
-        // 进入多选模式，清空当前选择器
-        selectedSelectors.value = []
+        // 进入多选模式，保留当前已选择的选择器
+        if (hoveredSelector.value && hoveredSelector.value.trim()) {
+          // 如果当前有选中的选择器，添加到列表中
+          selectedSelectors.value = [hoveredSelector.value]
+          console.log('[全视界] 切换到多选模式，保留当前选择器:', hoveredSelector.value)
+        } else {
+          selectedSelectors.value = []
+        }
+        // 清空当前hover选择器，准备选择下一个
         hoveredSelector.value = ''
+        
+        // 重新启动交互式选择，进入hover状态
+        restartSelection()
       } else {
-        // 退出多选模式，也清空
+        // 退出多选模式，切换到单选
+        if (selectedSelectors.value.length > 0) {
+          // 保留第一个选择器
+          hoveredSelector.value = selectedSelectors.value[0]
+          console.log('[全视界] 切换到单选模式，保留第一个选择器:', hoveredSelector.value)
+        }
         selectedSelectors.value = []
-        hoveredSelector.value = ''
       }
     }
 
