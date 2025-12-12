@@ -12,7 +12,7 @@
     @update:selectors="updateSelectorsManually"
     @navigate="navigateElement"
     @pause="handlePause"
-    @reselect="restartSelection"
+    @reselect="(skipInit) => restartSelection(skipInit)"
     @toggle-multi-select="toggleMultiSelectMode"
   />
 
@@ -460,8 +460,8 @@ export default {
         // 清空当前hover选择器，准备选择下一个
         hoveredSelector.value = ''
         
-        // 重新启动交互式选择，进入hover状态
-        restartSelection()
+        // 重新启动交互式选择，进入hover状态（跳过初始化以保留当前状态）
+        restartSelection(true)
       } else {
         // 退出多选模式，切换到单选
         if (selectedSelectors.value.length > 0) {
@@ -470,6 +470,9 @@ export default {
           console.log('[全视界] 切换到单选模式，保留第一个选择器:', hoveredSelector.value)
         }
         selectedSelectors.value = []
+        
+        // 重新启动交互式选择（跳过初始化以保留当前状态）
+        restartSelection(true)
       }
     }
 
@@ -503,20 +506,27 @@ export default {
 
     /**
      * 重新开始选择（清空当前选择并重新启动交互）
+     * @param {boolean} skipInitialize - 是否跳过初始化状态（用于切换多选模式或添加到列表时）
      */
-    const restartSelection = () => {
-      console.log('[全视界] 重新开始元素选择')
+    const restartSelection = (skipInitialize = false) => {
+      console.log('[全视界] 重新开始元素选择, skipInitialize:', skipInitialize)
 
       // 重新初始化选择器状态（基于当前视界配置）
-      initializeSelectorState()
+      if (!skipInitialize) {
+        initializeSelectorState()
+      }
 
-      // 立即清空前端状态和高亮显示
-      hoveredSelector.value = ''
+      // 立即清空前端高亮显示（但保留选择器状态）
       hoveredRects.value = []
       selectedRects.value = []
       currentElementInfo.value = null
+      
+      // 只在非跳过初始化时清空hoveredSelector
+      if (!skipInitialize) {
+        hoveredSelector.value = ''
+      }
 
-      console.log('[全视界] 前端状态已清空并重新初始化')
+      console.log('[全视界] 前端状态已清空', skipInitialize ? '(保留选择器)' : '(完全重置)')
 
       // 向 iframe/webview 发送清空并重新启动的消息
       if (isElectron.value) {

@@ -77,7 +77,6 @@ function createWindow(windowId = null, options = {}) {
   if (process.env.NODE_ENV === 'development') {
     console.log('[Electron Main] 开发模式,加载 http://localhost:3000')
     window.loadURL(`http://localhost:3000?${urlParams}`)
-    window.webContents.openDevTools()
   } else {
     console.log('[Electron Main] 生产模式,加载本地文件')
     // 使用 app.getAppPath() 获取应用路径，这在打包后也能正确工作
@@ -92,6 +91,7 @@ function createWindow(windowId = null, options = {}) {
     })
     window.loadFile(indexPath, { query })
   }
+  window.webContents.openDevTools()
 
   console.log('[Electron Main] ========== 设置 CORS 和 Cookie 处理 ==========')
 

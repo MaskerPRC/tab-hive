@@ -384,7 +384,7 @@ export default {
         
         // 添加到列表后，重新启动选择，进入hover状态
         console.log('[SelectorToolbar] 添加到列表后，触发重新选择')
-        emit('reselect')
+        emit('reselect', true) // 传入true表示跳过初始化
       }
     }
     

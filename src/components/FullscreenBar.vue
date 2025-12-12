@@ -29,7 +29,7 @@
       </button>
       <button
         class="btn-nav btn-refresh"
-        @click="$emit('refresh')"
+        @click.stop="handleRefresh"
         :title="$t('fullscreenBar.refresh')"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -81,9 +81,17 @@ export default {
     }
   },
   emits: ['exit', 'leave', 'selectElement', 'refresh', 'goBack', 'goForward'],
-  setup() {
+  setup(props, { emit }) {
     const { t } = useI18n()
-    return { t }
+    
+    const handleRefresh = (event) => {
+      console.log('[FullscreenBar] ========== 刷新按钮被点击 ==========')
+      console.log('[FullscreenBar] event:', event)
+      console.log('[FullscreenBar] event.target:', event.target)
+      emit('refresh')
+    }
+    
+    return { t, handleRefresh }
   }
 }
 </script>
@@ -103,6 +111,7 @@ export default {
   animation: slideDown 0.3s ease-out;
   display: flex;
   gap: 0;
+  pointer-events: auto;
 }
 
 @keyframes slideDown {
@@ -133,6 +142,7 @@ export default {
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
+  pointer-events: auto;
 }
 
 /* 前进后退按钮稍微宽一点 */
@@ -177,6 +187,7 @@ export default {
   font-weight: 500;
   transition: all 0.3s;
   position: relative;
+  pointer-events: auto;
 }
 
 .btn-selector {

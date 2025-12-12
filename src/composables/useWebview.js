@@ -340,6 +340,17 @@ export function useWebview(props, emit) {
         if (url) {
           webview.src = url
         }
+      } else if (event.channel === 'webview-open-external-url') {
+        // 处理打开外部链接（不同域名）
+        console.log('[useWebview] Webview 请求打开外部链接:', event.args[0])
+        const { url } = event.args[0]
+        if (url) {
+          console.log('[useWebview] 触发打开外部链接模态框:', url)
+          // 触发自定义事件，让App.vue监听
+          window.dispatchEvent(new CustomEvent('open-external-url-modal', {
+            detail: { url }
+          }))
+        }
       } else if (event.channel === 'webview-ready') {
         console.log('[useWebview] Webview 已准备就绪:', event.args[0])
       }

@@ -609,27 +609,73 @@ window.__webviewAPI__ = {
   }
 }
 
-// 拦截 window.open,防止打开新窗口
+// 拦截 window.open,根据域名判断是导航还是打开模态框
 const originalOpen = window.open
 window.open = function(url, target, features) {
   console.log('[Webview Preload] 拦截 window.open:', url, target)
   
-  // 如果是_blank或新窗口，改为在当前webview中导航
-  if (!target || target === '_blank' || target === '_new') {
-    console.log('[Webview Preload] 重定向到当前webview:', url)
-    window.location.href = url
-    return window
-  }
-  
-  // 其他情况也在当前webview中打开
-  if (url) {
-    console.log('[Webview Preload] 在当前webview中打开:', url)
-    window.location.href = url
-    return window
-  }
-  
   // 如果没有URL，使用原始行为
-  return originalOpen.call(this, url, target, features)
+  if (!url) {
+    return originalOpen.call(this, url, target, features)
+  }
+  
+  // 判断是否同根域名
+  function getRootDomain(hostname) {
+    if (!hostname) return ''
+    hostname = hostname.split(':')[0]
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
+    const parts = hostname.split('.')
+    if (parts.length >= 2) {
+      return parts.slice(-2).join('.')
+    }
+    return hostname
+  }
+  
+  function isSameRootDomain(url1, url2) {
+    try {
+      const urlObj1 = new URL(url1)
+      const urlObj2 = new URL(url2)
+      const rootDomain1 = getRootDomain(urlObj1.hostname)
+      const rootDomain2 = getRootDomain(urlObj2.hostname)
+      return rootDomain1 === rootDomain2 && rootDomain1 !== ''
+    } catch (e) {
+      console.error('[Webview Preload] URL解析失败:', e)
+      return false
+    }
+  }
+  
+  try {
+    const currentUrl = window.location.href
+    const targetUrl = url.startsWith('http') ? url : new URL(url, currentUrl).href
+    
+    console.log('[Webview Preload] 当前URL:', currentUrl)
+    console.log('[Webview Preload] 目标URL:', targetUrl)
+    
+    // 如果是同根域名，在当前webview中导航
+    if (isSameRootDomain(currentUrl, targetUrl)) {
+      console.log('[Webview Preload] ✓ 同根域名，在当前webview中导航')
+      window.location.href = targetUrl
+      return window
+    } else {
+      // 不同根域名，通知渲染进程打开模态框
+      console.log('[Webview Preload] ✗ 不同根域名，请求打开模态框')
+      ipcRenderer.sendToHost('webview-open-external-url', { url: targetUrl })
+      
+      // 返回一个模拟的window对象
+      return {
+        closed: false,
+        close: function() { this.closed = true },
+        focus: function() {},
+        blur: function() {}
+      }
+    }
+  } catch (error) {
+    console.error('[Webview Preload] window.open处理失败:', error)
+    // 出错时在当前页面打开
+    window.location.href = url
+    return window
+  }
 }
 
 // 修改所有target="_blank"的链接，让它们在当前webview中打开

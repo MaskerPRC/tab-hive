@@ -171,30 +171,51 @@ export function useWebsiteOperations(props, emit) {
   }
 
   /**
-   * 刷新网站
+   * 刷新网站（导航到首页原始URL）
    */
   const handleRefreshWebsite = (index) => {
     console.log('[GridView] ========== handleRefreshWebsite 被调用 ==========')
     console.log('[GridView] 刷新网站索引:', index)
 
-    // 注意：WebsiteCard 组件内部已经处理了双缓冲刷新
-    // GridView 不需要直接操作 DOM，避免与内部刷新机制冲突
-
-    // 处理 iframe 刷新（非 Electron 环境）
-    const iframe = document.querySelector(`.grid-item:nth-child(${index + 1}) iframe:not(.buffer-iframe)`)
-    if (iframe) {
-      console.log('[GridView] 刷新 iframe')
-      // 通过重新设置src来刷新iframe
-      const currentSrc = iframe.src
-      iframe.src = 'about:blank'
-      // 使用setTimeout确保浏览器识别到URL变化
-      setTimeout(() => {
-        iframe.src = currentSrc
-      }, 10)
+    // 获取网站的原始URL
+    const website = props.websites[index]
+    if (!website || !website.url) {
+      console.warn('[GridView] 无效的网站数据或URL')
+      return
     }
 
-    // Webview 刷新由 WebsiteCard 内部的双缓冲机制处理
-    // 不再直接操作 webview DOM
+    const originalUrl = website.url
+    console.log('[GridView] 导航到原始URL（首页）:', originalUrl)
+
+    // 检测是否在 Electron 环境
+    const isElectron = window.electron?.isElectron
+
+    if (isElectron) {
+      // Electron 环境：通过 ID 查找 webview 并导航到原始URL
+      const webview = document.querySelector(`#webview-${website.id}`)
+      if (webview) {
+        console.log('[GridView] 找到 webview，导航到原始URL')
+        // 构建带 webview ID 的URL
+        const separator = originalUrl.includes('?') ? '&' : '?'
+        const urlWithId = `${originalUrl}${separator}__webview_id__=${website.id}`
+        webview.src = urlWithId
+      } else {
+        console.warn('[GridView] 未找到 webview')
+      }
+    } else {
+      // 浏览器环境：通过 data-website-id 查找 iframe 并导航到原始URL
+      const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
+      if (iframe) {
+        console.log('[GridView] 找到 iframe，导航到原始URL')
+        // 先设置为空白页，再设置原始URL，确保刷新
+        iframe.src = 'about:blank'
+        setTimeout(() => {
+          iframe.src = originalUrl
+        }, 10)
+      } else {
+        console.warn('[GridView] 未找到 iframe')
+      }
+    }
   }
 
   /**

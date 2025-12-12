@@ -466,8 +466,13 @@ export default {
 
     // 处理全屏模式下的刷新
     const handleFullscreenRefresh = () => {
+      console.log('[GridView] ========== handleFullscreenRefresh 被调用 ==========')
+      console.log('[GridView] fullscreenIndex:', props.fullscreenIndex)
       if (props.fullscreenIndex !== null) {
+        console.log('[GridView] 准备刷新网站到首页')
         handleRefreshWebsite(props.fullscreenIndex)
+      } else {
+        console.warn('[GridView] fullscreenIndex 为 null，无法刷新')
       }
     }
 
