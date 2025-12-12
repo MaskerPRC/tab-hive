@@ -363,8 +363,17 @@ export default {
       return url
     })
     
-    // 双缓冲刷新回调
+    // 普通刷新回调（不使用双缓冲）
+    const handleSimpleRefresh = () => {
+      console.log('[WebsiteCard] 普通刷新（不使用双缓冲）')
+      if (webviewRef.value) {
+        webviewRef.value.src = websiteUrl.value
+      }
+    }
+
+    // 双缓冲刷新回调（仅用于配置了自动刷新的页面）
     const handleDoubleBufferRefresh = () => {
+      console.log('[WebsiteCard] 双缓冲刷新（配置了自动刷新）')
       refreshWithDoubleBuffer(
         websiteUrl.value,
         partitionName.value,
@@ -386,9 +395,19 @@ export default {
       }, needSelector)
     }
 
+    // 根据是否配置了自动刷新来决定使用哪种刷新方式
+    const handleAutoRefreshCallback = () => {
+      // 只有配置了自动刷新时才使用双缓冲刷新
+      if (props.item.autoRefreshInterval > 0) {
+        handleDoubleBufferRefresh()
+      } else {
+        handleSimpleRefresh()
+      }
+    }
+
     const { remainingTime, pauseTimer, resumeTimer } = useAutoRefresh({
       item: itemRef,
-      onRefresh: handleDoubleBufferRefresh
+      onRefresh: handleAutoRefreshCallback
     })
 
     // ==================== 修饰键状态管理 ====================
@@ -461,7 +480,14 @@ export default {
       console.log('[WebsiteCard] 手动刷新')
       
       if (isElectron.value && webviewRef.value) {
-        handleDoubleBufferRefresh()
+        // 只有配置了自动刷新时才使用双缓冲刷新
+        if (props.item.autoRefreshInterval > 0) {
+          console.log('[WebsiteCard] 使用双缓冲刷新（已配置自动刷新）')
+          handleDoubleBufferRefresh()
+        } else {
+          console.log('[WebsiteCard] 使用普通刷新（未配置自动刷新）')
+          handleSimpleRefresh()
+        }
       } else if (iframeRef.value) {
         const currentSrc = iframeRef.value.src
         iframeRef.value.src = 'about:blank'
