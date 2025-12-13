@@ -234,6 +234,7 @@ export default {
     const draggingItemIndex = ref(null)
     const dragStartPos = ref({ x: 0, y: 0 })
     const dragItemStartPos = ref({ x: 0, y: 0 })
+    const dragAnimationFrame = ref(null)
     
     // ========== 绘制事件处理 ==========
     
@@ -320,33 +321,39 @@ export default {
         // 文字和图片：记录位置
         dragItemStartPos.value = { x: item.x, y: item.y }
       }
-      
-      console.log('[拖动] 开始拖动项', index, '类型:', item.type)
     }
     
     /**
-     * 拖动项
+     * 拖动项（使用 requestAnimationFrame 优化性能）
      */
     const handleItemDrag = (event) => {
       if (draggingItemIndex.value === null) return
       
-      const coords = getSVGCoordinates(event)
-      const dx = coords.x - dragStartPos.value.x
-      const dy = coords.y - dragStartPos.value.y
-      
-      const index = draggingItemIndex.value
-      const item = props.savedDrawings[index]
-      
-      if (item.type === 'path') {
-        // 路径类型：移动整个路径
-        const newD = offsetPath(dragItemStartPos.value.d, dx, dy)
-        emit('update-drawing-item', { index, updates: { d: newD } })
-      } else {
-        // 文字和图片：更新位置
-        const newX = dragItemStartPos.value.x + dx
-        const newY = dragItemStartPos.value.y + dy
-        emit('update-drawing-item', { index, updates: { x: newX, y: newY } })
+      // 取消之前的动画帧
+      if (dragAnimationFrame.value) {
+        cancelAnimationFrame(dragAnimationFrame.value)
       }
+      
+      // 使用 requestAnimationFrame 节流更新
+      dragAnimationFrame.value = requestAnimationFrame(() => {
+        const coords = getSVGCoordinates(event)
+        const dx = coords.x - dragStartPos.value.x
+        const dy = coords.y - dragStartPos.value.y
+        
+        const index = draggingItemIndex.value
+        const item = props.savedDrawings[index]
+        
+        if (item.type === 'path') {
+          // 路径类型：移动整个路径
+          const newD = offsetPath(dragItemStartPos.value.d, dx, dy)
+          emit('update-drawing-item', { index, updates: { d: newD } })
+        } else {
+          // 文字和图片：更新位置
+          const newX = dragItemStartPos.value.x + dx
+          const newY = dragItemStartPos.value.y + dy
+          emit('update-drawing-item', { index, updates: { x: newX, y: newY } })
+        }
+      })
     }
     
     /**
@@ -354,7 +361,11 @@ export default {
      */
     const stopDraggingItem = () => {
       if (draggingItemIndex.value !== null) {
-        console.log('[拖动] 停止拖动项', draggingItemIndex.value)
+        // 取消任何待处理的动画帧
+        if (dragAnimationFrame.value) {
+          cancelAnimationFrame(dragAnimationFrame.value)
+          dragAnimationFrame.value = null
+        }
       }
       draggingItemIndex.value = null
       dragStartPos.value = { x: 0, y: 0 }
@@ -362,14 +373,15 @@ export default {
     }
     
     /**
-     * 偏移 SVG 路径
+     * 偏移 SVG 路径（支持 M、L、Q 命令）
      */
     const offsetPath = (pathData, dx, dy) => {
-      // 使用正则表达式提取所有坐标点并偏移
-      return pathData.replace(/([ML])\s*([\d.]+)\s+([\d.]+)/g, (match, cmd, x, y) => {
+      // 匹配所有数字并偏移
+      // perfect-freehand 生成的路径格式: M x0 y0 Q x1 y1 x2 y2 x3 y3 ... Z
+      return pathData.replace(/([\d.]+)\s+([\d.]+)/g, (match, x, y) => {
         const newX = parseFloat(x) + dx
         const newY = parseFloat(y) + dy
-        return `${cmd} ${newX} ${newY}`
+        return `${newX} ${newY}`
       })
     }
     
@@ -490,11 +502,11 @@ export default {
 }
 
 .draggable-item {
-  transition: opacity 0.2s;
+  cursor: move;
 }
 
 .draggable-item:hover {
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .draggable-item.selected {
