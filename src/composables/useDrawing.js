@@ -406,6 +406,21 @@ export function useDrawing(props, emit, canvasTransform) {
   const setDrawingWidth = (width) => {
     drawingWidth.value = parseInt(width)
   }
+  
+  /**
+   * 更新绘制项
+   */
+  const updateDrawingItem = ({ index, updates }) => {
+    if (index >= 0 && index < savedDrawings.value.length) {
+      // 更新绘制项的属性
+      savedDrawings.value[index] = {
+        ...savedDrawings.value[index],
+        ...updates
+      }
+      // 通知父组件更新绘制数据
+      emit('update-drawings', [...savedDrawings.value])
+    }
+  }
 
   return {
     // 状态
@@ -431,7 +446,8 @@ export function useDrawing(props, emit, canvasTransform) {
     saveText,
     saveImage,
     handlePaste,
-    handleImageUpload
+    handleImageUpload,
+    updateDrawingItem
   }
 }
 

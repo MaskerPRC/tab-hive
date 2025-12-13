@@ -116,6 +116,7 @@
           :drawing-width="drawingWidth"
           :text-input="textInput"
           :image-upload="imageUpload"
+          :canvas-transform="canvasTransform"
           @drawing-mouse-down="handleDrawingMouseDownWrapper"
           @drawing-mouse-move="handleDrawingMouseMove"
           @drawing-mouse-up="handleDrawingMouseUp"
@@ -123,6 +124,7 @@
           @text-cancel="handleTextCancel"
           @image-file-select="handleImageFileSelect"
           @image-cancel="handleImageCancel"
+          @update-drawing-item="updateDrawingItem"
         />
       </div>
     </div>
@@ -379,7 +381,8 @@ export default {
       saveText,
       saveImage,
       handlePaste,
-      handleImageUpload
+      handleImageUpload,
+      updateDrawingItem
     } = useDrawing(props, emit, canvasTransform)
 
     // 全屏导航功能
@@ -926,7 +929,8 @@ export default {
       handleTextSubmit,
       handleTextCancel,
       handleImageFileSelect,
-      handleImageCancel
+      handleImageCancel,
+      updateDrawingItem
     }
   }
 }
