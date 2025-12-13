@@ -8,6 +8,19 @@
         </svg>
         <span>{{ $t('floatingActions.copy') || '复制' }}</span>
       </button>
+      <button 
+        v-if="!isDesktopCapture && !isCustomHtml" 
+        class="more-menu-item" 
+        :class="{ 'has-active-rules': hasActiveRules }"
+        @click.stop="handleMonitoring"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>监听规则</span>
+        <span v-if="activeRulesCount > 0" class="rules-badge">{{ activeRulesCount }}</span>
+      </button>
       <button v-if="customCodeEnabled" class="more-menu-item" @click.stop="handleScript">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="16 18 22 12 16 6"/>
@@ -42,6 +55,8 @@
 </template>
 
 <script>
+import { computed } from 'vue'
+
 export default {
   name: 'WebsiteCardMoreMenu',
   props: {
@@ -64,10 +79,20 @@ export default {
     isDesktopCapture: {
       type: Boolean,
       default: false
+    },
+    isCustomHtml: {
+      type: Boolean,
+      default: false
+    },
+    activeRulesCount: {
+      type: Number,
+      default: 0
     }
   },
-  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close'],
+  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close', 'monitoring'],
   setup(props, { emit }) {
+    const hasActiveRules = computed(() => props.activeRulesCount > 0)
+    
     const handleCopy = () => {
       emit('close')
       emit('copy')
@@ -93,12 +118,19 @@ export default {
       emit('remove')
     }
 
+    const handleMonitoring = () => {
+      emit('close')
+      emit('monitoring')
+    }
+
     return {
+      hasActiveRules,
       handleCopy,
       handleScript,
       handleDevTools,
       handleEdit,
-      handleRemove
+      handleRemove,
+      handleMonitoring
     }
   }
 }
@@ -155,6 +187,31 @@ export default {
   height: 1px;
   background: #e2e8f0;
   margin: 0.25rem 0;
+}
+
+.more-menu-item.has-active-rules {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.more-menu-item.has-active-rules:hover {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.rules-badge {
+  margin-left: auto;
+  background: #16a34a;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.375rem;
 }
 </style>
 

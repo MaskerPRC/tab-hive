@@ -123,6 +123,7 @@
           @remove="handleRemoveWebsite"
           @toggle-mute="handleToggleMute"
           @open-script-panel="handleOpenScriptPanel"
+          @open-monitoring="(websiteId, darkMode) => $emit('open-monitoring', websiteId, darkMode)"
           @update-url="handleUpdateUrl"
           @resize-start="startResize($event, index, $event)"
         />
@@ -253,7 +254,7 @@ export default {
       default: null
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'update-canvas-transform', 'open-script-panel', 'import-layout-from-image'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'update-canvas-transform', 'open-script-panel', 'import-layout-from-image', 'open-monitoring'],
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸视界）
     const allWebsites = computed(() => {

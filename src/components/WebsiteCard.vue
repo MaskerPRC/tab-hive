@@ -98,6 +98,7 @@
         :is-custom-html="item.type === 'custom-html'"
         :is-electron="isElectron"
         :custom-code-enabled="customCodeEnabled"
+        :active-rules-count="activeRulesCount"
         @go-back="handleGoBack"
         @go-forward="handleGoForward"
         @refresh="handleManualRefresh"
@@ -108,6 +109,7 @@
         @edit="$emit('edit', index)"
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
+        @monitoring="handleMonitoringClick"
       />
       
       <!-- 拖动手柄 -->
@@ -155,6 +157,7 @@
         @ignore="handleIgnoreCertificateError"
         @reload="handleReload"
       />
+      
     </template>
   </div>
 </template>
@@ -267,7 +270,7 @@ export default {
       default: true
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring'],
   setup(props, { emit }) {
     // ==================== 自定义 HTML Data URL ====================
     const getCustomHtmlDataUrl = (html) => {
@@ -566,6 +569,38 @@ export default {
     watchMuteState()
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
 
+    // ==================== 监听规则管理 ====================
+    const activeRulesCount = ref(0)
+
+    // 点击监听设置按钮
+    const handleMonitoringClick = () => {
+      emit('open-monitoring', props.item.id, props.item.darkMode)
+    }
+
+    // 加载激活的规则数量
+    const loadActiveRulesCount = async () => {
+      if (!window.electron || !window.electron.monitoring || !props.item.id) return
+      
+      try {
+        const rules = await window.electron.monitoring.getRules(props.item.id)
+        activeRulesCount.value = rules.filter(r => r.enabled).length
+      } catch (error) {
+        console.error('加载监听规则数量失败:', error)
+      }
+    }
+
+    // 组件挂载时加载规则数量
+    watch(() => props.item.id, () => {
+      if (props.item.id) {
+        loadActiveRulesCount()
+      }
+    }, { immediate: true })
+
+    // 提供刷新规则计数的方法（供父组件调用）
+    const refreshRulesCount = () => {
+      loadActiveRulesCount()
+    }
+
     return {
       isElectron,
       webviewPreloadPath,
@@ -596,7 +631,11 @@ export default {
       handleGoBack,
       handleGoForward,
       isModifierPressed,
-      requireModifierForActions
+      requireModifierForActions,
+      // 监听规则相关
+      activeRulesCount,
+      handleMonitoringClick,
+      refreshRulesCount
     }
   }
 }

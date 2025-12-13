@@ -14,6 +14,29 @@
       @cancel="showLlmConfig = false"
     />
 
+    <!-- 监听规则列表弹窗 -->
+    <MonitoringRulesList
+      :show="showMonitoringRulesList"
+      :website-id="currentMonitoringWebsiteId"
+      :dark-mode="currentMonitoringDarkMode"
+      @close="showMonitoringRulesList = false"
+      @create="handleCreateMonitoringRule"
+      @edit="handleEditMonitoringRule"
+      @delete="handleDeleteMonitoringRule"
+      @toggle="handleToggleMonitoringRule"
+    />
+
+    <!-- 监听规则编辑弹窗 -->
+    <MonitoringRuleDialog
+      :show="showMonitoringRuleDialog"
+      :website-id="currentMonitoringWebsiteId"
+      :rule="editingMonitoringRule"
+      :dark-mode="currentMonitoringDarkMode"
+      @close="closeMonitoringRuleDialog"
+      @save="handleSaveMonitoringRule"
+      @open-api-settings="handleOpenLlmConfig"
+    />
+
     <!-- 更新通知 -->
     <UpdateNotification
       :visible="showUpdateNotification"
@@ -103,6 +126,7 @@
         @update-canvas-transform="(transform) => handleUpdateCanvasTransform(transform, layout.id)"
         @open-script-panel="(iframe) => openContentScriptPanel(iframe)"
         @import-layout-from-image="(layoutData) => handleImportLayoutFromImage(layoutData)"
+        @open-monitoring="(websiteId, darkMode) => handleOpenMonitoring(websiteId, darkMode)"
       />
     </template>
 
@@ -172,6 +196,8 @@ import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
 import ProxyManager from './components/ProxyManager.vue'
 import LlmConfigDialog from './components/LlmConfigDialog.vue'
+import MonitoringRulesList from './components/MonitoringRulesList.vue'
+import MonitoringRuleDialog from './components/MonitoringRuleDialog.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import SharedLayoutModal from './components/SharedLayoutModal.vue'
 import ExternalUrlModal from './components/ExternalUrlModal.vue'
@@ -195,6 +221,8 @@ export default {
     UpdateNotification,
     ProxyManager,
     LlmConfigDialog,
+    MonitoringRulesList,
+    MonitoringRuleDialog,
     ContentScriptPanel,
     SharedLayoutModal,
     ExternalUrlModal
@@ -258,6 +286,13 @@ export default {
     const { config: llmConfig } = useLlmConfig()
     const showLlmConfig = ref(false)
 
+    // 监听规则管理状态
+    const showMonitoringRulesList = ref(false)
+    const showMonitoringRuleDialog = ref(false)
+    const editingMonitoringRule = ref(null)
+    const currentMonitoringWebsiteId = ref('')
+    const currentMonitoringDarkMode = ref(false)
+
     // 内容脚本面板显示状态
     const showContentScriptPanel = ref(false)
     const contentScriptTargetIframe = ref(null)
@@ -295,12 +330,97 @@ export default {
     }
 
     // 处理 LLM 配置确认
-    const handleLlmConfigConfirm = (newConfig) => {
+    const handleLlmConfigConfirm = async (newConfig) => {
       console.log('[App] 保存 LLM 配置:', newConfig)
       Object.assign(llmConfig.value, newConfig)
       console.log('[App] 配置已更新:', llmConfig.value)
       console.log('[App] localStorage 内容:', localStorage.getItem('llm-api-config'))
       showLlmConfig.value = false
+      
+      // 同时配置到监听管理器
+      if (window.electron && window.electron.monitoring) {
+        try {
+          await window.electron.monitoring.configureLLM(newConfig)
+        } catch (error) {
+          console.error('[App] 配置监听管理器 LLM 失败:', error)
+        }
+      }
+    }
+
+    // 打开 LLM 配置（从监听规则调用）
+    const handleOpenLlmConfig = () => {
+      showMonitoringRuleDialog.value = false
+      showLlmConfig.value = true
+    }
+
+    // 打开监听规则设置
+    const handleOpenMonitoring = (websiteId, darkMode) => {
+      currentMonitoringWebsiteId.value = websiteId
+      currentMonitoringDarkMode.value = darkMode
+      showMonitoringRulesList.value = true
+    }
+
+    // 创建监听规则
+    const handleCreateMonitoringRule = () => {
+      editingMonitoringRule.value = null
+      showMonitoringRulesList.value = false
+      showMonitoringRuleDialog.value = true
+    }
+
+    // 编辑监听规则
+    const handleEditMonitoringRule = (rule) => {
+      editingMonitoringRule.value = rule
+      showMonitoringRulesList.value = false
+      showMonitoringRuleDialog.value = true
+    }
+
+    // 关闭监听规则编辑弹窗
+    const closeMonitoringRuleDialog = () => {
+      showMonitoringRuleDialog.value = false
+      editingMonitoringRule.value = null
+      showMonitoringRulesList.value = true
+    }
+
+    // 保存监听规则
+    const handleSaveMonitoringRule = async (ruleData) => {
+      if (!window.electron || !window.electron.monitoring) return
+      
+      try {
+        if (editingMonitoringRule.value) {
+          // 更新规则
+          await window.electron.monitoring.updateRule(ruleData.id, ruleData)
+        } else {
+          // 创建规则
+          await window.electron.monitoring.createRule(ruleData)
+        }
+        
+        closeMonitoringRuleDialog()
+      } catch (error) {
+        console.error('[App] 保存监听规则失败:', error)
+        alert('保存失败: ' + error.message)
+      }
+    }
+
+    // 删除监听规则
+    const handleDeleteMonitoringRule = async (ruleId) => {
+      if (!window.electron || !window.electron.monitoring) return
+      
+      try {
+        await window.electron.monitoring.deleteRule(ruleId)
+      } catch (error) {
+        console.error('[App] 删除监听规则失败:', error)
+      }
+    }
+
+    // 切换监听规则启用状态
+    const handleToggleMonitoringRule = async (ruleId, enabled) => {
+      if (!window.electron || !window.electron.monitoring) return
+      
+      try {
+        await window.electron.monitoring.toggleRule(ruleId, enabled)
+      } catch (error) {
+        console.error('[App] 切换监听规则状态失败:', error)
+      }
     }
 
     // 显示更新通知（从按钮点击）
@@ -919,6 +1039,20 @@ export default {
       handleLlmConfigConfirm,
       showLlmConfig,
       llmConfig,
+      // 监听规则
+      showMonitoringRulesList,
+      showMonitoringRuleDialog,
+      editingMonitoringRule,
+      currentMonitoringWebsiteId,
+      currentMonitoringDarkMode,
+      handleOpenMonitoring,
+      handleCreateMonitoringRule,
+      handleEditMonitoringRule,
+      closeMonitoringRuleDialog,
+      handleSaveMonitoringRule,
+      handleDeleteMonitoringRule,
+      handleToggleMonitoringRule,
+      handleOpenLlmConfig,
       handleToggleCustomCode,
       showContentScriptPanel,
       contentScriptTargetIframe,

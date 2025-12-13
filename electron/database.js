@@ -14,6 +14,30 @@ function getDatabasePath() {
 // 创建数据库表
 function createTables(callback) {
   db.serialize(() => {
+    // 监听规则表
+    db.run(`CREATE TABLE IF NOT EXISTS monitoring_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      website_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      enabled BOOLEAN DEFAULT 1,
+      condition_type TEXT NOT NULL DEFAULT 'llm_screenshot',
+      condition_config TEXT,
+      action_type TEXT NOT NULL DEFAULT 'desktop_notification',
+      action_config TEXT,
+      check_interval INTEGER DEFAULT 60,
+      last_check_time DATETIME,
+      last_trigger_time DATETIME,
+      trigger_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('创建监听规则表失败:', err)
+      } else {
+        console.log('监听规则表创建成功')
+      }
+    })
+
     // 代理配置表
     db.run(`CREATE TABLE IF NOT EXISTS proxies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

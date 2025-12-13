@@ -288,6 +288,124 @@ function registerIpcHandlers(createWindowFn, proxyManager, ensureCertificateHand
     return await proxyHandlers.setSessionProxy(partition, hiveId, proxyId)
   })
 
+  // ========== 监听规则管理 ==========
+  
+  const { getMonitoringManager } = require('./monitoringManager')
+  const monitoringManager = getMonitoringManager()
+
+  /**
+   * 获取监听规则列表
+   */
+  ipcMain.handle('monitoring:get-rules', async (event, websiteId) => {
+    console.log('[监听规则] 获取规则列表:', websiteId)
+    return await monitoringManager.getRules(websiteId)
+  })
+
+  /**
+   * 创建监听规则
+   */
+  ipcMain.handle('monitoring:create-rule', async (event, ruleData) => {
+    console.log('[监听规则] 创建规则:', ruleData)
+    return await monitoringManager.createRule(ruleData)
+  })
+
+  /**
+   * 更新监听规则
+   */
+  ipcMain.handle('monitoring:update-rule', async (event, ruleId, ruleData) => {
+    console.log('[监听规则] 更新规则:', ruleId, ruleData)
+    return await monitoringManager.updateRule(ruleId, ruleData)
+  })
+
+  /**
+   * 删除监听规则
+   */
+  ipcMain.handle('monitoring:delete-rule', async (event, ruleId) => {
+    console.log('[监听规则] 删除规则:', ruleId)
+    return await monitoringManager.deleteRule(ruleId)
+  })
+
+  /**
+   * 切换监听规则启用状态
+   */
+  ipcMain.handle('monitoring:toggle-rule', async (event, ruleId, enabled) => {
+    console.log('[监听规则] 切换规则状态:', ruleId, enabled)
+    return await monitoringManager.toggleRule(ruleId, enabled)
+  })
+
+  /**
+   * 配置 LLM API
+   */
+  ipcMain.handle('monitoring:configure-llm', async (event, config) => {
+    console.log('[监听规则] 配置 LLM API')
+    monitoringManager.configureLLM(config)
+    return { success: true }
+  })
+
+  /**
+   * 手动测试截图（用于调试）
+   */
+  ipcMain.handle('monitoring:test-screenshot', async (event, websiteId) => {
+    console.log('[监听规则] 测试截图:', websiteId)
+    try {
+      const webview = await monitoringManager.findWebview(websiteId)
+      if (!webview) {
+        return { success: false, error: '未找到 webview' }
+      }
+      
+      const screenshot = await monitoringManager.captureWebview(webview)
+      if (!screenshot) {
+        return { success: false, error: '截图失败' }
+      }
+      
+      // 保存截图到临时目录
+      const { app } = require('electron')
+      const fs = require('fs')
+      const path = require('path')
+      const tempDir = app.getPath('temp')
+      const screenshotPath = path.join(tempDir, `test-screenshot-${Date.now()}.png`)
+      const buffer = Buffer.from(screenshot, 'base64')
+      fs.writeFileSync(screenshotPath, buffer)
+      
+      return { success: true, path: screenshotPath, size: buffer.length }
+    } catch (error) {
+      console.error('[监听规则] 测试截图失败:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  /**
+   * 测试 LLM 视觉分析（用于调试）
+   */
+  ipcMain.handle('monitoring:test-llm-vision', async (event, websiteId, prompt) => {
+    console.log('[监听规则] 测试 LLM 视觉分析:', websiteId, prompt)
+    try {
+      const webview = await monitoringManager.findWebview(websiteId)
+      if (!webview) {
+        return { success: false, error: '未找到 webview' }
+      }
+      
+      console.log('[监听规则] 找到 webview, 开始截图...')
+      const screenshot = await monitoringManager.captureWebview(webview)
+      if (!screenshot) {
+        return { success: false, error: '截图失败' }
+      }
+      
+      console.log('[监听规则] 截图成功, 开始调用 LLM...')
+      // 使用测试模式，获取完整回答而不是 YES/NO
+      const answer = await monitoringManager.analyzewithLLM(screenshot, prompt, true)
+      
+      console.log('[监听规则] LLM 分析完成, 回答:', answer)
+      return { 
+        success: true, 
+        answer: answer
+      }
+    } catch (error) {
+      console.error('[监听规则] 测试 LLM 视觉分析失败:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   // ========== 证书处理 ==========
 
   /**

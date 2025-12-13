@@ -241,6 +241,76 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // 监听规则管理 API
+  monitoring: {
+    /**
+     * 获取监听规则列表
+     * @param {string} websiteId - 网站ID
+     */
+    getRules: (websiteId) => {
+      return ipcRenderer.invoke('monitoring:get-rules', websiteId)
+    },
+
+    /**
+     * 创建监听规则
+     * @param {Object} ruleData - 规则数据
+     */
+    createRule: (ruleData) => {
+      return ipcRenderer.invoke('monitoring:create-rule', ruleData)
+    },
+
+    /**
+     * 更新监听规则
+     * @param {number} ruleId - 规则ID
+     * @param {Object} ruleData - 规则数据
+     */
+    updateRule: (ruleId, ruleData) => {
+      return ipcRenderer.invoke('monitoring:update-rule', ruleId, ruleData)
+    },
+
+    /**
+     * 删除监听规则
+     * @param {number} ruleId - 规则ID
+     */
+    deleteRule: (ruleId) => {
+      return ipcRenderer.invoke('monitoring:delete-rule', ruleId)
+    },
+
+    /**
+     * 切换监听规则启用状态
+     * @param {number} ruleId - 规则ID
+     * @param {boolean} enabled - 启用状态
+     */
+    toggleRule: (ruleId, enabled) => {
+      return ipcRenderer.invoke('monitoring:toggle-rule', ruleId, enabled)
+    },
+
+    /**
+     * 配置 LLM API
+     * @param {Object} config - API配置
+     */
+    configureLLM: (config) => {
+      return ipcRenderer.invoke('monitoring:configure-llm', config)
+    },
+
+    /**
+     * 测试截图（调试用）
+     * @param {string} websiteId - 网站ID
+     */
+    testScreenshot: (websiteId) => {
+      return ipcRenderer.invoke('monitoring:test-screenshot', websiteId)
+    },
+
+    /**
+     * 测试 LLM 视觉分析（调试用）
+     * @param {string} websiteId - 网站ID
+     * @param {string} prompt - 测试问题
+     */
+    testLLMVision: (websiteId, prompt) => {
+      return ipcRenderer.invoke('monitoring:test-llm-vision', websiteId, prompt)
+    }
+  },
+
   // IPC 通信 API
   ipc: {
     /**

@@ -72,6 +72,12 @@ app.whenReady().then(async () => {
     (partition) => ensureCertificateErrorHandler(partition, notifyCertificateError)
   )
 
+  // 初始化监听规则管理器
+  const { getMonitoringManager } = require('./modules/monitoringManager')
+  const monitoringManager = getMonitoringManager()
+  await monitoringManager.initialize()
+  console.log('[Electron Main] ✓ 监听规则管理器初始化完成')
+
   app.on('activate', () => {
     console.log('[Electron Main] activate 事件触发')
     const { BrowserWindow } = require('electron')
@@ -92,9 +98,16 @@ app.on('window-all-closed', () => {
   }
 })
 
-// 应用退出时清理代理资源
+// 应用退出时清理资源
 app.on('before-quit', async () => {
-  console.log('[Electron Main] 清理代理资源...')
+  console.log('[Electron Main] 清理资源...')
+  
+  // 清理监听规则定时器
+  const { getMonitoringManager } = require('./modules/monitoringManager')
+  const monitoringManager = getMonitoringManager()
+  monitoringManager.cleanup()
+  
+  // 清理代理资源
   if (proxyManager) {
     // 停止所有视界的代理
     for (const hiveId of proxyManager.hiveClashProcesses.keys()) {
