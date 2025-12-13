@@ -217,38 +217,55 @@ export default {
       }
     }, { deep: true, immediate: true })
 
+    // 保存监听器引用
+    let progressListener = null
+    let completeListener = null
+    let errorListener = null
+
     // 监听 Electron 的下载事件
     const setupElectronListeners = () => {
       if (!isElectron) return
 
-      // 下载进度
-      window.electron.on('update-download-progress', (data) => {
+      // 定义监听器
+      progressListener = (data) => {
         isDownloading.value = true
         downloadedBytes.value = data.downloaded
         totalBytes.value = data.total
         downloadProgress.value = data.progress
-      })
+      }
 
-      // 下载完成
-      window.electron.on('update-download-complete', (data) => {
+      completeListener = (data) => {
         isDownloading.value = false
         downloadCompleted.value = true
         installerPath.value = data.savePath
-      })
+      }
 
-      // 下载失败
-      window.electron.on('update-download-error', (data) => {
+      errorListener = (data) => {
         isDownloading.value = false
         downloadError.value = data.error
-      })
+      }
+
+      // 注册监听器
+      window.electron.on('update-download-progress', progressListener)
+      window.electron.on('update-download-complete', completeListener)
+      window.electron.on('update-download-error', errorListener)
     }
 
     const cleanupElectronListeners = () => {
       if (!isElectron) return
       // 清理事件监听器
-      window.electron.off('update-download-progress')
-      window.electron.off('update-download-complete')
-      window.electron.off('update-download-error')
+      if (progressListener) {
+        window.electron.off('update-download-progress', progressListener)
+        progressListener = null
+      }
+      if (completeListener) {
+        window.electron.off('update-download-complete', completeListener)
+        completeListener = null
+      }
+      if (errorListener) {
+        window.electron.off('update-download-error', errorListener)
+        errorListener = null
+      }
     }
 
     onMounted(() => {

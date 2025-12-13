@@ -46,7 +46,7 @@ export function useWebsiteManager(initialWebsites = []) {
       id: Date.now(),
       url: websiteData.url || '',
       title: websiteData.title,
-      type: websiteData.type || 'website', // 'website' 或 'desktop-capture'
+      type: websiteData.type || 'website', // 'website'、'desktop-capture' 或 'custom-html'
       deviceType: websiteData.deviceType || 'desktop',
       targetSelector: websiteData.targetSelector || '',
       targetSelectors: websiteData.targetSelectors || [],
@@ -63,7 +63,9 @@ export function useWebsiteManager(initialWebsites = []) {
       desktopCaptureOptions: websiteData.desktopCaptureOptions || {
         autoRefresh: false,
         fitScreen: false
-      }
+      },
+      // 自定义 HTML 相关配置
+      html: websiteData.html || ''
     }
     
     console.log('[useWebsiteManager] 计算的位置:', { x: newX, y: newY })

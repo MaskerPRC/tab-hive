@@ -185,6 +185,8 @@ export default {
     instanceManagementHint: 'Manage Cookie shared instances',
     help: 'Help',
     helpHint: 'User guide',
+    settings: 'Settings',
+    settingsHint: 'Configure LLM API and other settings',
     proxy: 'Proxy',
     proxyHint: 'Manage proxy settings',
     downloadPlugin: 'Download Plugin',

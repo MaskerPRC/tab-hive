@@ -62,6 +62,15 @@
                 <i class="fa-solid fa-desktop"></i>
                 <span>桌面</span>
               </button>
+              <button 
+                class="quick-add-btn custom-html-btn"
+                @click="showCustomHtmlDialog = true"
+                type="button"
+                title="AI 生成自定义网页"
+              >
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>自定义</span>
+              </button>
             </div>
           </div>
         </section>
@@ -143,6 +152,20 @@
                 v-model="localWebsite.autoRefreshInterval"
                 @enter="handleConfirm"
               />
+              <!-- 自定义 HTML 代码编辑（仅当类型为 custom-html 时显示） -->
+              <div v-if="localWebsite.type === 'custom-html'" class="custom-html-editor">
+                <h3 class="editor-title">
+                  <i class="fa-solid fa-code"></i>
+                  HTML 代码
+                </h3>
+                <textarea
+                  v-model="localWebsite.html"
+                  class="html-textarea"
+                  placeholder="在此编辑 HTML 代码..."
+                  rows="10"
+                ></textarea>
+                <p class="editor-hint">修改 HTML 代码后点击确认保存</p>
+              </div>
             </div>
           </details>
         </section>
@@ -160,6 +183,13 @@
       :visible="showDesktopCaptureSelector"
       @close="showDesktopCaptureSelector = false"
       @select="handleDesktopCaptureSelect"
+    />
+
+    <!-- 自定义 HTML 对话框 -->
+    <CustomHtmlDialog
+      :show="showCustomHtmlDialog"
+      @confirm="handleCustomHtmlConfirm"
+      @cancel="showCustomHtmlDialog = false"
     />
   </div>
 </template>
@@ -179,6 +209,7 @@ import ProxySelector from './WebsiteEditDialog/ProxySelector.vue'
 import PaddingConfig from './WebsiteEditDialog/PaddingConfig.vue'
 import AutoRefreshConfig from './WebsiteEditDialog/AutoRefreshConfig.vue'
 import DesktopCaptureSelector from './DesktopCaptureSelector.vue'
+import CustomHtmlDialog from './CustomHtmlDialog.vue'
 
 export default {
   name: 'WebsiteEditDialog',
@@ -191,7 +222,8 @@ export default {
     ProxySelector,
     PaddingConfig,
     AutoRefreshConfig,
-    DesktopCaptureSelector
+    DesktopCaptureSelector,
+    CustomHtmlDialog
   },
   props: {
     show: {
@@ -237,6 +269,9 @@ export default {
     // 桌面捕获选择器显示状态
     const showDesktopCaptureSelector = ref(false)
     
+    // 自定义 HTML 对话框显示状态
+    const showCustomHtmlDialog = ref(false)
+    
     // 进阶功能折叠状态
     const showAdvanced = ref(false)
 
@@ -251,7 +286,10 @@ export default {
       const hasAutoRefresh = website.autoRefreshInterval && 
                             website.autoRefreshInterval !== 0
       
-      return hasSelectors || hasAutoRefresh
+      // 检查是否是自定义 HTML 类型
+      const isCustomHtml = website.type === 'custom-html'
+      
+      return hasSelectors || hasAutoRefresh || isCustomHtml
     }
 
     // 当对话框打开时，根据是否配置了进阶功能来决定展开状态
@@ -403,10 +441,44 @@ export default {
       })
     }
 
+    // 处理自定义 HTML 确认
+    const handleCustomHtmlConfirm = (data) => {
+      console.log('[WebsiteEditDialog] 自定义 HTML 数据:', data)
+      
+      // 关闭对话框
+      showCustomHtmlDialog.value = false
+      
+      // 关闭当前对话框
+      emit('cancel')
+      
+      // 延迟提交数据
+      nextTick(() => {
+        const customHtmlData = {
+          type: 'custom-html',
+          title: data.title || '自定义网页',
+          url: '', // 自定义 HTML 不需要 URL
+          html: data.html || '',
+          deviceType: 'desktop',
+          padding: 10,
+          muted: false,
+          darkMode: false,
+          requireModifierForActions: false,
+          targetSelectors: [],
+          targetSelector: '',
+          autoRefreshInterval: 0,
+          sessionInstance: 'default'
+        }
+        
+        // 提交数据
+        emit('confirm', customHtmlData)
+      })
+    }
+
     return {
       isElectron,
       showAdvanced,
       showDesktopCaptureSelector,
+      showCustomHtmlDialog,
       localWebsite,
       sessionInstances,
       handleConfirm,
@@ -417,7 +489,8 @@ export default {
       handleOpenProxyManager,
       quickAddBaidu,
       quickAddGoogle,
-      handleDesktopCaptureSelect
+      handleDesktopCaptureSelect,
+      handleCustomHtmlConfirm
     }
   }
 }
@@ -789,6 +862,55 @@ export default {
   flex-direction: column;
   gap: 2rem;
   animation: fadeIn 0.3s ease-out;
+}
+
+/* 自定义 HTML 编辑器 */
+.custom-html-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.editor-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.editor-title i {
+  color: #f97316;
+}
+
+.html-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all 0.2s;
+}
+
+.html-textarea:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.editor-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
 }
 
 /* 底部按钮栏 */

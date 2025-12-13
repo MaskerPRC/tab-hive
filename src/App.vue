@@ -6,6 +6,14 @@
     <!-- 代理节点管理 -->
     <ProxyManager :show="showProxyManager" @close="closeProxyManager" />
 
+    <!-- LLM API 配置 -->
+    <LlmConfigDialog
+      :show="showLlmConfig"
+      :config="llmConfig"
+      @confirm="handleLlmConfigConfirm"
+      @cancel="showLlmConfig = false"
+    />
+
     <!-- 更新通知 -->
     <UpdateNotification
       :visible="showUpdateNotification"
@@ -65,6 +73,7 @@
       @toggle-certificate-error-shadow="handleToggleCertificateErrorShadow"
       @manage-sessions="handleManageSessions"
       @manage-proxy="handleManageProxy"
+      @open-settings="handleOpenSettings"
       @show-update="handleShowUpdate"
       @clear-config="handleClearConfig"
       @close-sidebar="showPanel = false"
@@ -162,11 +171,13 @@ import ImportModeDialog from './components/ImportModeDialog.vue'
 import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
 import ProxyManager from './components/ProxyManager.vue'
+import LlmConfigDialog from './components/LlmConfigDialog.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import SharedLayoutModal from './components/SharedLayoutModal.vue'
 import ExternalUrlModal from './components/ExternalUrlModal.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
+import { useLlmConfig } from './composables/useLlmConfig'
 import { useWebsiteManager } from './composables/useWebsiteManager'
 import { useImportExport } from './composables/useImportExport'
 import { useUpdateChecker } from './composables/useUpdateChecker'
@@ -183,6 +194,7 @@ export default {
     SessionInstanceManager,
     UpdateNotification,
     ProxyManager,
+    LlmConfigDialog,
     ContentScriptPanel,
     SharedLayoutModal,
     ExternalUrlModal
@@ -242,6 +254,10 @@ export default {
     // 代理节点管理对话框显示状态
     const showProxyManager = ref(false)
 
+    // LLM API 配置
+    const { config: llmConfig } = useLlmConfig()
+    const showLlmConfig = ref(false)
+
     // 内容脚本面板显示状态
     const showContentScriptPanel = ref(false)
     const contentScriptTargetIframe = ref(null)
@@ -271,6 +287,20 @@ export default {
     // 关闭代理节点管理对话框
     const closeProxyManager = () => {
       showProxyManager.value = false
+    }
+
+    // 打开 LLM API 配置对话框
+    const handleOpenSettings = () => {
+      showLlmConfig.value = true
+    }
+
+    // 处理 LLM 配置确认
+    const handleLlmConfigConfirm = (newConfig) => {
+      console.log('[App] 保存 LLM 配置:', newConfig)
+      Object.assign(llmConfig.value, newConfig)
+      console.log('[App] 配置已更新:', llmConfig.value)
+      console.log('[App] localStorage 内容:', localStorage.getItem('llm-api-config'))
+      showLlmConfig.value = false
     }
 
     // 显示更新通知（从按钮点击）
@@ -885,6 +915,10 @@ export default {
       handleManageProxy,
       closeProxyManager,
       showProxyManager,
+      handleOpenSettings,
+      handleLlmConfigConfirm,
+      showLlmConfig,
+      llmConfig,
       handleToggleCustomCode,
       showContentScriptPanel,
       contentScriptTargetIframe,

@@ -185,6 +185,8 @@ export default {
     instanceManagementHint: '管理Cookie共享实例',
     help: '使用帮助',
     helpHint: '使用帮助',
+    settings: '设置',
+    settingsHint: '配置 LLM API 等设置',
     proxy: '代理',
     proxyHint: '管理代理设置',
     downloadPlugin: '下载插件',

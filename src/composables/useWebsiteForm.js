@@ -9,7 +9,7 @@ export function useWebsiteForm(props, emit) {
   const localWebsite = ref({
     title: '',
     url: '',
-    type: 'website', // 'website' 或 'desktop-capture'
+    type: 'website', // 'website'、'desktop-capture' 或 'custom-html'
     deviceType: 'desktop',
     targetSelector: '',
     targetSelectors: [],
@@ -24,7 +24,9 @@ export function useWebsiteForm(props, emit) {
     desktopCaptureOptions: {
       autoRefresh: false,
       fitScreen: false
-    }
+    },
+    // 自定义 HTML 相关
+    html: ''
   })
 
   /**
@@ -87,6 +89,22 @@ export function useWebsiteForm(props, emit) {
       emit('confirm', {
         ...localWebsite.value,
         url: '', // 桌面捕获不需要URL
+        targetSelectors: [],
+        targetSelector: ''
+      })
+      return true
+    }
+    
+    // 自定义 HTML 类型不需要验证URL
+    if (localWebsite.value.type === 'custom-html') {
+      if (!localWebsite.value.title || !localWebsite.value.html) {
+        alert('请填写标题和 HTML 代码')
+        return false
+      }
+      
+      emit('confirm', {
+        ...localWebsite.value,
+        url: '', // 自定义 HTML 不需要URL
         targetSelectors: [],
         targetSelector: ''
       })

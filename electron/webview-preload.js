@@ -590,6 +590,35 @@ function generateSelector(element) {
 
 
 
+// ==================== 拦截 location 对象操作（用于调试） ====================
+
+// 注意：location 对象是只读的，无法直接拦截 href 赋值
+// 但我们可以拦截 location.replace 和 location.assign
+
+// 拦截 location.replace
+const originalLocationReplace = window.location.replace
+window.location.replace = function(url) {
+  console.log('========================================')
+  console.log('[Webview Preload] ========== location.replace 被调用 ==========')
+  console.log('[Webview Preload] URL:', url)
+  console.log('[Webview Preload] 调用堆栈:')
+  console.log(new Error().stack)
+  console.log('========================================')
+  return originalLocationReplace.call(window.location, url)
+}
+
+// 拦截 location.assign
+const originalLocationAssign = window.location.assign
+window.location.assign = function(url) {
+  console.log('========================================')
+  console.log('[Webview Preload] ========== location.assign 被调用 ==========')
+  console.log('[Webview Preload] URL:', url)
+  console.log('[Webview Preload] 调用堆栈:')
+  console.log(new Error().stack)
+  console.log('========================================')
+  return originalLocationAssign.call(window.location, url)
+}
+
 // 暴露受限的 API 到 webview 的渲染进程
 window.__webviewAPI__ = {
   // 获取当前 webview ID
@@ -614,7 +643,17 @@ window.__webviewAPI__ = {
 // 拦截 window.open，改为在当前页面打开
 const originalOpen = window.open
 window.open = function(url, target, features) {
+  console.log('========================================')
+  console.log('[Webview Preload] ========== window.open 被调用 ==========')
+  console.log('[Webview Preload] URL:', url)
+  console.log('[Webview Preload] Target:', target)
+  console.log('[Webview Preload] Features:', features)
+  console.log('[Webview Preload] 调用堆栈:')
+  console.log(new Error().stack)
+  
   if (!url) {
+    console.log('[Webview Preload] ⚠️ 没有URL，使用原始window.open')
+    console.log('========================================')
     return originalOpen.call(this, url, target, features)
   }
   
@@ -622,33 +661,98 @@ window.open = function(url, target, features) {
   try {
     const currentUrl = window.location.href
     const targetUrl = url.startsWith('http') ? url : new URL(url, currentUrl).href
+    console.log('[Webview Preload] 当前URL:', currentUrl)
+    console.log('[Webview Preload] 目标URL:', targetUrl)
+    console.log('[Webview Preload] 🔄 执行: window.location.href =', targetUrl)
     window.location.href = targetUrl
+    console.log('[Webview Preload] ✓ 导航已执行')
+    console.log('========================================')
     return window
   } catch (error) {
+    console.error('[Webview Preload] ❌ window.open 处理失败:', error)
+    console.log('[Webview Preload] ⚠️ 降级处理：直接设置 location.href')
     // 出错时也在当前页面打开
     window.location.href = url
+    console.log('========================================')
     return window
   }
 }
 
-// 修改所有target="_blank"的链接，让它们在当前webview中打开
+// 全局点击事件监听器 - 处理链接和按钮点击
 document.addEventListener('click', (event) => {
-  let target = event.target
-  while (target && target.tagName !== 'A') {
-    target = target.parentElement
+  console.log('========================================')
+  console.log('[Webview Preload] ========== 全局点击事件 ==========')
+  console.log('[Webview Preload] 点击目标:', event.target)
+  console.log('[Webview Preload] 目标标签:', event.target?.tagName)
+  console.log('[Webview Preload] 目标类名:', event.target?.className)
+  console.log('[Webview Preload] 目标ID:', event.target?.id)
+  console.log('[Webview Preload] 目标文本:', event.target?.textContent?.substring(0, 50))
+  
+  // 查找链接元素
+  let linkElement = event.target
+  let depth = 0
+  while (linkElement && linkElement.tagName !== 'A' && depth < 10) {
+    linkElement = linkElement.parentElement
+    depth++
   }
   
-  if (target && target.tagName === 'A' && target.getAttribute('target') === '_blank') {
-    const href = target.getAttribute('href')
+  if (linkElement && linkElement.tagName === 'A') {
+    const href = linkElement.getAttribute('href')
+    const target = linkElement.getAttribute('target')
+    console.log('[Webview Preload] ✅ 找到链接元素 (深度:', depth, ')')
+    console.log('[Webview Preload] 链接 href:', href)
+    console.log('[Webview Preload] 链接 target:', target)
+    
     if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-      event.preventDefault()
-      const absoluteUrl = href.startsWith('http') || href.startsWith('//') 
-        ? href 
-        : new URL(href, window.location.href).href
-      window.location.href = absoluteUrl
+      if (target === '_blank') {
+        console.log('[Webview Preload] 🔄 拦截 target="_blank"，改为当前页面打开')
+        event.preventDefault()
+        event.stopPropagation()
+        const absoluteUrl = href.startsWith('http') || href.startsWith('//') 
+          ? href 
+          : new URL(href, window.location.href).href
+        console.log('[Webview Preload] 执行导航:', absoluteUrl)
+        window.location.href = absoluteUrl
+        console.log('[Webview Preload] ✓ 导航已执行')
+      } else {
+        console.log('[Webview Preload] ℹ️ 普通链接，允许默认行为')
+      }
+    } else {
+      console.log('[Webview Preload] ℹ️ 锚点或特殊链接，不处理')
+    }
+  } else {
+    console.log('[Webview Preload] ⚠️ 不是链接元素')
+    
+    // 检查按钮或其他可点击元素
+    const target = event.target
+    if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'SPAN' || target.tagName === 'DIV') {
+      console.log('[Webview Preload] 检测到可点击元素:', target.tagName)
+      console.log('[Webview Preload] 元素 onclick:', target.onclick)
+      console.log('[Webview Preload] 元素 data-* 属性:')
+      Array.from(target.attributes || []).forEach(attr => {
+        if (attr.name.startsWith('data-')) {
+          console.log(`  - ${attr.name}: ${attr.value}`)
+        }
+      })
+      
+      // 检查是否有 data-href 或 data-url
+      const dataHref = target.getAttribute('data-href') || target.getAttribute('data-url')
+      if (dataHref) {
+        console.log('[Webview Preload] ✅ 找到 data-href/data-url:', dataHref)
+        event.preventDefault()
+        event.stopPropagation()
+        const absoluteUrl = dataHref.startsWith('http') || dataHref.startsWith('//') 
+          ? dataHref 
+          : new URL(dataHref, window.location.href).href
+        console.log('[Webview Preload] 执行导航:', absoluteUrl)
+        window.location.href = absoluteUrl
+        console.log('[Webview Preload] ✓ 导航已执行')
+      }
     }
   }
-}, true)
+  
+  console.log('========================================')
+}, true) // 使用捕获阶段，确保优先处理
 
 // ==================== 页面加载事件 ====================
 

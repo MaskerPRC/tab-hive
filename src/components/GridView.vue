@@ -53,6 +53,23 @@
       @cancel="cancelAddWebsite"
     />
 
+    <!-- 自定义 HTML 对话框 -->
+    <CustomHtmlDialog
+      :show="showCustomHtmlDialog"
+      @confirm="handleCustomHtmlConfirm"
+      @cancel="showCustomHtmlDialog = false"
+    />
+
+    <!-- 右键菜单 -->
+    <CanvasContextMenu
+      :visible="contextMenuVisible"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      @add-website="handleContextMenuAddWebsite"
+      @add-custom-html="handleContextMenuAddCustomHtml"
+      @close="contextMenuVisible = false"
+    />
+
     <!-- 画布容器 -->
     <div
       class="canvas-wrapper"
@@ -176,6 +193,8 @@ import DesktopCaptureEditDialog from './DesktopCaptureEditDialog.vue'
 import WebsiteCard from './WebsiteCard.vue'
 import ElementSelector from './ElementSelector.vue'
 import CanvasControls from './CanvasControls.vue'
+import CustomHtmlDialog from './CustomHtmlDialog.vue'
+import CanvasContextMenu from './CanvasContextMenu.vue'
 // Composables
 import { useCollisionDetection } from '../composables/useCollisionDetection'
 import { useGridLayout } from '../composables/useGridLayout'
@@ -200,7 +219,9 @@ export default {
     DesktopCaptureEditDialog,
     WebsiteCard,
     ElementSelector,
-    CanvasControls
+    CanvasControls,
+    CustomHtmlDialog,
+    CanvasContextMenu
   },
   props: {
     websites: {
@@ -237,9 +258,17 @@ export default {
     // 所有网站列表（过滤掉空白项，防止僵尸视界）
     const allWebsites = computed(() => {
       const sites = props.websites || []
-      const filtered = sites.filter(site => site && (site.url || site.type === 'desktop-capture'))
+      const filtered = sites.filter(site => site && (site.url || site.type === 'desktop-capture' || site.type === 'custom-html'))
       return filtered
     })
+
+    // 右键菜单状态
+    const contextMenuVisible = ref(false)
+    const contextMenuX = ref(0)
+    const contextMenuY = ref(0)
+
+    // 自定义 HTML 对话框状态
+    const showCustomHtmlDialog = ref(false)
 
     // ========== Composables 初始化 ==========
     
@@ -373,10 +402,26 @@ export default {
       handleDropOnEmpty: handleDropOnEmptyFiles
     } = useFileDrop()
 
+    // 自定义的右键菜单处理
+    const handleContextMenu = (event) => {
+      const target = event.target
+      if (target.closest('webview') || 
+          target.closest('iframe') || 
+          target.closest('.grid-item')) {
+        return
+      }
+      event.preventDefault()
+      
+      // 显示右键菜单
+      contextMenuX.value = event.clientX
+      contextMenuY.value = event.clientY
+      contextMenuVisible.value = true
+    }
+
     // 画布事件处理器
     const {
       handleCanvasMouseDown,
-      handleContextMenu,
+      handleContextMenu: _handleContextMenu,
       handleCanvasWheel,
       zoomIn,
       zoomOut,
@@ -427,6 +472,46 @@ export default {
     // 确认添加网站包装器
     const onConfirmAddWebsite = (websiteData) => {
       confirmAddWebsite(websiteData, handleRefreshWebsite)
+    }
+
+    // 处理自定义 HTML 确认
+    const handleCustomHtmlConfirm = (data) => {
+      console.log('[GridView] 自定义 HTML 数据:', data)
+      showCustomHtmlDialog.value = false
+      
+      // 创建网站数据
+      const websiteData = {
+        type: 'custom-html',
+        title: data.title || '自定义网页',
+        url: '', // 自定义 HTML 不需要 URL
+        html: data.html || '',
+        deviceType: 'desktop',
+        padding: 10,
+        muted: false,
+        darkMode: false,
+        requireModifierForActions: false,
+        targetSelectors: [],
+        targetSelector: '',
+        autoRefreshInterval: 0,
+        sessionInstance: 'default'
+      }
+      
+      onConfirmAddWebsite(websiteData)
+    }
+
+    // 右键菜单：添加网站
+    const handleContextMenuAddWebsite = () => {
+      startAddWebsite(-1)
+    }
+
+    // 右键菜单：添加自定义 HTML
+    const handleContextMenuAddCustomHtml = () => {
+      showCustomHtmlDialog.value = true
+    }
+
+    // 点击其他地方关闭右键菜单
+    const handleClickOutside = () => {
+      contextMenuVisible.value = false
     }
 
     // 开始拖拽
@@ -623,11 +708,15 @@ export default {
           handleResizeEnd(emit)
         }
       })
+
+      // 点击其他地方关闭右键菜单
+      document.addEventListener('click', handleClickOutside)
     })
 
     onUnmounted(() => {
       cleanupFullscreen()
       window.removeEventListener('resize', initializeGridLayout)
+      document.removeEventListener('click', handleClickOutside)
     })
 
     return {
@@ -692,6 +781,15 @@ export default {
       zoomIn,
       zoomOut,
       resetTransform,
+      // 右键菜单
+      contextMenuVisible,
+      contextMenuX,
+      contextMenuY,
+      handleContextMenuAddWebsite,
+      handleContextMenuAddCustomHtml,
+      // 自定义 HTML
+      showCustomHtmlDialog,
+      handleCustomHtmlConfirm,
       handleAutoArrange,
       handleRefreshAll,
       handleFullscreenToggle,

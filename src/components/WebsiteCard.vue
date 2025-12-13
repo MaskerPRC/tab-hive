@@ -4,7 +4,7 @@
     :class="{
       'fullscreen': isFullscreen,
       'hidden': isHidden,
-      'empty-slot': !item.url && item.type !== 'desktop-capture',
+      'empty-slot': !item.url && item.type !== 'desktop-capture' && item.type !== 'custom-html',
       'drag-over': isDragOver && isExternalDragging,
       'draggable': true,
       'dragging': isDragging && isCurrentDrag,
@@ -13,12 +13,13 @@
       'dark-mode': item.darkMode,
       'require-modifier': requireModifierForActions,
       'modifier-pressed': requireModifierForActions && isModifierPressed,
-      'certificate-error': hasCertificateError && showCertificateErrorShadow
+      'certificate-error': hasCertificateError && showCertificateErrorShadow,
+      'custom-html': item.type === 'custom-html'
     }"
     :style="computedItemStyle"
   >
     <!-- 已有网站显示 -->
-    <template v-if="item.url || item.type === 'desktop-capture'">
+    <template v-if="item.url || item.type === 'desktop-capture' || item.type === 'custom-html'">
       <!-- 桌面捕获类型 -->
       <DesktopCaptureView
         v-if="item.type === 'desktop-capture'"
@@ -26,6 +27,16 @@
         :options="item.desktopCaptureOptions || { fitScreen: false }"
         class="desktop-capture-view"
       />
+      
+      <!-- 自定义 HTML 类型 -->
+      <webview
+        v-else-if="item.type === 'custom-html'"
+        :key="`webview-custom-${item.id}`"
+        :id="`webview-custom-${item.id}`"
+        :src="getCustomHtmlDataUrl(item.html)"
+        class="custom-html-webview"
+        webpreferences="javascript=yes"
+      ></webview>
       
       <!-- 普通网站类型 -->
       <template v-else>
@@ -84,6 +95,7 @@
         :can-go-back="canGoBack"
         :can-go-forward="canGoForward"
         :is-desktop-capture="item.type === 'desktop-capture'"
+        :is-custom-html="item.type === 'custom-html'"
         :is-electron="isElectron"
         :custom-code-enabled="customCodeEnabled"
         @go-back="handleGoBack"
@@ -257,6 +269,13 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error'],
   setup(props, { emit }) {
+    // ==================== 自定义 HTML Data URL ====================
+    const getCustomHtmlDataUrl = (html) => {
+      if (!html) return 'about:blank'
+      // 将 HTML 转换为 data URL
+      return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+    }
+
     // ==================== Webview/Iframe 管理 ====================
     const {
       isElectron,
@@ -561,6 +580,7 @@ export default {
       loadError,
       hasCertificateError,
       isCertificateTrusted,
+      getCustomHtmlDataUrl,
       setWebviewRef,
       setBufferWebviewRef,
       setIframeRef,
@@ -772,5 +792,21 @@ export default {
               0 0 0 2px rgba(239, 68, 68, 0.1),
               0 8px 24px rgba(239, 68, 68, 0.15) !important;
   transition: box-shadow 0.3s ease;
+}
+
+/* 自定义 HTML webview */
+.custom-html-webview {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+  flex: 1;
+  pointer-events: auto !important;
+  min-height: 0;
+}
+
+.grid-item.dragging .custom-html-webview,
+.grid-item.resizing .custom-html-webview {
+  pointer-events: none !important;
 }
 </style>

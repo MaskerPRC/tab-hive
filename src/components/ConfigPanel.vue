@@ -70,6 +70,7 @@
       @show-shared-modal="$emit('show-shared-modal')"
       @manage-proxy="$emit('manage-proxy')"
       @clear-config="clearConfig"
+      @open-settings="$emit('open-settings')"
     />
   </div>
 </template>
@@ -126,7 +127,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
   setup(props, { emit }) {
     const { t } = useI18n()
 

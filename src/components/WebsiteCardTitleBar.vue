@@ -19,7 +19,7 @@
     <div class="title-bar-actions">
       <!-- 导航按钮 -->
       <button
-        v-if="!isDesktopCapture"
+        v-if="!isDesktopCapture && !isCustomHtml"
         class="title-bar-btn"
         :class="{ 'disabled': !canGoBack }"
         @click="$emit('go-back')"
@@ -31,7 +31,7 @@
         </svg>
       </button>
       <button
-        v-if="!isDesktopCapture"
+        v-if="!isDesktopCapture && !isCustomHtml"
         class="title-bar-btn"
         :class="{ 'disabled': !canGoForward }"
         @click="$emit('go-forward')"
@@ -44,7 +44,7 @@
       </button>
       <!-- 刷新按钮 -->
       <button
-        v-if="!isDesktopCapture"
+        v-if="!isDesktopCapture && !isCustomHtml"
         class="title-bar-btn"
         @click="$emit('refresh')"
         :title="$t('floatingActions.refresh') || '刷新'"
@@ -101,6 +101,7 @@
           :custom-code-enabled="customCodeEnabled"
           :is-electron="isElectron"
           :is-desktop-capture="isDesktopCapture"
+          :is-custom-html="isCustomHtml"
           @close="showMoreMenu = false"
           @copy="$emit('copy')"
           @script="$emit('open-script-panel')"
@@ -151,6 +152,10 @@ export default {
       type: Boolean,
       default: false
     },
+    isCustomHtml: {
+      type: Boolean,
+      default: false
+    },
     customCodeEnabled: {
       type: Boolean,
       default: true
@@ -191,7 +196,7 @@ export default {
 
     // 显示URL（简化显示）
     const displayUrl = computed(() => {
-      if (!props.url || props.isDesktopCapture) return ''
+      if (!props.url || props.isDesktopCapture || props.isCustomHtml) return ''
       try {
         const url = new URL(props.url)
         return url.hostname + (url.pathname !== '/' ? url.pathname : '')

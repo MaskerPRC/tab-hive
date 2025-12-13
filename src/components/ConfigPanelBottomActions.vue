@@ -13,6 +13,11 @@
     
     <div class="action-buttons">
       <IconButton
+        icon="settings"
+        :label="$t('configPanel.settings') || '设置'"
+        @click="$emit('open-settings')"
+      />
+      <IconButton
         v-if="isElectron"
         icon="monitor"
         :label="$t('configPanel.proxy') || '代理'"
@@ -47,7 +52,7 @@ export default {
       default: false
     }
   },
-  emits: ['show-shared-modal', 'manage-proxy', 'clear-config'],
+  emits: ['show-shared-modal', 'manage-proxy', 'clear-config', 'open-settings'],
   setup() {
     const openHelp = () => {
       if (window.top) {
@@ -106,7 +111,7 @@ export default {
 
 .action-buttons {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
 }
 </style>
