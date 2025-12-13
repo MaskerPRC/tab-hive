@@ -633,26 +633,31 @@ export default {
       const spacing = 20
       const updates = {}
       
+      // 计算实际窗口大小（应用放大倍数）
+      const actualWidth = Math.round(width * scale)
+      const actualHeight = Math.round(height * scale)
+      
       // 计算所有网站的新位置和大小
       allWebsites.value.forEach((item, index) => {
         const row = Math.floor(index / cols)
         const col = index % cols
         
-        const x = snapToGrid(col * (width + spacing) + spacing)
-        const y = snapToGrid(row * (height + spacing) + spacing)
+        // 使用实际窗口大小计算位置，避免重叠
+        const x = snapToGrid(col * (actualWidth + spacing) + spacing)
+        const y = snapToGrid(row * (actualHeight + spacing) + spacing)
         
         // 更新位置和大小
         itemPositions.value[index] = { x, y }
         itemSizes.value[index] = { 
-          width: Math.round(width * scale), 
-          height: Math.round(height * scale) 
+          width: actualWidth, 
+          height: actualHeight 
         }
         
         updates[index] = {
           position: { x, y },
           size: { 
-            width: Math.round(width * scale), 
-            height: Math.round(height * scale) 
+            width: actualWidth, 
+            height: actualHeight 
           }
         }
       })
@@ -692,7 +697,7 @@ export default {
       })
       
       console.log('[重排] 完成，共重排', allWebsites.value.length, '个窗口')
-      console.log('[重排] 布局:', cols, '列，窗口大小:', `${Math.round(width * scale)}x${Math.round(height * scale)}`)
+      console.log('[重排] 布局:', cols, '列，窗口大小:', `${actualWidth}x${actualHeight}`)
     }
 
     // 文字输入处理
