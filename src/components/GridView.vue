@@ -34,47 +34,26 @@
       class="drag-overlay"
     ></div>
 
-    <!-- 普通网站编辑对话框 -->
-    <WebsiteEditDialog
-      :show="editingSlot !== null && editingDialogType === 'website'"
-      :editing-index="editingSlot"
-      :website="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : newWebsite"
+    <!-- 对话框管理器 -->
+    <GridDialogManager
+      :editing-slot="dialogState.editingSlot"
+      :editing-dialog-type="dialogState.editingDialogType"
+      :new-website="dialogState.newWebsite"
+      :show-custom-html-dialog="dialogState.showCustomHtmlDialog"
+      :show-rearrange-dialog="dialogState.showRearrangeDialog"
+      :context-menu-visible="dialogState.contextMenuVisible"
+      :context-menu-x="dialogState.contextMenuX"
+      :context-menu-y="dialogState.contextMenuY"
       :websites="websites"
-      @confirm="onConfirmAddWebsite"
-      @cancel="cancelAddWebsite"
-    />
-    
-    <!-- 桌面捕获编辑对话框 -->
-    <DesktopCaptureEditDialog
-      :show="editingSlot !== null && editingDialogType === 'desktop-capture'"
-      :editing-index="editingSlot"
-      :desktop-capture="editingSlot !== null && editingSlot !== -1 ? websites[editingSlot] : {}"
-      @confirm="onConfirmAddWebsite"
-      @cancel="cancelAddWebsite"
-    />
-
-    <!-- 自定义 HTML 对话框 -->
-    <CustomHtmlDialog
-      :show="showCustomHtmlDialog"
-      @confirm="handleCustomHtmlConfirm"
-      @cancel="showCustomHtmlDialog = false"
-    />
-
-    <!-- 重排配置对话框 -->
-    <RearrangeDialog
-      :show="showRearrangeDialog"
-      @confirm="handleRearrangeConfirm"
-      @cancel="showRearrangeDialog = false"
-    />
-
-    <!-- 右键菜单 -->
-    <CanvasContextMenu
-      :visible="contextMenuVisible"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      @add-website="handleContextMenuAddWebsite"
-      @add-custom-html="handleContextMenuAddCustomHtml"
-      @close="contextMenuVisible = false"
+      @confirm-website="onConfirmAddWebsite"
+      @cancel-edit="cancelAddWebsite"
+      @confirm-custom-html="handleCustomHtmlConfirm"
+      @cancel-custom-html="closeCustomHtmlDialog"
+      @confirm-rearrange="handleRearrangeConfirm"
+      @cancel-rearrange="closeRearrangeDialog"
+      @context-add-website="handleContextMenuAddWebsite"
+      @context-add-custom-html="handleContextMenuAddCustomHtml"
+      @close-context-menu="closeContextMenu"
     />
 
     <!-- 画布容器 -->
@@ -98,155 +77,53 @@
         :style="transformStyle"
         :data-websites-count="allWebsites.length"
       >
-        <WebsiteCard
-          v-for="(item, index) in allWebsites"
-          :key="item.id || `website-${index}`"
-          :item="item"
-          :index="index"
-          :item-style="getItemStyle(item, index, fullscreenIndex)"
-          :is-fullscreen="fullscreenIndex === index"
-          :is-hidden="isHidden(index)"
-          :is-drag-over="dragOverIndex === index"
-          :is-external-dragging="isDragging"
-          :is-dragging="isDraggingItem"
-          :is-current-drag="currentDragIndex === index"
+        <!-- 网站卡片列表 -->
+        <GridWebsiteList
+          :all-websites="allWebsites"
+          :fullscreen-index="fullscreenIndex"
+          :drag-over-index="dragOverIndex"
+          :is-dragging="isDragging"
+          :is-dragging-item="isDraggingItem"
+          :current-drag-index="currentDragIndex"
           :is-resizing="isResizing"
-          :is-current-resize="currentResizeIndex === index"
-          :is-colliding="dragIsColliding || resizeIsColliding"
-          :show-title="globalSettings?.showTitles"
-          :refresh-on-fullscreen-toggle="false"
-          :global-muted="globalSettings?.globalMuted"
-          :ad-block-enabled="globalSettings?.adBlockEnabled"
-          :custom-code-enabled="globalSettings?.customCodeEnabled"
-          :show-certificate-error-shadow="globalSettings?.showCertificateErrorShadow"
-          @drag-start="startDrag($event, index)"
+          :current-resize-index="currentResizeIndex"
+          :drag-is-colliding="dragIsColliding"
+          :resize-is-colliding="resizeIsColliding"
+          :global-settings="globalSettings"
+          :get-item-style="getItemStyle"
+          @drag-start="startDrag"
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
           @refresh="handleRefreshWebsite"
           @copy="handleCopyWebsite"
           @edit="handleEditWebsite"
-          @fullscreen="handleFullscreenToggle(index)"
+          @fullscreen="handleFullscreenToggle"
           @remove="handleRemoveWebsite"
           @toggle-mute="handleToggleMute"
           @open-script-panel="handleOpenScriptPanel"
           @open-monitoring="(websiteId, darkMode) => $emit('open-monitoring', websiteId, darkMode)"
           @update-url="handleUpdateUrl"
-          @resize-start="startResize($event, index, $event)"
+          @resize-start="startResize"
         />
         
         <!-- 绘制层 -->
-        <svg
-          v-if="isDrawingMode || savedDrawings.length > 0"
-          class="drawing-layer"
-          :class="{ 'drawing-active': isDrawingMode }"
-          xmlns="http://www.w3.org/2000/svg"
-          @mousedown="handleDrawingMouseDownWrapper"
-          @mousemove="handleDrawingMouseMove"
-          @mouseup="handleDrawingMouseUp"
-          @mouseleave="handleDrawingMouseUp"
-        >
-          <!-- 已保存的绘制内容 -->
-          <template v-for="(item, index) in savedDrawings" :key="`saved-${index}`">
-            <!-- 路径 -->
-            <path
-              v-if="item.type === 'path'"
-              :d="item.d"
-              :stroke="item.color"
-              :stroke-width="item.width"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            
-            <!-- 文字 -->
-            <text
-              v-else-if="item.type === 'text'"
-              :x="item.x"
-              :y="item.y"
-              :fill="item.color"
-              :font-size="item.fontSize"
-              font-family="Arial, sans-serif"
-              dominant-baseline="hanging"
-            >{{ item.content }}</text>
-            
-            <!-- 图片 -->
-            <image
-              v-else-if="item.type === 'image'"
-              :x="item.x"
-              :y="item.y"
-              :width="item.width"
-              :height="item.height"
-              :href="item.data"
-              preserveAspectRatio="xMidYMid meet"
-            />
-          </template>
-          
-          <!-- 当前正在绘制的路径 -->
-          <path
-            v-if="currentPath.length > 0"
-            :d="getPathData(currentPath)"
-            :stroke="drawingColor"
-            :stroke-width="drawingWidth"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        
-        <!-- 文字输入覆盖层 -->
-        <div
-          v-if="textInput.show"
-          class="text-input-overlay"
-          :style="{
-            position: 'absolute',
-            left: `${textInput.x}px`,
-            top: `${textInput.y}px`,
-            transform: 'translate(-50%, -50%)'
-          }"
-        >
-          <textarea
-            ref="textInputElement"
-            v-model="textInput.content"
-            class="text-input-field"
-            :style="{ color: textInput.color, fontSize: textInput.fontSize + 'px' }"
-            placeholder="输入文字..."
-            @keydown.enter.ctrl="handleTextSubmit"
-            @keydown.esc="handleTextCancel"
-            autofocus
-          ></textarea>
-          <div class="text-input-buttons">
-            <button @click="handleTextSubmit" class="text-input-btn text-input-btn-ok">确定</button>
-            <button @click="handleTextCancel" class="text-input-btn text-input-btn-cancel">取消</button>
-          </div>
-        </div>
-        
-        <!-- 图片上传覆盖层 -->
-        <div
-          v-if="imageUpload.show"
-          class="image-upload-overlay"
-          :style="{
-            position: 'absolute',
-            left: `${imageUpload.x}px`,
-            top: `${imageUpload.y}px`,
-            transform: 'translate(-50%, -50%)'
-          }"
-        >
-          <div class="image-upload-box">
-            <p>粘贴图片 (Ctrl+V)</p>
-            <p>或</p>
-            <label class="image-upload-btn">
-              <input
-                type="file"
-                accept="image/*"
-                @change="handleImageFileSelect"
-                style="display: none;"
-              />
-              选择图片
-            </label>
-            <button @click="handleImageCancel" class="image-upload-btn-cancel">取消</button>
-          </div>
-        </div>
+        <GridDrawingLayer
+          :is-drawing-mode="isDrawingMode"
+          :saved-drawings="savedDrawings"
+          :current-path="currentPath"
+          :drawing-color="drawingColor"
+          :drawing-width="drawingWidth"
+          :text-input="textInput"
+          :image-upload="imageUpload"
+          @drawing-mouse-down="handleDrawingMouseDownWrapper"
+          @drawing-mouse-move="handleDrawingMouseMove"
+          @drawing-mouse-up="handleDrawingMouseUp"
+          @text-submit="handleTextSubmit"
+          @text-cancel="handleTextCancel"
+          @image-file-select="handleImageFileSelect"
+          @image-cancel="handleImageCancel"
+        />
       </div>
     </div>
 
@@ -262,7 +139,7 @@
       @zoom-out="zoomOut"
       @reset="resetTransform"
       @auto-arrange="handleAutoArrange"
-      @rearrange="showRearrangeDialog = true"
+      @rearrange="openRearrangeDialog"
       @toggle-drawing="toggleDrawingMode"
       @set-tool="setDrawingTool"
       @update-color="setDrawingColor"
@@ -277,14 +154,12 @@
 import { computed, watch, onMounted, onUnmounted, nextTick, ref } from 'vue'
 // 子组件
 import FullscreenBar from './FullscreenBar.vue'
-import WebsiteEditDialog from './WebsiteEditDialog.vue'
-import DesktopCaptureEditDialog from './DesktopCaptureEditDialog.vue'
-import WebsiteCard from './WebsiteCard.vue'
 import ElementSelector from './ElementSelector.vue'
 import CanvasControls from './CanvasControls.vue'
-import CustomHtmlDialog from './CustomHtmlDialog.vue'
-import RearrangeDialog from './RearrangeDialog.vue'
-import CanvasContextMenu from './CanvasContextMenu.vue'
+import GridDialogManager from './GridDialogManager.vue'
+import GridDrawingLayer from './GridDrawingLayer.vue'
+import GridWebsiteList from './GridWebsiteList.vue'
+
 // Composables
 import { useCollisionDetection } from '../composables/useCollisionDetection'
 import { useGridLayout } from '../composables/useGridLayout'
@@ -300,19 +175,17 @@ import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useFullscreenNavigation } from '../composables/useFullscreenNavigation'
 import { useFileDrop } from '../composables/useFileDrop'
 import { useCanvasEventHandlers } from '../composables/useCanvasEventHandlers'
+import { useGridDialogs } from '../composables/useGridDialogs'
 
 export default {
   name: 'GridView',
   components: {
     FullscreenBar,
-    WebsiteEditDialog,
-    DesktopCaptureEditDialog,
-    WebsiteCard,
     ElementSelector,
     CanvasControls,
-    CustomHtmlDialog,
-    RearrangeDialog,
-    CanvasContextMenu
+    GridDialogManager,
+    GridDrawingLayer,
+    GridWebsiteList
   },
   props: {
     websites: {
@@ -353,18 +226,40 @@ export default {
       return filtered
     })
 
-    // 右键菜单状态
-    const contextMenuVisible = ref(false)
-    const contextMenuX = ref(0)
-    const contextMenuY = ref(0)
-
-    // 自定义 HTML 对话框状态
-    const showCustomHtmlDialog = ref(false)
-
-    // 重排配置对话框状态
-    const showRearrangeDialog = ref(false)
-
     // ========== Composables 初始化 ==========
+    
+    // 对话框管理
+    const {
+      editingSlot,
+      editingDialogType,
+      newWebsite,
+      showCustomHtmlDialog,
+      showRearrangeDialog,
+      contextMenuVisible,
+      contextMenuX,
+      contextMenuY,
+      openWebsiteEditDialog,
+      openDesktopCaptureDialog,
+      closeEditDialog,
+      openCustomHtmlDialog,
+      closeCustomHtmlDialog,
+      openRearrangeDialog,
+      closeRearrangeDialog,
+      openContextMenu,
+      closeContextMenu
+    } = useGridDialogs()
+    
+    // 将对话框状态组合成一个对象
+    const dialogState = computed(() => ({
+      editingSlot: editingSlot.value,
+      editingDialogType: editingDialogType.value,
+      newWebsite: newWebsite.value,
+      showCustomHtmlDialog: showCustomHtmlDialog.value,
+      showRearrangeDialog: showRearrangeDialog.value,
+      contextMenuVisible: contextMenuVisible.value,
+      contextMenuX: contextMenuX.value,
+      contextMenuY: contextMenuY.value
+    }))
     
     // 碰撞检测
     const { 
@@ -384,7 +279,6 @@ export default {
     } = useGridLayout(allWebsites)
 
     // 画布变换（平移和缩放）
-    // 从 props 中恢复保存的变换状态，如果没有则使用默认值
     const initialTransform = props.canvasTransform || null
     const {
       canvasTransform,
@@ -438,19 +332,19 @@ export default {
 
     // 网站操作
     const {
-      editingSlot,
-      editingDialogType,
-      newWebsite,
-      startAddWebsite,
+      editingSlot: _editingSlot,
+      editingDialogType: _editingDialogType,
+      newWebsite: _newWebsite,
+      startAddWebsite: _startAddWebsite,
       startAddDesktopCapture,
       confirmAddWebsite,
-      cancelAddWebsite,
+      cancelAddWebsite: _cancelAddWebsite,
       handleCopyWebsite,
       handleRemoveWebsite,
       handleToggleMute,
       handleUpdateUrl,
       handleRefreshWebsite,
-      handleEditWebsite
+      handleEditWebsite: _handleEditWebsite
     } = useWebsiteOperations(props, emit)
 
     // 元素选择
@@ -504,22 +398,6 @@ export default {
       handleDropOnEmpty: handleDropOnEmptyFiles
     } = useFileDrop()
 
-    // 自定义的右键菜单处理
-    const handleContextMenu = (event) => {
-      const target = event.target
-      if (target.closest('webview') || 
-          target.closest('iframe') || 
-          target.closest('.grid-item')) {
-        return
-      }
-      event.preventDefault()
-      
-      // 显示右键菜单
-      contextMenuX.value = event.clientX
-      contextMenuY.value = event.clientY
-      contextMenuVisible.value = true
-    }
-
     // 画布事件处理器
     const {
       handleCanvasMouseDown,
@@ -563,23 +441,31 @@ export default {
       await handleDropOnEmptyFiles(event, emit, handleDropOnEmptyBase)
     }
 
-    // 判断某个索引的网站是否应该隐藏
-    const isHidden = (index) => {
-      if (props.fullscreenIndex !== null) {
-        return index !== props.fullscreenIndex
-      }
-      return false
+    // 开始添加网站（使用对话框管理器）
+    const startAddWebsite = (index) => {
+      openWebsiteEditDialog(index, index === -1 ? null : allWebsites.value[index])
+    }
+
+    // 编辑网站（使用对话框管理器）
+    const handleEditWebsite = (index) => {
+      openWebsiteEditDialog(index, allWebsites.value[index])
+    }
+
+    // 取消添加网站（使用对话框管理器）
+    const cancelAddWebsite = () => {
+      closeEditDialog()
     }
 
     // 确认添加网站包装器
     const onConfirmAddWebsite = (websiteData) => {
       confirmAddWebsite(websiteData, handleRefreshWebsite)
+      closeEditDialog()
     }
 
     // 处理自定义 HTML 确认
     const handleCustomHtmlConfirm = (data) => {
       console.log('[GridView] 自定义 HTML 数据:', data)
-      showCustomHtmlDialog.value = false
+      closeCustomHtmlDialog()
       
       // 创建网站数据
       const websiteData = {
@@ -604,16 +490,32 @@ export default {
     // 右键菜单：添加网站
     const handleContextMenuAddWebsite = () => {
       startAddWebsite(-1)
+      closeContextMenu()
     }
 
     // 右键菜单：添加自定义 HTML
     const handleContextMenuAddCustomHtml = () => {
-      showCustomHtmlDialog.value = true
+      openCustomHtmlDialog()
+      closeContextMenu()
+    }
+
+    // 自定义的右键菜单处理
+    const handleContextMenu = (event) => {
+      const target = event.target
+      if (target.closest('webview') || 
+          target.closest('iframe') || 
+          target.closest('.grid-item')) {
+        return
+      }
+      event.preventDefault()
+      
+      // 显示右键菜单
+      openContextMenu(event.clientX, event.clientY)
     }
 
     // 点击其他地方关闭右键菜单
     const handleClickOutside = () => {
-      contextMenuVisible.value = false
+      closeContextMenu()
     }
 
     // 开始拖拽
@@ -632,8 +534,6 @@ export default {
         startResizeItem(event, index, 's')
       }
     }
-
-    // 画布控制方法已通过 useCanvasEventHandlers 提供
 
     // 处理全屏切换
     const handleFullscreenToggle = (index) => {
@@ -660,8 +560,6 @@ export default {
         console.warn('[GridView] fullscreenIndex 为 null，无法刷新')
       }
     }
-
-    // 全屏导航方法已通过 useFullscreenNavigation 提供
 
     // 绘制鼠标按下包装器
     const handleDrawingMouseDownWrapper = (event) => {
@@ -729,7 +627,7 @@ export default {
     // 处理重排确认：按网格重新排列所有网站
     const handleRearrangeConfirm = (config) => {
       console.log('[重排] 配置:', config)
-      showRearrangeDialog.value = false
+      closeRearrangeDialog()
       
       const { cols, width, height, scale } = config
       const spacing = 20
@@ -797,12 +695,29 @@ export default {
       console.log('[重排] 布局:', cols, '列，窗口大小:', `${Math.round(width * scale)}x${Math.round(height * scale)}`)
     }
 
-    // 刷新所有网站
-    const handleRefreshAll = () => {
-      console.log('[GridView] 刷新所有网站')
-      allWebsites.value.forEach((site, index) => {
-        handleRefreshWebsite(index)
-      })
+    // 文字输入处理
+    const handleTextSubmit = () => {
+      if (textInput.value.content && textInput.value.content.trim()) {
+        saveText(textInput.value.content)
+      } else {
+        textInput.value.show = false
+      }
+    }
+    
+    const handleTextCancel = () => {
+      textInput.value.show = false
+    }
+    
+    // 图片上传处理
+    const handleImageFileSelect = (event) => {
+      const file = event.target.files?.[0]
+      if (file) {
+        handleImageUpload(file)
+      }
+    }
+    
+    const handleImageCancel = () => {
+      imageUpload.value.show = false
     }
 
     // ========== 键盘快捷键 ==========
@@ -905,6 +820,9 @@ export default {
 
       // 点击其他地方关闭右键菜单
       document.addEventListener('click', handleClickOutside)
+      
+      // 监听粘贴事件
+      document.addEventListener('paste', handlePaste)
     })
 
     onUnmounted(() => {
@@ -913,51 +831,11 @@ export default {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('paste', handlePaste)
     })
-    
-    // ========== 文字和图片输入处理 ==========
-    
-    // ref for text input element
-    const textInputElement = ref(null)
-    
-    // 监听粘贴事件
-    onMounted(() => {
-      document.addEventListener('paste', handlePaste)
-    })
-    
-    // 处理文字提交
-    const handleTextSubmit = () => {
-      if (textInput.value.content && textInput.value.content.trim()) {
-        saveText(textInput.value.content)
-      } else {
-        textInput.value.show = false
-      }
-    }
-    
-    // 处理文字取消
-    const handleTextCancel = () => {
-      textInput.value.show = false
-    }
-    
-    // 处理图片文件选择
-    const handleImageFileSelect = (event) => {
-      const file = event.target.files?.[0]
-      if (file) {
-        handleImageUpload(file)
-      }
-    }
-    
-    // 处理图片取消
-    const handleImageCancel = () => {
-      imageUpload.value.show = false
-    }
 
     return {
       // 状态
       allWebsites,
       currentFullscreenWebsite,
-      editingSlot,
-      editingDialogType,
-      newWebsite,
       dragOverIndex,
       isDragging,
       showFullscreenBar,
@@ -981,12 +859,11 @@ export default {
       savedDrawings,
       textInput,
       imageUpload,
-      textInputElement,
+      // 对话框状态
+      dialogState,
       // 方法
-      isHidden,
       getItemStyle,
       startAddWebsite,
-      startAddDesktopCapture,
       onConfirmAddWebsite,
       cancelAddWebsite,
       handleCopyWebsite,
@@ -1017,33 +894,27 @@ export default {
       zoomIn,
       zoomOut,
       resetTransform,
-      // 右键菜单
-      contextMenuVisible,
-      contextMenuX,
-      contextMenuY,
       handleContextMenuAddWebsite,
       handleContextMenuAddCustomHtml,
-      // 自定义 HTML
-      showCustomHtmlDialog,
+      closeCustomHtmlDialog,
       handleCustomHtmlConfirm,
-      // 重排对话框
-      showRearrangeDialog,
+      closeRearrangeDialog,
+      openRearrangeDialog,
       handleRearrangeConfirm,
       handleAutoArrange,
-      handleRefreshAll,
       handleFullscreenToggle,
       handleFullscreenRefresh,
       handleFullscreenGoBack,
       handleFullscreenGoForward,
       fullscreenCanGoBack,
       fullscreenCanGoForward,
+      closeContextMenu,
       // 绘制方法
       toggleDrawingMode,
       setDrawingTool,
       handleDrawingMouseDownWrapper,
       handleDrawingMouseMove,
       handleDrawingMouseUp,
-      getPathData,
       clearAllDrawings,
       setDrawingColor,
       setDrawingWidth,
@@ -1141,139 +1012,5 @@ export default {
 
 .grid-container.is-dragging .website-iframe {
   pointer-events: none;
-}
-
-.drawing-layer {
-  position: absolute;
-  top: -10000px;
-  left: -10000px;
-  width: 20000px;
-  height: 20000px;
-  pointer-events: none;
-  z-index: 100;
-  overflow: visible;
-}
-
-.drawing-layer path {
-  pointer-events: none;
-}
-
-.drawing-layer.drawing-active {
-  pointer-events: auto;
-  cursor: crosshair;
-  z-index: 100;
-}
-
-/* 文字输入覆盖层 */
-.text-input-overlay {
-  z-index: 200;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 12px;
-  min-width: 250px;
-}
-
-.text-input-field {
-  width: 100%;
-  min-height: 80px;
-  padding: 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  font-family: Arial, sans-serif;
-  resize: vertical;
-  outline: none;
-  margin-bottom: 8px;
-}
-
-.text-input-field:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
-}
-
-.text-input-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.text-input-btn {
-  padding: 6px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.text-input-btn-ok {
-  background: #f97316;
-  color: white;
-}
-
-.text-input-btn-ok:hover {
-  background: #ea580c;
-}
-
-.text-input-btn-cancel {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.text-input-btn-cancel:hover {
-  background: #cbd5e1;
-}
-
-/* 图片上传覆盖层 */
-.image-upload-overlay {
-  z-index: 200;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 16px;
-}
-
-.image-upload-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  min-width: 200px;
-}
-
-.image-upload-box p {
-  margin: 0;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.image-upload-btn {
-  padding: 8px 20px;
-  background: #f97316;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.image-upload-btn:hover {
-  background: #ea580c;
-}
-
-.image-upload-btn-cancel {
-  padding: 6px 16px;
-  background: #e2e8f0;
-  color: #475569;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.image-upload-btn-cancel:hover {
-  background: #cbd5e1;
 }
 </style>
