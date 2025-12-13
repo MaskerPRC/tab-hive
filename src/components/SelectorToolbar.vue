@@ -148,112 +148,26 @@
       </div>
 
       <!-- 多选模式：选择器列表 -->
-      <div v-if="multiSelectMode" class="selectors-list-wrapper">
-        <label class="input-label">{{ $t('selectorToolbar.selectedElements') }} ({{ localSelectors.length }})</label>
-        <div class="selectors-list">
-          <div 
-            v-for="(sel, index) in localSelectors" 
-            :key="index"
-            class="selector-list-item"
-          >
-            <span class="selector-index">{{ index + 1 }}</span>
-            <span class="selector-value">{{ sel }}</span>
-            <button
-              class="remove-selector-btn"
-              @click="removeSelector(index)"
-              :title="$t('common.remove')"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div v-if="localSelector && !localSelectors.includes(localSelector)" class="current-selection">
-          <button class="add-selector-btn" @click="addCurrentSelector">
-            ➕ {{ $t('selectorToolbar.addToList') }}
-          </button>
-        </div>
-      </div>
+      <SelectorList
+        v-if="multiSelectMode"
+        :selectors="localSelectors"
+        :current-selector="localSelector"
+        @add="addCurrentSelector"
+        @remove="removeSelector"
+      />
 
       <!-- 选择器设置面板 -->
-      <div v-if="showSettings && localSelector" class="settings-panel">
-        <h4 class="settings-title">{{ $t('selectorToolbar.selectorRules') }}</h4>
-        <div class="settings-options">
-          <label class="setting-option">
-            <input v-model="settings.includeId" type="checkbox" />
-            <span>{{ $t('selectorToolbar.includeId') }}</span>
-          </label>
-          <label class="setting-option">
-            <input v-model="settings.includeClass" type="checkbox" />
-            <span>{{ $t('selectorToolbar.includeClass') }}</span>
-          </label>
-          <label class="setting-option">
-            <input v-model="settings.includeTag" type="checkbox" />
-            <span>{{ $t('selectorToolbar.includeTag') }}</span>
-          </label>
-          <label class="setting-option">
-            <input v-model="settings.includeAttributes" type="checkbox" />
-            <span>{{ $t('selectorToolbar.includeAttributes') }}</span>
-          </label>
-        </div>
-      </div>
+      <SelectorSettings
+        v-if="showSettings && localSelector"
+        :settings="settings"
+        @update:includeId="settings.includeId = $event"
+        @update:includeClass="settings.includeClass = $event"
+        @update:includeTag="settings.includeTag = $event"
+        @update:includeAttributes="settings.includeAttributes = $event"
+      />
 
       <!-- 详细信息面板 -->
-      <div v-if="elementInfo" class="element-info">
-        <!-- Tag -->
-        <div class="info-item">
-          <div class="info-icon info-icon-tag">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
-            </svg>
-          </div>
-          <div class="info-content">
-            <div class="info-label">{{ $t('selectorToolbar.tagName') }}</div>
-            <div class="info-value info-value-tag">
-              &lt;{{ elementInfo.tagName || elementInfo.tag }}&gt;
-            </div>
-          </div>
-        </div>
-
-        <!-- Class -->
-        <div v-if="elementInfo.className || elementInfo.class" class="info-item">
-          <div class="info-icon info-icon-class">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="4" y1="9" x2="20" y2="9"/>
-              <line x1="4" y1="15" x2="20" y2="15"/>
-              <line x1="10" y1="3" x2="8" y2="21"/>
-              <line x1="16" y1="3" x2="14" y2="21"/>
-            </svg>
-          </div>
-          <div class="info-content">
-            <div class="info-label">{{ $t('selectorToolbar.classList') }}</div>
-            <p class="info-value info-value-class">
-              {{ elementInfo.className || elementInfo.class }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Size -->
-        <div class="info-item">
-          <div class="info-icon info-icon-size">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <line x1="9" y1="3" x2="9" y2="21"/>
-              <line x1="3" y1="9" x2="21" y2="9"/>
-            </svg>
-          </div>
-          <div class="info-content">
-            <div class="info-label">{{ $t('selectorToolbar.dimensions') }}</div>
-            <div class="info-value info-value-size">
-              <span>{{ elementInfo.width || 0 }} px</span>
-              <span class="separator">×</span>
-              <span>{{ elementInfo.height || 0 }} px</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ElementInfo :element-info="elementInfo" />
     </div>
 
     <!-- 3. 底部操作栏 -->
@@ -290,11 +204,20 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, onUnmounted, reactive, computed } from 'vue'
+import { ref, watch, onMounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useDrag } from '../composables/useDrag'
+import SelectorList from './selector/SelectorList.vue'
+import ElementInfo from './selector/ElementInfo.vue'
+import SelectorSettings from './selector/SelectorSettings.vue'
 
 export default {
   name: 'SelectorToolbar',
+  components: {
+    SelectorList,
+    ElementInfo,
+    SelectorSettings
+  },
   props: {
     isActive: {
       type: Boolean,
@@ -323,17 +246,9 @@ export default {
     const localSelector = ref(props.selector)
     const localSelectors = ref(props.selectors || [])
     const showSettings = ref(false)
-    const isDragging = ref(false)
-    const position = reactive({
-      x: 0,
-      y: 20
-    })
-    const dragStart = reactive({
-      x: 0,
-      y: 0,
-      posX: 0,
-      posY: 0
-    })
+
+    // 使用拖拽composable
+    const { position, startDrag } = useDrag({ x: 0, y: 20 })
 
     const settings = reactive({
       includeId: true,
@@ -367,7 +282,6 @@ export default {
       if (!localSelector.value) return
       try {
         await navigator.clipboard.writeText(localSelector.value)
-        // 可以添加一个提示
         console.log('选择器已复制到剪贴板')
       } catch (err) {
         console.error('复制失败:', err)
@@ -394,50 +308,10 @@ export default {
       emit('update:selectors', [...localSelectors.value])
     }
 
-    const startDrag = (event) => {
-      isDragging.value = true
-      dragStart.x = event.clientX
-      dragStart.y = event.clientY
-      dragStart.posX = position.x
-      dragStart.posY = position.y
-      
-      document.addEventListener('mousemove', onDrag)
-      document.addEventListener('mouseup', stopDrag)
-    }
-
-    const onDrag = (event) => {
-      if (!isDragging.value) return
-      
-      const deltaX = event.clientX - dragStart.x
-      const deltaY = event.clientY - dragStart.y
-      
-      position.x = dragStart.posX + deltaX
-      position.y = dragStart.posY + deltaY
-      
-      // 限制在视口内
-      const maxX = window.innerWidth - 380 - 20
-      const maxY = window.innerHeight - 200
-      
-      position.x = Math.max(20, Math.min(position.x, maxX))
-      position.y = Math.max(20, Math.min(position.y, maxY))
-    }
-
-    const stopDrag = () => {
-      isDragging.value = false
-      document.removeEventListener('mousemove', onDrag)
-      document.removeEventListener('mouseup', stopDrag)
-    }
-
     onMounted(() => {
       // 初始位置：右上角
       position.x = window.innerWidth - 380 - 40
       position.y = 20
-    })
-
-    onUnmounted(() => {
-      if (isDragging.value) {
-        stopDrag()
-      }
     })
 
     return {
@@ -471,7 +345,7 @@ export default {
   user-select: none;
   overflow: hidden;
   animation: fadeInZoom 0.3s ease-out;
-  pointer-events: auto !important; /* 确保工具栏始终可以交互，不被父级 pointer-events: none 影响 */
+  pointer-events: auto !important;
 }
 
 @keyframes fadeInZoom {
@@ -768,253 +642,6 @@ export default {
   color: #ea580c;
 }
 
-/* 选择器列表 */
-.selectors-list-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.input-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #64748b;
-}
-
-.selectors-list {
-  max-height: 200px;
-  overflow-y: auto;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px;
-}
-
-.selector-list-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  transition: all 0.2s;
-}
-
-.selector-list-item:last-child {
-  margin-bottom: 0;
-}
-
-.selector-list-item:hover {
-  border-color: #ea580c;
-  background: #fff7ed;
-}
-
-.selector-index {
-  flex: 0 0 24px;
-  width: 24px;
-  height: 24px;
-  background: #ea580c;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 11px;
-}
-
-.selector-value {
-  flex: 1;
-  color: #1e293b;
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.remove-selector-btn {
-  flex: 0 0 20px;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: transparent;
-  color: #ef4444;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.remove-selector-btn:hover {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.current-selection {
-  margin-top: 8px;
-}
-
-.add-selector-btn {
-  width: 100%;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
-}
-
-.add-selector-btn:hover {
-  background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
-  transform: translateY(-1px);
-}
-
-.add-selector-btn:active {
-  transform: translateY(0);
-}
-
-/* 设置面板 */
-.settings-panel {
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.settings-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-  margin: 0 0 10px 0;
-}
-
-.settings-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.setting-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #64748b;
-  cursor: pointer;
-}
-
-.setting-option input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #ea580c;
-}
-
-/* 详细信息面板 */
-.element-info {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid #f1f5f9;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.info-item {
-  display: flex;
-  gap: 12px;
-}
-
-.info-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.info-icon-tag {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.info-icon-class {
-  background: #f3e8ff;
-  color: #9333ea;
-}
-
-.info-icon-size {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.info-content {
-  flex: 1;
-  overflow: hidden;
-  min-width: 0;
-}
-
-.info-label {
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.info-value {
-  font-size: 12px;
-  color: #475569;
-  word-break: break-word;
-}
-
-.info-value-tag {
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  background: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
-  display: inline-block;
-}
-
-.info-value-class {
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size: 11px;
-  color: #64748b;
-  line-height: 1.5;
-  user-select: all;
-}
-
-.info-value-size {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.separator {
-  color: #cbd5e1;
-}
-
 /* 3. 底部操作栏 */
 .toolbar-footer {
   padding: 20px;
@@ -1083,17 +710,6 @@ export default {
   font-size: 10px;
   color: #94a3b8;
   margin: 0;
-}
-
-.footer-hint kbd {
-  font-family: inherit;
-  background: #f1f5f9;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
-  font-size: 10px;
-  font-weight: 600;
-  color: #64748b;
 }
 
 /* 确保所有交互元素都可以点击 */

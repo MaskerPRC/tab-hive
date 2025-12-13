@@ -59,27 +59,11 @@
       <!-- 主要内容区 -->
       <div class="editor-body" v-show="!isSelectingElement">
         <!-- 左侧工具面板 -->
-        <div class="tools-panel">
-          <div class="tool-section">
-            <h4>添加节点</h4>
-            <button @click="addFlowNode" class="tool-btn">
-              <span class="tool-icon">🔄</span>
-              <span>Flow节点</span>
-            </button>
-            <button @click="addWebControlNode" class="tool-btn">
-              <span class="tool-icon">⚡</span>
-              <span>网页控制</span>
-            </button>
-          </div>
-
-          <div class="tool-section">
-            <h4>网页元素</h4>
-            <button @click="() => startElementSelection()" class="tool-btn primary">
-              <span class="tool-icon">🎯</span>
-              <span>选择元素</span>
-            </button>
-          </div>
-        </div>
+        <ToolsPanel
+          @add-flow-node="addFlowNode"
+          @add-web-control-node="addWebControlNode"
+          @start-element-selection="startElementSelection"
+        />
 
         <!-- 画布区域 -->
         <div
@@ -87,272 +71,56 @@
           ref="canvasArea"
           :style="{ opacity: canvasOpacity }"
         >
-          <svg class="connections-layer" :style="{ width: '100%', height: '100%' }">
-            <!-- 绘制连接线 -->
-            <g v-for="conn in connections" :key="conn.id">
-              <line
-                :x1="getConnectionStart(conn).x"
-                :y1="getConnectionStart(conn).y"
-                :x2="getConnectionEnd(conn).x"
-                :y2="getConnectionEnd(conn).y"
-                :class="getConnectionClass(conn)"
-                :stroke-dasharray="conn.type === 'data-mapping' ? '5,5' : '0'"
-                stroke-width="2"
-              />
-            </g>
-
-            <!-- 正在绘制的临时连接线 -->
-            <line
-              v-if="draggingConnection"
-              :x1="draggingConnection.startX"
-              :y1="draggingConnection.startY"
-              :x2="draggingConnection.endX"
-              :y2="draggingConnection.endY"
-              class="connection-temp"
-              stroke-dasharray="5,5"
-              stroke-width="2"
-            />
-          </svg>
+          <!-- 连接线层 -->
+          <ConnectionsLayer
+            :connections="connections"
+            :dragging-connection="draggingConnection"
+          />
 
           <!-- 节点层 -->
           <div class="nodes-layer">
             <!-- 网页节点 -->
-            <div
+            <WebpageNode
               v-for="node in webpageNodes"
               :key="node.id"
-              class="workflow-node webpage-node"
-              :style="getNodeStyle(node)"
-              @mousedown="startDragNode($event, node)"
-            >
-              <div class="node-header">
-                <span class="node-icon">🌐</span>
-                <span class="node-title">{{ node.name }}</span>
-                <button @click="deleteNode(node.id)" class="node-delete">×</button>
-              </div>
-
-              <div class="node-body">
-                <!-- 选择器列表 -->
-                <div
-                  v-for="selector in node.selectorConfigs"
-                  :key="selector.id"
-                  class="selector-group"
-                >
-                  <div class="selector-header">
-                    <span class="selector-name">{{ selector.elementName }}</span>
-                    <button
-                      @click="editSelectorConfig(node, selector)"
-                      class="selector-edit"
-                    >
-                      ⚙️
-                    </button>
-                  </div>
-
-                  <!-- 数据端口 -->
-                  <div
-                    v-for="dataMapping in selector.dataMappings"
-                    :key="dataMapping.id"
-                    class="port-item data-port"
-                  >
-                    <div
-                      class="port-dot data"
-                      :data-node-id="node.id"
-                      :data-port-id="dataMapping.portId"
-                      :data-port-type="'data'"
-                      @mousedown="startConnection($event, node.id, dataMapping.portId, 'data')"
-                    >
-                      ○
-                    </div>
-                    <span class="port-label">{{ dataMapping.name }}</span>
-                  </div>
-
-                  <!-- 交互端口 -->
-                  <div
-                    v-for="actionMapping in selector.actionMappings"
-                    :key="actionMapping.id"
-                    class="port-item action-port"
-                  >
-                    <span class="port-label">{{ actionMapping.name }}</span>
-                    <div
-                      class="port-dot action"
-                      :data-node-id="node.id"
-                      :data-port-id="actionMapping.portId"
-                      :data-port-type="'action'"
-                      @mousedown="startConnection($event, node.id, actionMapping.portId, 'action')"
-                    >
-                      ●
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  @click="startElementSelection(node)"
-                  class="add-selector-btn"
-                >
-                  + 添加选择器
-                </button>
-              </div>
-            </div>
+              :node="node"
+              @start-drag="startDragNode($event, node)"
+              @delete="deleteNode(node.id)"
+              @edit-selector="editSelectorConfig(node, $event)"
+              @add-selector="startElementSelection(node)"
+              @port-mousedown="handlePortMouseDown"
+            />
 
             <!-- Flow节点 -->
-            <div
+            <FlowNode
               v-for="node in flowNodes"
               :key="node.id"
-              class="workflow-node flow-node"
-              :style="getNodeStyle(node)"
-              @mousedown="startDragNode($event, node)"
-            >
-              <div class="node-header">
-                <span class="node-icon">🔄</span>
-                <input
-                  v-model="node.name"
-                  class="node-title-input"
-                  @click.stop
-                />
-                <button @click="deleteNode(node.id)" class="node-delete">×</button>
-              </div>
-
-              <div class="node-body">
-                <!-- 输入端口 -->
-                <div class="ports-section">
-                  <div
-                    v-for="port in node.inputPorts"
-                    :key="port.id"
-                    class="port-item input-port"
-                  >
-                    <div
-                      class="port-dot input"
-                      :data-node-id="node.id"
-                      :data-port-id="port.id"
-                      :data-port-type="'input'"
-                      @mousedown="startConnection($event, node.id, port.id, 'input')"
-                    >
-                      ◀
-                    </div>
-                    <span class="port-label">{{ port.name }}</span>
-                  </div>
-                </div>
-
-                <!-- 输出端口 -->
-                <div class="ports-section">
-                  <div
-                    v-for="port in node.outputPorts"
-                    :key="port.id"
-                    class="port-item output-port"
-                  >
-                    <span class="port-label">{{ port.name }}</span>
-                    <div
-                      class="port-dot output"
-                      :data-node-id="node.id"
-                      :data-port-id="port.id"
-                      :data-port-type="'output'"
-                      @mousedown="startConnection($event, node.id, port.id, 'output')"
-                    >
-                      ▶
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              :node="node"
+              @start-drag="startDragNode($event, node)"
+              @delete="deleteNode(node.id)"
+              @update:name="node.name = $event"
+              @port-mousedown="handlePortMouseDown"
+            />
 
             <!-- Web Control节点 -->
-            <div
+            <WebControlNode
               v-for="node in webControlNodes"
               :key="node.id"
-              class="workflow-node control-node"
-              :style="getNodeStyle(node)"
-              @mousedown="startDragNode($event, node)"
-            >
-              <div class="node-header">
-                <span class="node-icon">⚡</span>
-                <input
-                  v-model="node.name"
-                  class="node-title-input"
-                  @click.stop
-                />
-                <button @click="deleteNode(node.id)" class="node-delete">×</button>
-              </div>
-
-              <div class="node-body">
-                <!-- 输入端口 -->
-                <div class="ports-section">
-                  <div
-                    v-for="port in node.inputPorts"
-                    :key="port.id"
-                    class="port-item input-port"
-                  >
-                    <div
-                      class="port-dot input"
-                      :data-node-id="node.id"
-                      :data-port-id="port.id"
-                      :data-port-type="'input'"
-                      @mousedown="startConnection($event, node.id, port.id, 'input')"
-                    >
-                      ◀
-                    </div>
-                    <span class="port-label">{{ port.name }}</span>
-                  </div>
-                </div>
-
-                <!-- 交互控制（显示已配置的） -->
-                <div class="action-controls-section">
-                  <div
-                    v-for="ctrl in node.actionControls.filter(c => c.targetNodeId)"
-                    :key="ctrl.id"
-                    class="action-control-item"
-                  >
-                    <span class="control-label">{{ ctrl.name }}</span>
-                    <span class="control-target">
-                      → {{ getActionTargetName(ctrl) }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- 输出端口 -->
-                <div class="ports-section">
-                  <div
-                    v-for="port in node.outputPorts"
-                    :key="port.id"
-                    class="port-item output-port"
-                    :class="{ 'result-port': port.isFixed }"
-                  >
-                    <span class="port-label">
-                      {{ port.isFixed ? '📊 ' : '' }}{{ port.name }}
-                    </span>
-                    <div
-                      class="port-dot output"
-                      :data-node-id="node.id"
-                      :data-port-id="port.id"
-                      :data-port-type="'output'"
-                      @mousedown="startConnection($event, node.id, port.id, 'output')"
-                    >
-                      ▶
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              :node="node"
+              @start-drag="startDragNode($event, node)"
+              @delete="deleteNode(node.id)"
+              @update:name="node.name = $event"
+              @port-mousedown="handlePortMouseDown"
+            />
           </div>
         </div>
       </div>
 
       <!-- 执行日志 -->
-      <div v-if="executionLog.length > 0" class="execution-log">
-        <div class="log-header">
-          <h4>执行日志</h4>
-          <button @click="clearLog" class="btn-clear-log">清空</button>
-        </div>
-        <div class="log-content">
-          <div
-            v-for="(log, index) in executionLog"
-            :key="index"
-            class="log-item"
-            :class="`log-${log.type}`"
-          >
-            <span class="log-time">{{ formatTime(log.time) }}</span>
-            <span class="log-message">{{ log.message }}</span>
-          </div>
-        </div>
-      </div>
+      <ExecutionLog
+        :logs="executionLog"
+        @clear="clearLog"
+      />
     </div>
     <!-- 关闭 .workflow-editor -->
 
@@ -383,15 +151,29 @@
 <script>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useWorkflowManager } from '../../composables/useWorkflowManager'
+import { useNodeDrag } from '../../composables/useNodeDrag'
+import { useConnectionDrag } from '../../composables/useConnectionDrag'
 import { createSelectorConfig, createFlowNode, createWebControlNode, NODE_TYPES } from '../../models/workflowModels'
 import SelectorMappingConfig from './SelectorMappingConfig.vue'
 import ElementSelector from '../ElementSelector.vue'
+import ToolsPanel from './ToolsPanel.vue'
+import ExecutionLog from './ExecutionLog.vue'
+import ConnectionsLayer from './ConnectionsLayer.vue'
+import WebpageNode from './WebpageNode.vue'
+import FlowNode from './FlowNode.vue'
+import WebControlNode from './WebControlNode.vue'
 
 export default {
   name: 'WorkflowEditor',
   components: {
     SelectorMappingConfig,
-    ElementSelector
+    ElementSelector,
+    ToolsPanel,
+    ExecutionLog,
+    ConnectionsLayer,
+    WebpageNode,
+    FlowNode,
+    WebControlNode
   },
   props: {
     show: {
@@ -444,17 +226,26 @@ export default {
     const targetIframe = ref(null)
     const currentWebsite = ref(null)
 
-    // 拖拽状态
-    const draggingNode = ref(null)
-    const dragOffset = ref({ x: 0, y: 0 })
-    const draggingConnection = ref(null)
-
     // 执行状态
     const isExecuting = ref(false)
     const executionLog = ref([])
 
     // 透明度控制
-    const canvasOpacity = ref(0.7) // 默认70%透明度
+    const canvasOpacity = ref(0.7)
+
+    // 使用拖拽composables
+    const {
+      startDragNode: startNodeDrag,
+      handleNodeDrag,
+      stopNodeDrag
+    } = useNodeDrag()
+
+    const {
+      draggingConnection,
+      startConnection,
+      handleConnectionDrag,
+      stopConnection
+    } = useConnectionDrag()
 
     // 监听 show 属性变化
     watch(() => props.show, (newValue) => {
@@ -511,14 +302,6 @@ export default {
       document.removeEventListener('mouseup', handleMouseUp)
     })
 
-    // 节点样式
-    const getNodeStyle = (node) => {
-      return {
-        left: `${node.position.x}px`,
-        top: `${node.position.y}px`
-      }
-    }
-
     // 添加节点
     const addFlowNode = () => {
       const node = createFlowNode('处理节点')
@@ -537,6 +320,16 @@ export default {
       if (confirm('确定删除此节点吗？')) {
         workflowManager.removeNode(nodeId)
       }
+    }
+
+    // 节点拖拽
+    const startDragNode = (event, node) => {
+      startNodeDrag(event, node, canvasArea.value)
+    }
+
+    // 端口鼠标按下
+    const handlePortMouseDown = (event, nodeId, portId, portType) => {
+      startConnection(event, nodeId, portId, portType, canvasArea.value)
     }
 
     // 开始元素选择
@@ -641,80 +434,16 @@ export default {
       startElementSelection(currentEditingNode.value)
     }
 
-    // 节点拖拽
-    const startDragNode = (event, node) => {
-      if (event.target.closest('.port-dot')) return
-
-      draggingNode.value = node
-      const rect = event.target.closest('.workflow-node').getBoundingClientRect()
-      dragOffset.value = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-      }
-    }
-
-    // 连接线拖拽
-    const startConnection = (event, nodeId, portId, portType) => {
-      event.stopPropagation()
-
-      const rect = event.target.getBoundingClientRect()
-      const canvasRect = canvasArea.value.getBoundingClientRect()
-
-      draggingConnection.value = {
-        fromNodeId: nodeId,
-        fromPortId: portId,
-        fromPortType: portType,
-        startX: rect.left + rect.width / 2 - canvasRect.left,
-        startY: rect.top + rect.height / 2 - canvasRect.top,
-        endX: rect.left + rect.width / 2 - canvasRect.left,
-        endY: rect.top + rect.height / 2 - canvasRect.top
-      }
-    }
-
     // 鼠标移动
     const handleMouseMove = (event) => {
-      if (draggingNode.value && canvasArea.value) {
-        const canvasRect = canvasArea.value.getBoundingClientRect()
-        draggingNode.value.position = {
-          x: event.clientX - canvasRect.left - dragOffset.value.x,
-          y: event.clientY - canvasRect.top - dragOffset.value.y
-        }
-      }
-
-      if (draggingConnection.value && canvasArea.value) {
-        const canvasRect = canvasArea.value.getBoundingClientRect()
-        draggingConnection.value.endX = event.clientX - canvasRect.left
-        draggingConnection.value.endY = event.clientY - canvasRect.top
-      }
+      handleNodeDrag(event, canvasArea.value)
+      handleConnectionDrag(event, canvasArea.value)
     }
 
     // 鼠标释放
     const handleMouseUp = (event) => {
-      if (draggingNode.value) {
-        workflowManager.saveWorkflows()
-        draggingNode.value = null
-      }
-
-      if (draggingConnection.value) {
-        // 检查是否释放在端口上
-        const target = event.target.closest('.port-dot')
-        if (target) {
-          const toNodeId = target.dataset.nodeId
-          const toPortId = target.dataset.portId
-          const toPortType = target.dataset.portType
-
-          createConnectionBetweenPorts(
-            draggingConnection.value.fromNodeId,
-            draggingConnection.value.fromPortId,
-            draggingConnection.value.fromPortType,
-            toNodeId,
-            toPortId,
-            toPortType
-          )
-        }
-
-        draggingConnection.value = null
-      }
+      stopNodeDrag(() => workflowManager.saveWorkflows())
+      stopConnection(event, createConnectionBetweenPorts)
     }
 
     // 创建连接
@@ -723,10 +452,6 @@ export default {
       toNodeId, toPortId, toPortType
     ) => {
       // MVP: 简化的连接逻辑
-      // 数据端口 → Flow输入
-      // Flow输出 → Flow输入 或 WebControl输入
-      // WebControl → 交互端口
-
       let connectionType = 'execution-flow'
 
       if (fromPortType === 'data') {
@@ -738,30 +463,6 @@ export default {
         { nodeId: fromNodeId, portId: fromPortId },
         { nodeId: toNodeId, portId: toPortId }
       )
-    }
-
-    // 获取连接线坐标（简化版，后续可优化）
-    const getConnectionStart = (conn) => {
-      // TODO: 计算实际端口位置
-      return { x: 100, y: 100 }
-    }
-
-    const getConnectionEnd = (conn) => {
-      // TODO: 计算实际端口位置
-      return { x: 300, y: 200 }
-    }
-
-    const getConnectionClass = (conn) => {
-      return {
-        'connection-line': true,
-        'connection-data': conn.type === 'data-mapping',
-        'connection-flow': conn.type === 'execution-flow'
-      }
-    }
-
-    const getActionTargetName = (ctrl) => {
-      // TODO: 获取目标动作名称
-      return '交互操作'
     }
 
     // 测试运行
@@ -786,10 +487,6 @@ export default {
       executionLog.value = []
     }
 
-    const formatTime = (time) => {
-      return new Date(time).toLocaleTimeString()
-    }
-
     return {
       workflow,
       nodes,
@@ -807,7 +504,6 @@ export default {
       isExecuting,
       executionLog,
       canvasOpacity,
-      getNodeStyle,
       addFlowNode,
       addWebControlNode,
       deleteNode,
@@ -817,16 +513,11 @@ export default {
       handleSelectorConfigSave,
       handleReselect,
       startDragNode,
-      startConnection,
-      getConnectionStart,
-      getConnectionEnd,
-      getConnectionClass,
-      getActionTargetName,
+      handlePortMouseDown,
       handleTest,
       handleSave,
       handleClose,
-      clearLog,
-      formatTime
+      clearLog
     }
   }
 }
@@ -839,40 +530,37 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3); /* 半透明背景 */
-  backdrop-filter: blur(2px); /* 轻微模糊效果 */
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
   z-index: 9999;
   display: flex;
-  pointer-events: none; /* 让背景不捕获鼠标事件 */
+  pointer-events: none;
 }
 
-/* 选择元素模式：背景完全透明，不阻挡交互 */
 .workflow-editor-overlay.selecting-element {
   background: transparent !important;
   backdrop-filter: none !important;
-  pointer-events: none !important; /* 完全不捕获事件，让下方元素可以被选择 */
+  pointer-events: none !important;
 }
 
 .workflow-editor {
   width: 100%;
   height: 100%;
-  background: rgba(245, 245, 245, 0.95); /* 半透明白色 */
+  background: rgba(245, 245, 245, 0.95);
   display: flex;
   flex-direction: column;
-  pointer-events: auto; /* 编辑器本身可以交互 */
+  pointer-events: auto;
 }
 
 .workflow-editor.dark-mode {
-  background: rgba(26, 26, 26, 0.95); /* 半透明黑色 */
+  background: rgba(26, 26, 26, 0.95);
   color: #e0e0e0;
 }
 
-/* 选择元素模式：编辑器主体不捕获事件 */
 .selecting-element .workflow-editor {
   pointer-events: none;
 }
 
-/* 但头部工具栏仍需要捕获事件（用于关闭等操作） */
 .selecting-element .editor-header {
   pointer-events: auto;
 }
@@ -976,8 +664,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent; /* 完全透明 */
-  pointer-events: none; /* 不阻挡鼠标事件 */
+  background: transparent;
+  pointer-events: none;
 }
 
 .hint-content {
@@ -988,12 +676,12 @@ export default {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   max-width: 450px;
-  pointer-events: none; /* 提示框也不阻挡，只用于显示 */
+  pointer-events: none;
   position: fixed;
-  top: 120px; /* 靠上显示，不遮挡网页主体 */
+  top: 120px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9998; /* 低于ElementHighlighter(10001)，不遮挡高亮效果 */
+  z-index: 9998;
 }
 
 .dark-mode .hint-content {
@@ -1133,73 +821,6 @@ export default {
   overflow: hidden;
 }
 
-.tools-panel {
-  width: 200px;
-  background: rgba(255, 255, 255, 0.98);
-  border-right: 1px solid #e0e0e0;
-  padding: 16px;
-  overflow-y: auto;
-  backdrop-filter: blur(10px);
-}
-
-.dark-mode .tools-panel {
-  background: rgba(45, 45, 45, 0.98);
-  border-right-color: #444;
-}
-
-.tool-section {
-  margin-bottom: 24px;
-}
-
-.tool-section h4 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.dark-mode .tool-section h4 {
-  color: #aaa;
-}
-
-.tool-btn {
-  width: 100%;
-  padding: 12px;
-  background: #fff;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  transition: all 0.2s;
-}
-
-.tool-btn:hover {
-  border-color: #4CAF50;
-  background: #f9fff9;
-}
-
-.tool-btn.primary {
-  background: #4CAF50;
-  color: #fff;
-  border-color: #4CAF50;
-}
-
-.tool-btn.primary:hover {
-  background: #45a049;
-}
-
-.dark-mode .tool-btn {
-  background: #3a3a3a;
-  border-color: #555;
-  color: #e0e0e0;
-}
-
-.tool-icon {
-  font-size: 20px;
-}
-
 .canvas-area {
   flex: 1;
   position: relative;
@@ -1207,7 +828,7 @@ export default {
   background:
     linear-gradient(90deg, rgba(224, 224, 224, 0.3) 1px, transparent 1px) 0 0 / 20px 20px,
     linear-gradient(rgba(224, 224, 224, 0.3) 1px, transparent 1px) 0 0 / 20px 20px;
-  background-color: rgba(250, 250, 250, 0.5); /* 半透明画布，可以看到下面的网页 */
+  background-color: rgba(250, 250, 250, 0.5);
 }
 
 .dark-mode .canvas-area {
@@ -1217,32 +838,6 @@ export default {
   background-color: rgba(26, 26, 26, 0.5);
 }
 
-.connections-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.connection-line {
-  stroke: #666;
-  transition: stroke 0.2s;
-}
-
-.connection-data {
-  stroke: #2196F3;
-}
-
-.connection-flow {
-  stroke: #4CAF50;
-}
-
-.connection-temp {
-  stroke: #999;
-  opacity: 0.6;
-}
-
 .nodes-layer {
   position: relative;
   z-index: 2;
@@ -1250,303 +845,13 @@ export default {
   min-height: 2000px;
 }
 
-.workflow-node {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.98); /* 几乎不透明，保证可读性 */
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  min-width: 220px;
-  cursor: move;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* 更强的阴影，突出层次 */
-  backdrop-filter: blur(10px); /* 背景模糊效果 */
-}
-
-.dark-mode .workflow-node {
-  background: rgba(45, 45, 45, 0.98);
-  border-color: #444;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.webpage-node {
-  border-color: #2196F3;
-}
-
-.flow-node {
-  border-color: #4CAF50;
-}
-
-.control-node {
-  border-color: #ff9800;
-}
-
-.node-header {
-  padding: 12px;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.dark-mode .node-header {
-  border-bottom-color: #444;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.node-icon {
-  font-size: 18px;
-}
-
-.node-title {
-  flex: 1;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.node-title-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-weight: 600;
-  font-size: 14px;
-  color: inherit;
-  padding: 4px;
-  cursor: text;
-}
-
-.node-title-input:focus {
-  outline: 1px solid #4CAF50;
-  border-radius: 4px;
-}
-
-.node-delete {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #999;
-  cursor: pointer;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-}
-
-.node-delete:hover {
-  background: rgba(244, 67, 54, 0.1);
-  color: #f44336;
-}
-
-.node-body {
-  padding: 12px;
-}
-
-.selector-group {
-  margin-bottom: 12px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 4px;
-}
-
-.dark-mode .selector-group {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.selector-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.selector-name {
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.selector-edit {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px;
-}
-
-.port-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  font-size: 12px;
-}
-
-.port-dot {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  user-select: none;
-}
-
-.port-dot.data {
-  color: #2196F3;
-}
-
-.port-dot.action {
-  color: #ff9800;
-}
-
-.port-dot.input,
-.port-dot.output {
-  color: #4CAF50;
-}
-
-.port-label {
-  flex: 1;
-}
-
-.add-selector-btn {
-  width: 100%;
-  padding: 8px;
-  background: transparent;
-  border: 2px dashed #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #666;
-  margin-top: 8px;
-}
-
-.add-selector-btn:hover {
-  border-color: #4CAF50;
-  color: #4CAF50;
-}
-
-.ports-section {
-  margin-bottom: 8px;
-}
-
-.action-controls-section {
-  margin: 8px 0;
-  padding: 8px;
-  background: rgba(255, 152, 0, 0.05);
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.action-control-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-}
-
-.control-label {
-  font-weight: 500;
-}
-
-.control-target {
-  color: #666;
-  font-size: 11px;
-}
-
-.dark-mode .control-target {
-  color: #aaa;
-}
-
-.result-port {
-  background: rgba(33, 150, 243, 0.05);
-  padding: 6px;
-  border-radius: 4px;
-}
-
-.execution-log {
-  background: rgba(255, 255, 255, 0.98);
-  border-top: 1px solid #e0e0e0;
-  max-height: 200px;
-  display: flex;
-  flex-direction: column;
-  backdrop-filter: blur(10px);
-}
-
-.dark-mode .execution-log {
-  background: rgba(45, 45, 45, 0.98);
-  border-top-color: #444;
-}
-
-.log-header {
-  padding: 12px;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dark-mode .log-header {
-  border-bottom-color: #444;
-}
-
-.log-header h4 {
-  margin: 0;
-  font-size: 14px;
-}
-
-.btn-clear-log {
-  padding: 4px 12px;
-  background: #e0e0e0;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.log-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-}
-
-.log-item {
-  padding: 4px 0;
-  display: flex;
-  gap: 8px;
-}
-
-.log-time {
-  color: #999;
-}
-
-.log-message {
-  flex: 1;
-}
-
-.log-info {
-  color: #2196F3;
-}
-
-.log-success {
-  color: #4CAF50;
-}
-
-.log-error {
-  color: #f44336;
-}
-
 /* 确保配置对话框和元素选择器永远可以交互 */
-/* 它们现在在 .workflow-editor 外层，不会被 pointer-events: none 影响 */
 .selector-mapping-overlay,
 .selector-toolbar {
   pointer-events: auto !important;
-  z-index: 10000; /* 确保在最上层 */
+  z-index: 10000;
 }
 
-/* 确保所有交互元素都可以点击 */
 .selector-mapping-overlay button,
 .selector-mapping-overlay input,
 .selector-mapping-overlay select,
@@ -1557,4 +862,3 @@ export default {
   cursor: pointer;
 }
 </style>
-
