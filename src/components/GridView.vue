@@ -139,17 +139,41 @@
           @mouseup="handleDrawingMouseUp"
           @mouseleave="handleDrawingMouseUp"
         >
-          <!-- 已保存的绘制路径 -->
-          <path
-            v-for="(path, index) in savedDrawings"
-            :key="`saved-${index}`"
-            :d="path.d"
-            :stroke="path.color"
-            :stroke-width="path.width"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
+          <!-- 已保存的绘制内容 -->
+          <template v-for="(item, index) in savedDrawings" :key="`saved-${index}`">
+            <!-- 路径 -->
+            <path
+              v-if="item.type === 'path'"
+              :d="item.d"
+              :stroke="item.color"
+              :stroke-width="item.width"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            
+            <!-- 文字 -->
+            <text
+              v-else-if="item.type === 'text'"
+              :x="item.x"
+              :y="item.y"
+              :fill="item.color"
+              :font-size="item.fontSize"
+              font-family="Arial, sans-serif"
+              dominant-baseline="hanging"
+            >{{ item.content }}</text>
+            
+            <!-- 图片 -->
+            <image
+              v-else-if="item.type === 'image'"
+              :x="item.x"
+              :y="item.y"
+              :width="item.width"
+              :height="item.height"
+              :href="item.data"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </template>
           
           <!-- 当前正在绘制的路径 -->
           <path
@@ -162,6 +186,60 @@
             stroke-linejoin="round"
           />
         </svg>
+        
+        <!-- 文字输入覆盖层 -->
+        <div
+          v-if="textInput.show"
+          class="text-input-overlay"
+          :style="{
+            position: 'absolute',
+            left: `${textInput.x}px`,
+            top: `${textInput.y}px`,
+            transform: 'translate(-50%, -50%)'
+          }"
+        >
+          <textarea
+            ref="textInputElement"
+            v-model="textInput.content"
+            class="text-input-field"
+            :style="{ color: textInput.color, fontSize: textInput.fontSize + 'px' }"
+            placeholder="输入文字..."
+            @keydown.enter.ctrl="handleTextSubmit"
+            @keydown.esc="handleTextCancel"
+            autofocus
+          ></textarea>
+          <div class="text-input-buttons">
+            <button @click="handleTextSubmit" class="text-input-btn text-input-btn-ok">确定</button>
+            <button @click="handleTextCancel" class="text-input-btn text-input-btn-cancel">取消</button>
+          </div>
+        </div>
+        
+        <!-- 图片上传覆盖层 -->
+        <div
+          v-if="imageUpload.show"
+          class="image-upload-overlay"
+          :style="{
+            position: 'absolute',
+            left: `${imageUpload.x}px`,
+            top: `${imageUpload.y}px`,
+            transform: 'translate(-50%, -50%)'
+          }"
+        >
+          <div class="image-upload-box">
+            <p>粘贴图片 (Ctrl+V)</p>
+            <p>或</p>
+            <label class="image-upload-btn">
+              <input
+                type="file"
+                accept="image/*"
+                @change="handleImageFileSelect"
+                style="display: none;"
+              />
+              选择图片
+            </label>
+            <button @click="handleImageCancel" class="image-upload-btn-cancel">取消</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -170,6 +248,7 @@
       v-if="fullscreenIndex === null"
       :zoom-percentage="zoomPercentage"
       :is-drawing-mode="isDrawingMode"
+      :drawing-tool="drawingTool"
       :drawing-color="drawingColor"
       :drawing-width="drawingWidth"
       @zoom-in="zoomIn"
@@ -177,6 +256,7 @@
       @reset="resetTransform"
       @auto-arrange="handleAutoArrange"
       @toggle-drawing="toggleDrawingMode"
+      @set-tool="setDrawingTool"
       @update-color="setDrawingColor"
       @update-width="setDrawingWidth"
       @clear-drawings="clearAllDrawings"
@@ -373,18 +453,26 @@ export default {
     // 绘制功能
     const {
       isDrawingMode,
+      drawingTool,
       currentPath,
       drawingColor,
       drawingWidth,
       savedDrawings,
+      textInput,
+      imageUpload,
       toggleDrawingMode,
+      setDrawingTool,
       handleDrawingMouseDown,
       handleDrawingMouseMove,
       handleDrawingMouseUp,
       getPathData,
       clearAllDrawings,
       setDrawingColor,
-      setDrawingWidth
+      setDrawingWidth,
+      saveText,
+      saveImage,
+      handlePaste,
+      handleImageUpload
     } = useDrawing(props, emit, canvasTransform)
 
     // 全屏导航功能
@@ -718,7 +806,45 @@ export default {
       cleanupFullscreen()
       window.removeEventListener('resize', initializeGridLayout)
       document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('paste', handlePaste)
     })
+    
+    // ========== 文字和图片输入处理 ==========
+    
+    // ref for text input element
+    const textInputElement = ref(null)
+    
+    // 监听粘贴事件
+    onMounted(() => {
+      document.addEventListener('paste', handlePaste)
+    })
+    
+    // 处理文字提交
+    const handleTextSubmit = () => {
+      if (textInput.value.content && textInput.value.content.trim()) {
+        saveText(textInput.value.content)
+      } else {
+        textInput.value.show = false
+      }
+    }
+    
+    // 处理文字取消
+    const handleTextCancel = () => {
+      textInput.value.show = false
+    }
+    
+    // 处理图片文件选择
+    const handleImageFileSelect = (event) => {
+      const file = event.target.files?.[0]
+      if (file) {
+        handleImageUpload(file)
+      }
+    }
+    
+    // 处理图片取消
+    const handleImageCancel = () => {
+      imageUpload.value.show = false
+    }
 
     return {
       // 状态
@@ -743,10 +869,14 @@ export default {
       transformStyle,
       // 绘制状态
       isDrawingMode,
+      drawingTool,
       currentPath,
       drawingColor,
       drawingWidth,
       savedDrawings,
+      textInput,
+      imageUpload,
+      textInputElement,
       // 方法
       isHidden,
       getItemStyle,
@@ -801,13 +931,18 @@ export default {
       fullscreenCanGoForward,
       // 绘制方法
       toggleDrawingMode,
+      setDrawingTool,
       handleDrawingMouseDownWrapper,
       handleDrawingMouseMove,
       handleDrawingMouseUp,
       getPathData,
       clearAllDrawings,
       setDrawingColor,
-      setDrawingWidth
+      setDrawingWidth,
+      handleTextSubmit,
+      handleTextCancel,
+      handleImageFileSelect,
+      handleImageCancel
     }
   }
 }
@@ -919,5 +1054,118 @@ export default {
   pointer-events: auto;
   cursor: crosshair;
   z-index: 100;
+}
+
+/* 文字输入覆盖层 */
+.text-input-overlay {
+  z-index: 200;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  min-width: 250px;
+}
+
+.text-input-field {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-family: Arial, sans-serif;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 8px;
+}
+
+.text-input-field:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.text-input-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.text-input-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.text-input-btn-ok {
+  background: #f97316;
+  color: white;
+}
+
+.text-input-btn-ok:hover {
+  background: #ea580c;
+}
+
+.text-input-btn-cancel {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.text-input-btn-cancel:hover {
+  background: #cbd5e1;
+}
+
+/* 图片上传覆盖层 */
+.image-upload-overlay {
+  z-index: 200;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+}
+
+.image-upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.image-upload-box p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.image-upload-btn {
+  padding: 8px 20px;
+  background: #f97316;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.image-upload-btn:hover {
+  background: #ea580c;
+}
+
+.image-upload-btn-cancel {
+  padding: 6px 16px;
+  background: #e2e8f0;
+  color: #475569;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.image-upload-btn-cancel:hover {
+  background: #cbd5e1;
 }
 </style>

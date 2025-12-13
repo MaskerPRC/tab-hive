@@ -61,6 +61,48 @@
         </svg>
       </button>
       
+      <!-- 工具选择按钮（仅在绘制模式下显示） -->
+      <button
+        v-if="isDrawingMode"
+        class="fab-btn"
+        :class="{ 'active': drawingTool === 'pen' }"
+        @click="$emit('set-tool', 'pen')"
+        title="画笔工具"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+        </svg>
+      </button>
+      
+      <button
+        v-if="isDrawingMode"
+        class="fab-btn"
+        :class="{ 'active': drawingTool === 'text' }"
+        @click="$emit('set-tool', 'text')"
+        title="文字工具"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 7 4 4 20 4 20 7"/>
+          <line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      </button>
+      
+      <button
+        v-if="isDrawingMode"
+        class="fab-btn"
+        :class="{ 'active': drawingTool === 'image' }"
+        @click="$emit('set-tool', 'image')"
+        title="图片工具"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
+      
       <!-- 清除绘制按钮（仅在绘制模式下显示） -->
       <button
         v-if="isDrawingMode"
@@ -142,6 +184,10 @@ export default {
       type: Boolean,
       default: false
     },
+    drawingTool: {
+      type: String,
+      default: 'pen'
+    },
     drawingColor: {
       type: String,
       default: '#FF5C00'
@@ -151,7 +197,7 @@ export default {
       default: 3
     }
   },
-  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'toggle-drawing', 'update-color', 'update-width', 'clear-drawings', 'add-website'],
+  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'toggle-drawing', 'set-tool', 'update-color', 'update-width', 'clear-drawings', 'add-website'],
   setup(props, { emit }) {
     const showSettings = ref(false)
     

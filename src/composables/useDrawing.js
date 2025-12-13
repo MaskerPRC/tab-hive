@@ -8,11 +8,29 @@ import getStroke from 'perfect-freehand'
 export function useDrawing(props, emit, canvasTransform) {
   // 绘制状态
   const isDrawingMode = ref(false)
+  const drawingTool = ref('pen') // 'pen', 'text', 'image'
   const currentPath = ref([])
   const isDrawing = ref(false)
   const drawingColor = ref('#FF5C00')
   const drawingWidth = ref(3)
   const savedDrawings = ref([])
+  
+  // 文字输入状态
+  const textInput = ref({
+    show: false,
+    x: 0,
+    y: 0,
+    content: '',
+    fontSize: 24,
+    color: '#000000'
+  })
+  
+  // 图片上传状态
+  const imageUpload = ref({
+    show: false,
+    x: 0,
+    y: 0
+  })
 
   // 从 props 加载绘制数据
   watch(() => props.drawings, (newDrawings) => {
@@ -32,9 +50,19 @@ export function useDrawing(props, emit, canvasTransform) {
       }
       currentPath.value = []
       isDrawing.value = false
+      textInput.value.show = false
+      imageUpload.value.show = false
     } else {
       console.log('[绘制] 绘制模式已激活')
     }
+  }
+  
+  /**
+   * 设置绘制工具
+   */
+  const setDrawingTool = (tool) => {
+    drawingTool.value = tool
+    console.log('[绘制] 切换工具:', tool)
   }
 
   /**
@@ -92,17 +120,40 @@ export function useDrawing(props, emit, canvasTransform) {
     // 如果点击的是网站卡片或其他元素，不开始绘制
     if (event.target.closest('.grid-item') || 
         event.target.closest('.drawing-toolbar') ||
-        event.target.closest('.canvas-controls')) {
+        event.target.closest('.canvas-controls') ||
+        event.target.closest('.text-input-overlay') ||
+        event.target.closest('.image-upload-overlay')) {
       return
     }
 
     event.preventDefault()
     event.stopPropagation()
     
-    isDrawing.value = true
     const coords = getCanvasCoordinates(event)
-    if (coords) {
+    if (!coords) return
+    
+    // 根据不同工具执行不同操作
+    if (drawingTool.value === 'pen') {
+      // 画笔模式：开始绘制路径
+      isDrawing.value = true
       currentPath.value = [coords]
+    } else if (drawingTool.value === 'text') {
+      // 文字模式：显示文字输入框
+      textInput.value = {
+        show: true,
+        x: coords[0],
+        y: coords[1],
+        content: '',
+        fontSize: 24,
+        color: drawingColor.value
+      }
+    } else if (drawingTool.value === 'image') {
+      // 图片模式：显示上传按钮或等待粘贴
+      imageUpload.value = {
+        show: true,
+        x: coords[0],
+        y: coords[1]
+      }
     }
   }
 
@@ -110,7 +161,7 @@ export function useDrawing(props, emit, canvasTransform) {
    * 绘制中
    */
   const handleDrawingMouseMove = (event) => {
-    if (!isDrawing.value || !isDrawingMode.value) return
+    if (!isDrawing.value || !isDrawingMode.value || drawingTool.value !== 'pen') return
     
     const coords = getCanvasCoordinates(event)
     if (coords) {
@@ -126,7 +177,7 @@ export function useDrawing(props, emit, canvasTransform) {
    * 停止绘制
    */
   const handleDrawingMouseUp = () => {
-    if (!isDrawing.value) return
+    if (!isDrawing.value || drawingTool.value !== 'pen') return
     
     if (currentPath.value.length > 1) {
       saveCurrentPath()
@@ -153,6 +204,7 @@ export function useDrawing(props, emit, canvasTransform) {
     const pathData = getSvgPathFromStroke(stroke)
     
     const newPath = {
+      type: 'path',
       d: pathData,
       color: drawingColor.value,
       width: drawingWidth.value
@@ -162,6 +214,135 @@ export function useDrawing(props, emit, canvasTransform) {
     
     // 通知父组件更新绘制数据
     emit('update-drawings', [...savedDrawings.value])
+  }
+  
+  /**
+   * 保存文字
+   */
+  const saveText = (textContent) => {
+    if (!textContent || !textContent.trim()) return
+    
+    const newText = {
+      type: 'text',
+      x: textInput.value.x,
+      y: textInput.value.y,
+      content: textContent,
+      fontSize: textInput.value.fontSize,
+      color: textInput.value.color
+    }
+    
+    savedDrawings.value.push(newText)
+    emit('update-drawings', [...savedDrawings.value])
+    
+    // 重置文字输入状态
+    textInput.value = {
+      show: false,
+      x: 0,
+      y: 0,
+      content: '',
+      fontSize: 24,
+      color: '#000000'
+    }
+  }
+  
+  /**
+   * 保存图片
+   */
+  const saveImage = (imageData, width, height) => {
+    const newImage = {
+      type: 'image',
+      x: imageUpload.value.x,
+      y: imageUpload.value.y,
+      data: imageData, // base64 图片数据
+      width: width || 200,
+      height: height || 200
+    }
+    
+    savedDrawings.value.push(newImage)
+    emit('update-drawings', [...savedDrawings.value])
+    
+    // 重置图片上传状态
+    imageUpload.value = {
+      show: false,
+      x: 0,
+      y: 0
+    }
+  }
+  
+  /**
+   * 处理图片粘贴
+   */
+  const handlePaste = async (event) => {
+    if (!isDrawingMode.value || drawingTool.value !== 'image') return
+    
+    const items = event.clipboardData?.items
+    if (!items) return
+    
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile()
+        if (file) {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const img = new Image()
+            img.onload = () => {
+              // 限制最大宽度/高度
+              let width = img.width
+              let height = img.height
+              const maxSize = 400
+              
+              if (width > maxSize || height > maxSize) {
+                if (width > height) {
+                  height = (height / width) * maxSize
+                  width = maxSize
+                } else {
+                  width = (width / height) * maxSize
+                  height = maxSize
+                }
+              }
+              
+              saveImage(e.target.result, width, height)
+            }
+            img.src = e.target.result
+          }
+          reader.readAsDataURL(file)
+        }
+        event.preventDefault()
+        break
+      }
+    }
+  }
+  
+  /**
+   * 处理图片文件上传
+   */
+  const handleImageUpload = (file) => {
+    if (!file || !file.type.startsWith('image/')) return
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        // 限制最大宽度/高度
+        let width = img.width
+        let height = img.height
+        const maxSize = 400
+        
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = (height / width) * maxSize
+            width = maxSize
+          } else {
+            width = (width / height) * maxSize
+            height = maxSize
+          }
+        }
+        
+        saveImage(e.target.result, width, height)
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
   }
 
   /**
@@ -227,20 +408,28 @@ export function useDrawing(props, emit, canvasTransform) {
   return {
     // 状态
     isDrawingMode,
+    drawingTool,
     currentPath,
     isDrawing,
     drawingColor,
     drawingWidth,
     savedDrawings,
+    textInput,
+    imageUpload,
     // 方法
     toggleDrawingMode,
+    setDrawingTool,
     handleDrawingMouseDown,
     handleDrawingMouseMove,
     handleDrawingMouseUp,
     getPathData,
     clearAllDrawings,
     setDrawingColor,
-    setDrawingWidth
+    setDrawingWidth,
+    saveText,
+    saveImage,
+    handlePaste,
+    handleImageUpload
   }
 }
 
