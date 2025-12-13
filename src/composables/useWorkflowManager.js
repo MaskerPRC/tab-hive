@@ -25,11 +25,20 @@ export function useWorkflowManager() {
    * 创建新工作流
    */
   const createNewWorkflow = (websiteId, websiteName) => {
+    console.log('[useWorkflowManager] createNewWorkflow 被调用')
+    console.log('[useWorkflowManager] websiteId:', websiteId)
+    console.log('[useWorkflowManager] websiteName:', websiteName)
+    
     const workflow = createWorkflow(`${websiteName}的工作流`)
+    console.log('[useWorkflowManager] 工作流已创建:', workflow)
     
     // 自动创建一个网页节点
     const webpageNode = createWebPageNode(websiteId, websiteName)
+    console.log('[useWorkflowManager] 网页节点已创建:', webpageNode)
+    console.log('[useWorkflowManager] 网页节点的 websiteId:', webpageNode.websiteId)
+    
     workflow.nodes.push(webpageNode)
+    console.log('[useWorkflowManager] 网页节点已添加到工作流')
     
     currentWorkflow.value = workflow
     currentWebsiteId.value = websiteId
@@ -38,6 +47,7 @@ export function useWorkflowManager() {
     // 保存到localStorage
     saveWorkflows()
     
+    console.log('[useWorkflowManager] 工作流创建完成')
     return workflow
   }
 

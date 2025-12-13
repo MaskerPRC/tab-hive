@@ -1,8 +1,12 @@
 <template>
-  <div v-if="show" class="workflow-editor-overlay">
+  <div 
+    v-if="show" 
+    class="workflow-editor-overlay"
+    :class="{ 'selecting-element': isSelectingElement }"
+  >
     <div class="workflow-editor" :class="{ 'dark-mode': darkMode }">
       <!-- 顶部工具栏 -->
-      <div class="editor-header">
+      <div class="editor-header" :class="{ 'selecting-mode': isSelectingElement }">
         <div class="header-left">
           <div class="title-row">
             <h2>{{ workflow?.name || '工作流编辑器' }}</h2>
@@ -39,8 +43,20 @@
         </div>
       </div>
 
+      <!-- 元素选择提示层 -->
+      <div v-if="isSelectingElement" class="element-selection-hint">
+        <div class="hint-content">
+          <div class="hint-icon">🎯</div>
+          <div class="hint-text">
+            <h3>正在选择网页元素</h3>
+            <p>请在下方网页中点击要选择的元素</p>
+            <p class="hint-small">按 ESC 取消选择</p>
+          </div>
+        </div>
+      </div>
+
       <!-- 主要内容区 -->
-      <div class="editor-body">
+      <div class="editor-body" v-show="!isSelectingElement">
         <!-- 左侧工具面板 -->
         <div class="tools-panel">
           <div class="tool-section">
@@ -57,7 +73,7 @@
 
           <div class="tool-section">
             <h4>网页元素</h4>
-            <button @click="startElementSelection" class="tool-btn primary">
+            <button @click="() => startElementSelection()" class="tool-btn primary">
               <span class="tool-icon">🎯</span>
               <span>选择元素</span>
             </button>
@@ -447,6 +463,16 @@ export default {
       }
     }, { immediate: true })
     
+    // 监听元素选择状态变化
+    watch(isSelectingElement, (newValue) => {
+      console.log('[WorkflowEditor] isSelectingElement 变化:', newValue)
+      if (newValue) {
+        console.log('[WorkflowEditor] 进入元素选择模式，隐藏编辑器主体')
+      } else {
+        console.log('[WorkflowEditor] 退出元素选择模式，显示编辑器主体')
+      }
+    })
+    
     // 初始化
     onMounted(() => {
       console.log('[WorkflowEditor] 组件已挂载')
@@ -464,6 +490,13 @@ export default {
       }
       
       console.log('[WorkflowEditor] 工作流对象:', workflow.value)
+      console.log('[WorkflowEditor] nodes 数组:', workflow.value?.nodes)
+      console.log('[WorkflowEditor] webpageNodes:', webpageNodes.value)
+      
+      if (webpageNodes.value.length > 0) {
+        console.log('[WorkflowEditor] 第一个网页节点:', webpageNodes.value[0])
+        console.log('[WorkflowEditor] 第一个网页节点的 websiteId:', webpageNodes.value[0].websiteId)
+      }
       
       // 添加全局事件监听
       document.addEventListener('mousemove', handleMouseMove)
@@ -505,11 +538,20 @@ export default {
     
     // 开始元素选择
     const startElementSelection = (node = null) => {
+      console.log('[WorkflowEditor] startElementSelection 被调用')
+      console.log('[WorkflowEditor] 传入的 node:', node)
+      console.log('[WorkflowEditor] webpageNodes.value:', webpageNodes.value)
+      console.log('[WorkflowEditor] webpageNodes.value[0]:', webpageNodes.value[0])
+      
       currentEditingNode.value = node || webpageNodes.value[0]
       if (!currentEditingNode.value) {
         alert('请先添加网页节点')
         return
       }
+      
+      console.log('[WorkflowEditor] 开始元素选择')
+      console.log('[WorkflowEditor] currentEditingNode:', currentEditingNode.value)
+      console.log('[WorkflowEditor] 目标网站ID:', currentEditingNode.value.websiteId)
       
       // 查找对应的webview/iframe
       const isElectron = window.electron?.isElectron
@@ -523,6 +565,8 @@ export default {
         )
       }
       
+      console.log('[WorkflowEditor] 找到的iframe/webview:', targetIframe.value)
+      
       if (!targetIframe.value) {
         alert('未找到网页，请确保网页已加载')
         return
@@ -530,15 +574,23 @@ export default {
       
       currentWebsite.value = { id: currentEditingNode.value.websiteId }
       isSelectingElement.value = true
+      
+      console.log('[WorkflowEditor] 元素选择模式已激活')
+      console.log('[WorkflowEditor] isSelectingElement:', isSelectingElement.value)
     }
     
     // 处理元素选择完成
     const handleElementSelected = (result) => {
+      console.log('[WorkflowEditor] 元素选择完成')
+      console.log('[WorkflowEditor] 选择器:', result.selector)
+      
       isSelectingElement.value = false
       
       const selectorConfig = createSelectorConfig(result.selector, '新元素')
       currentSelectorConfig.value = selectorConfig
       showSelectorConfig.value = true
+      
+      console.log('[WorkflowEditor] 打开配置对话框')
     }
     
     // 编辑选择器配置
@@ -780,6 +832,13 @@ export default {
   pointer-events: none; /* 让背景不捕获鼠标事件 */
 }
 
+/* 选择元素模式：背景完全透明，不阻挡交互 */
+.workflow-editor-overlay.selecting-element {
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none; /* 完全不捕获事件，让下方元素可以被选择 */
+}
+
 .workflow-editor {
   width: 100%;
   height: 100%;
@@ -809,6 +868,27 @@ export default {
   background: rgba(45, 45, 45, 0.98);
   border-bottom-color: #444;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.editor-header.selecting-mode {
+  background: rgba(103, 58, 183, 0.95);
+  color: #fff;
+  border-bottom-color: rgba(103, 58, 183, 0.8);
+}
+
+.editor-header.selecting-mode .god-mode-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.editor-header.selecting-mode .info-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.editor-header.selecting-mode .info-hint {
+  background: rgba(255, 193, 7, 0.3);
+  color: #fff;
 }
 
 .title-row {
@@ -864,6 +944,71 @@ export default {
 .dark-mode .info-hint {
   background: rgba(255, 193, 7, 0.2);
   color: #ffb74d;
+}
+
+.element-selection-hint {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.hint-content {
+  text-align: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  max-width: 400px;
+  pointer-events: auto; /* 提示框本身可见，但不阻挡下方操作 */
+}
+
+.dark-mode .hint-content {
+  background: rgba(45, 45, 45, 0.98);
+}
+
+.hint-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.hint-text h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.dark-mode .hint-text h3 {
+  color: #e0e0e0;
+}
+
+.hint-text p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.dark-mode .hint-text p {
+  color: #aaa;
+}
+
+.hint-small {
+  font-size: 12px !important;
+  font-style: italic;
+  color: #999 !important;
+  margin-top: 20px !important;
+}
+
+.dark-mode .hint-small {
+  color: #777 !important;
 }
 
 .header-right {
