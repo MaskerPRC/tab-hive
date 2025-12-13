@@ -60,6 +60,13 @@
       @cancel="showCustomHtmlDialog = false"
     />
 
+    <!-- 重排配置对话框 -->
+    <RearrangeDialog
+      :show="showRearrangeDialog"
+      @confirm="handleRearrangeConfirm"
+      @cancel="showRearrangeDialog = false"
+    />
+
     <!-- 右键菜单 -->
     <CanvasContextMenu
       :visible="contextMenuVisible"
@@ -255,6 +262,7 @@
       @zoom-out="zoomOut"
       @reset="resetTransform"
       @auto-arrange="handleAutoArrange"
+      @rearrange="showRearrangeDialog = true"
       @toggle-drawing="toggleDrawingMode"
       @set-tool="setDrawingTool"
       @update-color="setDrawingColor"
@@ -275,6 +283,7 @@ import WebsiteCard from './WebsiteCard.vue'
 import ElementSelector from './ElementSelector.vue'
 import CanvasControls from './CanvasControls.vue'
 import CustomHtmlDialog from './CustomHtmlDialog.vue'
+import RearrangeDialog from './RearrangeDialog.vue'
 import CanvasContextMenu from './CanvasContextMenu.vue'
 // Composables
 import { useCollisionDetection } from '../composables/useCollisionDetection'
@@ -302,6 +311,7 @@ export default {
     ElementSelector,
     CanvasControls,
     CustomHtmlDialog,
+    RearrangeDialog,
     CanvasContextMenu
   },
   props: {
@@ -350,6 +360,9 @@ export default {
 
     // 自定义 HTML 对话框状态
     const showCustomHtmlDialog = ref(false)
+
+    // 重排配置对话框状态
+    const showRearrangeDialog = ref(false)
 
     // ========== Composables 初始化 ==========
     
@@ -655,10 +668,98 @@ export default {
       handleDrawingMouseDown(event, props.fullscreenIndex)
     }
 
-    // 处理自动排布
+    // 处理适应屏幕：调整画板缩放以适应所有内容
     const handleAutoArrange = () => {
-      const updates = autoArrange()
+      // 计算所有网站的边界框
+      let minX = Infinity, minY = Infinity
+      let maxX = -Infinity, maxY = -Infinity
       
+      allWebsites.value.forEach((site, index) => {
+        const pos = itemPositions.value[index]
+        const size = itemSizes.value[index]
+        
+        if (pos && size) {
+          minX = Math.min(minX, pos.x)
+          minY = Math.min(minY, pos.y)
+          maxX = Math.max(maxX, pos.x + size.width)
+          maxY = Math.max(maxY, pos.y + size.height)
+        }
+      })
+      
+      if (!isFinite(minX) || !isFinite(minY)) {
+        console.warn('[适应屏幕] 没有有效的网站位置')
+        return
+      }
+      
+      // 获取容器尺寸
+      const container = document.querySelector('.canvas-wrapper')
+      if (!container) {
+        console.warn('[适应屏幕] 未找到容器')
+        return
+      }
+      
+      const containerWidth = container.clientWidth
+      const containerHeight = container.clientHeight
+      
+      // 计算内容的实际尺寸（加上边距）
+      const contentWidth = maxX - minX + 40  // 左右各留20px边距
+      const contentHeight = maxY - minY + 40 // 上下各留20px边距
+      
+      // 计算缩放比例
+      const scaleX = containerWidth / contentWidth
+      const scaleY = containerHeight / contentHeight
+      const newZoom = Math.min(scaleX, scaleY, 1) // 不放大，只缩小
+      
+      // 计算居中偏移
+      const offsetX = (containerWidth - contentWidth * newZoom) / 2 - minX * newZoom + 20 * newZoom
+      const offsetY = (containerHeight - contentHeight * newZoom) / 2 - minY * newZoom + 20 * newZoom
+      
+      // 应用缩放和平移
+      canvasTransform.value = {
+        x: offsetX,
+        y: offsetY,
+        zoom: newZoom
+      }
+      
+      console.log('[适应屏幕] 内容边界:', { minX, minY, maxX, maxY })
+      console.log('[适应屏幕] 容器尺寸:', { containerWidth, containerHeight })
+      console.log('[适应屏幕] 新缩放:', newZoom)
+    }
+
+    // 处理重排确认：按网格重新排列所有网站
+    const handleRearrangeConfirm = (config) => {
+      console.log('[重排] 配置:', config)
+      showRearrangeDialog.value = false
+      
+      const { cols, width, height, scale } = config
+      const spacing = 20
+      const updates = {}
+      
+      // 计算所有网站的新位置和大小
+      allWebsites.value.forEach((item, index) => {
+        const row = Math.floor(index / cols)
+        const col = index % cols
+        
+        const x = snapToGrid(col * (width + spacing) + spacing)
+        const y = snapToGrid(row * (height + spacing) + spacing)
+        
+        // 更新位置和大小
+        itemPositions.value[index] = { x, y }
+        itemSizes.value[index] = { 
+          width: Math.round(width * scale), 
+          height: Math.round(height * scale) 
+        }
+        
+        updates[index] = {
+          position: { x, y },
+          size: { 
+            width: Math.round(width * scale), 
+            height: Math.round(height * scale) 
+          }
+        }
+      })
+      
+      // 创建索引映射
       const indexMap = new Map()
       let originalIndex = 0
       
@@ -677,6 +778,7 @@ export default {
         }
       })
       
+      // 发送更新事件
       Object.keys(updates).forEach(indexStr => {
         const filteredIndex = parseInt(indexStr)
         const origIdx = indexMap.get(filteredIndex)
@@ -690,6 +792,9 @@ export default {
           })
         }
       })
+      
+      console.log('[重排] 完成，共重排', allWebsites.value.length, '个窗口')
+      console.log('[重排] 布局:', cols, '列，窗口大小:', `${Math.round(width * scale)}x${Math.round(height * scale)}`)
     }
 
     // 刷新所有网站
@@ -921,6 +1026,9 @@ export default {
       // 自定义 HTML
       showCustomHtmlDialog,
       handleCustomHtmlConfirm,
+      // 重排对话框
+      showRearrangeDialog,
+      handleRearrangeConfirm,
       handleAutoArrange,
       handleRefreshAll,
       handleFullscreenToggle,

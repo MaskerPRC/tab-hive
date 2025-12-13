@@ -16,10 +16,23 @@
       <button
         class="fab-btn"
         @click="$emit('auto-arrange')"
-        :title="$t('canvasControls.autoArrange') || '适应屏幕'"
+        :title="$t('canvasControls.fitToScreen') || '适应屏幕'"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+      
+      <button
+        class="fab-btn"
+        @click="$emit('rearrange')"
+        :title="$t('canvasControls.rearrange') || '重新排列'"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
         </svg>
       </button>
       
@@ -197,7 +210,7 @@ export default {
       default: 3
     }
   },
-  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'toggle-drawing', 'set-tool', 'update-color', 'update-width', 'clear-drawings', 'add-website'],
+  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'rearrange', 'toggle-drawing', 'set-tool', 'update-color', 'update-width', 'clear-drawings', 'add-website'],
   setup(props, { emit }) {
     const showSettings = ref(false)
     

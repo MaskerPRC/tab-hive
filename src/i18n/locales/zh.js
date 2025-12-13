@@ -213,13 +213,28 @@ export default {
   // 画布控制
   canvasControls: {
     addWebsite: '添加窗口',
+    fitToScreen: '适应屏幕',
     autoArrange: '适应屏幕',
+    rearrange: '重新排列',
     clearDrawings: '清除绘制',
     drawingMode: '绘制模式',
     drawingSettings: '绘制设置',
     resetZoom: '重置缩放 (100%)',
     zoomIn: '放大',
     zoomOut: '缩小'
+  },
+  
+  rearrangeDialog: {
+    title: '重新排列窗口',
+    columns: '列数',
+    itemWidth: '窗口宽度 (px)',
+    itemHeight: '窗口高度 (px)',
+    scale: '窗口放大倍数',
+    scaleHint: '1.0 为原始大小，2.0 为放大一倍',
+    preview: '预览',
+    finalSize: '最终窗口大小',
+    layout: '布局',
+    reset: '恢复默认'
   },
 
   // 布局操作

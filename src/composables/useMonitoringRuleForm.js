@@ -36,6 +36,20 @@ export function useMonitoringRuleForm(props, emit) {
   })
 
   /**
+   * 重置表单
+   */
+  const resetForm = () => {
+    formData.value = {
+      name: '',
+      conditionType: 'llm_screenshot',
+      conditionDescription: '',
+      checkInterval: 60,
+      actionType: 'desktop_notification',
+      notificationMessage: ''
+    }
+  }
+
+  /**
    * 监听规则变化，填充表单
    */
   watch(() => props.rule, (newRule) => {
@@ -53,20 +67,6 @@ export function useMonitoringRuleForm(props, emit) {
       resetForm()
     }
   }, { immediate: true })
-
-  /**
-   * 重置表单
-   */
-  const resetForm = () => {
-    formData.value = {
-      name: '',
-      conditionType: 'llm_screenshot',
-      conditionDescription: '',
-      checkInterval: 60,
-      actionType: 'desktop_notification',
-      notificationMessage: ''
-    }
-  }
 
   /**
    * 保存规则
