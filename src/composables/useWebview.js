@@ -123,14 +123,9 @@ export function useWebview(props, emit) {
     if (!hasExistingSrc) {
       // 加载实际页面
       let url = props.item.url || props.item.href || 'https://www.google.com'
-      // 为 webview 添加 ID 参数和配置参数
+      // 为 webview 添加 ID 参数
       const separator = url.includes('?') ? '&' : '?'
       url = `${url}${separator}__webview_id__=${props.item.id}`
-      
-      // 添加外部链接配置参数
-      if (props.item.openExternalInModal) {
-        url = `${url}&__open_external_in_modal__=1`
-      }
       
       console.log(`[useWebview] 代理设置完成，直接加载页面: ${url}`)
 
@@ -171,64 +166,7 @@ export function useWebview(props, emit) {
       
       if (event.url) {
         console.log('[useWebview] 拦截new-window，在当前webview中导航:', event.url)
-        
-        // 获取当前URL，判断是否同根域名
-        try {
-          const currentUrl = webview.getURL()
-          console.log('[useWebview] 当前webview URL:', currentUrl)
-          
-          // 判断是否同根域名
-          function getRootDomain(hostname) {
-            if (!hostname) return ''
-            hostname = hostname.split(':')[0]
-            if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return hostname
-            if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
-            const parts = hostname.split('.')
-            if (parts.length >= 2) {
-              return parts.slice(-2).join('.')
-            }
-            return hostname
-          }
-          
-          function isSameRootDomain(url1, url2) {
-            try {
-              const urlObj1 = new URL(url1)
-              const urlObj2 = new URL(url2)
-              const rootDomain1 = getRootDomain(urlObj1.hostname)
-              const rootDomain2 = getRootDomain(urlObj2.hostname)
-              const isSame = rootDomain1 === rootDomain2 && rootDomain1 !== ''
-              console.log('[useWebview] 域名比较:', {
-                url1: urlObj1.hostname,
-                url2: urlObj2.hostname,
-                rootDomain1,
-                rootDomain2,
-                isSame
-              })
-              return isSame
-            } catch (e) {
-              console.error('[useWebview] URL解析失败:', e)
-              return false
-            }
-          }
-          
-          // 如果同根域名，在当前webview中导航
-          if (currentUrl && isSameRootDomain(currentUrl, event.url)) {
-            console.log('[useWebview] ✓ 同根域名，在当前webview中导航')
-            webview.src = event.url
-          } else {
-            // 不同根域名，触发事件打开模态框
-            console.log('[useWebview] ✗ 不同根域名，打开模态框')
-            window.dispatchEvent(new CustomEvent('open-external-url-modal', {
-              detail: { url: event.url }
-            }))
-          }
-        } catch (error) {
-          console.error('[useWebview] 处理new-window失败:', error)
-          // 出错时也打开模态框
-          window.dispatchEvent(new CustomEvent('open-external-url-modal', {
-            detail: { url: event.url }
-          }))
-        }
+        webview.src = event.url
       }
     }
     
@@ -328,67 +266,6 @@ export function useWebview(props, emit) {
       }
     })
 
-    // 监听导航开始事件（用于检测跨域跳转）
-    webview.addEventListener('will-navigate', (event) => {
-      console.log('========================================')
-      console.log('[useWebview] ========== Webview 即将导航 ==========')
-      console.log('[useWebview] 目标 URL:', event.url)
-      
-      try {
-        const currentUrl = webview.getURL()
-        console.log('[useWebview] 当前 URL:', currentUrl)
-        
-        // 判断域名函数
-        function getRootDomain(hostname) {
-          if (!hostname) return ''
-          hostname = hostname.split(':')[0]
-          if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return hostname
-          if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
-          const parts = hostname.split('.')
-          if (parts.length >= 2) {
-            return parts.slice(-2).join('.')
-          }
-          return hostname
-        }
-        
-        const currentDomain = getRootDomain(new URL(currentUrl).hostname)
-        const targetDomain = getRootDomain(new URL(event.url).hostname)
-        
-        console.log('[useWebview] 当前域名:', currentDomain)
-        console.log('[useWebview] 目标域名:', targetDomain)
-        
-        // 如果是跨域导航，根据配置决定是否拦截
-        if (currentDomain && targetDomain && currentDomain !== targetDomain) {
-          console.log('[useWebview] ✅ 检测到跨域导航（可能是重定向）')
-          
-          // 检查是否启用了在模态框中打开外部链接
-          const openExternalInModal = props.item.openExternalInModal || false
-          console.log('[useWebview] 外部链接在模态框中打开配置:', openExternalInModal)
-          
-          if (openExternalInModal) {
-            console.log('[useWebview] 🛑 配置启用：阻止导航，打开模态框')
-            
-            event.preventDefault()
-            
-            // 触发自定义事件打开模态框
-            console.log('[useWebview] 📢 触发事件: open-external-url-modal')
-            window.dispatchEvent(new CustomEvent('open-external-url-modal', {
-              detail: { url: event.url }
-            }))
-            
-            console.log('[useWebview] ✓ 已拦截跨域导航')
-          } else {
-            console.log('[useWebview] ℹ️ 配置未启用：允许跨域导航（在当前页面跳转）')
-          }
-        } else {
-          console.log('[useWebview] ✅ 同域名导航，允许继续')
-        }
-      } catch (error) {
-        console.error('[useWebview] ❌ 处理导航事件失败:', error)
-      }
-      
-      console.log('========================================')
-    })
 
     // 注意：new-window事件监听器已经在上面定义并注册了
 
@@ -408,31 +285,6 @@ export function useWebview(props, emit) {
           console.log('[useWebview] 🔄 设置 webview.src =', url)
           webview.src = url
           console.log('[useWebview] ✓ webview 导航已触发')
-        } else {
-          console.warn('[useWebview] ⚠️ URL 为空，忽略')
-        }
-        console.log('========================================')
-      } else if (event.channel === 'webview-open-external-url') {
-        // 处理打开外部链接（不同域名）
-        console.log('[useWebview] ✅ 消息类型: webview-open-external-url (不同域名)')
-        console.log('[useWebview] Webview 请求打开外部链接')
-        console.log('[useWebview] 消息数据:', event.args[0])
-        const { url } = event.args[0]
-        if (url) {
-          console.log('[useWebview] 📤 外部链接 URL:', url)
-          console.log('[useWebview] 🎯 触发打开外部链接模态框')
-          console.log('[useWebview] 触发事件: open-external-url-modal')
-          console.log('[useWebview] 事件详情:', { url })
-          
-          // 触发自定义事件，让App.vue监听
-          const customEvent = new CustomEvent('open-external-url-modal', {
-            detail: { url }
-          })
-          
-          console.log('[useWebview] 📢 正在派发自定义事件到 window...')
-          window.dispatchEvent(customEvent)
-          console.log('[useWebview] ✓ 自定义事件已派发')
-          console.log('[useWebview] 等待 App.vue 响应...')
         } else {
           console.warn('[useWebview] ⚠️ URL 为空，忽略')
         }

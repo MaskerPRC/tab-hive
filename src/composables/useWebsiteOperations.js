@@ -25,8 +25,7 @@ export function useWebsiteOperations(props, emit) {
       padding: 0,
       muted: false,
       darkMode: false,
-      requireModifierForActions: false,
-      openExternalInModal: false
+      requireModifierForActions: false
     }
   }
 
