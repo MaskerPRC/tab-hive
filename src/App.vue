@@ -213,6 +213,14 @@ import { useMonitoringRules } from './composables/useMonitoringRules'
 import { useViewportStates } from './composables/useViewportStates'
 import { useGlobalSettingsHandlers } from './composables/useGlobalSettingsHandlers'
 import { useExternalUrlModalListeners } from './composables/useExternalUrlModal'
+import { useLayoutHandlers } from './composables/useLayoutHandlers'
+import { useWebsiteHandlers } from './composables/useWebsiteHandlers'
+import { useUpdateHandlers } from './composables/useUpdateHandlers'
+import { useLayoutShareExport } from './composables/useLayoutShareExport'
+import { useMonitoringHandlers } from './composables/useMonitoringHandlers'
+import { useSharedLayoutHandlers } from './composables/useSharedLayoutHandlers'
+import { useDownloadModalHandlers } from './composables/useDownloadModalHandlers'
+import { useAppInitialization } from './composables/useAppInitialization'
 
 export default {
   name: 'App',
@@ -260,373 +268,42 @@ export default {
     // 初始化网站管理器
     const websiteManager = useWebsiteManager(layoutManager.currentLayout.value.websites)
 
-    // 使用新的 composables 来管理状态
+    // 使用状态管理 composables
     const dialogStates = useDialogStates()
     const monitoringRules = useMonitoringRules()
     const viewportStates = useViewportStates()
     const globalSettingsHandlers = useGlobalSettingsHandlers(layoutManager, websiteManager)
 
-    // 检查用户是否已经看过首次弹窗
-    const hasSeenDownloadModal = () => {
-      try {
-        return localStorage.getItem('quanshijie-seen-download-modal') === 'true'
-      } catch (e) {
-        return false
-      }
-    }
-
+    // 下载弹窗处理器
+    const downloadModalHandlers = useDownloadModalHandlers(dialogStates, viewportStates)
+    
     // 控制下载弹窗显示（初始状态）
-    dialogStates.showDownloadModal.value = !dialog.isElectron.value && !hasSeenDownloadModal()
+    dialogStates.showDownloadModal.value = !dialog.isElectron.value && !downloadModalHandlers.hasSeenDownloadModal()
 
     // LLM API 配置
     const { config: llmConfig } = useLlmConfig()
 
-    // 处理 LLM 配置确认
-    const handleLlmConfigConfirm = async (newConfig) => {
-      console.log('[App] 保存 LLM 配置:', newConfig)
-      Object.assign(llmConfig.value, newConfig)
-      console.log('[App] 配置已更新:', llmConfig.value)
-      console.log('[App] localStorage 内容:', localStorage.getItem('llm-api-config'))
-      dialogStates.closeLlmConfig()
-      
-      // 同时配置到监听管理器
-      await monitoringRules.configureLLM(newConfig)
-    }
+    // 监听规则处理器
+    const monitoringHandlers = useMonitoringHandlers(monitoringRules, dialogStates, llmConfig)
 
-    // 打开 LLM 配置（从监听规则调用）
-    const handleOpenLlmConfig = () => {
-      dialogStates.closeMonitoringRuleDialog()
-      dialogStates.openLlmConfig()
-    }
+    // 更新检测处理器
+    const updateHandlers = useUpdateHandlers(updateChecker)
 
-    // 监听规则相关处理器
-    const handleOpenMonitoring = (websiteId, darkMode) => {
-      monitoringRules.openMonitoring(websiteId, darkMode, dialogStates.openMonitoringRulesList)
-    }
+    // 布局操作处理器
+    const layoutHandlers = useLayoutHandlers(layoutManager, websiteManager, dialog, t)
 
-    const handleCreateMonitoringRule = () => {
-      monitoringRules.createMonitoringRule(dialogStates.openMonitoringRuleDialog)
-    }
+    // 网站操作处理器
+    const websiteHandlers = useWebsiteHandlers(websiteManager, layoutManager)
 
-    const handleEditMonitoringRule = (rule) => {
-      monitoringRules.editMonitoringRule(rule, dialogStates.openMonitoringRuleDialog)
-    }
+    // 布局分享导出处理器
+    const layoutShareExport = useLayoutShareExport(dialog, t, layoutManager)
 
-    const handleSaveMonitoringRule = async (ruleData) => {
-      await monitoringRules.saveMonitoringRule(ruleData, dialogStates.closeMonitoringRuleDialog)
-    }
-
-    const handleDeleteMonitoringRule = async (ruleId) => {
-      await monitoringRules.deleteMonitoringRule(ruleId)
-    }
-
-    const handleToggleMonitoringRule = async (ruleId, enabled) => {
-      await monitoringRules.toggleMonitoringRule(ruleId, enabled)
-    }
-
-    // 显示更新通知（从按钮点击）
-    const handleShowUpdate = () => {
-      updateChecker.showNotificationFromButton()
-    }
-
-    // 更新检测相关处理函数
-    const handleCloseUpdateNotification = () => {
-      updateChecker.closeNotification()
-    }
-
-    const handleIgnoreUpdate = () => {
-      updateChecker.ignoreUpdate()
-    }
-
-    const handleStartDownload = () => {
-      updateChecker.startDownload()
-    }
-
-    const handleInstallUpdate = (filePath) => {
-      updateChecker.openInstaller(filePath)
-    }
-
-    const handleCancelDownload = () => {
-      updateChecker.cancelDownload()
-    }
-
-    const handleRetryDownload = () => {
-      updateChecker.retryDownload()
-    }
-
-    // 关闭下载弹窗
-    const closeDownloadModal = () => {
-      const isFirstTime = !hasSeenDownloadModal()
-      dialogStates.closeDownloadModal()
-
-      // 保存用户已经看过弹窗的标记
-      try {
-        localStorage.setItem('quanshijie-seen-download-modal', 'true')
-      } catch (e) {
-        console.error('保存弹窗状态失败:', e)
-      }
-
-      // 如果是首次关闭弹窗，显示侧边栏让用户知道
-      if (isFirstTime) {
-        setTimeout(() => {
-          viewportStates.showPanelTemporarily(3000)
-        }, 300) // 稍微延迟一下，让弹窗关闭动画完成
-      }
-    }
-
-    const handleAddWebsite = (websiteData) => {
-      console.log('[App] 准备添加网站，数据:', websiteData)
-      websiteManager.addWebsite(websiteData)
-      console.log('[App] 添加网站后，当前网站列表:', websiteManager.websites.value)
-      console.log('[App] 当前布局ID:', layoutManager.currentLayoutId.value)
-    }
-
-    const handleCopyWebsite = (index) => {
-      websiteManager.copyWebsite(index)
-    }
-
-    const handleRemoveWebsite = (index) => {
-      websiteManager.removeWebsite(index)
-    }
-
-    const handleUpdateWebsite = (params) => {
-      console.log('[App] ========== handleUpdateWebsite 被调用 ==========')
-      console.log('[App] 接收到的参数:', params)
-      console.log('[App] 参数的键:', Object.keys(params))
-      websiteManager.updateWebsite(params)
-      // 立即触发保存
-      layoutManager.saveCurrentLayout(websiteManager.websites.value)
-    }
-
-    // 显示分享布局弹窗
-    const handleShowSharedModal = () => {
-      dialogStates.openSharedModal()
-      sharedLayouts.loadSharedLayouts()
-    }
-
-    // 导入布局
-    const handleImportLayout = (layout) => {
-      dialogStates.closeSharedModal()
-      // 使用导入模式对话框
-      importExport.showImportModeDialog(layout)
-    }
-
-    // 搜索共享布局
-    const handleSearchShared = (query) => {
-      sharedLayouts.searchQuery.value = query
-      sharedLayouts.searchSharedLayouts(query)
-    }
-
-    // 排序共享布局
-    const handleSortShared = (sortType) => {
-      // TODO: 实现排序逻辑
-      console.log('Sort shared layouts:', sortType)
-    }
-
-    // 处理分享布局（带截图）
-    const handleShareLayout = async (layout) => {
-      try {
-        // 询问用户是否要截图
-        const shouldCapture = await dialog.showConfirm({
-          title: t('layout.shareLayout'),
-          message: t('layout.shareWithScreenshotConfirm')
-        })
-
-        if (!shouldCapture) {
-          // 用户取消，使用原来的分享方式
-          const layoutOperations = (await import('./composables/useLayoutOperations.js')).useLayoutOperations(dialog.isElectron.value)
-          await layoutOperations.shareLayout(layout, dialog.showConfirm)
-          return
-        }
-
-        // 用户确认，进行截图
-        const { captureScreenshot, embedLayoutInImage, copyImageToClipboard } = await import('./utils/layoutImageUtils.js')
-        
-        // 显示提示
-        alert(t('layout.capturingScreenshot'))
-        
-        // 截图
-        const screenshotBlob = await captureScreenshot()
-        
-        // 准备布局数据（只包含必要信息）
-        const layoutData = {
-          name: layout.name,
-          websites: layout.websites,
-          version: 1,
-          exportedAt: new Date().toISOString()
-        }
-        
-        // 嵌入布局数据到图片
-        const imageWithLayout = await embedLayoutInImage(screenshotBlob, layoutData)
-        
-        // 复制到剪贴板
-        const copied = await copyImageToClipboard(imageWithLayout)
-        
-        if (copied) {
-          alert(t('layout.screenshotCopied'))
-        } else {
-          // 如果复制失败，下载图片
-          const { downloadImage } = await import('./utils/layoutImageUtils.js')
-          downloadImage(imageWithLayout, `${layout.name || 'layout'}.png`)
-          alert(t('layout.screenshotDownloaded'))
-        }
-
-        // 同时执行原来的分享逻辑（上传到服务器）
-        const layoutOperations = (await import('./composables/useLayoutOperations.js')).useLayoutOperations(dialog.isElectron.value)
-        await layoutOperations.shareLayout(layout, dialog.showConfirm)
-      } catch (error) {
-        console.error('分享布局失败:', error)
-        alert(t('layout.shareFailed') + ': ' + error.message)
-      }
-    }
-
-    // 处理导出布局（带截图）
-    const handleExportLayout = async (layout) => {
-      try {
-        // 询问用户是否要截图
-        const shouldCapture = await dialog.showConfirm({
-          title: t('layout.exportLayout'),
-          message: t('layout.exportWithScreenshotConfirm')
-        })
-
-        if (!shouldCapture) {
-          // 用户取消，只导出JSON
-          const layoutJson = JSON.stringify(layout, null, 2)
-          const blob = new Blob([layoutJson], { type: 'application/json' })
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `${layout.name || 'layout'}.json`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(url)
-          return
-        }
-
-        // 用户确认，进行截图
-        const { captureScreenshot, embedLayoutInImage, downloadImage } = await import('./utils/layoutImageUtils.js')
-        
-        // 显示提示
-        alert(t('layout.capturingScreenshot'))
-        
-        // 截图
-        const screenshotBlob = await captureScreenshot()
-        
-        // 准备布局数据
-        const layoutData = {
-          name: layout.name,
-          websites: layout.websites,
-          version: 1,
-          exportedAt: new Date().toISOString()
-        }
-        
-        // 嵌入布局数据到图片
-        const imageWithLayout = await embedLayoutInImage(screenshotBlob, layoutData)
-        
-        // 下载图片
-        downloadImage(imageWithLayout, `${layout.name || 'layout'}.png`)
-        alert(t('layout.exportSuccess'))
-      } catch (error) {
-        console.error('导出布局失败:', error)
-        alert(t('layout.exportFailed') + ': ' + error.message)
-      }
-    }
+    // 共享布局处理器
+    const sharedLayoutHandlers = useSharedLayoutHandlers(sharedLayouts, dialogStates, importExport)
 
     // 处理从图片导入布局
-    const handleImportLayoutFromImage = async (layoutData) => {
-      try {
-        if (!layoutData || !layoutData.websites || !Array.isArray(layoutData.websites)) {
-          alert(t('layout.invalidLayoutData'))
-          return
-        }
-
-        // 询问用户是否要导入
-        const shouldImport = await dialog.showConfirm({
-          title: t('layout.importLayout'),
-          message: t('layout.importLayoutFromImageConfirm', { name: layoutData.name || t('layout.unnamedLayout') })
-        })
-
-        if (!shouldImport) {
-          return
-        }
-
-        // 创建新布局
-        const layoutName = layoutData.name || `${t('layout.importedLayout')} ${new Date().toLocaleString()}`
-        handleCreateLayout(layoutName, {
-          websites: layoutData.websites
-        })
-
-        alert(t('layout.importSuccess'))
-      } catch (error) {
-        console.error('导入布局失败:', error)
-        alert(t('layout.importFailed') + ': ' + error.message)
-      }
-    }
-
-    // 切换布局
-    const handleSwitchLayout = (layoutId) => {
-      const websites = layoutManager.switchLayout(layoutId)
-      websiteManager.setWebsites(websites)
-      
-      // 如果全局静音已开启，应用到新布局的所有网站
-      if (layoutManager.globalSettings.value.globalMuted) {
-        console.log('[App] 全局静音已开启，应用到新布局的所有网站')
-        websiteManager.websites.value.forEach((website, index) => {
-          if (!website.muted) {
-            websiteManager.updateWebsite({ index, updates: { muted: true } })
-          }
-        })
-      }
-    }
-
-    // 创建新布局
-    const handleCreateLayout = (name, options = {}) => {
-      const newLayout = layoutManager.createLayout(name, options)
-      handleSwitchLayout(newLayout.id)
-    }
-
-    // 删除布局
-    const handleDeleteLayout = async (layoutId) => {
-      if (layoutManager.layouts.value.length <= 1) {
-        await dialog.showAlert({
-          title: t('layout.warning') || '提示',
-          message: t('layout.atLeastOne')
-        })
-        return
-      }
-
-      const result = layoutManager.deleteLayout(layoutId)
-
-      // 如果删除的是当前布局，切换到第一个布局
-      if (typeof result === 'number') {
-        handleSwitchLayout(result)
-      }
-    }
-
-    // 切换布局后台运行状态
-    const handleToggleKeepAlive = async (layoutId) => {
-      const newState = layoutManager.toggleKeepAlive(layoutId)
-      const layout = layoutManager.layouts.value.find(l => l.id === layoutId)
-      if (layout) {
-        const message = newState
-          ? t('layout.keepAliveEnabled', { name: layout.name })
-          : t('layout.keepAliveDisabled', { name: layout.name })
-        await dialog.showAlert({
-          title: t('layout.success') || '提示',
-          message: message
-        })
-      }
-    }
-
-    // 重命名布局
-    const handleRenameLayout = (layoutId, newName) => {
-      layoutManager.renameLayout(layoutId, newName)
-    }
-
-    // 重新排序布局
-    const handleReorderLayout = (fromIndex, toIndex) => {
-      layoutManager.reorderLayouts(fromIndex, toIndex)
+    const handleImportLayoutFromImage = (layoutData) => {
+      layoutShareExport.handleImportLayoutFromImage(layoutData, layoutHandlers.handleCreateLayout)
     }
 
     // 处理导入模式选择
@@ -635,14 +312,9 @@ export default {
         mode,
         dialog.isElectron.value,
         (layoutData) => {
-          handleCreateLayout(layoutData.name, layoutData)
+          layoutHandlers.handleCreateLayout(layoutData.name, layoutData)
         }
       )
-    }
-
-    // 处理清除配置
-    const handleClearConfig = () => {
-      layoutManager.clearConfig()
     }
 
     // 提供给子组件使用
@@ -660,8 +332,8 @@ export default {
       )
     )
     provide('showImportModeDialog', importExport.showImportModeDialog)
-    provide('openSessionManager', handleManageSessions)
-    provide('openProxyManager', handleManageProxy)
+    provide('openSessionManager', dialogStates.openSessionManager)
+    provide('openProxyManager', dialogStates.openProxyManager)
 
     // 监听网站添加/删除，自动保存到当前布局
     watch(() => websiteManager.websites.value.length, () => {
@@ -673,105 +345,22 @@ export default {
       console.log('[App] 保存完成')
     })
 
-    // 更新绘制数据
-    const handleUpdateDrawings = (drawings) => {
-      const layout = layoutManager.layouts.value.find(l => l.id === layoutManager.currentLayoutId.value)
-      if (layout) {
-        layout.drawings = drawings
-        layoutManager.saveCurrentLayout(websiteManager.websites.value)
-      }
-    }
-
-    // 更新画布变换数据
-    const handleUpdateCanvasTransform = (transform, layoutId) => {
-      const layout = layoutManager.layouts.value.find(l => l.id === layoutId)
-      if (layout) {
-        layout.canvasTransform = { ...transform }
-        layoutManager.saveCurrentLayout(websiteManager.websites.value)
-      }
-    }
-
-
     // 设置外部链接模态框监听器
     useExternalUrlModalListeners(dialogStates)
 
-    // 页面加载时自动显示左侧栏，然后隐藏
-    onMounted(() => {
-      
-      // 检查是否是从双击打开的单网站窗口
-      // 检查是否是从双击打开的单网站窗口
-      const urlParams = new URLSearchParams(window.location.search)
-      const websiteDataParam = urlParams.get('websiteData')
-      
-      if (websiteDataParam) {
-        try {
-          const websiteData = JSON.parse(decodeURIComponent(websiteDataParam))
-          console.log('[App] 检测到单网站窗口模式，网站数据:', websiteData)
-          
-          // 隐藏侧边栏
-          viewportStates.closePanel()
-          
-          // 创建只包含这个网站的布局
-          const singleWebsiteLayout = {
-            id: Date.now(),
-            name: websiteData.title || websiteData.url || '单网站窗口',
-            websites: [{
-              id: websiteData.id || Date.now(),
-              url: websiteData.url,
-              title: websiteData.title || websiteData.url,
-              type: websiteData.type || 'website',
-              deviceType: websiteData.deviceType || 'desktop',
-              targetSelector: websiteData.targetSelector,
-              targetSelectors: websiteData.targetSelectors,
-              padding: websiteData.padding,
-              muted: websiteData.muted || false,
-              darkMode: websiteData.darkMode || false,
-              autoRefreshInterval: websiteData.autoRefreshInterval || 0,
-              desktopCaptureSourceId: websiteData.desktopCaptureSourceId,
-              desktopCaptureOptions: websiteData.desktopCaptureOptions,
-              position: { x: 0, y: 0 },
-              size: { width: 1000, height: 700 }
-            }],
-            drawings: []
-          }
-          
-          // 切换到单网站布局
-          layoutManager.createLayout(singleWebsiteLayout.name, singleWebsiteLayout)
-          layoutManager.switchLayout(singleWebsiteLayout.id)
-          
-          // 自动全屏显示这个网站
-          setTimeout(() => {
-            if (websiteManager.websites.value.length > 0) {
-              viewportStates.handleFullscreen(0)
-            }
-          }, 500)
-          
-          return // 单网站窗口模式，不执行后续逻辑
-        } catch (error) {
-          console.error('[App] 解析网站数据失败:', error)
-        }
-      }
-
-      // 首先尝试从 URL 参数导入布局
-      const importedLayout = importExport.importLayoutFromUrlParams()
-      if (importedLayout) {
-        handleCreateLayout(importedLayout.name, importedLayout)
-      }
-
-      // 如果有弹窗显示，等待弹窗关闭后再显示侧边栏
-      // 否则直接显示侧边栏
-      if (!dialogStates.showDownloadModal.value) {
-        // 初始显示侧边栏，3秒后自动隐藏
-        viewportStates.showPanelTemporarily(3000)
-
-        // 如果成功导入了布局，显示提示
-        if (importedLayout) {
-          setTimeout(() => {
-            alert(t('layout.urlImportSuccess'))
-          }, 500)
-        }
-      }
+    // 应用初始化
+    const appInitialization = useAppInitialization({
+      dialogStates,
+      viewportStates,
+      importExport,
+      layoutManager,
+      websiteManager,
+      handleCreateLayout: layoutHandlers.handleCreateLayout,
+      t
     })
+    
+    // 执行初始化
+    appInitialization.initialize()
 
     return {
       // 视口状态
@@ -826,14 +415,14 @@ export default {
       llmConfig,
       
       // 对话框操作方法
-      closeDownloadModal,
+      closeDownloadModal: downloadModalHandlers.closeDownloadModal,
       handleShowDownloadModal: dialogStates.openDownloadModal,
       handleManageSessions: dialogStates.openSessionManager,
       closeSessionManager: dialogStates.closeSessionManager,
       handleManageProxy: dialogStates.openProxyManager,
       closeProxyManager: dialogStates.closeProxyManager,
       handleOpenSettings: dialogStates.openLlmConfig,
-      handleLlmConfigConfirm,
+      handleLlmConfigConfirm: monitoringHandlers.handleLlmConfigConfirm,
       openContentScriptPanel: dialogStates.openContentScriptPanel,
       closeContentScriptPanel: dialogStates.closeContentScriptPanel,
       closeExternalUrlModal: dialogStates.closeExternalUrlModal,
@@ -841,23 +430,23 @@ export default {
       handleImportModeSelect,
       
       // 监听规则方法
-      handleOpenMonitoring,
-      handleCreateMonitoringRule,
-      handleEditMonitoringRule,
+      handleOpenMonitoring: monitoringHandlers.handleOpenMonitoring,
+      handleCreateMonitoringRule: monitoringHandlers.handleCreateMonitoringRule,
+      handleEditMonitoringRule: monitoringHandlers.handleEditMonitoringRule,
       closeMonitoringRuleDialog: dialogStates.closeMonitoringRuleDialog,
-      handleSaveMonitoringRule,
-      handleDeleteMonitoringRule,
-      handleToggleMonitoringRule,
-      handleOpenLlmConfig,
+      handleSaveMonitoringRule: monitoringHandlers.handleSaveMonitoringRule,
+      handleDeleteMonitoringRule: monitoringHandlers.handleDeleteMonitoringRule,
+      handleToggleMonitoringRule: monitoringHandlers.handleToggleMonitoringRule,
+      handleOpenLlmConfig: monitoringHandlers.handleOpenLlmConfig,
       
       // 更新检测方法
-      handleShowUpdate,
-      handleCloseUpdateNotification,
-      handleIgnoreUpdate,
-      handleStartDownload,
-      handleInstallUpdate,
-      handleCancelDownload,
-      handleRetryDownload,
+      handleShowUpdate: updateHandlers.handleShowUpdate,
+      handleCloseUpdateNotification: updateHandlers.handleCloseUpdateNotification,
+      handleIgnoreUpdate: updateHandlers.handleIgnoreUpdate,
+      handleStartDownload: updateHandlers.handleStartDownload,
+      handleInstallUpdate: updateHandlers.handleInstallUpdate,
+      handleCancelDownload: updateHandlers.handleCancelDownload,
+      handleRetryDownload: updateHandlers.handleRetryDownload,
       
       // 视口操作方法
       handleFullscreen: viewportStates.handleFullscreen,
@@ -865,22 +454,22 @@ export default {
       toggleSidebar: viewportStates.toggleSidebar,
       
       // 网站操作方法
-      handleAddWebsite,
-      handleCopyWebsite,
-      handleRemoveWebsite,
-      handleUpdateWebsite,
+      handleAddWebsite: websiteHandlers.handleAddWebsite,
+      handleCopyWebsite: websiteHandlers.handleCopyWebsite,
+      handleRemoveWebsite: websiteHandlers.handleRemoveWebsite,
+      handleUpdateWebsite: websiteHandlers.handleUpdateWebsite,
       
       // 布局操作方法
-      handleSwitchLayout,
-      handleCreateLayout,
-      handleDeleteLayout,
-      handleToggleKeepAlive,
-      handleRenameLayout,
-      handleReorderLayout,
+      handleSwitchLayout: layoutHandlers.handleSwitchLayout,
+      handleCreateLayout: layoutHandlers.handleCreateLayout,
+      handleDeleteLayout: layoutHandlers.handleDeleteLayout,
+      handleToggleKeepAlive: layoutHandlers.handleToggleKeepAlive,
+      handleRenameLayout: layoutHandlers.handleRenameLayout,
+      handleReorderLayout: layoutHandlers.handleReorderLayout,
       renameLayout: layoutManager.renameLayout,
-      handleClearConfig,
-      handleUpdateDrawings,
-      handleUpdateCanvasTransform,
+      handleClearConfig: layoutHandlers.handleClearConfig,
+      handleUpdateDrawings: layoutHandlers.handleUpdateDrawings,
+      handleUpdateCanvasTransform: layoutHandlers.handleUpdateCanvasTransform,
       
       // 全局设置方法（来自 globalSettingsHandlers）
       handleToggleTitles: globalSettingsHandlers.handleToggleTitles,
@@ -890,13 +479,13 @@ export default {
       handleToggleCertificateErrorShadow: globalSettingsHandlers.handleToggleCertificateErrorShadow,
       
       // 分享布局方法
-      handleShowSharedModal,
-      handleImportLayout,
-      handleSearchShared,
-      handleSortShared,
+      handleShowSharedModal: sharedLayoutHandlers.handleShowSharedModal,
+      handleImportLayout: sharedLayoutHandlers.handleImportLayout,
+      handleSearchShared: sharedLayoutHandlers.handleSearchShared,
+      handleSortShared: sharedLayoutHandlers.handleSortShared,
       sharedLayouts,
-      handleShareLayout,
-      handleExportLayout,
+      handleShareLayout: layoutShareExport.handleShareLayout,
+      handleExportLayout: layoutShareExport.handleExportLayout,
       handleImportLayoutFromImage
     }
   }
