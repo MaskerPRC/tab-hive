@@ -21,6 +21,12 @@ export function useDialogStates() {
   const showMonitoringRulesList = ref(false)
   const showMonitoringRuleDialog = ref(false)
   
+  // 工作流编辑器
+  const showWorkflowEditor = ref(false)
+  const currentWorkflowWebsiteId = ref(null)
+  const currentWorkflowWebsiteName = ref('')
+  const currentWorkflowDarkMode = ref(false)
+  
   // 内容脚本面板
   const showContentScriptPanel = ref(false)
   const contentScriptTargetIframe = ref(null)
@@ -88,6 +94,30 @@ export function useDialogStates() {
     showMonitoringRulesList.value = true
   }
   
+  const openWorkflowEditor = (websiteId, websiteName, darkMode) => {
+    console.log('[useDialogStates] openWorkflowEditor 被调用')
+    console.log('[useDialogStates] websiteId:', websiteId)
+    console.log('[useDialogStates] websiteName:', websiteName)
+    console.log('[useDialogStates] darkMode:', darkMode)
+    console.log('[useDialogStates] 设置状态前 showWorkflowEditor:', showWorkflowEditor.value)
+    
+    showWorkflowEditor.value = true
+    currentWorkflowWebsiteId.value = websiteId
+    currentWorkflowWebsiteName.value = websiteName
+    currentWorkflowDarkMode.value = darkMode || false
+    
+    console.log('[useDialogStates] 设置状态后 showWorkflowEditor:', showWorkflowEditor.value)
+    console.log('[useDialogStates] currentWorkflowWebsiteId:', currentWorkflowWebsiteId.value)
+    console.log('[useDialogStates] currentWorkflowWebsiteName:', currentWorkflowWebsiteName.value)
+  }
+  
+  const closeWorkflowEditor = () => {
+    console.log('[useDialogStates] closeWorkflowEditor 被调用')
+    showWorkflowEditor.value = false
+    currentWorkflowWebsiteId.value = null
+    currentWorkflowWebsiteName.value = ''
+  }
+  
   const openContentScriptPanel = (iframe) => {
     contentScriptTargetIframe.value = iframe
     showContentScriptPanel.value = true
@@ -133,6 +163,10 @@ export function useDialogStates() {
     showSessionManager,
     showMonitoringRulesList,
     showMonitoringRuleDialog,
+    showWorkflowEditor,
+    currentWorkflowWebsiteId,
+    currentWorkflowWebsiteName,
+    currentWorkflowDarkMode,
     showContentScriptPanel,
     contentScriptTargetIframe,
     showSharedModal,
@@ -153,6 +187,8 @@ export function useDialogStates() {
     closeMonitoringRulesList,
     openMonitoringRuleDialog,
     closeMonitoringRuleDialog,
+    openWorkflowEditor,
+    closeWorkflowEditor,
     openContentScriptPanel,
     closeContentScriptPanel,
     openSharedModal,

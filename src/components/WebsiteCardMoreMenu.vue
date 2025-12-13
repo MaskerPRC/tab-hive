@@ -21,6 +21,16 @@
         <span>监听规则</span>
         <span v-if="activeRulesCount > 0" class="rules-badge">{{ activeRulesCount }}</span>
       </button>
+      <button v-if="!isDesktopCapture && !isCustomHtml" class="more-menu-item" @click.stop="handleWorkflow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="5" r="2"/>
+          <circle cx="12" cy="12" r="2"/>
+          <circle cx="12" cy="19" r="2"/>
+          <line x1="12" y1="7" x2="12" y2="10"/>
+          <line x1="12" y1="14" x2="12" y2="17"/>
+        </svg>
+        <span>自动化工作流</span>
+      </button>
       <button v-if="customCodeEnabled" class="more-menu-item" @click.stop="handleScript">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="16 18 22 12 16 6"/>
@@ -89,13 +99,20 @@ export default {
       default: 0
     }
   },
-  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close', 'monitoring'],
+  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close', 'monitoring', 'workflow'],
   setup(props, { emit }) {
     const hasActiveRules = computed(() => props.activeRulesCount > 0)
     
     const handleCopy = () => {
       emit('close')
       emit('copy')
+    }
+
+    const handleWorkflow = () => {
+      console.log('[WorkflowMenu] 点击自动化工作流按钮')
+      emit('close')
+      console.log('[WorkflowMenu] 触发 workflow 事件')
+      emit('workflow')
     }
 
     const handleScript = () => {
@@ -126,6 +143,7 @@ export default {
     return {
       hasActiveRules,
       handleCopy,
+      handleWorkflow,
       handleScript,
       handleDevTools,
       handleEdit,

@@ -33,6 +33,7 @@
       @toggle-mute="handleToggleMute"
       @open-script-panel="handleOpenScriptPanel"
       @open-monitoring="handleOpenMonitoring"
+      @open-workflow="handleOpenWorkflow"
       @update-url="handleUpdateUrl"
       @resize-start="handleResizeStart($event, index, $event)"
     />
@@ -114,6 +115,7 @@ export default {
     'toggle-mute',
     'open-script-panel',
     'open-monitoring',
+    'open-workflow',
     'update-url',
     'resize-start'
   ],
@@ -183,6 +185,14 @@ export default {
       emit('open-monitoring', websiteId, darkMode)
     }
     
+    const handleOpenWorkflow = (websiteId, websiteName, darkMode) => {
+      console.log('[GridWebsiteList] 接收到 open-workflow 事件')
+      console.log('[GridWebsiteList] websiteId:', websiteId)
+      console.log('[GridWebsiteList] websiteName:', websiteName)
+      console.log('[GridWebsiteList] 向上传递到 GridView')
+      emit('open-workflow', websiteId, websiteName, darkMode)
+    }
+    
     const handleUpdateUrl = (index, url) => {
       emit('update-url', index, url)
     }
@@ -206,6 +216,7 @@ export default {
       handleToggleMute,
       handleOpenScriptPanel,
       handleOpenMonitoring,
+      handleOpenWorkflow,
       handleUpdateUrl,
       handleResizeStart
     }

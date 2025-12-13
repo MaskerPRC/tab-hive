@@ -103,6 +103,7 @@
           @toggle-mute="handleToggleMute"
           @open-script-panel="handleOpenScriptPanel"
           @open-monitoring="(websiteId, darkMode) => $emit('open-monitoring', websiteId, darkMode)"
+          @open-workflow="handleOpenWorkflow"
           @update-url="handleUpdateUrl"
           @resize-start="startResize"
         />
@@ -219,7 +220,7 @@ export default {
       default: null
     }
   },
-  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'update-canvas-transform', 'open-script-panel', 'import-layout-from-image', 'open-monitoring'],
+  emits: ['fullscreen', 'exitFullscreen', 'add-website', 'copy-website', 'remove-website', 'update-website', 'update-drawings', 'update-canvas-transform', 'open-script-panel', 'import-layout-from-image', 'open-monitoring', 'open-workflow'],
   setup(props, { emit }) {
     // 所有网站列表（过滤掉空白项，防止僵尸视界）
     const allWebsites = computed(() => {
@@ -552,6 +553,15 @@ export default {
       emit('open-script-panel', iframe)
     }
 
+    const handleOpenWorkflow = (websiteId, websiteName, darkMode) => {
+      console.log('[GridView] 接收到 open-workflow 事件')
+      console.log('[GridView] websiteId:', websiteId)
+      console.log('[GridView] websiteName:', websiteName)
+      console.log('[GridView] darkMode:', darkMode)
+      console.log('[GridView] 向上传递事件到 App.vue')
+      emit('open-workflow', websiteId, websiteName, darkMode)
+    }
+
     // 处理全屏模式下的刷新
     const handleFullscreenRefresh = () => {
       console.log('[GridView] ========== handleFullscreenRefresh 被调用 ==========')
@@ -880,6 +890,7 @@ export default {
       handleToggleMute,
       handleUpdateUrl,
       handleOpenScriptPanel,
+      handleOpenWorkflow,
       handleEditWebsite,
       handleGridMouseMove,
       handleFullscreenBarLeave,

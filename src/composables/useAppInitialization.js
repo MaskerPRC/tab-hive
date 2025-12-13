@@ -85,8 +85,15 @@ export function useAppInitialization(options) {
   // 显示侧边栏并可选显示导入成功提示
   const showSidebarAndNotification = (importedLayout) => {
     if (!dialogStates.showDownloadModal.value) {
-      // 初始显示侧边栏，3秒后自动隐藏
-      viewportStates.showPanelTemporarily(3000)
+      // 检查是否是第一次启动
+      const isFirstLaunch = !localStorage.getItem('hasLaunched')
+      
+      if (isFirstLaunch) {
+        // 第一次启动：显示侧边栏，3秒后自动隐藏
+        localStorage.setItem('hasLaunched', 'true')
+        viewportStates.showPanelTemporarily(3000)
+      }
+      // 非第一次启动：保持用户上次的状态（不做任何改变）
 
       // 如果成功导入了布局，显示提示
       if (importedLayout) {

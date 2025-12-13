@@ -37,6 +37,17 @@
       @open-api-settings="handleOpenLlmConfig"
     />
 
+    <!-- 工作流编辑器 -->
+    <WorkflowEditor
+      v-if="showWorkflowEditor"
+      :show="showWorkflowEditor"
+      :website-id="currentWorkflowWebsiteId"
+      :website-name="currentWorkflowWebsiteName"
+      :dark-mode="currentWorkflowDarkMode"
+      @close="closeWorkflowEditor"
+      @save="handleSaveWorkflow"
+    />
+
     <!-- 更新通知 -->
     <UpdateNotification
       :visible="showUpdateNotification"
@@ -127,6 +138,7 @@
         @open-script-panel="(iframe) => openContentScriptPanel(iframe)"
         @import-layout-from-image="(layoutData) => handleImportLayoutFromImage(layoutData)"
         @open-monitoring="(websiteId, darkMode) => handleOpenMonitoring(websiteId, darkMode)"
+        @open-workflow="(websiteId, websiteName, darkMode) => handleOpenWorkflow(websiteId, websiteName, darkMode)"
       />
     </template>
 
@@ -198,6 +210,7 @@ import ProxyManager from './components/ProxyManager.vue'
 import LlmConfigDialog from './components/LlmConfigDialog.vue'
 import MonitoringRulesList from './components/MonitoringRulesList.vue'
 import MonitoringRuleDialog from './components/MonitoringRuleDialog.vue'
+import WorkflowEditor from './components/workflow/WorkflowEditor.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import SharedLayoutModal from './components/SharedLayoutModal.vue'
 import ExternalUrlModal from './components/ExternalUrlModal.vue'
@@ -236,6 +249,7 @@ export default {
     LlmConfigDialog,
     MonitoringRulesList,
     MonitoringRuleDialog,
+    WorkflowEditor,
     ContentScriptPanel,
     SharedLayoutModal,
     ExternalUrlModal
@@ -389,6 +403,10 @@ export default {
       showLlmConfig: dialogStates.showLlmConfig,
       showMonitoringRulesList: dialogStates.showMonitoringRulesList,
       showMonitoringRuleDialog: dialogStates.showMonitoringRuleDialog,
+      showWorkflowEditor: dialogStates.showWorkflowEditor,
+      currentWorkflowWebsiteId: dialogStates.currentWorkflowWebsiteId,
+      currentWorkflowWebsiteName: dialogStates.currentWorkflowWebsiteName,
+      currentWorkflowDarkMode: dialogStates.currentWorkflowDarkMode,
       showContentScriptPanel: dialogStates.showContentScriptPanel,
       contentScriptTargetIframe: dialogStates.contentScriptTargetIframe,
       showSharedModal: dialogStates.showSharedModal,
@@ -438,6 +456,22 @@ export default {
       handleDeleteMonitoringRule: monitoringHandlers.handleDeleteMonitoringRule,
       handleToggleMonitoringRule: monitoringHandlers.handleToggleMonitoringRule,
       handleOpenLlmConfig: monitoringHandlers.handleOpenLlmConfig,
+      
+      // 工作流方法
+      handleOpenWorkflow: (websiteId, websiteName, darkMode) => {
+        console.log('[App.vue] handleOpenWorkflow 被调用')
+        console.log('[App.vue] websiteId:', websiteId)
+        console.log('[App.vue] websiteName:', websiteName)
+        console.log('[App.vue] darkMode:', darkMode)
+        console.log('[App.vue] 调用 dialogStates.openWorkflowEditor')
+        dialogStates.openWorkflowEditor(websiteId, websiteName, darkMode)
+        console.log('[App.vue] showWorkflowEditor 状态:', dialogStates.showWorkflowEditor.value)
+      },
+      closeWorkflowEditor: dialogStates.closeWorkflowEditor,
+      handleSaveWorkflow: (workflow) => {
+        console.log('[App.vue] 工作流已保存:', workflow)
+        dialogStates.closeWorkflowEditor()
+      },
       
       // 更新检测方法
       handleShowUpdate: updateHandlers.handleShowUpdate,

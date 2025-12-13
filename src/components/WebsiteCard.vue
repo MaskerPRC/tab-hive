@@ -110,6 +110,7 @@
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
         @monitoring="handleMonitoringClick"
+        @workflow="handleWorkflowClick"
       />
       
       <!-- 拖动手柄 -->
@@ -270,7 +271,7 @@ export default {
       default: true
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring', 'open-workflow'],
   setup(props, { emit }) {
     // ==================== 自定义 HTML Data URL ====================
     const getCustomHtmlDataUrl = (html) => {
@@ -577,6 +578,15 @@ export default {
       emit('open-monitoring', props.item.id, props.item.darkMode)
     }
 
+    // 工作流按钮点击
+    const handleWorkflowClick = () => {
+      console.log('[WebsiteCard] 工作流按钮被点击')
+      console.log('[WebsiteCard] 网站ID:', props.item.id)
+      console.log('[WebsiteCard] 网站标题:', props.item.title || '网页')
+      console.log('[WebsiteCard] 触发 open-workflow 事件')
+      emit('open-workflow', props.item.id, props.item.title || '网页', props.item.darkMode)
+    }
+
     // 加载激活的规则数量
     const loadActiveRulesCount = async () => {
       if (!window.electron || !window.electron.monitoring || !props.item.id) return
@@ -635,6 +645,7 @@ export default {
       // 监听规则相关
       activeRulesCount,
       handleMonitoringClick,
+      handleWorkflowClick,
       refreshRulesCount
     }
   }

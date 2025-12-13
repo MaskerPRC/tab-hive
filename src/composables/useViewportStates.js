@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 /**
  * 管理视口状态：全屏和侧边栏
@@ -8,11 +8,22 @@ export function useViewportStates() {
   // 全屏网站的索引
   const fullscreenIndex = ref(null)
   
+  // 从 localStorage 读取侧边栏状态，如果不存在则默认为 false
+  const getSavedPanelState = () => {
+    const saved = localStorage.getItem('sidebarPanelState')
+    return saved === 'true'
+  }
+  
   // 侧边栏显示状态
-  const showPanel = ref(false)
+  const showPanel = ref(getSavedPanelState())
   
   // 保存全屏前的侧边栏状态，用于退出全屏时恢复
   const panelStateBeforeFullscreen = ref(null)
+  
+  // 监听侧边栏状态变化，保存到 localStorage
+  watch(showPanel, (newValue) => {
+    localStorage.setItem('sidebarPanelState', String(newValue))
+  })
   
   /**
    * 进入全屏
