@@ -1,6 +1,6 @@
 <template>
-  <div 
-    v-if="show" 
+  <div
+    v-if="show"
     class="workflow-editor-overlay"
     :class="{ 'selecting-element': isSelectingElement }"
   >
@@ -49,7 +49,8 @@
           <div class="hint-icon">🎯</div>
           <div class="hint-text">
             <h3>正在选择网页元素</h3>
-            <p>请在下方网页中点击要选择的元素</p>
+            <p>✓ 鼠标移动到元素上会显示黄色高亮</p>
+            <p>✓ 点击元素即可选择</p>
             <p class="hint-small">按 ESC 取消选择</p>
           </div>
         </div>
@@ -81,8 +82,8 @@
         </div>
 
         <!-- 画布区域 -->
-        <div 
-          class="canvas-area" 
+        <div
+          class="canvas-area"
           ref="canvasArea"
           :style="{ opacity: canvasOpacity }"
         >
@@ -99,7 +100,7 @@
                 stroke-width="2"
               />
             </g>
-            
+
             <!-- 正在绘制的临时连接线 -->
             <line
               v-if="draggingConnection"
@@ -128,7 +129,7 @@
                 <span class="node-title">{{ node.name }}</span>
                 <button @click="deleteNode(node.id)" class="node-delete">×</button>
               </div>
-              
+
               <div class="node-body">
                 <!-- 选择器列表 -->
                 <div
@@ -353,8 +354,9 @@
         </div>
       </div>
     </div>
+    <!-- 关闭 .workflow-editor -->
 
-    <!-- 选择器映射配置弹窗 -->
+    <!-- 选择器映射配置弹窗（放在 .workflow-editor 外层，避免被 pointer-events: none 影响） -->
     <SelectorMappingConfig
       v-if="showSelectorConfig"
       :show="showSelectorConfig"
@@ -365,7 +367,7 @@
       @reselect="handleReselect"
     />
 
-    <!-- 元素选择器 -->
+    <!-- 元素选择器（放在编辑器外层，避免被遮挡） -->
     <ElementSelector
       v-if="isSelectingElement"
       :is-active="isSelectingElement"
@@ -375,6 +377,7 @@
       @cancel="isSelectingElement = false"
     />
   </div>
+  <!-- 关闭 .workflow-editor-overlay -->
 </template>
 
 <script>
@@ -400,7 +403,7 @@ export default {
       default: null
     },
     websiteId: {
-      type: String,
+      type: [String, Number],
       required: true
     },
     websiteName: {
@@ -415,23 +418,23 @@ export default {
   emits: ['close', 'save'],
   setup(props, { emit }) {
     const workflowManager = useWorkflowManager()
-    
+
     // 工作流数据
     const workflow = computed(() => workflowManager.currentWorkflow.value)
     const nodes = computed(() => workflow.value?.nodes || [])
     const connections = computed(() => workflow.value?.connections || [])
-    
+
     // 按类型分组节点
-    const webpageNodes = computed(() => 
+    const webpageNodes = computed(() =>
       nodes.value.filter(n => n.type === NODE_TYPES.WEBPAGE)
     )
-    const flowNodes = computed(() => 
+    const flowNodes = computed(() =>
       nodes.value.filter(n => n.type === NODE_TYPES.FLOW)
     )
-    const webControlNodes = computed(() => 
+    const webControlNodes = computed(() =>
       nodes.value.filter(n => n.type === NODE_TYPES.WEB_CONTROL)
     )
-    
+
     // UI状态
     const canvasArea = ref(null)
     const showSelectorConfig = ref(false)
@@ -440,19 +443,19 @@ export default {
     const isSelectingElement = ref(false)
     const targetIframe = ref(null)
     const currentWebsite = ref(null)
-    
+
     // 拖拽状态
     const draggingNode = ref(null)
     const dragOffset = ref({ x: 0, y: 0 })
     const draggingConnection = ref(null)
-    
+
     // 执行状态
     const isExecuting = ref(false)
     const executionLog = ref([])
-    
+
     // 透明度控制
     const canvasOpacity = ref(0.7) // 默认70%透明度
-    
+
     // 监听 show 属性变化
     watch(() => props.show, (newValue) => {
       console.log('[WorkflowEditor] props.show 变化:', newValue)
@@ -462,7 +465,7 @@ export default {
         console.log('[WorkflowEditor] 编辑器应该隐藏')
       }
     }, { immediate: true })
-    
+
     // 监听元素选择状态变化
     watch(isSelectingElement, (newValue) => {
       console.log('[WorkflowEditor] isSelectingElement 变化:', newValue)
@@ -472,7 +475,7 @@ export default {
         console.log('[WorkflowEditor] 退出元素选择模式，显示编辑器主体')
       }
     })
-    
+
     // 初始化
     onMounted(() => {
       console.log('[WorkflowEditor] 组件已挂载')
@@ -480,7 +483,7 @@ export default {
       console.log('[WorkflowEditor] props.websiteId:', props.websiteId)
       console.log('[WorkflowEditor] props.websiteName:', props.websiteName)
       console.log('[WorkflowEditor] props.workflowId:', props.workflowId)
-      
+
       if (props.workflowId) {
         console.log('[WorkflowEditor] 加载现有工作流')
         workflowManager.loadWorkflow(props.workflowId)
@@ -488,26 +491,26 @@ export default {
         console.log('[WorkflowEditor] 创建新工作流')
         workflowManager.createNewWorkflow(props.websiteId, props.websiteName)
       }
-      
+
       console.log('[WorkflowEditor] 工作流对象:', workflow.value)
       console.log('[WorkflowEditor] nodes 数组:', workflow.value?.nodes)
       console.log('[WorkflowEditor] webpageNodes:', webpageNodes.value)
-      
+
       if (webpageNodes.value.length > 0) {
         console.log('[WorkflowEditor] 第一个网页节点:', webpageNodes.value[0])
         console.log('[WorkflowEditor] 第一个网页节点的 websiteId:', webpageNodes.value[0].websiteId)
       }
-      
+
       // 添加全局事件监听
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     })
-    
+
     onUnmounted(() => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     })
-    
+
     // 节点样式
     const getNodeStyle = (node) => {
       return {
@@ -515,98 +518,109 @@ export default {
         top: `${node.position.y}px`
       }
     }
-    
+
     // 添加节点
     const addFlowNode = () => {
       const node = createFlowNode('处理节点')
       node.position = { x: 300, y: 100 }
       workflowManager.addNode(node)
     }
-    
+
     const addWebControlNode = () => {
       const node = createWebControlNode('网页控制')
       node.position = { x: 600, y: 100 }
       workflowManager.addNode(node)
     }
-    
+
     // 删除节点
     const deleteNode = (nodeId) => {
       if (confirm('确定删除此节点吗？')) {
         workflowManager.removeNode(nodeId)
       }
     }
-    
+
     // 开始元素选择
     const startElementSelection = (node = null) => {
       console.log('[WorkflowEditor] startElementSelection 被调用')
       console.log('[WorkflowEditor] 传入的 node:', node)
       console.log('[WorkflowEditor] webpageNodes.value:', webpageNodes.value)
       console.log('[WorkflowEditor] webpageNodes.value[0]:', webpageNodes.value[0])
-      
+
       currentEditingNode.value = node || webpageNodes.value[0]
       if (!currentEditingNode.value) {
         alert('请先添加网页节点')
         return
       }
-      
+
       console.log('[WorkflowEditor] 开始元素选择')
       console.log('[WorkflowEditor] currentEditingNode:', currentEditingNode.value)
       console.log('[WorkflowEditor] 目标网站ID:', currentEditingNode.value.websiteId)
-      
+
       // 查找对应的webview/iframe
       const isElectron = window.electron?.isElectron
+      const websiteId = currentEditingNode.value.websiteId
+
+      console.log('[WorkflowEditor] 查找 webview/iframe，ID:', websiteId)
+
       if (isElectron) {
-        targetIframe.value = document.querySelector(
-          `#webview-${currentEditingNode.value.websiteId}`
-        )
+        const selector = `#webview-${websiteId}`
+        console.log('[WorkflowEditor] Electron模式，选择器:', selector)
+        targetIframe.value = document.querySelector(selector)
+
+        if (targetIframe.value) {
+          console.log('[WorkflowEditor] ✓ 找到 webview')
+          console.log('[WorkflowEditor] webview.id:', targetIframe.value.id)
+          console.log('[WorkflowEditor] webview.send 方法存在:', typeof targetIframe.value.send)
+          console.log('[WorkflowEditor] webview.addEventListener 方法存在:', typeof targetIframe.value.addEventListener)
+        }
       } else {
-        targetIframe.value = document.querySelector(
-          `iframe[data-website-id="${currentEditingNode.value.websiteId}"]`
-        )
+        const selector = `iframe[data-website-id="${websiteId}"]`
+        console.log('[WorkflowEditor] 浏览器模式，选择器:', selector)
+        targetIframe.value = document.querySelector(selector)
       }
-      
+
       console.log('[WorkflowEditor] 找到的iframe/webview:', targetIframe.value)
-      
+
       if (!targetIframe.value) {
         alert('未找到网页，请确保网页已加载')
         return
       }
-      
+
       currentWebsite.value = { id: currentEditingNode.value.websiteId }
       isSelectingElement.value = true
-      
+
       console.log('[WorkflowEditor] 元素选择模式已激活')
       console.log('[WorkflowEditor] isSelectingElement:', isSelectingElement.value)
     }
-    
+
     // 处理元素选择完成
     const handleElementSelected = (result) => {
       console.log('[WorkflowEditor] 元素选择完成')
       console.log('[WorkflowEditor] 选择器:', result.selector)
-      
+
       isSelectingElement.value = false
-      
+
       const selectorConfig = createSelectorConfig(result.selector, '新元素')
       currentSelectorConfig.value = selectorConfig
       showSelectorConfig.value = true
-      
+
       console.log('[WorkflowEditor] 打开配置对话框')
     }
-    
+
     // 编辑选择器配置
     const editSelectorConfig = (node, selector) => {
       currentEditingNode.value = node
       currentSelectorConfig.value = selector
       showSelectorConfig.value = true
     }
-    
+
     // 保存选择器配置
     const handleSelectorConfigSave = (config) => {
       if (currentEditingNode.value) {
         const existingIndex = currentEditingNode.value.selectorConfigs.findIndex(
           c => c.id === config.id
         )
-        
+
         if (existingIndex >= 0) {
           // 更新现有配置
           currentEditingNode.value.selectorConfigs[existingIndex] = config
@@ -614,23 +628,23 @@ export default {
           // 添加新配置
           currentEditingNode.value.selectorConfigs.push(config)
         }
-        
+
         workflowManager.saveWorkflows()
       }
-      
+
       showSelectorConfig.value = false
     }
-    
+
     // 重新选择元素
     const handleReselect = () => {
       showSelectorConfig.value = false
       startElementSelection(currentEditingNode.value)
     }
-    
+
     // 节点拖拽
     const startDragNode = (event, node) => {
       if (event.target.closest('.port-dot')) return
-      
+
       draggingNode.value = node
       const rect = event.target.closest('.workflow-node').getBoundingClientRect()
       dragOffset.value = {
@@ -638,14 +652,14 @@ export default {
         y: event.clientY - rect.top
       }
     }
-    
+
     // 连接线拖拽
     const startConnection = (event, nodeId, portId, portType) => {
       event.stopPropagation()
-      
+
       const rect = event.target.getBoundingClientRect()
       const canvasRect = canvasArea.value.getBoundingClientRect()
-      
+
       draggingConnection.value = {
         fromNodeId: nodeId,
         fromPortId: portId,
@@ -656,7 +670,7 @@ export default {
         endY: rect.top + rect.height / 2 - canvasRect.top
       }
     }
-    
+
     // 鼠标移动
     const handleMouseMove = (event) => {
       if (draggingNode.value && canvasArea.value) {
@@ -666,21 +680,21 @@ export default {
           y: event.clientY - canvasRect.top - dragOffset.value.y
         }
       }
-      
+
       if (draggingConnection.value && canvasArea.value) {
         const canvasRect = canvasArea.value.getBoundingClientRect()
         draggingConnection.value.endX = event.clientX - canvasRect.left
         draggingConnection.value.endY = event.clientY - canvasRect.top
       }
     }
-    
+
     // 鼠标释放
     const handleMouseUp = (event) => {
       if (draggingNode.value) {
         workflowManager.saveWorkflows()
         draggingNode.value = null
       }
-      
+
       if (draggingConnection.value) {
         // 检查是否释放在端口上
         const target = event.target.closest('.port-dot')
@@ -688,7 +702,7 @@ export default {
           const toNodeId = target.dataset.nodeId
           const toPortId = target.dataset.portId
           const toPortType = target.dataset.portType
-          
+
           createConnectionBetweenPorts(
             draggingConnection.value.fromNodeId,
             draggingConnection.value.fromPortId,
@@ -698,11 +712,11 @@ export default {
             toPortType
           )
         }
-        
+
         draggingConnection.value = null
       }
     }
-    
+
     // 创建连接
     const createConnectionBetweenPorts = (
       fromNodeId, fromPortId, fromPortType,
@@ -712,31 +726,31 @@ export default {
       // 数据端口 → Flow输入
       // Flow输出 → Flow输入 或 WebControl输入
       // WebControl → 交互端口
-      
+
       let connectionType = 'execution-flow'
-      
+
       if (fromPortType === 'data') {
         connectionType = 'data-mapping'
       }
-      
+
       workflowManager.addConnection(
         connectionType,
         { nodeId: fromNodeId, portId: fromPortId },
         { nodeId: toNodeId, portId: toPortId }
       )
     }
-    
+
     // 获取连接线坐标（简化版，后续可优化）
     const getConnectionStart = (conn) => {
       // TODO: 计算实际端口位置
       return { x: 100, y: 100 }
     }
-    
+
     const getConnectionEnd = (conn) => {
       // TODO: 计算实际端口位置
       return { x: 300, y: 200 }
     }
-    
+
     const getConnectionClass = (conn) => {
       return {
         'connection-line': true,
@@ -744,38 +758,38 @@ export default {
         'connection-flow': conn.type === 'execution-flow'
       }
     }
-    
+
     const getActionTargetName = (ctrl) => {
       // TODO: 获取目标动作名称
       return '交互操作'
     }
-    
+
     // 测试运行
     const handleTest = async () => {
       // TODO: 实现工作流执行
       alert('执行功能正在开发中...')
     }
-    
+
     // 保存和关闭
     const handleSave = () => {
       workflowManager.saveWorkflows()
       emit('save', workflow.value)
     }
-    
+
     const handleClose = () => {
       workflowManager.saveWorkflows()
       emit('close')
     }
-    
+
     // 日志
     const clearLog = () => {
       executionLog.value = []
     }
-    
+
     const formatTime = (time) => {
       return new Date(time).toLocaleTimeString()
     }
-    
+
     return {
       workflow,
       nodes,
@@ -834,9 +848,9 @@ export default {
 
 /* 选择元素模式：背景完全透明，不阻挡交互 */
 .workflow-editor-overlay.selecting-element {
-  background: transparent;
-  backdrop-filter: none;
-  pointer-events: none; /* 完全不捕获事件，让下方元素可以被选择 */
+  background: transparent !important;
+  backdrop-filter: none !important;
+  pointer-events: none !important; /* 完全不捕获事件，让下方元素可以被选择 */
 }
 
 .workflow-editor {
@@ -851,6 +865,16 @@ export default {
 .workflow-editor.dark-mode {
   background: rgba(26, 26, 26, 0.95); /* 半透明黑色 */
   color: #e0e0e0;
+}
+
+/* 选择元素模式：编辑器主体不捕获事件 */
+.selecting-element .workflow-editor {
+  pointer-events: none;
+}
+
+/* 但头部工具栏仍需要捕获事件（用于关闭等操作） */
+.selecting-element .editor-header {
+  pointer-events: auto;
 }
 
 .editor-header {
@@ -871,9 +895,10 @@ export default {
 }
 
 .editor-header.selecting-mode {
-  background: rgba(103, 58, 183, 0.95);
+  background: rgba(103, 58, 183, 0.98);
   color: #fff;
   border-bottom-color: rgba(103, 58, 183, 0.8);
+  box-shadow: 0 4px 12px rgba(103, 58, 183, 0.4);
 }
 
 .editor-header.selecting-mode .god-mode-badge {
@@ -951,18 +976,24 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent; /* 完全透明 */
+  pointer-events: none; /* 不阻挡鼠标事件 */
 }
 
 .hint-content {
   text-align: center;
-  padding: 40px;
+  padding: 32px 40px;
   background: rgba(255, 255, 255, 0.98);
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
-  max-width: 400px;
-  pointer-events: auto; /* 提示框本身可见，但不阻挡下方操作 */
+  max-width: 450px;
+  pointer-events: none; /* 提示框也不阻挡，只用于显示 */
+  position: fixed;
+  top: 120px; /* 靠上显示，不遮挡网页主体 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998; /* 低于ElementHighlighter(10001)，不遮挡高亮效果 */
 }
 
 .dark-mode .hint-content {
@@ -982,7 +1013,7 @@ export default {
 
 .hint-text h3 {
   margin: 0 0 12px 0;
-  font-size: 20px;
+  font-size: 18px;
   color: #333;
 }
 
@@ -991,9 +1022,10 @@ export default {
 }
 
 .hint-text p {
-  margin: 8px 0;
-  font-size: 14px;
+  margin: 6px 0;
+  font-size: 13px;
   color: #666;
+  text-align: left;
 }
 
 .dark-mode .hint-text p {
@@ -1004,7 +1036,8 @@ export default {
   font-size: 12px !important;
   font-style: italic;
   color: #999 !important;
-  margin-top: 20px !important;
+  margin-top: 16px !important;
+  text-align: center !important;
 }
 
 .dark-mode .hint-small {
@@ -1171,14 +1204,14 @@ export default {
   flex: 1;
   position: relative;
   overflow: auto;
-  background: 
+  background:
     linear-gradient(90deg, rgba(224, 224, 224, 0.3) 1px, transparent 1px) 0 0 / 20px 20px,
     linear-gradient(rgba(224, 224, 224, 0.3) 1px, transparent 1px) 0 0 / 20px 20px;
   background-color: rgba(250, 250, 250, 0.5); /* 半透明画布，可以看到下面的网页 */
 }
 
 .dark-mode .canvas-area {
-  background: 
+  background:
     linear-gradient(90deg, rgba(51, 51, 51, 0.3) 1px, transparent 1px) 0 0 / 20px 20px,
     linear-gradient(rgba(51, 51, 51, 0.3) 1px, transparent 1px) 0 0 / 20px 20px;
   background-color: rgba(26, 26, 26, 0.5);
@@ -1503,6 +1536,25 @@ export default {
 
 .log-error {
   color: #f44336;
+}
+
+/* 确保配置对话框和元素选择器永远可以交互 */
+/* 它们现在在 .workflow-editor 外层，不会被 pointer-events: none 影响 */
+.selector-mapping-overlay,
+.selector-toolbar {
+  pointer-events: auto !important;
+  z-index: 10000; /* 确保在最上层 */
+}
+
+/* 确保所有交互元素都可以点击 */
+.selector-mapping-overlay button,
+.selector-mapping-overlay input,
+.selector-mapping-overlay select,
+.selector-toolbar button,
+.selector-toolbar input,
+.selector-toolbar select {
+  pointer-events: auto !important;
+  cursor: pointer;
 }
 </style>
 

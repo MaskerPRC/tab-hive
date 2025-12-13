@@ -116,6 +116,11 @@ export default {
      * 启动元素选择器（支持 webview 和 iframe）
      */
     const startSelector = () => {
+      console.log('[ElementSelector] startSelector 被调用')
+      console.log('[ElementSelector] props.targetIframe:', props.targetIframe)
+      console.log('[ElementSelector] props.targetIframe.id:', props.targetIframe?.id)
+      console.log('[ElementSelector] props.targetIframe.send 存在:', typeof props.targetIframe?.send)
+      
       if (!props.targetIframe) {
         console.error('[全视界] target 不可用')
         emit('cancel')
@@ -123,6 +128,7 @@ export default {
       }
 
       const reqId = ++requestId
+      console.log('[ElementSelector] 请求ID:', reqId)
 
       if (isElectron.value) {
         // Electron 环境：使用 webview API
@@ -130,12 +136,14 @@ export default {
 
         // Webview 使用 send 方法发送消息
         if (typeof props.targetIframe.send === 'function') {
+          console.log('[ElementSelector] 调用 webview.send("start-element-selector")')
           props.targetIframe.send('start-element-selector', {
             requestId: reqId
           })
           console.log('[全视界] 已通过 webview.send 发送启动消息')
         } else {
           console.error('[全视界] webview.send 方法不可用')
+          console.error('[ElementSelector] targetIframe的方法:', Object.keys(props.targetIframe))
           emit('cancel')
         }
       } else {
@@ -160,12 +168,22 @@ export default {
      * 处理来自 webview 的 IPC 消息
      */
     const handleWebviewMessage = (event) => {
+      console.log('[ElementSelector] handleWebviewMessage 被调用')
+      console.log('[ElementSelector] event.channel:', event.channel)
+      console.log('[ElementSelector] event.args:', event.args)
+      
       const channel = event.channel
       const data = event.args && event.args[0]
 
-      if (!data) return
+      if (!data) {
+        console.log('[ElementSelector] 没有数据，返回')
+        return
+      }
+
+      console.log('[ElementSelector] channel:', channel, 'data:', data)
 
       if (channel === 'element-selector-hover') {
+        console.log('[ElementSelector] 处理 hover 消息:', data.selector)
         hoveredSelector.value = data.selector || ''
 
         // 更新高亮矩形
@@ -552,12 +570,20 @@ export default {
      * 初始化
      */
     const initialize = async () => {
+      console.log('[ElementSelector] initialize 被调用')
+      console.log('[ElementSelector] isElectron:', isElectron.value)
+      console.log('[ElementSelector] props.targetIframe:', props.targetIframe)
+      
       if (isElectron.value) {
         // Electron 环境：添加 webview IPC 消息监听
+        console.log('[ElementSelector] Electron模式初始化')
         if (props.targetIframe && typeof props.targetIframe.addEventListener === 'function') {
           props.targetIframe.addEventListener('ipc-message', handleWebviewMessage)
           console.log('[全视界] 已添加 webview IPC 消息监听器')
+        } else {
+          console.error('[ElementSelector] webview.addEventListener 不可用')
         }
+        console.log('[ElementSelector] 调用 startSelector()')
         startSelector()
       } else {
         // 浏览器环境先检测扩展
@@ -697,16 +723,22 @@ export default {
 
     // 监听isActive变化
     watch(() => props.isActive, (newVal, oldVal) => {
-      console.log('[全视界] isActive变化:', oldVal, '->', newVal)
+      console.log('[ElementSelector] ========== isActive 变化 ==========')
+      console.log('[ElementSelector] 从', oldVal, '变为', newVal)
+      console.log('[ElementSelector] props.targetIframe:', props.targetIframe)
+      console.log('[ElementSelector] props.currentWebsite:', props.currentWebsite)
+      
       if (newVal && !oldVal) {
         // 从false变为true，先初始化选择器状态，再初始化
+        console.log('[ElementSelector] 激活选择器，开始初始化')
         initializeSelectorState()
         initialize()
       } else if (!newVal && oldVal) {
         // 从true变为false，清理
+        console.log('[ElementSelector] 取消选择器，开始清理')
         cleanup()
       }
-    })
+    }, { immediate: true })
 
     // 监听当前视界配置变化
     watch(() => props.currentWebsite, (newVal, oldVal) => {
@@ -719,7 +751,11 @@ export default {
 
     // 生命周期
     onMounted(() => {
-      console.log('[全视界] ElementSelector组件已挂载，添加事件监听器')
+      console.log('[ElementSelector] ========== 组件已挂载 ==========')
+      console.log('[ElementSelector] 初始 props.isActive:', props.isActive)
+      console.log('[ElementSelector] 初始 props.targetIframe:', props.targetIframe)
+      console.log('[ElementSelector] 初始 props.currentWebsite:', props.currentWebsite)
+      
       messageListener = handleMessage
       keydownListener = handleKeyDown
       spaceKeyListener = handleSpaceKey

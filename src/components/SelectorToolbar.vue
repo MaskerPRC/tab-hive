@@ -471,6 +471,7 @@ export default {
   user-select: none;
   overflow: hidden;
   animation: fadeInZoom 0.3s ease-out;
+  pointer-events: auto !important; /* 确保工具栏始终可以交互，不被父级 pointer-events: none 影响 */
 }
 
 @keyframes fadeInZoom {
@@ -1093,5 +1094,13 @@ export default {
   font-size: 10px;
   font-weight: 600;
   color: #64748b;
+}
+
+/* 确保所有交互元素都可以点击 */
+.selector-toolbar button,
+.selector-toolbar input,
+.selector-toolbar select,
+.selector-toolbar textarea {
+  pointer-events: auto !important;
 }
 </style>
