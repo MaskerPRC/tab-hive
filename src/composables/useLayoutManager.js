@@ -128,7 +128,9 @@ export function useLayoutManager() {
             layouts: [{
               id: 1,
               name: '默认布局',
-              websites: config.websites || []
+              websites: config.websites || [],
+              drawings: config.drawings || [],
+              canvasTransform: config.canvasTransform || { x: 0, y: 0, zoom: 1 }
             }],
             currentLayoutId: 1,
             globalSettings: {
@@ -229,9 +231,23 @@ export function useLayoutManager() {
           position: { x: 20, y: 340 },
           size: { width: 400, height: 300 }
         }
-      ]
+      ],
+      drawings: [],
+      canvasTransform: { x: 0, y: 0, zoom: 1 }
     }
   ])
+  
+  // 确保所有加载的布局都有 drawings 和 canvasTransform 字段（兼容旧配置）
+  if (savedConfig && savedConfig.layouts) {
+    layouts.value.forEach(layout => {
+      if (!layout.drawings) {
+        layout.drawings = []
+      }
+      if (!layout.canvasTransform) {
+        layout.canvasTransform = { x: 0, y: 0, zoom: 1 }
+      }
+    })
+  }
 
   // 当前布局 ID
   const currentLayoutId = ref(savedConfig?.currentLayoutId || 1)
@@ -332,6 +348,9 @@ export function useLayoutManager() {
       name: name || `布局 ${layouts.value.length + 1}`,
       websites: options.websites || [],
       keepAlive: options.keepAlive || false, // 是否后台运行
+      // 绘制和画布数据
+      drawings: options.drawings || [], // 绘制内容（画笔、文字、图片）
+      canvasTransform: options.canvasTransform || { x: 0, y: 0, zoom: 1 }, // 画布变换
       // 模板链接相关字段
       linkedTemplateId: options.linkedTemplateId || null, // 链接的原始模板ID (original_id)
       importMode: options.importMode || null, // 'realtime' 或 'copy' 或 null

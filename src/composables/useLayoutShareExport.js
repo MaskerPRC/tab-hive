@@ -29,10 +29,12 @@ export function useLayoutShareExport(dialog, t, layoutManager) {
       // 截图
       const screenshotBlob = await captureScreenshot()
       
-      // 准备布局数据（只包含必要信息）
+      // 准备布局数据（包含必要信息和绘制内容）
       const layoutData = {
         name: layout.name,
         websites: layout.websites,
+        drawings: layout.drawings || [],
+        canvasTransform: layout.canvasTransform || { x: 0, y: 0, zoom: 1 },
         version: 1,
         exportedAt: new Date().toISOString()
       }
@@ -94,10 +96,12 @@ export function useLayoutShareExport(dialog, t, layoutManager) {
       // 截图
       const screenshotBlob = await captureScreenshot()
       
-      // 准备布局数据
+      // 准备布局数据（包含绘制内容）
       const layoutData = {
         name: layout.name,
         websites: layout.websites,
+        drawings: layout.drawings || [],
+        canvasTransform: layout.canvasTransform || { x: 0, y: 0, zoom: 1 },
         version: 1,
         exportedAt: new Date().toISOString()
       }
