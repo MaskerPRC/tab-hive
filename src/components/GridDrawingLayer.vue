@@ -57,61 +57,59 @@
         stroke-linecap="round"
         stroke-linejoin="round"
       />
+      
+      <!-- 文字输入覆盖层（作为 SVG foreignObject） -->
+      <foreignObject
+        v-if="textInput.show"
+        :x="textInput.x - 150"
+        :y="textInput.y - 75"
+        width="300"
+        height="150"
+      >
+        <div xmlns="http://www.w3.org/1999/xhtml" class="text-input-overlay">
+          <textarea
+            ref="textInputElement"
+            v-model="textInput.content"
+            class="text-input-field"
+            :style="{ color: textInput.color, fontSize: textInput.fontSize + 'px' }"
+            placeholder="输入文字..."
+            @keydown.enter.ctrl="handleTextSubmit"
+            @keydown.esc="handleTextCancel"
+            autofocus
+          ></textarea>
+          <div class="text-input-buttons">
+            <button @click="handleTextSubmit" class="text-input-btn text-input-btn-ok">确定</button>
+            <button @click="handleTextCancel" class="text-input-btn text-input-btn-cancel">取消</button>
+          </div>
+        </div>
+      </foreignObject>
+      
+      <!-- 图片上传覆盖层（作为 SVG foreignObject） -->
+      <foreignObject
+        v-if="imageUpload.show"
+        :x="imageUpload.x - 125"
+        :y="imageUpload.y - 100"
+        width="250"
+        height="200"
+      >
+        <div xmlns="http://www.w3.org/1999/xhtml" class="image-upload-overlay">
+          <div class="image-upload-box">
+            <p>粘贴图片 (Ctrl+V)</p>
+            <p>或</p>
+            <label class="image-upload-btn">
+              <input
+                type="file"
+                accept="image/*"
+                @change="handleImageFileSelect"
+                style="display: none;"
+              />
+              选择图片
+            </label>
+            <button @click="handleImageCancel" class="image-upload-btn-cancel">取消</button>
+          </div>
+        </div>
+      </foreignObject>
     </svg>
-    
-    <!-- 文字输入覆盖层 -->
-    <div
-      v-if="textInput.show"
-      class="text-input-overlay"
-      :style="{
-        position: 'absolute',
-        left: `${textInput.x}px`,
-        top: `${textInput.y}px`,
-        transform: 'translate(-50%, -50%)'
-      }"
-    >
-      <textarea
-        ref="textInputElement"
-        v-model="textInput.content"
-        class="text-input-field"
-        :style="{ color: textInput.color, fontSize: textInput.fontSize + 'px' }"
-        placeholder="输入文字..."
-        @keydown.enter.ctrl="handleTextSubmit"
-        @keydown.esc="handleTextCancel"
-        autofocus
-      ></textarea>
-      <div class="text-input-buttons">
-        <button @click="handleTextSubmit" class="text-input-btn text-input-btn-ok">确定</button>
-        <button @click="handleTextCancel" class="text-input-btn text-input-btn-cancel">取消</button>
-      </div>
-    </div>
-    
-    <!-- 图片上传覆盖层 -->
-    <div
-      v-if="imageUpload.show"
-      class="image-upload-overlay"
-      :style="{
-        position: 'absolute',
-        left: `${imageUpload.x}px`,
-        top: `${imageUpload.y}px`,
-        transform: 'translate(-50%, -50%)'
-      }"
-    >
-      <div class="image-upload-box">
-        <p>粘贴图片 (Ctrl+V)</p>
-        <p>或</p>
-        <label class="image-upload-btn">
-          <input
-            type="file"
-            accept="image/*"
-            @change="handleImageFileSelect"
-            style="display: none;"
-          />
-          选择图片
-        </label>
-        <button @click="handleImageCancel" class="image-upload-btn-cancel">取消</button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -199,9 +197,19 @@ export default {
     const getPathData = (path) => {
       if (path.length === 0) return ''
       
-      let d = `M ${path[0].x} ${path[0].y}`
+      // 支持数组格式 [x, y] 和对象格式 {x, y}
+      const getCoords = (point) => {
+        if (Array.isArray(point)) {
+          return { x: point[0], y: point[1] }
+        }
+        return point
+      }
+      
+      const firstPoint = getCoords(path[0])
+      let d = `M ${firstPoint.x} ${firstPoint.y}`
       for (let i = 1; i < path.length; i++) {
-        d += ` L ${path[i].x} ${path[i].y}`
+        const point = getCoords(path[i])
+        d += ` L ${point.x} ${point.y}`
       }
       return d
     }
@@ -275,12 +283,13 @@ export default {
 
 /* 文字输入覆盖层 */
 .text-input-overlay {
-  z-index: 200;
+  width: 100%;
+  height: 100%;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 12px;
-  min-width: 250px;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 
@@ -336,11 +345,13 @@ export default {
 
 /* 图片上传覆盖层 */
 .image-upload-overlay {
-  z-index: 200;
+  width: 100%;
+  height: 100%;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 16px;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 

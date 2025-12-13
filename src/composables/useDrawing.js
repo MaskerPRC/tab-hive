@@ -139,6 +139,7 @@ export function useDrawing(props, emit, canvasTransform) {
       currentPath.value = [coords]
     } else if (drawingTool.value === 'text') {
       // 文字模式：显示文字输入框
+      // 注意：coords 是 SVG 坐标（包含 +10000 偏移），直接使用即可
       textInput.value = {
         show: true,
         x: coords[0],
@@ -149,6 +150,7 @@ export function useDrawing(props, emit, canvasTransform) {
       }
     } else if (drawingTool.value === 'image') {
       // 图片模式：显示上传按钮或等待粘贴
+      // 注意：coords 是 SVG 坐标（包含 +10000 偏移），直接使用即可
       imageUpload.value = {
         show: true,
         x: coords[0],
