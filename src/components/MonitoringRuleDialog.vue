@@ -175,53 +175,25 @@
     </div>
 
     <!-- 测试 LLM 视觉分析弹窗 -->
-    <div v-if="showTestDialog" class="test-dialog-overlay" @click.self="showTestDialog = false">
-      <div class="test-dialog" :class="{ 'dark-mode': darkMode }">
-        <div class="test-dialog-header">
-          <h3>🤖 测试视觉分析</h3>
-          <button class="close-btn" @click="showTestDialog = false">×</button>
-        </div>
-        <div class="test-dialog-body">
-          <p class="test-dialog-desc">输入一个简单的问题来测试 LLM 是否能正确分析当前页面：</p>
-          <textarea
-            v-model="testPrompt"
-            placeholder="例如：页面上有输入框吗？&#10;页面显示的是登录页面吗？&#10;页面中有购买按钮吗？"
-            class="test-prompt-input"
-            rows="4"
-          ></textarea>
-          <div class="test-examples">
-            <div class="examples-title">示例问题：</div>
-            <button 
-              v-for="example in examplePrompts" 
-              :key="example"
-              class="example-btn"
-              @click="testPrompt = example"
-            >
-              {{ example }}
-            </button>
-          </div>
-        </div>
-        <div class="test-dialog-footer">
-          <button class="btn btn-cancel" @click="showTestDialog = false">取消</button>
-          <button 
-            class="btn btn-primary" 
-            @click="executeTest" 
-            :disabled="!testPrompt.trim() || testLoading"
-          >
-            <span v-if="testLoading">分析中...</span>
-            <span v-else>开始测试</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <TestLLMDialog
+      :visible="showTestDialog"
+      :website-id="websiteId"
+      :dark-mode="darkMode"
+      @close="closeTestDialog"
+    />
   </div>
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
+import TestLLMDialog from './TestLLMDialog.vue'
+import { useMonitoringRuleForm } from '../composables/useMonitoringRuleForm'
 
 export default {
   name: 'MonitoringRuleDialog',
+  components: {
+    TestLLMDialog
+  },
   props: {
     show: {
       type: Boolean,
@@ -242,88 +214,29 @@ export default {
   },
   emits: ['close', 'save', 'open-api-settings'],
   setup(props, { emit }) {
-    const formData = ref({
-      name: '',
-      conditionType: 'llm_screenshot',
-      conditionDescription: '',
-      checkInterval: 60,
-      actionType: 'desktop_notification',
-      notificationMessage: ''
-    })
+    // 使用表单管理 composable
+    const {
+      formData,
+      intervalPresets,
+      isEdit,
+      isFormValid,
+      handleSave,
+      handleClose
+    } = useMonitoringRuleForm(props, emit)
 
-    const intervalPresets = [
-      { label: '30秒', value: 30 },
-      { label: '1分钟', value: 60 },
-      { label: '5分钟', value: 300 },
-      { label: '10分钟', value: 600 },
-      { label: '30分钟', value: 1800 },
-      { label: '1小时', value: 3600 }
-    ]
+    // 测试 LLM 对话框状态
+    const showTestDialog = ref(false)
 
-    const isEdit = computed(() => !!props.rule)
-
-    const isFormValid = computed(() => {
-      return formData.value.name.trim() !== '' &&
-             formData.value.conditionDescription.trim() !== '' &&
-             formData.value.checkInterval >= 10
-    })
-
-    // 监听规则变化，填充表单
-    watch(() => props.rule, (newRule) => {
-      if (newRule) {
-        formData.value = {
-          name: newRule.name || '',
-          conditionType: newRule.condition_type || 'llm_screenshot',
-          conditionDescription: newRule.condition_config ? JSON.parse(newRule.condition_config).description : '',
-          checkInterval: newRule.check_interval || 60,
-          actionType: newRule.action_type || 'desktop_notification',
-          notificationMessage: newRule.action_config ? JSON.parse(newRule.action_config).message : ''
-        }
-      } else {
-        // 重置表单
-        formData.value = {
-          name: '',
-          conditionType: 'llm_screenshot',
-          conditionDescription: '',
-          checkInterval: 60,
-          actionType: 'desktop_notification',
-          notificationMessage: ''
-        }
-      }
-    }, { immediate: true })
-
-    const handleClose = () => {
-      emit('close')
-    }
-
-    const handleSave = () => {
-      if (!isFormValid.value) return
-
-      const ruleData = {
-        website_id: props.websiteId,
-        name: formData.value.name.trim(),
-        condition_type: formData.value.conditionType,
-        condition_config: JSON.stringify({
-          description: formData.value.conditionDescription.trim()
-        }),
-        action_type: formData.value.actionType,
-        action_config: JSON.stringify({
-          message: formData.value.notificationMessage.trim()
-        }),
-        check_interval: formData.value.checkInterval
-      }
-
-      if (isEdit.value) {
-        ruleData.id = props.rule.id
-      }
-
-      emit('save', ruleData)
-    }
-
+    /**
+     * 打开 API 设置
+     */
     const openApiSettings = () => {
       emit('open-api-settings')
     }
 
+    /**
+     * 测试截图
+     */
     const testScreenshot = async () => {
       if (!window.electron || !window.electron.monitoring) {
         alert('此功能仅在 Electron 环境中可用')
@@ -343,54 +256,18 @@ export default {
       }
     }
 
-    // 测试 LLM 视觉分析
-    const showTestDialog = ref(false)
-    const testPrompt = ref('')
-    const testLoading = ref(false)
-
-    const examplePrompts = [
-      '你看到了什么？请描述页面的主要内容。',
-      '页面上有哪些按钮？',
-      '页面中是否有输入框？如果有，请描述它们的用途。',
-      '页面显示了什么文字内容？',
-      '页面的整体布局是什么样的？'
-    ]
-
+    /**
+     * 打开测试 LLM 视觉分析对话框
+     */
     const testLLMVision = () => {
       showTestDialog.value = true
-      testPrompt.value = ''
     }
 
-    const executeTest = async () => {
-      if (!window.electron || !window.electron.monitoring) {
-        alert('此功能仅在 Electron 环境中可用')
-        return
-      }
-
-      if (!testPrompt.value.trim()) {
-        return
-      }
-
-      testLoading.value = true
-      try {
-        const result = await window.electron.monitoring.testLLMVision(
-          props.websiteId, 
-          testPrompt.value.trim()
-        )
-        
-        testLoading.value = false
-        
-        if (result.success) {
-          alert(`🤖 LLM 回答：\n\n${result.answer}\n\n───────────────\n\n你的问题：${testPrompt.value}\n\n请检查这个回答是否合理。\n\n如果回答不准确，可能需要：\n1. 调整问题的描述方式（更明确、更具体）\n2. 检查截图是否正确（点击"测试截图"按钮）\n3. 尝试更换不同的 LLM 模型\n4. 检查 LLM API 配置`)
-          showTestDialog.value = false
-        } else {
-          alert(`测试失败：${result.error}`)
-        }
-      } catch (error) {
-        testLoading.value = false
-        console.error('测试 LLM 视觉分析失败:', error)
-        alert('测试失败: ' + error.message)
-      }
+    /**
+     * 关闭测试对话框
+     */
+    const closeTestDialog = () => {
+      showTestDialog.value = false
     }
 
     return {
@@ -403,11 +280,8 @@ export default {
       openApiSettings,
       testScreenshot,
       showTestDialog,
-      testPrompt,
-      testLoading,
-      examplePrompts,
       testLLMVision,
-      executeTest
+      closeTestDialog
     }
   }
 }
@@ -833,145 +707,6 @@ export default {
 
 .notice-btn.primary:hover {
   background: #45a049;
-}
-
-.test-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10001;
-  backdrop-filter: blur(4px);
-}
-
-.test-dialog {
-  background: #fff;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.test-dialog.dark-mode {
-  background: #2d2d2d;
-  color: #e0e0e0;
-}
-
-.test-dialog-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dark-mode .test-dialog-header {
-  border-bottom-color: #444;
-}
-
-.test-dialog-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.test-dialog-body {
-  padding: 24px;
-}
-
-.test-dialog-desc {
-  margin: 0 0 16px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.dark-mode .test-dialog-desc {
-  color: #aaa;
-}
-
-.test-prompt-input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-.test-prompt-input:focus {
-  outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.dark-mode .test-prompt-input {
-  background: #3a3a3a;
-  border-color: #555;
-  color: #e0e0e0;
-}
-
-.test-examples {
-  margin-top: 16px;
-}
-
-.examples-title {
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #666;
-}
-
-.dark-mode .examples-title {
-  color: #aaa;
-}
-
-.example-btn {
-  display: block;
-  width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  text-align: left;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.example-btn:hover {
-  background: #e8f5e9;
-  border-color: #4CAF50;
-}
-
-.dark-mode .example-btn {
-  background: #3a3a3a;
-  border-color: #555;
-  color: #e0e0e0;
-}
-
-.dark-mode .example-btn:hover {
-  background: #2a4a2a;
-  border-color: #66BB6A;
-}
-
-.test-dialog-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.dark-mode .test-dialog-footer {
-  border-top-color: #444;
 }
 
 .dialog-footer {

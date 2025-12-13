@@ -185,7 +185,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, onBeforeUnmount, provide, computed } from 'vue'
+import { ref, watch, onMounted, provide, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
@@ -208,6 +208,11 @@ import { useWebsiteManager } from './composables/useWebsiteManager'
 import { useImportExport } from './composables/useImportExport'
 import { useUpdateChecker } from './composables/useUpdateChecker'
 import { useSharedLayouts } from './composables/useSharedLayouts'
+import { useDialogStates } from './composables/useDialogStates'
+import { useMonitoringRules } from './composables/useMonitoringRules'
+import { useViewportStates } from './composables/useViewportStates'
+import { useGlobalSettingsHandlers } from './composables/useGlobalSettingsHandlers'
+import { useExternalUrlModalListeners } from './composables/useExternalUrlModal'
 
 export default {
   name: 'App',
@@ -255,6 +260,12 @@ export default {
     // 初始化网站管理器
     const websiteManager = useWebsiteManager(layoutManager.currentLayout.value.websites)
 
+    // 使用新的 composables 来管理状态
+    const dialogStates = useDialogStates()
+    const monitoringRules = useMonitoringRules()
+    const viewportStates = useViewportStates()
+    const globalSettingsHandlers = useGlobalSettingsHandlers(layoutManager, websiteManager)
+
     // 检查用户是否已经看过首次弹窗
     const hasSeenDownloadModal = () => {
       try {
@@ -264,70 +275,11 @@ export default {
       }
     }
 
-    // 控制下载弹窗显示
-    const showDownloadModal = ref(!dialog.isElectron.value && !hasSeenDownloadModal())
-
-    // 全屏状态
-    const fullscreenIndex = ref(null)
-
-    // 侧边栏显示状态
-    const showPanel = ref(false)
-    
-    // 保存全屏前的侧边栏状态，用于退出全屏时恢复
-    const panelStateBeforeFullscreen = ref(null)
-
-    // Session实例管理对话框显示状态
-    const showSessionManager = ref(false)
-
-    // 代理节点管理对话框显示状态
-    const showProxyManager = ref(false)
+    // 控制下载弹窗显示（初始状态）
+    dialogStates.showDownloadModal.value = !dialog.isElectron.value && !hasSeenDownloadModal()
 
     // LLM API 配置
     const { config: llmConfig } = useLlmConfig()
-    const showLlmConfig = ref(false)
-
-    // 监听规则管理状态
-    const showMonitoringRulesList = ref(false)
-    const showMonitoringRuleDialog = ref(false)
-    const editingMonitoringRule = ref(null)
-    const currentMonitoringWebsiteId = ref('')
-    const currentMonitoringDarkMode = ref(false)
-
-    // 内容脚本面板显示状态
-    const showContentScriptPanel = ref(false)
-    const contentScriptTargetIframe = ref(null)
-
-    // 分享布局弹窗显示状态
-    const showSharedModal = ref(false)
-
-    // 外部链接模态框显示状态
-    const showExternalUrlModal = ref(false)
-    const externalUrl = ref('')
-
-    // 打开Session实例管理对话框
-    const handleManageSessions = () => {
-      showSessionManager.value = true
-    }
-
-    // 关闭Session实例管理对话框
-    const closeSessionManager = () => {
-      showSessionManager.value = false
-    }
-
-    // 打开代理节点管理对话框
-    const handleManageProxy = () => {
-      showProxyManager.value = true
-    }
-
-    // 关闭代理节点管理对话框
-    const closeProxyManager = () => {
-      showProxyManager.value = false
-    }
-
-    // 打开 LLM API 配置对话框
-    const handleOpenSettings = () => {
-      showLlmConfig.value = true
-    }
 
     // 处理 LLM 配置确认
     const handleLlmConfigConfirm = async (newConfig) => {
@@ -335,92 +287,41 @@ export default {
       Object.assign(llmConfig.value, newConfig)
       console.log('[App] 配置已更新:', llmConfig.value)
       console.log('[App] localStorage 内容:', localStorage.getItem('llm-api-config'))
-      showLlmConfig.value = false
+      dialogStates.closeLlmConfig()
       
       // 同时配置到监听管理器
-      if (window.electron && window.electron.monitoring) {
-        try {
-          await window.electron.monitoring.configureLLM(newConfig)
-        } catch (error) {
-          console.error('[App] 配置监听管理器 LLM 失败:', error)
-        }
-      }
+      await monitoringRules.configureLLM(newConfig)
     }
 
     // 打开 LLM 配置（从监听规则调用）
     const handleOpenLlmConfig = () => {
-      showMonitoringRuleDialog.value = false
-      showLlmConfig.value = true
+      dialogStates.closeMonitoringRuleDialog()
+      dialogStates.openLlmConfig()
     }
 
-    // 打开监听规则设置
+    // 监听规则相关处理器
     const handleOpenMonitoring = (websiteId, darkMode) => {
-      currentMonitoringWebsiteId.value = websiteId
-      currentMonitoringDarkMode.value = darkMode
-      showMonitoringRulesList.value = true
+      monitoringRules.openMonitoring(websiteId, darkMode, dialogStates.openMonitoringRulesList)
     }
 
-    // 创建监听规则
     const handleCreateMonitoringRule = () => {
-      editingMonitoringRule.value = null
-      showMonitoringRulesList.value = false
-      showMonitoringRuleDialog.value = true
+      monitoringRules.createMonitoringRule(dialogStates.openMonitoringRuleDialog)
     }
 
-    // 编辑监听规则
     const handleEditMonitoringRule = (rule) => {
-      editingMonitoringRule.value = rule
-      showMonitoringRulesList.value = false
-      showMonitoringRuleDialog.value = true
+      monitoringRules.editMonitoringRule(rule, dialogStates.openMonitoringRuleDialog)
     }
 
-    // 关闭监听规则编辑弹窗
-    const closeMonitoringRuleDialog = () => {
-      showMonitoringRuleDialog.value = false
-      editingMonitoringRule.value = null
-      showMonitoringRulesList.value = true
-    }
-
-    // 保存监听规则
     const handleSaveMonitoringRule = async (ruleData) => {
-      if (!window.electron || !window.electron.monitoring) return
-      
-      try {
-        if (editingMonitoringRule.value) {
-          // 更新规则
-          await window.electron.monitoring.updateRule(ruleData.id, ruleData)
-        } else {
-          // 创建规则
-          await window.electron.monitoring.createRule(ruleData)
-        }
-        
-        closeMonitoringRuleDialog()
-      } catch (error) {
-        console.error('[App] 保存监听规则失败:', error)
-        alert('保存失败: ' + error.message)
-      }
+      await monitoringRules.saveMonitoringRule(ruleData, dialogStates.closeMonitoringRuleDialog)
     }
 
-    // 删除监听规则
     const handleDeleteMonitoringRule = async (ruleId) => {
-      if (!window.electron || !window.electron.monitoring) return
-      
-      try {
-        await window.electron.monitoring.deleteRule(ruleId)
-      } catch (error) {
-        console.error('[App] 删除监听规则失败:', error)
-      }
+      await monitoringRules.deleteMonitoringRule(ruleId)
     }
 
-    // 切换监听规则启用状态
     const handleToggleMonitoringRule = async (ruleId, enabled) => {
-      if (!window.electron || !window.electron.monitoring) return
-      
-      try {
-        await window.electron.monitoring.toggleRule(ruleId, enabled)
-      } catch (error) {
-        console.error('[App] 切换监听规则状态失败:', error)
-      }
+      await monitoringRules.toggleMonitoringRule(ruleId, enabled)
     }
 
     // 显示更新通知（从按钮点击）
@@ -456,7 +357,7 @@ export default {
     // 关闭下载弹窗
     const closeDownloadModal = () => {
       const isFirstTime = !hasSeenDownloadModal()
-      showDownloadModal.value = false
+      dialogStates.closeDownloadModal()
 
       // 保存用户已经看过弹窗的标记
       try {
@@ -468,41 +369,9 @@ export default {
       // 如果是首次关闭弹窗，显示侧边栏让用户知道
       if (isFirstTime) {
         setTimeout(() => {
-          showPanel.value = true
-
-          // 3秒后自动隐藏
-          setTimeout(() => {
-            showPanel.value = false
-          }, 3000)
+          viewportStates.showPanelTemporarily(3000)
         }, 300) // 稍微延迟一下，让弹窗关闭动画完成
       }
-    }
-
-    // 显示下载弹窗（手动触发）
-    const handleShowDownloadModal = () => {
-      showDownloadModal.value = true
-    }
-
-    const handleFullscreen = (index) => {
-      // 保存当前侧边栏状态
-      panelStateBeforeFullscreen.value = showPanel.value
-      // 进入全屏时强制隐藏侧边栏
-      showPanel.value = false
-      fullscreenIndex.value = index
-    }
-
-    const exitFullscreen = () => {
-      fullscreenIndex.value = null
-      // 退出全屏时恢复之前的侧边栏状态
-      if (panelStateBeforeFullscreen.value !== null) {
-        showPanel.value = panelStateBeforeFullscreen.value
-        panelStateBeforeFullscreen.value = null
-      }
-    }
-
-    // 切换侧边栏显示状态
-    const toggleSidebar = () => {
-      showPanel.value = !showPanel.value
     }
 
     const handleAddWebsite = (websiteData) => {
@@ -529,70 +398,15 @@ export default {
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
     }
 
-    // 切换标题显示
-    const handleToggleTitles = (showTitles) => {
-      layoutManager.updateGlobalSettings({ showTitles })
-    }
-
-    // 切换全局静音
-    const handleToggleGlobalMute = (globalMuted) => {
-      layoutManager.updateGlobalSettings({ globalMuted })
-      // 应用到所有网站
-      if (globalMuted) {
-        // 静音所有网站
-        websiteManager.websites.value.forEach((website, index) => {
-          if (!website.muted) {
-            websiteManager.updateWebsite({ index, updates: { muted: true } })
-          }
-        })
-      } else {
-        // 解除所有网站的静音
-        websiteManager.websites.value.forEach((website, index) => {
-          if (website.muted) {
-            websiteManager.updateWebsite({ index, updates: { muted: false } })
-          }
-        })
-      }
-    }
-
-    // 切换去广告
-    const handleToggleAdBlock = (adBlockEnabled) => {
-      layoutManager.updateGlobalSettings({ adBlockEnabled })
-      // 注意：去广告设置变化后，WebsiteCard 组件会自动检测并重新应用
-      // 通过 watch 监听 adBlockEnabled prop 的变化
-      // 不需要手动刷新所有网站
-    }
-
-    // 切换自定义代码
-    const handleToggleCustomCode = (customCodeEnabled) => {
-      layoutManager.updateGlobalSettings({ customCodeEnabled })
-    }
-
-    const handleToggleCertificateErrorShadow = (showCertificateErrorShadow) => {
-      layoutManager.updateGlobalSettings({ showCertificateErrorShadow })
-    }
-
-    // 打开内容脚本面板
-    const openContentScriptPanel = (iframe) => {
-      contentScriptTargetIframe.value = iframe
-      showContentScriptPanel.value = true
-    }
-
-    // 关闭内容脚本面板
-    const closeContentScriptPanel = () => {
-      showContentScriptPanel.value = false
-      contentScriptTargetIframe.value = null
-    }
-
     // 显示分享布局弹窗
     const handleShowSharedModal = () => {
-      showSharedModal.value = true
+      dialogStates.openSharedModal()
       sharedLayouts.loadSharedLayouts()
     }
 
     // 导入布局
     const handleImportLayout = (layout) => {
-      showSharedModal.value = false
+      dialogStates.closeSharedModal()
       // 使用导入模式对话框
       importExport.showImportModeDialog(layout)
     }
@@ -877,44 +691,12 @@ export default {
       }
     }
 
-    // 打开外部链接模态框
-    const openExternalUrlModal = (url) => {
-      console.log('[App] ========== 打开外部链接模态框 ==========')
-      console.log('[App] URL:', url)
-      externalUrl.value = url
-      showExternalUrlModal.value = true
-      console.log('[App] 模态框状态已更新')
-    }
 
-    // 关闭外部链接模态框
-    const closeExternalUrlModal = () => {
-      showExternalUrlModal.value = false
-      externalUrl.value = ''
-    }
+    // 设置外部链接模态框监听器
+    useExternalUrlModalListeners(dialogStates)
 
     // 页面加载时自动显示左侧栏，然后隐藏
     onMounted(() => {
-      // 监听打开外部链接模态框事件
-      const handleOpenExternalUrlModal = (event) => {
-        console.log('[App] ========== 收到open-external-url-modal事件 ==========')
-        console.log('[App] event:', event)
-        console.log('[App] event.detail:', event.detail)
-        const url = event.detail?.url
-        if (url) {
-          console.log('[App] ✓ 有效URL，打开模态框:', url)
-          openExternalUrlModal(url)
-        } else {
-          console.warn('[App] ✗ 无效URL，忽略事件')
-        }
-      }
-      
-      console.log('[App] 注册open-external-url-modal事件监听器')
-      window.addEventListener('open-external-url-modal', handleOpenExternalUrlModal)
-      
-      // 组件卸载时清理事件监听器
-      onBeforeUnmount(() => {
-        window.removeEventListener('open-external-url-modal', handleOpenExternalUrlModal)
-      })
       
       // 检查是否是从双击打开的单网站窗口
       // 检查是否是从双击打开的单网站窗口
@@ -927,7 +709,7 @@ export default {
           console.log('[App] 检测到单网站窗口模式，网站数据:', websiteData)
           
           // 隐藏侧边栏
-          showPanel.value = false
+          viewportStates.closePanel()
           
           // 创建只包含这个网站的布局
           const singleWebsiteLayout = {
@@ -960,7 +742,7 @@ export default {
           // 自动全屏显示这个网站
           setTimeout(() => {
             if (websiteManager.websites.value.length > 0) {
-              handleFullscreen(0)
+              viewportStates.handleFullscreen(0)
             }
           }, 500)
           
@@ -978,9 +760,9 @@ export default {
 
       // 如果有弹窗显示，等待弹窗关闭后再显示侧边栏
       // 否则直接显示侧边栏
-      if (!showDownloadModal.value) {
-        // 初始显示侧边栏
-        showPanel.value = true
+      if (!dialogStates.showDownloadModal.value) {
+        // 初始显示侧边栏，3秒后自动隐藏
+        viewportStates.showPanelTemporarily(3000)
 
         // 如果成功导入了布局，显示提示
         if (importedLayout) {
@@ -988,25 +770,21 @@ export default {
             alert(t('layout.urlImportSuccess'))
           }, 500)
         }
-
-        // 3秒后自动隐藏
-        setTimeout(() => {
-          showPanel.value = false
-        }, 3000)
       }
     })
 
     return {
-      // 状态
-      showDownloadModal,
-      fullscreenIndex,
-      showPanel,
-      showSessionManager,
+      // 视口状态
+      fullscreenIndex: viewportStates.fullscreenIndex,
+      showPanel: viewportStates.showPanel,
+      
+      // 网站和布局
       websites: websiteManager.websites,
       layouts: layoutManager.layouts,
       currentLayoutId: layoutManager.currentLayoutId,
       currentLayoutName,
       layoutManager,
+      
       // 更新检测状态
       showUpdateNotification: updateChecker.showUpdateNotification,
       showUpdateButton: updateChecker.showUpdateButton,
@@ -1014,7 +792,27 @@ export default {
       latestVersion: updateChecker.latestVersion,
       updateInfo: updateChecker.updateInfo,
       downloadStatus: updateChecker.downloadStatus,
-      // 对话框
+      
+      // 对话框状态（来自 dialogStates）
+      showDownloadModal: dialogStates.showDownloadModal,
+      showSessionManager: dialogStates.showSessionManager,
+      showProxyManager: dialogStates.showProxyManager,
+      showLlmConfig: dialogStates.showLlmConfig,
+      showMonitoringRulesList: dialogStates.showMonitoringRulesList,
+      showMonitoringRuleDialog: dialogStates.showMonitoringRuleDialog,
+      showContentScriptPanel: dialogStates.showContentScriptPanel,
+      contentScriptTargetIframe: dialogStates.contentScriptTargetIframe,
+      showSharedModal: dialogStates.showSharedModal,
+      showExternalUrlModal: dialogStates.showExternalUrlModal,
+      externalUrl: dialogStates.externalUrl,
+      showImportDialog: dialogStates.showImportDialog,
+      
+      // 监听规则状态（来自 monitoringRules）
+      editingMonitoringRule: monitoringRules.editingMonitoringRule,
+      currentMonitoringWebsiteId: monitoringRules.currentMonitoringWebsiteId,
+      currentMonitoringDarkMode: monitoringRules.currentMonitoringDarkMode,
+      
+      // 通用对话框
       dialogVisible: dialog.dialogVisible,
       dialogType: dialog.dialogType,
       dialogTitle: dialog.dialogTitle,
@@ -1023,41 +821,36 @@ export default {
       dialogDefaultValue: dialog.dialogDefaultValue,
       handleDialogConfirm: dialog.handleDialogConfirm,
       handleDialogCancel: dialog.handleDialogCancel,
-      // 导入对话框
-      showImportDialog: importExport.showImportDialog,
-      closeImportDialog: importExport.closeImportDialog,
-      handleImportModeSelect,
-      // 方法
-      closeDownloadModal,
-      handleShowDownloadModal,
-      handleManageSessions,
-      closeSessionManager,
-      handleManageProxy,
-      closeProxyManager,
-      showProxyManager,
-      handleOpenSettings,
-      handleLlmConfigConfirm,
-      showLlmConfig,
+      
+      // LLM 配置
       llmConfig,
-      // 监听规则
-      showMonitoringRulesList,
-      showMonitoringRuleDialog,
-      editingMonitoringRule,
-      currentMonitoringWebsiteId,
-      currentMonitoringDarkMode,
+      
+      // 对话框操作方法
+      closeDownloadModal,
+      handleShowDownloadModal: dialogStates.openDownloadModal,
+      handleManageSessions: dialogStates.openSessionManager,
+      closeSessionManager: dialogStates.closeSessionManager,
+      handleManageProxy: dialogStates.openProxyManager,
+      closeProxyManager: dialogStates.closeProxyManager,
+      handleOpenSettings: dialogStates.openLlmConfig,
+      handleLlmConfigConfirm,
+      openContentScriptPanel: dialogStates.openContentScriptPanel,
+      closeContentScriptPanel: dialogStates.closeContentScriptPanel,
+      closeExternalUrlModal: dialogStates.closeExternalUrlModal,
+      closeImportDialog: dialogStates.closeImportDialog,
+      handleImportModeSelect,
+      
+      // 监听规则方法
       handleOpenMonitoring,
       handleCreateMonitoringRule,
       handleEditMonitoringRule,
-      closeMonitoringRuleDialog,
+      closeMonitoringRuleDialog: dialogStates.closeMonitoringRuleDialog,
       handleSaveMonitoringRule,
       handleDeleteMonitoringRule,
       handleToggleMonitoringRule,
       handleOpenLlmConfig,
-      handleToggleCustomCode,
-      showContentScriptPanel,
-      contentScriptTargetIframe,
-      openContentScriptPanel,
-      closeContentScriptPanel,
+      
+      // 更新检测方法
       handleShowUpdate,
       handleCloseUpdateNotification,
       handleIgnoreUpdate,
@@ -1065,13 +858,19 @@ export default {
       handleInstallUpdate,
       handleCancelDownload,
       handleRetryDownload,
-      handleFullscreen,
-      exitFullscreen,
-      toggleSidebar,
+      
+      // 视口操作方法
+      handleFullscreen: viewportStates.handleFullscreen,
+      exitFullscreen: viewportStates.exitFullscreen,
+      toggleSidebar: viewportStates.toggleSidebar,
+      
+      // 网站操作方法
       handleAddWebsite,
       handleCopyWebsite,
       handleRemoveWebsite,
       handleUpdateWebsite,
+      
+      // 布局操作方法
       handleSwitchLayout,
       handleCreateLayout,
       handleDeleteLayout,
@@ -1079,14 +878,18 @@ export default {
       handleRenameLayout,
       handleReorderLayout,
       renameLayout: layoutManager.renameLayout,
-      handleToggleTitles,
-      handleToggleGlobalMute,
-      handleToggleAdBlock,
-      handleToggleCertificateErrorShadow,
       handleClearConfig,
       handleUpdateDrawings,
       handleUpdateCanvasTransform,
-      showSharedModal,
+      
+      // 全局设置方法（来自 globalSettingsHandlers）
+      handleToggleTitles: globalSettingsHandlers.handleToggleTitles,
+      handleToggleGlobalMute: globalSettingsHandlers.handleToggleGlobalMute,
+      handleToggleAdBlock: globalSettingsHandlers.handleToggleAdBlock,
+      handleToggleCustomCode: globalSettingsHandlers.handleToggleCustomCode,
+      handleToggleCertificateErrorShadow: globalSettingsHandlers.handleToggleCertificateErrorShadow,
+      
+      // 分享布局方法
       handleShowSharedModal,
       handleImportLayout,
       handleSearchShared,
@@ -1094,11 +897,7 @@ export default {
       sharedLayouts,
       handleShareLayout,
       handleExportLayout,
-      handleImportLayoutFromImage,
-      showExternalUrlModal,
-      externalUrl,
-      openExternalUrlModal,
-      closeExternalUrlModal
+      handleImportLayoutFromImage
     }
   }
 }
