@@ -41,22 +41,44 @@ app.userAgentFallback = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/5
  * @param {Object} errorData - 证书错误数据
  */
 function notifyCertificateError(errorData) {
+  // ========== 详细日志：记录证书错误通知 ==========
+  console.log('[证书通知] notifyCertificateError 被调用:', {
+    url: errorData.url,
+    hostname: errorData.hostname,
+    partition: errorData.partition,
+    error: errorData.error,
+    certificateHash: errorData.certificateHash ? (errorData.certificateHash.substring(0, 16) + '...') : '(无)',
+    timestamp: new Date().toISOString(),
+    allWindowsCount: getAllWindows().length
+  })
+  
   // 通知所有窗口有证书错误
-  getAllWindows().forEach((window) => {
+  let notifiedCount = 0
+  getAllWindows().forEach((window, index) => {
     if (window && !window.isDestroyed()) {
       try {
-        console.log('[证书处理] 发送证书错误通知:', {
+        console.log(`[证书通知] 向窗口 ${index} 发送证书错误通知:`, {
+          windowId: window.id,
           url: errorData.url,
           hostname: errorData.hostname,
           partition: errorData.partition,
-          certificateHash: errorData.certificateHash
+          certificateHash: errorData.certificateHash ? (errorData.certificateHash.substring(0, 16) + '...') : '(无)'
         })
         window.webContents.send('certificate-error-detected', errorData)
+        notifiedCount++
       } catch (err) {
-        console.error('[证书处理] 发送证书错误通知失败:', err.message)
+        console.error(`[证书通知] 向窗口 ${index} 发送证书错误通知失败:`, {
+          windowId: window.id,
+          error: err.message,
+          stack: err.stack
+        })
       }
+    } else {
+      console.log(`[证书通知] 窗口 ${index} 已销毁或无效，跳过`)
     }
   })
+  
+  console.log(`[证书通知] 通知完成，共通知 ${notifiedCount} 个窗口`)
 }
 
 // ========== 为默认 session 设置证书错误处理 ==========

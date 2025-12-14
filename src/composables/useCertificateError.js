@@ -60,18 +60,62 @@ export function useCertificateError(props, { isElectron, websiteUrl, webviewRef,
     try {
       // 检查 webview 的 URL 是否是错误页面
       const currentUrl = getCurrentUrl()
+      console.log('[WebsiteCard] checkCertificateError 被调用，当前 URL:', currentUrl)
+      
       if (currentUrl && currentUrl.startsWith('chrome-error://')) {
-        console.log('[WebsiteCard] 检测到 chrome-error 页面，可能是证书错误')
-        hasCertificateError.value = true
-        if (!loadError.value) {
-          loadError.value = {
-            type: 'certificate',
-            errorCode: -202,
-            errorDescription: 'ERR_CERT_AUTHORITY_INVALID',
-            url: currentUrl
+        console.log('[WebsiteCard] 检测到 chrome-error 页面，尝试获取错误详情')
+        
+        try {
+          // 尝试从页面中提取错误信息
+          const errorInfo = await executeJavaScript(`
+            (function() {
+              const title = document.title || '';
+              const bodyText = document.body ? document.body.innerText || '' : '';
+              const url = window.location.href;
+              return { title, bodyText, url };
+            })();
+          `)
+          
+          console.log('[WebsiteCard] chrome-error 页面信息:', {
+            title: errorInfo.title,
+            bodyTextPreview: errorInfo.bodyText?.substring(0, 200),
+            url: errorInfo.url
+          })
+          
+          // 检查是否是证书相关的错误
+          const isCertError = errorInfo.title?.includes('证书') || 
+                            errorInfo.title?.includes('Certificate') ||
+                            errorInfo.bodyText?.includes('ERR_CERT') ||
+                            errorInfo.bodyText?.includes('证书') ||
+                            errorInfo.bodyText?.includes('Certificate')
+          
+          console.log('[WebsiteCard] chrome-error 页面证书错误判断:', {
+            isCertError,
+            title: errorInfo.title,
+            bodyTextContainsCert: errorInfo.bodyText?.includes('ERR_CERT') || errorInfo.bodyText?.includes('证书')
+          })
+          
+          if (isCertError) {
+            console.log('[WebsiteCard] ✓ chrome-error 页面确认为证书错误')
+            hasCertificateError.value = true
+            if (!loadError.value) {
+              loadError.value = {
+                type: 'certificate',
+                errorCode: -202,
+                errorDescription: 'ERR_CERT_AUTHORITY_INVALID',
+                url: currentUrl
+              }
+            }
+            return
+          } else {
+            console.log('[WebsiteCard] ✗ chrome-error 页面不是证书错误，可能是其他错误，不设置证书错误状态')
+            return
           }
+        } catch (jsError) {
+          console.log('[WebsiteCard] 无法从 chrome-error 页面提取信息，默认不判定为证书错误:', jsError.message)
+          // 如果无法提取信息，不判定为证书错误，避免误判
+          return
         }
-        return
       }
 
       // 检查当前 URL 是否有已保存的证书哈希
@@ -93,25 +137,34 @@ export function useCertificateError(props, { isElectron, websiteUrl, webviewRef,
       }
 
       // 尝试执行 JavaScript 检查页面是否有证书警告
+      // 注意：这个检查可能误判，因为很多正常页面也可能包含 "Certificate" 等关键词
       try {
         const result = await executeJavaScript(`
           (function() {
             const title = document.title || '';
             const bodyText = document.body ? document.body.innerText || '' : '';
-            const hasCertError = title.includes('证书') || 
-                                 title.includes('Certificate') ||
-                                 title.includes('安全') ||
-                                 title.includes('Security') ||
-                                 bodyText.includes('证书') ||
-                                 bodyText.includes('Certificate') ||
+            const url = window.location.href;
+            
+            // 使用更严格的判断条件，只检查明确的证书错误标识
+            const hasCertError = url.startsWith('chrome-error://') ||
+                                 bodyText.includes('ERR_CERT') ||
                                  bodyText.includes('NET::ERR_CERT') ||
-                                 window.location.href.startsWith('chrome-error://');
-            return { hasCertError, url: window.location.href, title };
+                                 (title.includes('证书') && (bodyText.includes('ERR_CERT') || bodyText.includes('NET::ERR_CERT'))) ||
+                                 (title.includes('Certificate') && (bodyText.includes('ERR_CERT') || bodyText.includes('NET::ERR_CERT')));
+            
+            return { hasCertError, url, title, bodyTextPreview: bodyText.substring(0, 200) };
           })();
         `)
         
+        console.log('[WebsiteCard] JavaScript 检查证书错误结果:', {
+          hasCertError: result?.hasCertError,
+          url: result?.url,
+          title: result?.title,
+          bodyTextPreview: result?.bodyTextPreview
+        })
+        
         if (result && result.hasCertError) {
-          console.log('[WebsiteCard] 检测到证书错误:', result)
+          console.log('[WebsiteCard] ✓ JavaScript 检查确认为证书错误')
           hasCertificateError.value = true
           if (!loadError.value) {
             loadError.value = {
@@ -124,6 +177,7 @@ export function useCertificateError(props, { isElectron, websiteUrl, webviewRef,
         } else {
           // 如果之前有证书错误但现在没有了，清除状态
           if (hasCertificateError.value && currentUrl && !currentUrl.startsWith('chrome-error://')) {
+            console.log('[WebsiteCard] 清除之前的证书错误状态')
             hasCertificateError.value = false
           }
         }
