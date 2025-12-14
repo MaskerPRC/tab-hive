@@ -15,6 +15,7 @@ dist-ssr
 # Electron
 release/
 out/
+dev-user-data/
 
 # Database
 server/*.db

@@ -1,4 +1,5 @@
 const { app, session } = require('electron')
+const path = require('path')
 const { setupDatabase } = require('./database')
 const { ProxyManager } = require('./proxy-manager')
 const { setupCertificateErrorHandler, ensureCertificateErrorHandler } = require('./modules/certificateHandler')
@@ -6,6 +7,14 @@ const { createWindow, getMainWindow, getAllWindows } = require('./modules/window
 const { registerIpcHandlers } = require('./modules/ipcHandlers')
 
 console.log('[Electron Main] ========== 全视界 启动 (Webview 架构) ==========')
+
+// ========== 开发模式下设置固定的 userData 路径 ==========
+// 必须在 app.whenReady() 之前设置，确保 localStorage 数据持久化
+if (process.env.NODE_ENV === 'development') {
+  const userDataPath = path.join(__dirname, '../dev-user-data')
+  app.setPath('userData', userDataPath)
+  console.log('[Electron Main] 开发模式: userData 路径已设置为:', userDataPath)
+}
 
 // ========== 初始化代理管理器 ==========
 let proxyManager = null
