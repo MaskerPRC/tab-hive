@@ -37,7 +37,7 @@ export function useGridDialogs() {
         url: '',
         title: '',
         deviceType: 'desktop',
-        padding: 10,
+        padding: 0, // 默认不启用内边距，除非配置了选择器
         muted: false,
         darkMode: false,
         requireModifierForActions: false,

@@ -48,10 +48,18 @@ export function useWebsiteOperations(props, emit) {
 
   /**
    * 确认添加网站
+   * @param {Object} websiteData - 网站数据
+   * @param {Function} handleRefreshWebsite - 刷新网站的回调函数
+   * @param {Number} externalEditingSlot - 外部传入的 editingSlot（可选，用于支持双状态管理）
    */
-  const confirmAddWebsite = (websiteData, handleRefreshWebsite) => {
+  const confirmAddWebsite = (websiteData, handleRefreshWebsite, externalEditingSlot) => {
+    // 使用外部传入的 editingSlot，如果没有则使用内部的
+    const currentEditingSlot = externalEditingSlot !== undefined ? externalEditingSlot : editingSlot.value
+    
     console.log('[GridView] ========== 确认添加/更新网站 ==========')
-    console.log('[GridView] editingSlot:', editingSlot.value)
+    console.log('[GridView] editingSlot (内部):', editingSlot.value)
+    console.log('[GridView] editingSlot (外部传入):', externalEditingSlot)
+    console.log('[GridView] editingSlot (实际使用):', currentEditingSlot)
     console.log('[GridView] websiteData:', websiteData)
 
     // 如果提交的是桌面捕获类型，确保对话框类型正确（用于后续编辑）
@@ -62,11 +70,11 @@ export function useWebsiteOperations(props, emit) {
     }
 
     // 如果是编辑模式
-    if (editingSlot.value !== -1 && editingSlot.value !== null) {
+    if (currentEditingSlot !== -1 && currentEditingSlot !== null) {
       console.log('[GridView] 模式：编辑现有网站')
 
       // 检查是否需要刷新（选择器或暗色模式变化）
-      const oldWebsite = props.websites[editingSlot.value]
+      const oldWebsite = props.websites[currentEditingSlot]
       let needsRefresh = false
 
       if (oldWebsite) {
@@ -90,7 +98,7 @@ export function useWebsiteOperations(props, emit) {
         }
       }
 
-      const websiteIndex = editingSlot.value
+      const websiteIndex = currentEditingSlot
 
       emit('update-website', {
         index: websiteIndex,

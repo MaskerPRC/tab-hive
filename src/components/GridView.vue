@@ -462,7 +462,8 @@ export default {
 
     // 确认添加网站包装器
     const onConfirmAddWebsite = (websiteData) => {
-      confirmAddWebsite(websiteData, handleRefreshWebsite)
+      // 传入正确的 editingSlot（来自 useGridDialogs）
+      confirmAddWebsite(websiteData, handleRefreshWebsite, editingSlot.value)
       closeEditDialog()
     }
 
@@ -478,7 +479,7 @@ export default {
         url: '', // 自定义 HTML 不需要 URL
         html: data.html || '',
         deviceType: 'desktop',
-        padding: 10,
+        padding: 0, // 自定义 HTML 默认不需要内边距
         muted: false,
         darkMode: false,
         requireModifierForActions: false,

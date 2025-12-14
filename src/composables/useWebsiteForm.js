@@ -15,7 +15,7 @@ export function useWebsiteForm(props, emit) {
     targetSelectors: [],
     autoRefreshInterval: 0,
     sessionInstance: 'default',
-    padding: 10,
+    padding: 0, // 默认不启用内边距，除非配置了选择器
     muted: false,
     darkMode: false,
     requireModifierForActions: false,
@@ -57,13 +57,25 @@ export function useWebsiteForm(props, emit) {
   watch(() => props.website, (newVal) => {
     const targetSelectors = convertTargetSelectors(newVal)
     
+    // 判断是否配置了选择器
+    const hasSelectors = targetSelectors.some(s => s && s.trim())
+    
+    // 决定 padding 默认值：
+    // 1. 如果已有 padding 值（包括 0），使用原值
+    // 2. 如果是新建且配置了选择器，默认 10
+    // 3. 其他情况默认 0
+    let paddingValue = 0
+    if ('padding' in newVal) {
+      paddingValue = newVal.padding
+    } else if (props.editingIndex === -1 && hasSelectors) {
+      paddingValue = 10
+    }
+    
     localWebsite.value = { 
       ...newVal,
       targetSelectors,
       sessionInstance: newVal.sessionInstance || 'default',
-      // 只在编辑模式且原有值为 undefined 时才设置默认值 10
-      // 如果是旧数据（没有 padding 属性），保留为 undefined，不设置默认值
-      padding: 'padding' in newVal ? newVal.padding : (props.editingIndex === -1 ? 10 : 0),
+      padding: paddingValue,
       muted: newVal.muted || false,
       darkMode: newVal.darkMode || false,
       requireModifierForActions: newVal.requireModifierForActions || false
@@ -71,9 +83,26 @@ export function useWebsiteForm(props, emit) {
     
     console.log('[WebsiteEditDialog] 加载网站数据:', {
       title: localWebsite.value.title,
-      sessionInstance: localWebsite.value.sessionInstance
+      sessionInstance: localWebsite.value.sessionInstance,
+      padding: paddingValue,
+      hasSelectors
     })
   }, { immediate: true, deep: true })
+
+  /**
+   * 监听选择器变化，智能调整内边距
+   * 当用户从无选择器变为有选择器时，如果 padding 为 0，自动设置为 10
+   */
+  watch(() => localWebsite.value.targetSelectors, (newSelectors, oldSelectors) => {
+    const hasNewSelectors = newSelectors.some(s => s && s.trim())
+    const hadOldSelectors = oldSelectors ? oldSelectors.some(s => s && s.trim()) : false
+    
+    // 如果从无选择器变为有选择器，且当前 padding 为 0，则自动设置为 10
+    if (!hadOldSelectors && hasNewSelectors && localWebsite.value.padding === 0) {
+      console.log('[WebsiteEditDialog] 检测到添加了选择器，自动启用内边距')
+      localWebsite.value.padding = 10
+    }
+  }, { deep: true })
 
   /**
    * 验证并提交表单
