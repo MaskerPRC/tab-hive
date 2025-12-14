@@ -1,213 +1,165 @@
-import { ref, nextTick } from 'vue'
-
 /**
  * 布局操作 Composable
- * 提供布局的重命名、分享、同步等操作
+ * 处理自动排列、重排列、适应屏幕等布局相关操作
  */
-export function useLayoutOperations(isElectron = false) {
-  // 自动检测API地址
-  const API_BASE_URL = isElectron
-    ? 'https://tabs.apexstone.ai/api'
-    : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+import { computed } from 'vue'
 
-  // 重命名状态
-  const editingLayoutId = ref(null)
-  const editingLayoutName = ref('')
-
+export function useLayoutOperations(props, { 
+  allWebsites, 
+  itemPositions, 
+  itemSizes, 
+  snapToGrid,
+  canvasTransform,
+  emit 
+}) {
   /**
-   * 开始重命名布局
-   * @param {number} layoutId - 布局 ID
-   * @param {string} currentName - 当前名称
-   * @param {Event} event - 事件对象
+   * 自动适应屏幕：调整画板缩放以适应所有内容
    */
-  const startRename = (layoutId, currentName, event) => {
-    event?.stopPropagation()
-    editingLayoutId.value = layoutId
-    editingLayoutName.value = currentName
-    // 下一帧自动聚焦到输入框
-    nextTick(() => {
-      const input = document.querySelector('.rename-input')
-      if (input) {
-        input.focus()
-        input.select() // 选中全部文本，方便用户直接输入
+  const handleAutoArrange = () => {
+    // 计算所有网站的边界框
+    let minX = Infinity, minY = Infinity
+    let maxX = -Infinity, maxY = -Infinity
+    
+    allWebsites.value.forEach((site, index) => {
+      const pos = itemPositions.value[index]
+      const size = itemSizes.value[index]
+      
+      if (pos && size) {
+        minX = Math.min(minX, pos.x)
+        minY = Math.min(minY, pos.y)
+        maxX = Math.max(maxX, pos.x + size.width)
+        maxY = Math.max(maxY, pos.y + size.height)
       }
     })
-  }
-
-  /**
-   * 确认重命名
-   * @param {Function} onRename - 重命名回调函数
-   */
-  const confirmRename = (onRename) => {
-    if (editingLayoutName.value.trim() && onRename) {
-      onRename(editingLayoutId.value, editingLayoutName.value.trim())
-      editingLayoutId.value = null
-      editingLayoutName.value = ''
-    }
-  }
-
-  /**
-   * 取消重命名
-   */
-  const cancelRename = () => {
-    editingLayoutId.value = null
-    editingLayoutName.value = ''
-  }
-
-  /**
-   * 分享布局
-   * @param {Object} layout - 布局对象
-   * @param {Function} showConfirm - 确认对话框函数
-   */
-  const shareLayout = async (layout, showConfirm) => {
-    if (!layout.websites || layout.websites.length === 0) {
-      alert('该布局没有网站，无法分享')
+    
+    if (!isFinite(minX) || !isFinite(minY)) {
+      console.warn('[适应屏幕] 没有有效的网站位置')
       return
     }
-
-    try {
-      // 首先检查是否已经分享过同名布局
-      const checkResponse = await fetch(
-        `${API_BASE_URL}/layouts/check-own?layoutName=${encodeURIComponent(layout.name)}`
-      )
-      const checkData = await checkResponse.json()
-
-      console.log('检查同名布局结果:', checkData)
-
-      let isUpdate = false
-      let originalId = null
-
-      // 如果找到同名布局，询问是否更新版本
-      if (checkData.exists) {
-        const confirmUpdate = await showConfirm(
-          `检测到你之前已经分享过名为 "${layout.name}" 的布局（当前版本 v${checkData.currentVersion}）。\n\n` +
-          `是否要更新为新版本 v${checkData.currentVersion + 1}？\n\n` +
-          `点击"确定"将更新版本，点击"取消"将创建新的分享布局。`
-        )
-        
-        if (confirmUpdate) {
-          isUpdate = true
-          originalId = checkData.originalId
-          console.log('用户选择更新版本，originalId:', originalId)
-        } else {
-          console.log('用户选择创建新的分享布局')
-        }
-      } else {
-        console.log('未找到同名布局，将创建新的分享')
-        // 如果不是更新，显示普通的分享确认
-        if (!await showConfirm(`确定要分享布局 "${layout.name}" 吗？\n\n分享后其他用户将可以查看和使用此布局。\n每个IP每天最多分享10个布局。`)) {
-          return
-        }
-      }
-
-      // 为兼容数据库表结构，添加已废弃的 rows 和 cols 字段（使用默认值）
-      const layoutData = {
-        ...layout,
-        rows: layout.rows || 1,  // 使用默认值 1（字段已废弃，仅为满足数据库约束）
-        cols: layout.cols || 1   // 使用默认值 1（字段已废弃，仅为满足数据库约束）
-      }
-
-      const requestBody = { 
-        layout: layoutData,
-        isUpdate: isUpdate,
-        originalId: originalId
-      }
-
-      console.log('准备发送分享请求:', {
-        layoutName: layoutData.name,
-        isUpdate,
-        originalId,
-        websiteCount: layoutData.websites?.length
-      })
-
-      const response = await fetch(`${API_BASE_URL}/layouts/share`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      })
-
-      const data = await response.json()
-
-      console.log('分享响应:', { status: response.status, data })
-
-      if (response.ok) {
-        if (isUpdate) {
-          alert(`版本更新成功！已更新到 v${data.version}`)
-        } else {
-          alert(`分享成功！\n今日还可分享 ${data.remaining} 次`)
-        }
-      } else {
-        console.error('分享失败，服务器返回错误:', data)
-        alert(data.error || '分享失败')
-      }
-    } catch (error) {
-      console.error('分享失败:', error)
-      alert('分享失败，请确保后端服务正在运行')
+    
+    // 获取容器尺寸
+    const container = document.querySelector('.canvas-wrapper')
+    if (!container) {
+      console.warn('[适应屏幕] 未找到容器')
+      return
     }
+    
+    // 检查左栏是否显示（通过检查 grid-view 是否有 panel-visible class）
+    const gridView = container.closest('.grid-view')
+    const isPanelVisible = gridView && gridView.classList.contains('panel-visible')
+    const sidebarWidth = 288 // 左栏宽度
+    
+    // 如果左栏显示，需要从容器宽度中减去左栏宽度
+    const containerWidth = isPanelVisible 
+      ? container.clientWidth - sidebarWidth 
+      : container.clientWidth
+    const containerHeight = container.clientHeight
+    
+    // 计算内容的实际尺寸（加上边距）
+    const contentWidth = maxX - minX + 40  // 左右各留20px边距
+    const contentHeight = maxY - minY + 40 // 上下各留20px边距
+    
+    // 计算缩放比例
+    const scaleX = containerWidth / contentWidth
+    const scaleY = containerHeight / contentHeight
+    const newZoom = Math.min(scaleX, scaleY, 1) // 不放大，只缩小
+    
+    // 计算居中偏移
+    const offsetX = (containerWidth - contentWidth * newZoom) / 2 - minX * newZoom + 20 * newZoom
+    const offsetY = (containerHeight - contentHeight * newZoom) / 2 - minY * newZoom + 20 * newZoom
+    
+    // 应用缩放和平移
+    canvasTransform.value = {
+      x: offsetX,
+      y: offsetY,
+      zoom: newZoom
+    }
+    
+    console.log('[适应屏幕] 内容边界:', { minX, minY, maxX, maxY })
+    console.log('[适应屏幕] 左栏显示:', isPanelVisible)
+    console.log('[适应屏幕] 容器尺寸:', { containerWidth, containerHeight })
+    console.log('[适应屏幕] 新缩放:', newZoom)
   }
 
   /**
-   * 同步模板更新
-   * @param {Object} layout - 布局对象
-   * @param {Function} checkTemplateUpdate - 检查更新函数
-   * @param {Function} syncTemplateUpdate - 同步更新函数
-   * @param {Function} showConfirm - 确认对话框函数
+   * 处理重排确认：按网格重新排列所有网站
    */
-  const syncTemplate = async (layout, checkTemplateUpdate, syncTemplateUpdate, showConfirm) => {
-    try {
-      // 如果用户已修改，先显示警告
-      if (layout.isModified) {
-        const confirmOverride = await showConfirm(
-          `⚠️ 警告：你已经修改过此布局！\n\n` +
-          `同步更新将会覆盖你的所有改动，包括：\n` +
-          `• 添加或删除的网站\n` +
-          `• 修改的网站信息\n` +
-          `• 调整的布局位置\n\n` +
-          `确定要继续同步吗？此操作无法撤销。`
-        )
-        
-        if (!confirmOverride) {
-          return
+  const handleRearrangeConfirm = (config) => {
+    console.log('[重排] 配置:', config)
+    
+    const { cols, width, height, scale } = config
+    const spacing = 20
+    const updates = {}
+    
+    // 计算实际窗口大小（应用放大倍数）
+    const actualWidth = Math.round(width * scale)
+    const actualHeight = Math.round(height * scale)
+    
+    // 计算所有网站的新位置和大小
+    allWebsites.value.forEach((item, index) => {
+      const row = Math.floor(index / cols)
+      const col = index % cols
+      
+      // 使用实际窗口大小计算位置，避免重叠
+      const x = snapToGrid(col * (actualWidth + spacing) + spacing)
+      const y = snapToGrid(row * (actualHeight + spacing) + spacing)
+      
+      // 更新位置和大小
+      itemPositions.value[index] = { x, y }
+      itemSizes.value[index] = { 
+        width: actualWidth, 
+        height: actualHeight 
+      }
+      
+      updates[index] = {
+        position: { x, y },
+        size: { 
+          width: actualWidth, 
+          height: actualHeight 
         }
       }
-
-      const updateInfo = await checkTemplateUpdate(layout.id)
-
-      if (!updateInfo.hasUpdate) {
-        alert('已是最新版本！')
-        return
-      }
-
-      const confirmMessage = layout.isModified
-        ? `发现新版本 v${updateInfo.latestVersion}，同步后将覆盖你的改动。\n\n确定要立即同步更新吗？`
-        : `发现新版本 v${updateInfo.latestVersion}，是否立即同步更新？`
-
-      if (await showConfirm(confirmMessage)) {
-        const success = await syncTemplateUpdate(layout.id)
-        if (success) {
-          alert(`已成功更新到 v${updateInfo.latestVersion}`)
-        } else {
-          alert('更新失败，请稍后重试')
+    })
+    
+    // 创建索引映射
+    const indexMap = new Map()
+    let originalIndex = 0
+    
+    allWebsites.value.forEach((site, filteredIndex) => {
+      while (originalIndex < props.websites.length) {
+        const originalSite = props.websites[originalIndex]
+        if (originalSite && 
+            ((originalSite.url && originalSite.url === site.url) || 
+             (originalSite.id && originalSite.id === site.id) ||
+             (originalSite.type === 'desktop-capture' && site.type === 'desktop-capture'))) {
+          indexMap.set(filteredIndex, originalIndex)
+          originalIndex++
+          break
         }
+        originalIndex++
       }
-    } catch (error) {
-      console.error('检查更新失败:', error)
-      alert('检查更新失败')
-    }
+    })
+    
+    // 发送更新事件
+    Object.keys(updates).forEach(indexStr => {
+      const filteredIndex = parseInt(indexStr)
+      const origIdx = indexMap.get(filteredIndex)
+      const update = updates[filteredIndex]
+      
+      if (update && origIdx !== undefined) {
+        emit('update-website', {
+          index: origIdx,
+          position: update.position,
+          size: update.size
+        })
+      }
+    })
+    
+    console.log('[重排] 完成，共重排', allWebsites.value.length, '个窗口')
+    console.log('[重排] 布局:', cols, '列，窗口大小:', `${actualWidth}x${actualHeight}`)
   }
 
   return {
-    // 状态
-    editingLayoutId,
-    editingLayoutName,
-    // 方法
-    startRename,
-    confirmRename,
-    cancelRename,
-    shareLayout,
-    syncTemplate
+    handleAutoArrange,
+    handleRearrangeConfirm
   }
 }
-
