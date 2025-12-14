@@ -132,7 +132,9 @@ export function useWebsiteManager(initialWebsites = []) {
       desktopCaptureOptions: sourceSite.desktopCaptureOptions ? { ...sourceSite.desktopCaptureOptions } : {
         autoRefresh: false,
         fitScreen: false
-      }
+      },
+      // 复制自定义HTML配置
+      html: sourceSite.html || ''
     }
 
     websites.value.push(copiedSite)

@@ -693,6 +693,7 @@ export default {
       hasCertificateError,
       isCertificateTrusted,
       getCustomHtmlDataUrl,
+      setCustomHtmlWebviewRef,
       setWebviewRef,
       setBufferWebviewRef,
       setIframeRef,
