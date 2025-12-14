@@ -455,15 +455,124 @@ export default {
 
     // ==================== 前进后退功能 ====================
     const {
-      canGoBack,
-      canGoForward,
-      checkNavigationState,
-      handleGoBack,
-      handleGoForward,
+      canGoBack: canGoBackBase,
+      canGoForward: canGoForwardBase,
+      checkNavigationState: checkNavigationStateBase,
+      handleGoBack: handleGoBackBase,
+      handleGoForward: handleGoForwardBase,
       watchIframeLoad
     } = useNavigation(props, { isElectron, webviewRef, iframeRef })
 
     watchIframeLoad()
+
+    // ==================== 自定义HTML导航功能 ====================
+    const canGoBackCustomHtml = ref(false)
+    const canGoForwardCustomHtml = ref(false)
+
+    // 检查自定义HTML webview的导航状态
+    const checkCustomHtmlNavigationState = async () => {
+      if (props.item.type !== 'custom-html' || !isElectron.value || !customHtmlWebviewRef.value) {
+        canGoBackCustomHtml.value = false
+        canGoForwardCustomHtml.value = false
+        return
+      }
+
+      try {
+        canGoBackCustomHtml.value = customHtmlWebviewRef.value.canGoBack()
+        canGoForwardCustomHtml.value = customHtmlWebviewRef.value.canGoForward()
+      } catch (error) {
+        console.error('[WebsiteCard] 检查自定义HTML导航状态失败:', error)
+        canGoBackCustomHtml.value = false
+        canGoForwardCustomHtml.value = false
+      }
+    }
+
+    // 为自定义HTML webview设置导航事件监听
+    const setupCustomHtmlNavigationEvents = () => {
+      if (props.item.type !== 'custom-html' || !isElectron.value || !customHtmlWebviewRef.value) {
+        return
+      }
+
+      const webview = customHtmlWebviewRef.value
+      
+      // 监听导航事件
+      const handleDidNavigate = () => {
+        setTimeout(checkCustomHtmlNavigationState, 100)
+      }
+
+      webview.addEventListener('did-navigate', handleDidNavigate)
+      webview.addEventListener('did-navigate-in-page', handleDidNavigate)
+      webview.addEventListener('did-finish-load', handleDidNavigate)
+
+      // 初始检查
+      setTimeout(checkCustomHtmlNavigationState, 500)
+    }
+
+    // 监听自定义HTML webview ref变化
+    watch(customHtmlWebviewRef, (newRef) => {
+      if (newRef && props.item.type === 'custom-html') {
+        setupCustomHtmlNavigationEvents()
+      }
+    }, { immediate: true })
+
+    // 合并导航状态
+    const canGoBack = computed(() => {
+      if (props.item.type === 'custom-html') {
+        return canGoBackCustomHtml.value
+      }
+      return canGoBackBase.value
+    })
+
+    const canGoForward = computed(() => {
+      if (props.item.type === 'custom-html') {
+        return canGoForwardCustomHtml.value
+      }
+      return canGoForwardBase.value
+    })
+
+    // 合并导航处理函数
+    const handleGoBack = () => {
+      if (props.item.type === 'custom-html') {
+        if (isElectron.value && customHtmlWebviewRef.value) {
+          try {
+            if (customHtmlWebviewRef.value.canGoBack()) {
+              customHtmlWebviewRef.value.goBack()
+              setTimeout(checkCustomHtmlNavigationState, 100)
+            }
+          } catch (error) {
+            console.error('[WebsiteCard] 自定义HTML后退失败:', error)
+          }
+        }
+      } else {
+        handleGoBackBase()
+      }
+    }
+
+    const handleGoForward = () => {
+      if (props.item.type === 'custom-html') {
+        if (isElectron.value && customHtmlWebviewRef.value) {
+          try {
+            if (customHtmlWebviewRef.value.canGoForward()) {
+              customHtmlWebviewRef.value.goForward()
+              setTimeout(checkCustomHtmlNavigationState, 100)
+            }
+          } catch (error) {
+            console.error('[WebsiteCard] 自定义HTML前进失败:', error)
+          }
+        }
+      } else {
+        handleGoForwardBase()
+      }
+    }
+
+    // 合并的导航状态检查函数（供 useWebviewSetup 使用）
+    const checkNavigationState = () => {
+      if (props.item.type === 'custom-html') {
+        checkCustomHtmlNavigationState()
+      } else {
+        checkNavigationStateBase()
+      }
+    }
 
     // ==================== 证书错误处理 ====================
     const {
@@ -516,6 +625,25 @@ export default {
       
       console.log('[WebsiteCard] 手动刷新')
       
+      // 自定义HTML类型 - 刷新时重新加载原始HTML内容
+      if (props.item.type === 'custom-html') {
+        if (isElectron.value && customHtmlWebviewRef.value) {
+          console.log('[WebsiteCard] 刷新自定义HTML webview，重新加载原始HTML内容')
+          // 重新获取原始HTML内容并生成data URL
+          const originalHtml = props.item.html || ''
+          const originalDataUrl = getCustomHtmlDataUrl(originalHtml)
+          // 重新加载原始HTML内容
+          customHtmlWebviewRef.value.src = 'about:blank'
+          setTimeout(() => {
+            customHtmlWebviewRef.value.src = originalDataUrl
+            // 刷新后更新导航状态
+            setTimeout(checkCustomHtmlNavigationState, 100)
+          }, 10)
+        }
+        return
+      }
+      
+      // 普通网站类型
       if (isElectron.value && webviewRef.value) {
         // 只有配置了自动刷新时才使用双缓冲刷新
         if (props.item.autoRefreshInterval > 0) {

@@ -19,7 +19,7 @@
     <div class="title-bar-actions">
       <!-- 导航按钮 -->
       <button
-        v-if="!isDesktopCapture && !isCustomHtml"
+        v-if="!isDesktopCapture"
         class="title-bar-btn"
         :class="{ 'disabled': !canGoBack }"
         @click="$emit('go-back')"
@@ -31,7 +31,7 @@
         </svg>
       </button>
       <button
-        v-if="!isDesktopCapture && !isCustomHtml"
+        v-if="!isDesktopCapture"
         class="title-bar-btn"
         :class="{ 'disabled': !canGoForward }"
         @click="$emit('go-forward')"
@@ -44,7 +44,7 @@
       </button>
       <!-- 刷新按钮 -->
       <button
-        v-if="!isDesktopCapture && !isCustomHtml"
+        v-if="!isDesktopCapture"
         class="title-bar-btn"
         @click="$emit('refresh')"
         :title="$t('floatingActions.refresh') || '刷新'"
