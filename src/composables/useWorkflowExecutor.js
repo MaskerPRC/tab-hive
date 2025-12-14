@@ -279,6 +279,16 @@ export function useWorkflowExecutor() {
   }
 
   /**
+   * 查找webview（支持自定义HTML和普通页面）
+   */
+  const findWebview = (websiteId) => {
+    // 先尝试自定义HTML格式，再尝试普通格式
+    const customWebview = document.querySelector(`#webview-custom-${websiteId}`)
+    if (customWebview) return customWebview
+    return document.querySelector(`#webview-${websiteId}`)
+  }
+
+  /**
    * 从网页提取数据
    */
   const extractData = async (websiteId, selector, dataMapping) => {
@@ -299,7 +309,7 @@ export function useWorkflowExecutor() {
 
     if (isElectron) {
       // Electron环境：通过webview执行
-      const webview = document.querySelector(`#webview-${websiteId}`)
+      const webview = findWebview(websiteId)
       if (!webview || !webview.executeJavaScript) {
         throw new Error('未找到webview或webview不支持executeJavaScript')
       }
@@ -351,7 +361,7 @@ export function useWorkflowExecutor() {
     }
 
     if (isElectron) {
-      const webview = document.querySelector(`#webview-${websiteId}`)
+      const webview = findWebview(websiteId)
       if (!webview || !webview.executeJavaScript) {
         throw new Error('未找到webview或webview不支持executeJavaScript')
       }

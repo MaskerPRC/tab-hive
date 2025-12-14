@@ -115,7 +115,7 @@ export default {
     /**
      * 启动元素选择器（支持 webview 和 iframe）
      */
-    const startSelector = () => {
+    const startSelector = async () => {
       console.log('[ElementSelector] startSelector 被调用')
       console.log('[ElementSelector] props.targetIframe:', props.targetIframe)
       console.log('[ElementSelector] props.targetIframe.id:', props.targetIframe?.id)
@@ -136,6 +136,52 @@ export default {
 
         // Webview 使用 send 方法发送消息
         if (typeof props.targetIframe.send === 'function') {
+          // 等待webview加载完成，确保preload脚本已经初始化
+          const waitForWebviewReady = () => {
+            return new Promise((resolve) => {
+              // 检查webview是否已经加载完成（通过检查URL）
+              const currentUrl = props.targetIframe.getURL()
+              const isDataUrl = currentUrl.startsWith('data:')
+              
+              // 如果webview已经加载（有URL），等待一小段时间确保preload脚本初始化
+              if (currentUrl && currentUrl !== 'about:blank') {
+                console.log('[ElementSelector] Webview已加载，URL:', currentUrl.substring(0, 50))
+                // 对于data URL，preload脚本初始化可能更快，但仍需要一点时间
+                setTimeout(resolve, isDataUrl ? 300 : 500)
+                return
+              }
+              
+              // 如果还在加载，等待加载完成事件
+              const onLoadFinish = () => {
+                props.targetIframe.removeEventListener('did-finish-load', onLoadFinish)
+                // 额外等待确保preload脚本初始化
+                console.log('[ElementSelector] Webview加载完成，等待preload脚本初始化')
+                setTimeout(resolve, 300)
+              }
+              
+              const onDomReady = () => {
+                props.targetIframe.removeEventListener('dom-ready', onDomReady)
+                console.log('[ElementSelector] Webview DOM就绪，等待preload脚本初始化')
+                setTimeout(resolve, 200)
+              }
+              
+              // 同时监听两个事件，哪个先触发就用哪个
+              props.targetIframe.addEventListener('did-finish-load', onLoadFinish)
+              props.targetIframe.addEventListener('dom-ready', onDomReady)
+              
+              // 超时保护：最多等待2秒
+              setTimeout(() => {
+                props.targetIframe.removeEventListener('did-finish-load', onLoadFinish)
+                props.targetIframe.removeEventListener('dom-ready', onDomReady)
+                console.warn('[ElementSelector] 等待webview加载超时，直接发送消息')
+                resolve()
+              }, 2000)
+            })
+          }
+          
+          // 等待webview准备好
+          await waitForWebviewReady()
+          
           console.log('[ElementSelector] 调用 webview.send("start-element-selector")')
           props.targetIframe.send('start-element-selector', {
             requestId: reqId

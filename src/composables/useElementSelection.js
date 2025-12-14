@@ -47,13 +47,17 @@ export function useElementSelection(props, emit) {
 
     if (isElectron) {
       // Electron 环境：通过 ID 精确查找 webview（而不是使用索引）
-      const webview = document.querySelector(`#webview-${website.id}`)
+      // 自定义HTML页面的webview ID格式是 webview-custom-${id}，普通页面是 webview-${id}
+      const webviewId = website.type === 'custom-html' 
+        ? `webview-custom-${website.id}` 
+        : `webview-${website.id}`
+      const webview = document.querySelector(`#${webviewId}`)
       if (webview) {
         fullscreenIframe.value = webview
         isSelectingElement.value = true
-        console.log('[全视界] 开始元素选择模式 (webview)，ID:', website.id)
+        console.log('[全视界] 开始元素选择模式 (webview)，ID:', website.id, 'webviewId:', webviewId)
       } else {
-        console.error('[全视界] 未找到全屏 webview，ID:', website.id)
+        console.error('[全视界] 未找到全屏 webview，ID:', website.id, 'webviewId:', webviewId)
         console.error('[全视界] 页面上所有 webview:', Array.from(document.querySelectorAll('webview')).map(w => w.id))
       }
     } else {
@@ -88,7 +92,11 @@ export function useElementSelection(props, emit) {
       let currentUrl = website.url
       try {
         // 查找当前全屏的 webview
-        const webview = document.querySelector(`#webview-${website.id}`)
+        // 自定义HTML页面的webview ID格式是 webview-custom-${id}，普通页面是 webview-${id}
+        const webviewId = website.type === 'custom-html' 
+          ? `webview-custom-${website.id}` 
+          : `webview-${website.id}`
+        const webview = document.querySelector(`#${webviewId}`)
         if (webview && window.electron?.isElectron) {
           const url = webview.getURL()
           // 移除 __webview_id__ 参数

@@ -36,6 +36,7 @@
         :src="getCustomHtmlDataUrl(item.html)"
         :ref="setCustomHtmlWebviewRef"
         class="custom-html-webview"
+        :preload="webviewPreloadPath"
         webpreferences="javascript=yes"
       ></webview>
       

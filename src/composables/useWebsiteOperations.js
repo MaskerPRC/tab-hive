@@ -204,7 +204,11 @@ export function useWebsiteOperations(props, emit) {
 
     if (isElectron) {
       // Electron 环境：通过 ID 查找 webview 并导航到原始URL
-      const webview = document.querySelector(`#webview-${website.id}`)
+      // 自定义HTML页面的webview ID格式是 webview-custom-${id}，普通页面是 webview-${id}
+      const webviewId = website.type === 'custom-html' 
+        ? `webview-custom-${website.id}` 
+        : `webview-${website.id}`
+      const webview = document.querySelector(`#${webviewId}`)
       if (webview) {
         console.log('[GridView] 找到 webview，导航到原始URL')
         // 构建带 webview ID 的URL
@@ -212,7 +216,7 @@ export function useWebsiteOperations(props, emit) {
         const urlWithId = `${originalUrl}${separator}__webview_id__=${website.id}`
         webview.src = urlWithId
       } else {
-        console.warn('[GridView] 未找到 webview')
+        console.warn('[GridView] 未找到 webview，webviewId:', webviewId)
       }
     } else {
       // 浏览器环境：通过 data-website-id 查找 iframe 并导航到原始URL

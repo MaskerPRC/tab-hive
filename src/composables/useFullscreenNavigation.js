@@ -29,7 +29,11 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
     const isElectron = window.electron?.isElectron
     if (isElectron) {
       // Electron 环境：通过 ID 精确查找 webview（而不是使用索引）
-      const webview = document.querySelector(`#webview-${website.id}`)
+      // 自定义HTML页面的webview ID格式是 webview-custom-${id}，普通页面是 webview-${id}
+      const webviewId = website.type === 'custom-html' 
+        ? `webview-custom-${website.id}` 
+        : `webview-${website.id}`
+      const webview = document.querySelector(`#${webviewId}`)
       if (webview) {
         try {
           fullscreenCanGoBack.value = webview.canGoBack()
@@ -40,7 +44,7 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
           fullscreenCanGoForward.value = false
         }
       } else {
-        console.warn('[useFullscreenNavigation] 未找到 webview，ID:', website.id)
+        console.warn('[useFullscreenNavigation] 未找到 webview，ID:', website.id, 'webviewId:', webviewId)
         fullscreenCanGoBack.value = false
         fullscreenCanGoForward.value = false
       }
@@ -83,7 +87,11 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
     const isElectron = window.electron?.isElectron
     if (isElectron) {
       // 通过 ID 精确查找 webview（而不是使用索引）
-      const webview = document.querySelector(`#webview-${website.id}`)
+      // 自定义HTML页面的webview ID格式是 webview-custom-${id}，普通页面是 webview-${id}
+      const webviewId = website.type === 'custom-html' 
+        ? `webview-custom-${website.id}` 
+        : `webview-${website.id}`
+      const webview = document.querySelector(`#${webviewId}`)
       if (webview && webview.canGoBack()) {
         webview.goBack()
         setTimeout(checkFullscreenNavigationState, 100)
@@ -117,7 +125,11 @@ export function useFullscreenNavigation(fullscreenIndexRef, allWebsites) {
     const isElectron = window.electron?.isElectron
     if (isElectron) {
       // 通过 ID 精确查找 webview（而不是使用索引）
-      const webview = document.querySelector(`#webview-${website.id}`)
+      // 自定义HTML页面的webview ID格式是 webview-custom-${id}，普通页面是 webview-${id}
+      const webviewId = website.type === 'custom-html' 
+        ? `webview-custom-${website.id}` 
+        : `webview-${website.id}`
+      const webview = document.querySelector(`#${webviewId}`)
       if (webview && webview.canGoForward()) {
         webview.goForward()
         setTimeout(checkFullscreenNavigationState, 100)
