@@ -610,7 +610,15 @@ export default {
         return
       }
       
-      const containerWidth = container.clientWidth
+      // 检查左栏是否显示（通过检查 grid-view 是否有 panel-visible class）
+      const gridView = container.closest('.grid-view')
+      const isPanelVisible = gridView && gridView.classList.contains('panel-visible')
+      const sidebarWidth = 288 // 左栏宽度
+      
+      // 如果左栏显示，需要从容器宽度中减去左栏宽度
+      const containerWidth = isPanelVisible 
+        ? container.clientWidth - sidebarWidth 
+        : container.clientWidth
       const containerHeight = container.clientHeight
       
       // 计算内容的实际尺寸（加上边距）
@@ -634,6 +642,7 @@ export default {
       }
       
       console.log('[适应屏幕] 内容边界:', { minX, minY, maxX, maxY })
+      console.log('[适应屏幕] 左栏显示:', isPanelVisible)
       console.log('[适应屏幕] 容器尺寸:', { containerWidth, containerHeight })
       console.log('[适应屏幕] 新缩放:', newZoom)
     }
