@@ -232,8 +232,33 @@ export default {
           const moreBtn = event.target.closest('.title-bar-more')?.querySelector('.title-bar-btn')
           if (moreBtn) {
             const rect = moreBtn.getBoundingClientRect()
+            
+            // 估算菜单高度（根据菜单项数量）
+            // 每个菜单项约 36px，加上 padding 8px
+            const estimatedMenuHeight = 250 // 保守估计最大高度
+            
+            // 计算可用空间
+            const spaceBelow = window.innerHeight - rect.bottom
+            const spaceAbove = rect.top
+            
+            // 决定菜单显示在按钮上方还是下方
+            let top
+            if (spaceBelow >= estimatedMenuHeight || spaceBelow >= spaceAbove) {
+              // 空间足够或下方空间更大，显示在下方
+              top = `${rect.bottom + 4}px`
+            } else {
+              // 下方空间不足，显示在上方
+              // 菜单会向上展开，bottom 设置为窗口高度减去按钮顶部位置
+              top = 'auto'
+              moreMenuStyle.value = {
+                bottom: `${window.innerHeight - rect.top + 4}px`,
+                right: `${window.innerWidth - rect.right}px`
+              }
+              return
+            }
+            
             moreMenuStyle.value = {
-              top: `${rect.bottom + 4}px`,
+              top,
               right: `${window.innerWidth - rect.right}px`
             }
           }
