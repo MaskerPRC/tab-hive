@@ -37,7 +37,8 @@
         :ref="setCustomHtmlWebviewRef"
         class="custom-html-webview"
         :preload="webviewPreloadPath"
-        webpreferences="javascript=yes"
+        webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+        allowpopups
       ></webview>
       
       <!-- 普通网站类型 -->
@@ -53,7 +54,8 @@
           class="website-webview"
           :class="{ 'mobile-view': item.deviceType === 'mobile' }"
           :preload="webviewPreloadPath"
-          webpreferences="allowRunningInsecureContent"
+          webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+          allowpopups
         ></webview>
 
         <!-- 后台缓冲 webview(双缓冲机制) -->
@@ -68,7 +70,8 @@
           class="website-webview buffer-webview"
           :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
           :preload="webviewPreloadPath"
-          webpreferences="allowRunningInsecureContent"
+          webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+          allowpopups
         ></webview>
 
         <!-- 非 Electron 环境使用 iframe -->

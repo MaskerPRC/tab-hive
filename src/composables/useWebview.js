@@ -151,29 +151,6 @@ export function useWebview(props, emit) {
 
     setupWebviewsSet.add(webview)
 
-    // 立即设置new-window事件监听（必须在dom-ready之前）
-    const handleNewWindow = (event) => {
-      console.log('[useWebview] ========== Webview new-window 事件 ==========')
-      console.log('[useWebview] URL:', event.url)
-      console.log('[useWebview] frameName:', event.frameName)
-      console.log('[useWebview] disposition:', event.disposition)
-      console.log('[useWebview] webview ID:', webview?.id)
-      console.log('[useWebview] 堆栈跟踪:', new Error().stack)
-      
-      // 阻止默认行为（打开新窗口）
-      event.preventDefault()
-      console.log('[useWebview] ✓ 已阻止默认行为')
-      
-      if (event.url) {
-        console.log('[useWebview] 拦截new-window，在当前webview中导航:', event.url)
-        webview.src = event.url
-      }
-    }
-    
-    // 立即注册new-window事件监听器（必须在webview加载前）
-    webview.addEventListener('new-window', handleNewWindow)
-    console.log('[useWebview] ✓ 已注册new-window事件监听器')
-
     // 使用 Promise 来确保 DOM 就绪
     let domReadyPromise = new Promise((resolve) => {
       let resolved = false

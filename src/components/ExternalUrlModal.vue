@@ -18,6 +18,8 @@
             :preload="webviewPreloadPath"
             class="external-url-webview"
             :partition="partitionName"
+            webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+            allowpopups
             @did-finish-load="handleWebviewLoad"
             @did-fail-load="handleWebviewFail"
           ></webview>
@@ -78,24 +80,7 @@ export default {
     // Webview加载完成
     const handleWebviewLoad = (event) => {
       console.log('[ExternalUrlModal] Webview加载完成:', event.url)
-      
-      // 设置webview的窗口打开处理，确保不会打开新窗口
-      const webview = event.target
-      if (webview && webview.getWebContents) {
-        try {
-          const webContents = webview.getWebContents()
-          if (webContents && webContents.setWindowOpenHandler) {
-            webContents.setWindowOpenHandler(({ url }) => {
-              console.log('[ExternalUrlModal] 拦截webview中的新窗口打开:', url)
-              // 在当前webview中导航
-              webview.src = url
-              return { action: 'deny' }
-            })
-          }
-        } catch (error) {
-          console.warn('[ExternalUrlModal] 设置窗口打开处理失败:', error)
-        }
-      }
+      // 注意：新窗口打开已由主进程全局拦截
     }
 
     // Webview加载失败
@@ -111,40 +96,7 @@ export default {
       }
     })
 
-    // 监听visible变化，设置webview事件
-    watch(() => props.visible, (newVal) => {
-      if (newVal && isElectron.value) {
-        // 模态框打开时，确保webview不会打开新窗口
-        setTimeout(() => {
-          const webview = document.querySelector('.external-url-webview')
-          if (webview) {
-            // 监听新窗口事件，确保所有链接都在当前webview中打开
-            const handleNewWindow = (event) => {
-              console.log('[ExternalUrlModal] 拦截webview新窗口事件:', event.url)
-              event.preventDefault()
-              if (event.url) {
-                webview.src = event.url
-              }
-            }
-            
-            webview.addEventListener('new-window', handleNewWindow)
-            
-            // 监听导航事件，确保所有导航都在当前webview中
-            const handleNavigation = (event) => {
-              console.log('[ExternalUrlModal] Webview导航:', event.url)
-            }
-            
-            webview.addEventListener('will-navigate', handleNavigation)
-            
-            // 清理函数
-            return () => {
-              webview.removeEventListener('new-window', handleNewWindow)
-              webview.removeEventListener('will-navigate', handleNavigation)
-            }
-          }
-        }, 100)
-      }
-    })
+    // 注意：新窗口打开已由主进程全局拦截，不需要在渲染进程处理
 
     // 监听ESC键关闭
     const handleKeyDown = (event) => {

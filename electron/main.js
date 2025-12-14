@@ -89,6 +89,36 @@ app.whenReady().then(async () => {
   setupCertificateErrorHandler(defaultSession, notifyCertificateError)
   console.log('[证书处理] ✓ 默认 session 证书错误处理已设置')
 
+  // 全局监听所有 webContents 创建（包括 webview）
+  app.on('web-contents-created', (event, webContents) => {
+    console.log('[Webview Guard] webContents 已创建, type:', webContents.getType())
+    
+    // 为所有 webContents 设置新窗口打开拦截器
+    webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
+      console.log('[Webview Guard] ========== 拦截新窗口 ==========')
+      console.log('[Webview Guard] URL:', url)
+      console.log('[Webview Guard] frameName:', frameName)
+      console.log('[Webview Guard] disposition:', disposition)
+      console.log('[Webview Guard] webContents type:', webContents.getType())
+      
+      // 如果是 webview，尝试在当前 webview 中导航
+      if (webContents.getType() === 'webview') {
+        console.log('[Webview Guard] 是 webview，在当前 webview 中导航')
+        try {
+          webContents.loadURL(url)
+          console.log('[Webview Guard] ✓ 导航成功')
+        } catch (error) {
+          console.error('[Webview Guard] ✗ 导航失败:', error)
+        }
+      }
+      
+      // 阻止打开新窗口
+      console.log('[Webview Guard] 阻止打开新窗口')
+      return { action: 'deny' }
+    })
+  })
+  console.log('[Webview Guard] ✓ 全局 webContents 监听已设置')
+
   // 等待数据库和代理管理器初始化完成
   await databaseReady
   console.log('[Electron Main] ✓ 数据库和代理管理器初始化完成')
