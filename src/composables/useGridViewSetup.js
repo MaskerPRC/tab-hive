@@ -290,11 +290,35 @@ export function useGridViewSetup(props, { emit }) {
 
   // 标记是否正在从 props 恢复状态
   const isRestoringTransform = ref(false)
+  
+  // 保存全屏前的画布变换状态
+  const canvasTransformBeforeFullscreen = ref(null)
 
   // 监听全屏索引变化
   watch(() => props.fullscreenIndex, (newVal, oldVal) => {
     if (newVal !== null && oldVal === null) {
+      // 进入全屏：保存当前的画布变换状态
+      canvasTransformBeforeFullscreen.value = {
+        x: canvasTransform.value?.x || 0,
+        y: canvasTransform.value?.y || 0,
+        zoom: canvasTransform.value?.zoom || 1
+      }
+      console.log('[全屏] 保存画布变换状态:', canvasTransformBeforeFullscreen.value)
       resetCanvasTransform()
+    } else if (newVal === null && oldVal !== null) {
+      // 退出全屏：恢复之前保存的画布变换状态
+      if (canvasTransformBeforeFullscreen.value) {
+        console.log('[全屏] 恢复画布变换状态:', canvasTransformBeforeFullscreen.value)
+        const savedTransform = { ...canvasTransformBeforeFullscreen.value }
+        isRestoringTransform.value = true
+        canvasTransform.value = savedTransform
+        // 触发更新事件，确保父组件同步状态
+        nextTick(() => {
+          emit('update-canvas-transform', savedTransform)
+          isRestoringTransform.value = false
+          canvasTransformBeforeFullscreen.value = null
+        })
+      }
     }
     // 检查导航状态
     if (newVal !== null) {
