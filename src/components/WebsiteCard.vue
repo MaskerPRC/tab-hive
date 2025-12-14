@@ -326,9 +326,22 @@ export default {
       applyDarkMode,
       applySelector,
       watchFullscreenToggle,
+      restoreOriginalStyles,
       applyAdBlock,
       applyPadding
     } = useWebviewSelector(props, { isElectron, webviewRef, executeJavaScript, adBlockEnabled: computed(() => props.adBlockEnabled) })
+
+    // ==================== 自定义HTML页面选择器功能 ====================
+    // 为自定义HTML页面创建单独的选择器处理逻辑
+    const {
+      applySelector: applySelectorForCustomHtml,
+      restoreOriginalStyles: restoreOriginalStylesForCustomHtml
+    } = useWebviewSelector(props, { isElectron, webviewRef: customHtmlWebviewRef, executeJavaScript: async (code) => {
+      if (isElectron.value && customHtmlWebviewRef.value) {
+        return await customHtmlWebviewRef.value.executeJavaScript(code)
+      }
+      return null
+    }, adBlockEnabled: computed(() => props.adBlockEnabled) })
 
     // 监听去广告配置变化
     watch(() => props.adBlockEnabled, async (newVal) => {
@@ -500,9 +513,27 @@ export default {
         setTimeout(checkCustomHtmlNavigationState, 100)
       }
 
+      // 监听加载完成事件，应用选择器（如果不在全屏模式下）
+      const handleDidFinishLoad = async () => {
+        handleDidNavigate()
+        
+        // 检查是否有选择器且不在全屏模式
+        const hasSelectors = (props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0) ||
+                             (props.item.targetSelector && props.item.targetSelector.trim())
+        
+        if (hasSelectors && !props.isFullscreen) {
+          console.log('[WebsiteCard] 自定义HTML页面加载完成，应用选择器')
+          // 等待一小段时间确保DOM完全加载
+          await new Promise(resolve => setTimeout(resolve, 500))
+          if (customHtmlWebviewRef.value) {
+            await applySelectorForCustomHtml(customHtmlWebviewRef.value, false)
+          }
+        }
+      }
+
       webview.addEventListener('did-navigate', handleDidNavigate)
       webview.addEventListener('did-navigate-in-page', handleDidNavigate)
-      webview.addEventListener('did-finish-load', handleDidNavigate)
+      webview.addEventListener('did-finish-load', handleDidFinishLoad)
 
       // 初始检查
       setTimeout(checkCustomHtmlNavigationState, 500)
@@ -765,6 +796,43 @@ export default {
     
     watchMuteState()
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
+
+    // ==================== 自定义HTML页面全屏切换选择器处理 ====================
+    watch(isFullscreenRef, async (newVal, oldVal) => {
+      // 只处理自定义HTML页面
+      if (props.item.type !== 'custom-html') return
+      
+      // 支持新旧两种格式
+      const hasSelectors = (props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0) ||
+                           (props.item.targetSelector && props.item.targetSelector.trim())
+      
+      if (!hasSelectors) return
+      
+      if (newVal) {
+        console.log('[WebsiteCard] 自定义HTML页面进入全屏，恢复完整页面')
+        // 进入全屏：恢复完整页面
+        if (!props.refreshOnFullscreenToggle && oldVal !== undefined) {
+          await restoreOriginalStylesForCustomHtml()
+        }
+      } else {
+        console.log('[WebsiteCard] 自定义HTML页面退出全屏，重新应用选择器')
+        // 退出全屏：重新应用选择器
+        if (!props.refreshOnFullscreenToggle && oldVal !== undefined) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          if (isElectron.value && customHtmlWebviewRef.value) {
+            await applySelectorForCustomHtml(customHtmlWebviewRef.value, false)
+          }
+        }
+      }
+      
+      // 如果配置了刷新，则刷新 webview
+      if (props.refreshOnFullscreenToggle && oldVal !== undefined) {
+        if (isElectron.value && customHtmlWebviewRef.value) {
+          console.log('[WebsiteCard] 自定义HTML页面全屏切换，刷新 webview')
+          customHtmlWebviewRef.value.reload()
+        }
+      }
+    })
 
     // ==================== 监听规则管理 ====================
     const activeRulesCount = ref(0)
