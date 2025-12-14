@@ -12,9 +12,18 @@ export function useSharedLayoutHandlers(sharedLayouts, dialogStates, importExpor
 
   // 导入布局
   const handleImportLayout = (layout) => {
+    console.log('[useSharedLayoutHandlers] ========== 开始导入布局 ==========')
+    console.log('[useSharedLayoutHandlers] 布局信息:', layout)
+    console.log('[useSharedLayoutHandlers] 布局ID:', layout?.id)
+    console.log('[useSharedLayoutHandlers] 布局名称:', layout?.layout_name)
+    
     dialogStates.closeSharedModal()
+    console.log('[useSharedLayoutHandlers] 已关闭共享模态框')
+    
     // 使用导入模式对话框
+    console.log('[useSharedLayoutHandlers] 调用 showImportModeDialog')
     importExport.showImportModeDialog(layout)
+    console.log('[useSharedLayoutHandlers] showImportModeDialog 调用完成')
   }
 
   // 搜索共享布局

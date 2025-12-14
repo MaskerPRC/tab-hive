@@ -162,7 +162,13 @@ export default {
     }
 
     const handleImportLayout = (layout) => {
+      console.log('[SharedLayoutModal] ========== handleImportLayout 被触发 ==========')
+      console.log('[SharedLayoutModal] 点击的布局:', layout)
+      console.log('[SharedLayoutModal] 布局ID:', layout?.id)
+      console.log('[SharedLayoutModal] 布局名称:', layout?.layout_name)
+      console.log('[SharedLayoutModal] 准备触发 import-layout 事件')
       emit('import-layout', layout)
+      console.log('[SharedLayoutModal] import-layout 事件已触发')
     }
 
     return {

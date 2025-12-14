@@ -156,8 +156,8 @@
 
     <!-- 导入模式选择对话框 -->
     <ImportModeDialog
-      :visible="showImportDialog"
-      @close="closeImportDialog"
+      :visible="importExport.showImportDialog.value"
+      @close="importExport.closeImportDialog"
       @select-mode="handleImportModeSelect"
     />
 
@@ -322,13 +322,28 @@ export default {
 
     // 处理导入模式选择
     const handleImportModeSelect = (mode) => {
+      console.log('[App.vue] ========== handleImportModeSelect 被调用 ==========')
+      console.log('[App.vue] 选择的导入模式:', mode)
+      console.log('[App.vue] 是否 Electron 环境:', dialog.isElectron.value)
+      console.log('[App.vue] 调用 importExport.handleImportMode')
+      
       importExport.handleImportMode(
         mode,
         dialog.isElectron.value,
         (layoutData) => {
+          console.log('[App.vue] ========== 导入回调被调用 ==========')
+          console.log('[App.vue] 回调接收到的布局数据:', layoutData)
+          console.log('[App.vue] 布局名称:', layoutData.name)
+          console.log('[App.vue] 网站数量:', layoutData.websites?.length || 0)
+          console.log('[App.vue] 调用 handleCreateLayout')
+          
           layoutHandlers.handleCreateLayout(layoutData.name, layoutData)
+          
+          console.log('[App.vue] handleCreateLayout 调用完成')
         }
       )
+      
+      console.log('[App.vue] handleImportMode 调用完成')
     }
 
     // 提供给子组件使用
@@ -412,7 +427,9 @@ export default {
       showSharedModal: dialogStates.showSharedModal,
       showExternalUrlModal: dialogStates.showExternalUrlModal,
       externalUrl: dialogStates.externalUrl,
-      showImportDialog: dialogStates.showImportDialog,
+      
+      // 导入导出
+      importExport,
       
       // 监听规则状态（来自 monitoringRules）
       editingMonitoringRule: monitoringRules.editingMonitoringRule,
@@ -444,7 +461,6 @@ export default {
       openContentScriptPanel: dialogStates.openContentScriptPanel,
       closeContentScriptPanel: dialogStates.closeContentScriptPanel,
       closeExternalUrlModal: dialogStates.closeExternalUrlModal,
-      closeImportDialog: dialogStates.closeImportDialog,
       handleImportModeSelect,
       
       // 监听规则方法

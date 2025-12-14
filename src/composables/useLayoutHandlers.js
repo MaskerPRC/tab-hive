@@ -22,8 +22,21 @@ export function useLayoutHandlers(layoutManager, websiteManager, dialog, t) {
 
   // 创建新布局
   const handleCreateLayout = (name, options = {}) => {
+    console.log('[useLayoutHandlers] ========== handleCreateLayout 被调用 ==========')
+    console.log('[useLayoutHandlers] 布局名称:', name)
+    console.log('[useLayoutHandlers] 选项:', options)
+    console.log('[useLayoutHandlers] 网站数量:', options.websites?.length || 0)
+    console.log('[useLayoutHandlers] 调用 createLayout')
+    
     const newLayout = layoutManager.createLayout(name, options)
+    
+    console.log('[useLayoutHandlers] 新布局已创建:', newLayout)
+    console.log('[useLayoutHandlers] 新布局ID:', newLayout.id)
+    console.log('[useLayoutHandlers] 调用 handleSwitchLayout')
+    
     handleSwitchLayout(newLayout.id)
+    
+    console.log('[useLayoutHandlers] handleSwitchLayout 完成')
   }
 
   // 删除布局

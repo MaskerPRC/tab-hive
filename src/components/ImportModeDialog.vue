@@ -47,17 +47,28 @@ export default {
 
     // 监听对话框显示，重置状态
     watch(() => props.visible, (newVal) => {
+      console.log('[ImportModeDialog] ========== visible 变化 ==========')
+      console.log('[ImportModeDialog] 新状态:', newVal)
       if (newVal) {
+        console.log('[ImportModeDialog] 对话框已显示')
         mouseDownOnOverlay.value = false
+      } else {
+        console.log('[ImportModeDialog] 对话框已隐藏')
       }
     })
 
     const handleClose = () => {
+      console.log('[ImportModeDialog] ========== handleClose 被调用 ==========')
+      console.log('[ImportModeDialog] 触发 close 事件')
       emit('close')
     }
 
     const handleSelectMode = (mode) => {
+      console.log('[ImportModeDialog] ========== handleSelectMode 被调用 ==========')
+      console.log('[ImportModeDialog] 选择的模式:', mode)
+      console.log('[ImportModeDialog] 触发 select-mode 事件')
       emit('select-mode', mode)
+      console.log('[ImportModeDialog] select-mode 事件已触发')
     }
 
     const handleOverlayMouseDown = (event) => {

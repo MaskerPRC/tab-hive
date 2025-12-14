@@ -343,6 +343,11 @@ export function useLayoutManager() {
    * @returns {Object} 新创建的布局
    */
   const createLayout = (name, options = {}) => {
+    console.log('[useLayoutManager] ========== createLayout 被调用 ==========')
+    console.log('[useLayoutManager] 布局名称:', name)
+    console.log('[useLayoutManager] 选项:', options)
+    console.log('[useLayoutManager] 当前布局数量:', layouts.value.length)
+    
     const newLayout = {
       id: Date.now(),
       name: name || `布局 ${layouts.value.length + 1}`,
@@ -357,7 +362,15 @@ export function useLayoutManager() {
       isModified: false, // 用户是否修改过（实时导入时使用）
       templateVersion: options.templateVersion || null // 当前模板版本
     }
+    
+    console.log('[useLayoutManager] 新建的布局对象:', newLayout)
+    console.log('[useLayoutManager] 将布局添加到 layouts 数组')
+    
     layouts.value.push(newLayout)
+    
+    console.log('[useLayoutManager] 布局已添加，新的布局数量:', layouts.value.length)
+    console.log('[useLayoutManager] 返回新布局')
+    
     return newLayout
   }
 
