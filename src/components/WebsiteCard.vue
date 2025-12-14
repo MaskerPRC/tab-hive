@@ -28,51 +28,51 @@
         class="desktop-capture-view"
       />
       
-      <!-- 自定义 HTML 类型 -->
-      <webview
-        v-else-if="item.type === 'custom-html'"
-        :key="`webview-custom-${item.id}`"
-        :id="`webview-custom-${item.id}`"
-        :src="getCustomHtmlDataUrl(item.html)"
-        :ref="setCustomHtmlWebviewRef"
-        class="custom-html-webview"
-        :preload="webviewPreloadPath"
-        webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
-        allowpopups
-      ></webview>
+       <!-- 自定义 HTML 类型 -->
+       <webview
+         v-else-if="item.type === 'custom-html'"
+         :key="`webview-custom-${item.id}`"
+         :id="`webview-custom-${item.id}`"
+         :src="getCustomHtmlDataUrl(item.html)"
+         :ref="setCustomHtmlWebviewRef"
+         class="custom-html-webview"
+         :preload="webviewPreloadPath"
+         webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+         allowpopups
+       ></webview>
       
       <!-- 普通网站类型 -->
       <template v-else>
-        <!-- 主 webview -->
-        <webview
-          v-if="isElectron"
-          :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
-          :ref="setWebviewRef"
-          :id="`webview-${item.id}`"
-          :data-webview-id="item.id"
-          :partition="partitionName"
-          class="website-webview"
-          :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-          :preload="webviewPreloadPath"
-          webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
-          allowpopups
-        ></webview>
+         <!-- 主 webview -->
+         <webview
+           v-if="isElectron"
+           :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
+           :ref="setWebviewRef"
+           :id="`webview-${item.id}`"
+           :data-webview-id="item.id"
+           :partition="partitionName"
+           class="website-webview"
+           :class="{ 'mobile-view': item.deviceType === 'mobile' }"
+           :preload="webviewPreloadPath"
+           webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+           allowpopups
+         ></webview>
 
-        <!-- 后台缓冲 webview(双缓冲机制) -->
-        <webview
-          v-if="isElectron && isBufferLoading"
-          :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
-          :ref="setBufferWebviewRef"
-          :id="`webview-buffer-${item.id}`"
-          :data-webview-id="`buffer-${item.id}`"
-          :src="bufferUrl"
-          :partition="partitionName"
-          class="website-webview buffer-webview"
-          :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
-          :preload="webviewPreloadPath"
-          webpreferences="javascript=yes,webSecurity=no,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
-          allowpopups
-        ></webview>
+         <!-- 后台缓冲 webview(双缓冲机制) -->
+         <webview
+           v-if="isElectron && isBufferLoading"
+           :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
+           :ref="setBufferWebviewRef"
+           :id="`webview-buffer-${item.id}`"
+           :data-webview-id="`buffer-${item.id}`"
+           :src="bufferUrl"
+           :partition="partitionName"
+           class="website-webview buffer-webview"
+           :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
+           :preload="webviewPreloadPath"
+           webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
+           allowpopups
+         ></webview>
 
         <!-- 非 Electron 环境使用 iframe -->
         <iframe
