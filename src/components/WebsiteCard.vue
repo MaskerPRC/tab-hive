@@ -34,6 +34,7 @@
         :key="`webview-custom-${item.id}`"
         :id="`webview-custom-${item.id}`"
         :src="getCustomHtmlDataUrl(item.html)"
+        :ref="setCustomHtmlWebviewRef"
         class="custom-html-webview"
         webpreferences="javascript=yes"
       ></webview>
@@ -164,7 +165,7 @@
 </template>
 
 <script>
-import { computed, toRef, watch, ref } from 'vue'
+import { computed, toRef, watch, ref, nextTick } from 'vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
@@ -278,6 +279,18 @@ export default {
       if (!html) return 'about:blank'
       // 将 HTML 转换为 data URL
       return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+    }
+
+    // ==================== 自定义 HTML Webview 引用 ====================
+    const customHtmlWebviewRef = ref(null)
+    const setCustomHtmlWebviewRef = (el) => {
+      if (el) {
+        console.log('[WebsiteCard] 设置自定义HTML webview ref:', el.id)
+        customHtmlWebviewRef.value = el
+      } else {
+        console.log('[WebsiteCard] 清除自定义HTML webview ref')
+        customHtmlWebviewRef.value = null
+      }
     }
 
     // ==================== Webview/Iframe 管理 ====================
@@ -539,13 +552,67 @@ export default {
       handleManualRefresh()
     }
 
-    const handleOpenDevTools = () => {
-      if (isElectron.value && webviewRef.value) {
-        console.log('[WebsiteCard] 打开 DevTools')
-        try {
-          webviewRef.value.openDevTools()
-        } catch (error) {
-          console.error('[WebsiteCard] 打开 DevTools 失败:', error)
+    const handleOpenDevTools = async () => {
+      if (isElectron.value) {
+        // 等待DOM更新完成
+        await nextTick()
+        
+        console.log('[WebsiteCard] 尝试打开 DevTools')
+        console.log('[WebsiteCard] item.type:', props.item.type)
+        console.log('[WebsiteCard] item.id:', props.item.id)
+        console.log('[WebsiteCard] webviewRef.value:', webviewRef.value)
+        console.log('[WebsiteCard] customHtmlWebviewRef.value:', customHtmlWebviewRef.value)
+        
+        // 根据类型选择正确的 webview ref
+        let targetWebview = null
+        if (props.item.type === 'custom-html') {
+          targetWebview = customHtmlWebviewRef.value
+          console.log('[WebsiteCard] 使用自定义HTML webview ref')
+          
+          // 如果ref为空，尝试通过DOM查询
+          if (!targetWebview) {
+            const webviewId = `webview-custom-${props.item.id}`
+            const webviewElement = document.getElementById(webviewId)
+            if (webviewElement) {
+              targetWebview = webviewElement
+              console.log('[WebsiteCard] 通过DOM查询找到自定义HTML webview:', webviewId)
+            }
+          }
+        } else {
+          targetWebview = webviewRef.value
+          console.log('[WebsiteCard] 使用普通 webview ref')
+          
+          // 如果ref为空，尝试通过DOM查询
+          if (!targetWebview) {
+            const webviewId = `webview-${props.item.id}`
+            const webviewElement = document.getElementById(webviewId)
+            if (webviewElement) {
+              targetWebview = webviewElement
+              console.log('[WebsiteCard] 通过DOM查询找到普通 webview:', webviewId)
+            }
+          }
+        }
+        
+        if (targetWebview) {
+          console.log('[WebsiteCard] 找到 webview 引用，打开 DevTools')
+          try {
+            targetWebview.openDevTools()
+            console.log('[WebsiteCard] DevTools 打开成功')
+          } catch (error) {
+            console.error('[WebsiteCard] 打开 DevTools 失败:', error)
+          }
+        } else {
+          console.warn('[WebsiteCard] 无法打开 DevTools: 未找到 webview 引用')
+          console.warn('[WebsiteCard] 调试信息:', {
+            type: props.item.type,
+            id: props.item.id,
+            isElectron: isElectron.value,
+            webviewRef: webviewRef.value,
+            customHtmlWebviewRef: customHtmlWebviewRef.value,
+            domQuery: props.item.type === 'custom-html' 
+              ? document.getElementById(`webview-custom-${props.item.id}`)
+              : document.getElementById(`webview-${props.item.id}`)
+          })
         }
       }
     }
