@@ -255,6 +255,7 @@ export default {
     screenshotCopied: 'Screenshot copied to clipboard!',
     screenshotDownloaded: 'Screenshot downloaded!',
     shareFailed: 'Share failed',
+    shareSuccess: 'Share successful!',
     exportSuccess: 'Export successful!',
     exportFailed: 'Export failed',
     importLayoutFromImageConfirm: 'Detected layout data in image ("{name}").\n\nDo you want to import this layout?',

@@ -4,6 +4,43 @@
  */
 
 export function useLayoutShareExport(dialog, t, layoutManager) {
+  // 分享布局到服务器
+  const shareLayoutToServer = async (layout) => {
+    try {
+      // 确定 API 地址
+      const API_BASE_URL = dialog.isElectron?.value
+        ? 'https://tabs.apexstone.ai/api'
+        : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+
+      const response = await fetch(`${API_BASE_URL}/layouts/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          layout: {
+            name: layout.name,
+            websites: layout.websites,
+            drawings: layout.drawings || [],
+            canvasTransform: layout.canvasTransform || { x: 0, y: 0, zoom: 1 }
+          }
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '分享失败')
+      }
+
+      const result = await response.json()
+      console.log('分享成功:', result)
+      return result
+    } catch (error) {
+      console.error('分享到服务器失败:', error)
+      throw error
+    }
+  }
+
   // 处理分享布局（带截图）
   const handleShareLayout = async (layout) => {
     try {
@@ -14,9 +51,9 @@ export function useLayoutShareExport(dialog, t, layoutManager) {
       })
 
       if (!shouldCapture) {
-        // 用户取消，使用原来的分享方式
-        const layoutOperations = (await import('./useLayoutOperations.js')).useLayoutOperations(dialog.isElectron.value)
-        await layoutOperations.shareLayout(layout, dialog.showConfirm)
+        // 用户取消截图，直接分享到服务器
+        await shareLayoutToServer(layout)
+        alert(t('layout.shareSuccess') || '分享成功！')
         return
       }
 
@@ -54,9 +91,9 @@ export function useLayoutShareExport(dialog, t, layoutManager) {
         alert(t('layout.screenshotDownloaded'))
       }
 
-      // 同时执行原来的分享逻辑（上传到服务器）
-      const layoutOperations = (await import('./useLayoutOperations.js')).useLayoutOperations(dialog.isElectron.value)
-      await layoutOperations.shareLayout(layout, dialog.showConfirm)
+      // 同时执行分享逻辑（上传到服务器）
+      await shareLayoutToServer(layout)
+      alert(t('layout.shareSuccess') || '分享成功！')
     } catch (error) {
       console.error('分享布局失败:', error)
       alert(t('layout.shareFailed') + ': ' + error.message)

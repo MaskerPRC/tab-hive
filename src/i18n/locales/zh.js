@@ -286,6 +286,7 @@ export default {
     screenshotCopied: '截图已复制到剪贴板！',
     screenshotDownloaded: '截图已下载！',
     shareFailed: '分享失败',
+    shareSuccess: '分享成功！',
     exportSuccess: '导出成功！',
     exportFailed: '导出失败',
     importLayout: '导入布局',
