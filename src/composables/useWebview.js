@@ -49,6 +49,25 @@ export function useWebview(props, emit) {
     const partition = partitionName.value
     const hiveId = props.item.id
 
+    // 检查 URL 是否为 HTTP 协议
+    let isHttpUrl = false
+    try {
+      const url = props.item.url || props.item.href || ''
+      if (url) {
+        const urlObj = new URL(url)
+        isHttpUrl = urlObj.protocol === 'http:'
+      }
+    } catch (error) {
+      // URL 解析失败，继续按原逻辑处理
+    }
+
+    // 如果是 HTTP 协议，不设置代理
+    if (isHttpUrl && proxyId) {
+      console.log(`[useWebview] HTTP 协议网页，跳过代理设置`)
+      proxySetupDone.value = true
+      return true
+    }
+
     try {
       if (proxyId) {
         // 设置代理
@@ -100,6 +119,21 @@ export function useWebview(props, emit) {
     // 检查 webview 是否已经有 src（比如从双缓冲刷新过来的）
     const hasExistingSrc = webview.src && webview.src !== '' && webview.src !== 'about:blank'
     
+    // 获取要加载的 URL
+    let url = props.item.url || props.item.href || 'https://www.google.com'
+    
+    // 检查 URL 协议类型
+    let isHttpUrl = false
+    try {
+      const urlObj = new URL(url)
+      isHttpUrl = urlObj.protocol === 'http:'
+      if (isHttpUrl) {
+        console.log(`[useWebview] 检测到 HTTP 协议网页: ${url}，将禁用代理设置`)
+      }
+    } catch (error) {
+      console.warn('[useWebview] URL 解析失败:', url, error)
+    }
+    
     // 确保证书错误处理已设置（支持自签名证书）
     if (isElectron.value && window.electron?.ipc) {
       try {
@@ -111,18 +145,37 @@ export function useWebview(props, emit) {
       }
     }
     
-    // 设置代理
-    const proxySetupSuccess = await setupProxyIfNeeded()
-
-    // 延迟一下确保代理完全就绪（缩短延迟时间）
-    if (props.item.proxyId && proxySetupSuccess) {
-      await new Promise(resolve => setTimeout(resolve, 200))
+    // 如果是 HTTP 协议，强制清除代理；否则按需设置代理
+    let proxySetupSuccess = true
+    if (isHttpUrl) {
+      // HTTP 协议：强制清除代理
+      if (isElectron.value && window.electron?.proxy && props.item.proxyId) {
+        console.log(`[useWebview] HTTP 协议网页，强制清除代理设置`)
+        try {
+          const partition = partitionName.value
+          const hiveId = props.item.id
+          const result = await window.electron.proxy.setSessionProxy(partition, hiveId, null)
+          if (result.success) {
+            console.log(`[useWebview] 代理已清除（HTTP 协议）`)
+            proxySetupDone.value = true
+          } else {
+            console.error(`[useWebview] 清除代理失败: ${result.error}`)
+          }
+        } catch (error) {
+          console.error('[useWebview] 清除代理时出错:', error)
+        }
+      }
+    } else {
+      // HTTPS 或其他协议：按需设置代理
+      proxySetupSuccess = await setupProxyIfNeeded()
+      // 延迟一下确保代理完全就绪（缩短延迟时间）
+      if (props.item.proxyId && proxySetupSuccess) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
     }
 
     // 只有在 webview 没有 src 的情况下才加载页面（首次初始化）
     if (!hasExistingSrc) {
-      // 加载实际页面
-      let url = props.item.url || props.item.href || 'https://www.google.com'
       // 为 webview 添加 ID 参数
       const separator = url.includes('?') ? '&' : '?'
       url = `${url}${separator}__webview_id__=${props.item.id}`
@@ -340,10 +393,32 @@ export function useWebview(props, emit) {
       const partition = partitionName.value
       const hiveId = props.item.id
 
+      // 检查当前 URL 是否为 HTTP 协议
+      let isHttpUrl = false
+      try {
+        const url = props.item.url || props.item.href || ''
+        if (url) {
+          const urlObj = new URL(url)
+          isHttpUrl = urlObj.protocol === 'http:'
+          if (isHttpUrl) {
+            console.log(`[useWebview] 检测到 HTTP 协议网页，禁止切换代理设置`)
+          }
+        }
+      } catch (error) {
+        console.warn('[useWebview] URL 解析失败:', error)
+      }
+
       try {
         console.log(`[useWebview] 代理配置变化: ${oldVal} -> ${newVal}`)
         proxySetupDone.value = false  // 重置状态，允许重新设置
-        const result = await window.electron.proxy.setSessionProxy(partition, hiveId, newVal || null)
+        
+        // 如果是 HTTP 协议，强制清除代理；否则按照新配置设置
+        const proxyIdToSet = isHttpUrl ? null : (newVal || null)
+        if (isHttpUrl && newVal) {
+          console.log(`[useWebview] HTTP 协议网页，忽略代理设置请求，强制清除代理`)
+        }
+        
+        const result = await window.electron.proxy.setSessionProxy(partition, hiveId, proxyIdToSet)
         if (result.success) {
           console.log(`[useWebview] 代理配置更新成功`)
           proxySetupDone.value = true
