@@ -1,119 +1,64 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 /**
- * 管理监听规则相关的业务逻辑
- * 包括创建、编辑、删除、切换规则等操作
+ * 管理监听规则的逻辑
+ * @param {Object} props - 组件属性
+ * @param {Object} emit - Vue emit 函数
+ * @returns {Object} 监听规则相关的状态和方法
  */
-export function useMonitoringRules() {
-  // 当前正在编辑的规则
-  const editingMonitoringRule = ref(null)
-  
-  // 当前监听的网站ID
-  const currentMonitoringWebsiteId = ref('')
-  
-  // 当前网站的暗黑模式状态
-  const currentMonitoringDarkMode = ref(false)
-  
+export function useMonitoringRules(props, emit) {
+  const activeRulesCount = ref(0)
+
   /**
-   * 打开监听规则设置
+   * 加载激活的规则数量
    */
-  const openMonitoring = (websiteId, darkMode, openRulesList) => {
-    currentMonitoringWebsiteId.value = websiteId
-    currentMonitoringDarkMode.value = darkMode
-    openRulesList()
-  }
-  
-  /**
-   * 创建监听规则
-   */
-  const createMonitoringRule = (openRuleDialog) => {
-    editingMonitoringRule.value = null
-    openRuleDialog()
-  }
-  
-  /**
-   * 编辑监听规则
-   */
-  const editMonitoringRule = (rule, openRuleDialog) => {
-    editingMonitoringRule.value = rule
-    openRuleDialog()
-  }
-  
-  /**
-   * 保存监听规则
-   */
-  const saveMonitoringRule = async (ruleData, closeDialog) => {
-    if (!window.electron || !window.electron.monitoring) return
-    
+  const loadActiveRulesCount = async () => {
+    if (!window.electron || !window.electron.monitoring || !props.item.id) return
+
     try {
-      if (editingMonitoringRule.value) {
-        // 更新规则
-        await window.electron.monitoring.updateRule(ruleData.id, ruleData)
-      } else {
-        // 创建规则
-        await window.electron.monitoring.createRule(ruleData)
-      }
-      
-      closeDialog()
+      const rules = await window.electron.monitoring.getRules(props.item.id)
+      activeRulesCount.value = rules.filter(r => r.enabled).length
     } catch (error) {
-      console.error('[useMonitoringRules] 保存监听规则失败:', error)
-      alert('保存失败: ' + error.message)
+      console.error('[useMonitoringRules] 加载监听规则数量失败:', error)
     }
   }
-  
+
   /**
-   * 删除监听规则
+   * 点击监听设置按钮
    */
-  const deleteMonitoringRule = async (ruleId) => {
-    if (!window.electron || !window.electron.monitoring) return
-    
-    try {
-      await window.electron.monitoring.deleteRule(ruleId)
-    } catch (error) {
-      console.error('[useMonitoringRules] 删除监听规则失败:', error)
-    }
+  const handleMonitoringClick = () => {
+    emit('open-monitoring', props.item.id, props.item.darkMode)
   }
-  
+
   /**
-   * 切换监听规则启用状态
+   * 工作流按钮点击
    */
-  const toggleMonitoringRule = async (ruleId, enabled) => {
-    if (!window.electron || !window.electron.monitoring) return
-    
-    try {
-      await window.electron.monitoring.toggleRule(ruleId, enabled)
-    } catch (error) {
-      console.error('[useMonitoringRules] 切换监听规则状态失败:', error)
-    }
+  const handleWorkflowClick = () => {
+    console.log('[useMonitoringRules] 工作流按钮被点击')
+    console.log('[useMonitoringRules] 网站ID:', props.item.id)
+    console.log('[useMonitoringRules] 网站标题:', props.item.title || '网页')
+    console.log('[useMonitoringRules] 触发 open-workflow 事件')
+    emit('open-workflow', props.item.id, props.item.title || '网页', props.item.darkMode)
   }
-  
+
   /**
-   * 配置 LLM
+   * 提供刷新规则计数的方法（供父组件调用）
    */
-  const configureLLM = async (config) => {
-    if (!window.electron || !window.electron.monitoring) return
-    
-    try {
-      await window.electron.monitoring.configureLLM(config)
-    } catch (error) {
-      console.error('[useMonitoringRules] 配置监听管理器 LLM 失败:', error)
-    }
+  const refreshRulesCount = () => {
+    loadActiveRulesCount()
   }
-  
+
+  // 组件挂载时加载规则数量
+  watch(() => props.item.id, () => {
+    if (props.item.id) {
+      loadActiveRulesCount()
+    }
+  }, { immediate: true })
+
   return {
-    // 状态
-    editingMonitoringRule,
-    currentMonitoringWebsiteId,
-    currentMonitoringDarkMode,
-    
-    // 方法
-    openMonitoring,
-    createMonitoringRule,
-    editMonitoringRule,
-    saveMonitoringRule,
-    deleteMonitoringRule,
-    toggleMonitoringRule,
-    configureLLM
+    activeRulesCount,
+    handleMonitoringClick,
+    handleWorkflowClick,
+    refreshRulesCount
   }
 }
-

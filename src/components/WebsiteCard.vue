@@ -1,5 +1,5 @@
 <template>
-    <div
+  <div
     class="grid-item"
     :class="{
       'fullscreen': isFullscreen,
@@ -28,67 +28,30 @@
         class="desktop-capture-view"
       />
       
-       <!-- 自定义 HTML 类型 -->
-       <webview
-         v-else-if="item.type === 'custom-html'"
-         :key="`webview-custom-${item.id}`"
-         :id="`webview-custom-${item.id}`"
-         :src="getCustomHtmlDataUrl(item.html)"
-         :ref="setCustomHtmlWebviewRef"
-         class="custom-html-webview"
-         :preload="webviewPreloadPath"
-         webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
-         allowpopups
-       ></webview>
+      <!-- 自定义 HTML 类型 -->
+      <WebsiteCardContentCustomHtml
+        v-else-if="item.type === 'custom-html'"
+        :item="item"
+        :webview-preload-path="webviewPreloadPath"
+        :custom-html-data-url="customHtmlDataUrl"
+        :set-custom-html-webview-ref="setCustomHtmlWebviewRef"
+      />
       
       <!-- 普通网站类型 -->
-      <template v-else>
-         <!-- 主 webview -->
-         <webview
-           v-if="isElectron"
-           :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
-           :ref="setWebviewRef"
-           :id="`webview-${item.id}`"
-           :data-webview-id="item.id"
-           :partition="partitionName"
-           class="website-webview"
-           :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-           :preload="webviewPreloadPath"
-           webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
-           allowpopups
-         ></webview>
-
-         <!-- 后台缓冲 webview(双缓冲机制) -->
-         <webview
-           v-if="isElectron && isBufferLoading"
-           :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
-           :ref="setBufferWebviewRef"
-           :id="`webview-buffer-${item.id}`"
-           :data-webview-id="`buffer-${item.id}`"
-           :src="bufferUrl"
-           :partition="partitionName"
-           class="website-webview buffer-webview"
-           :class="{ 'mobile-view': item.deviceType === 'mobile', 'buffer-ready': isBufferReady }"
-           :preload="webviewPreloadPath"
-           webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
-           allowpopups
-         ></webview>
-
-        <!-- 非 Electron 环境使用 iframe -->
-        <iframe
-          v-if="!isElectron"
-          :ref="setIframeRef"
-          :id="`iframe-${item.id}`"
-          :data-website-id="item.id"
-          :src="websiteUrl"
-          frameborder="0"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
-          class="website-iframe"
-          :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-          :title="item.title"
-          :allow="'autoplay; fullscreen; picture-in-picture'"
-        ></iframe>
-      </template>
+      <WebsiteCardContentNormal
+        v-else
+        :item="item"
+        :is-electron="isElectron"
+        :webview-preload-path="webviewPreloadPath"
+        :partition-name="partitionName"
+        :website-url="websiteUrl"
+        :is-buffer-loading="isBufferLoading"
+        :is-buffer-ready="isBufferReady"
+        :buffer-url="bufferUrl"
+        :set-webview-ref="setWebviewRef"
+        :set-buffer-webview-ref="setBufferWebviewRef"
+        :set-iframe-ref="setIframeRef"
+      />
       
       <!-- 窗口标题栏 -->
       <WebsiteCardTitleBar
@@ -169,7 +132,7 @@
 </template>
 
 <script>
-import { computed, toRef, watch, ref, nextTick } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
@@ -178,6 +141,8 @@ import UrlChangeHint from './UrlChangeHint.vue'
 import DesktopCaptureView from './DesktopCaptureView.vue'
 import WebsiteCardTitleBar from './WebsiteCardTitleBar.vue'
 import CertificateErrorOverlay from './CertificateErrorOverlay.vue'
+import WebsiteCardContentNormal from './WebsiteCardContentNormal.vue'
+import WebsiteCardContentCustomHtml from './WebsiteCardContentCustomHtml.vue'
 import { useAutoRefresh } from '../composables/useAutoRefresh.js'
 import { useIframeSelector } from '../composables/useIframeSelector.js'
 import { useWebview } from '../composables/useWebview.js'
@@ -189,6 +154,9 @@ import { useModifierKey } from '../composables/useModifierKey.js'
 import { useNavigation } from '../composables/useNavigation.js'
 import { useWebviewSetup } from '../composables/useWebviewSetup.js'
 import { useCertificateError } from '../composables/useCertificateError.js'
+import { useCustomHtmlWebview } from '../composables/useCustomHtmlWebview.js'
+import { useWebviewDevTools } from '../composables/useWebviewDevTools.js'
+import { useMonitoringRules } from '../composables/useMonitoringRules.js'
 
 export default {
   name: 'WebsiteCard',
@@ -200,7 +168,9 @@ export default {
     UrlChangeHint,
     DesktopCaptureView,
     WebsiteCardTitleBar,
-    CertificateErrorOverlay
+    CertificateErrorOverlay,
+    WebsiteCardContentNormal,
+    WebsiteCardContentCustomHtml
   },
   props: {
     item: {
@@ -278,25 +248,6 @@ export default {
   },
   emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring', 'open-workflow'],
   setup(props, { emit }) {
-    // ==================== 自定义 HTML Data URL ====================
-    const getCustomHtmlDataUrl = (html) => {
-      if (!html) return 'about:blank'
-      // 将 HTML 转换为 data URL
-      return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
-    }
-
-    // ==================== 自定义 HTML Webview 引用 ====================
-    const customHtmlWebviewRef = ref(null)
-    const setCustomHtmlWebviewRef = (el) => {
-      if (el) {
-        console.log('[WebsiteCard] 设置自定义HTML webview ref:', el.id)
-        customHtmlWebviewRef.value = el
-      } else {
-        console.log('[WebsiteCard] 清除自定义HTML webview ref')
-        customHtmlWebviewRef.value = null
-      }
-    }
-
     // ==================== Webview/Iframe 管理 ====================
     const {
       isElectron,
@@ -339,12 +290,37 @@ export default {
     const {
       applySelector: applySelectorForCustomHtml,
       restoreOriginalStyles: restoreOriginalStylesForCustomHtml
-    } = useWebviewSelector(props, { isElectron, webviewRef: customHtmlWebviewRef, executeJavaScript: async (code) => {
-      if (isElectron.value && customHtmlWebviewRef.value) {
-        return await customHtmlWebviewRef.value.executeJavaScript(code)
-      }
-      return null
-    }, adBlockEnabled: computed(() => props.adBlockEnabled) })
+    } = useWebviewSelector(props, { 
+      isElectron, 
+      webviewRef: computed(() => customHtmlWebviewRef.value), 
+      executeJavaScript: async (code) => {
+        if (isElectron.value && customHtmlWebviewRef.value) {
+          return await customHtmlWebviewRef.value.executeJavaScript(code)
+        }
+        return null
+      }, 
+      adBlockEnabled: computed(() => props.adBlockEnabled) 
+    })
+
+    // ==================== 自定义HTML Webview ====================
+    const {
+      customHtmlWebviewRef,
+      canGoBackCustomHtml,
+      canGoForwardCustomHtml,
+      getCustomHtmlDataUrl,
+      setCustomHtmlWebviewRef,
+      handleGoBackCustomHtml,
+      handleGoForwardCustomHtml,
+      handleRefreshCustomHtml,
+      handleFullscreenToggle: handleCustomHtmlFullscreenToggle
+    } = useCustomHtmlWebview(props, { 
+      isElectron, 
+      applySelector: applySelectorForCustomHtml, 
+      restoreOriginalStyles: restoreOriginalStylesForCustomHtml 
+    })
+
+    // 计算自定义HTML的data URL
+    const customHtmlDataUrl = computed(() => getCustomHtmlDataUrl(props.item.html))
 
     // 监听去广告配置变化
     watch(() => props.adBlockEnabled, async (newVal) => {
@@ -392,10 +368,60 @@ export default {
       watchMuteState
     } = useWebviewAudio(props, { isElectron, webviewRef })
 
-    // ==================== 自动刷新 ====================
-    const itemRef = toRef(props, 'item')
-    const isFullscreenRef = toRef(props, 'isFullscreen')
+    // ==================== 前进后退功能 ====================
+    const {
+      canGoBack: canGoBackBase,
+      canGoForward: canGoForwardBase,
+      checkNavigationState: checkNavigationStateBase,
+      handleGoBack: handleGoBackBase,
+      handleGoForward: handleGoForwardBase,
+      watchIframeLoad
+    } = useNavigation(props, { isElectron, webviewRef, iframeRef })
 
+    watchIframeLoad()
+
+    // 合并导航状态
+    const canGoBack = computed(() => {
+      if (props.item.type === 'custom-html') {
+        return canGoBackCustomHtml.value
+      }
+      return canGoBackBase.value
+    })
+
+    const canGoForward = computed(() => {
+      if (props.item.type === 'custom-html') {
+        return canGoForwardCustomHtml.value
+      }
+      return canGoForwardBase.value
+    })
+
+    // 合并导航处理函数
+    const handleGoBack = () => {
+      if (props.item.type === 'custom-html') {
+        handleGoBackCustomHtml()
+      } else {
+        handleGoBackBase()
+      }
+    }
+
+    const handleGoForward = () => {
+      if (props.item.type === 'custom-html') {
+        handleGoForwardCustomHtml()
+      } else {
+        handleGoForwardBase()
+      }
+    }
+
+    // 合并的导航状态检查函数（供 useWebviewSetup 使用）
+    const checkNavigationState = () => {
+      if (props.item.type === 'custom-html') {
+        // 自定义HTML的导航状态检查已在useCustomHtmlWebview中处理
+      } else {
+        checkNavigationStateBase()
+      }
+    }
+
+    // ==================== 证书错误处理 ====================
     // 计算网站 URL
     const websiteUrl = computed(() => {
       if (props.item.type === 'desktop-capture') {
@@ -415,6 +441,47 @@ export default {
       
       return url
     })
+
+    const {
+      loadError,
+      hasCertificateError,
+      isCertificateTrusted,
+      handleLoadFail,
+      handleIgnoreCertificateError
+    } = useCertificateError(props, {
+      isElectron,
+      websiteUrl,
+      webviewRef,
+      partitionName,
+      getCurrentUrl,
+      executeJavaScript,
+      mainWebviewReady
+    })
+
+    // ==================== Webview 设置 ====================
+    const {
+      setWebviewRef,
+      setBufferWebviewRef
+    } = useWebviewSetup(props, {
+      isElectron,
+      websiteUrl,
+      webviewRef,
+      setWebviewRefBase,
+      setBufferWebviewRefBase,
+      setupWebviewEvents,
+      applyMuteState,
+      applyAdBlock,
+      applyDarkMode,
+      applySelector,
+      applyPadding,
+      checkNavigationState,
+      checkUrlChange,
+      onLoadFail: handleLoadFail
+    })
+
+    // ==================== 自动刷新 ====================
+    const itemRef = toRef(props, 'item')
+    const isFullscreenRef = toRef(props, 'isFullscreen')
     
     // 普通刷新回调（不使用双缓冲）
     const handleSimpleRefresh = () => {
@@ -469,182 +536,20 @@ export default {
       requireModifierForActions
     } = useModifierKey(props)
 
-    // ==================== 前进后退功能 ====================
+    // ==================== DevTools ====================
+    const { handleOpenDevTools } = useWebviewDevTools(props, { 
+      isElectron, 
+      webviewRef, 
+      customHtmlWebviewRef 
+    })
+
+    // ==================== 监听规则管理 ====================
     const {
-      canGoBack: canGoBackBase,
-      canGoForward: canGoForwardBase,
-      checkNavigationState: checkNavigationStateBase,
-      handleGoBack: handleGoBackBase,
-      handleGoForward: handleGoForwardBase,
-      watchIframeLoad
-    } = useNavigation(props, { isElectron, webviewRef, iframeRef })
-
-    watchIframeLoad()
-
-    // ==================== 自定义HTML导航功能 ====================
-    const canGoBackCustomHtml = ref(false)
-    const canGoForwardCustomHtml = ref(false)
-
-    // 检查自定义HTML webview的导航状态
-    const checkCustomHtmlNavigationState = async () => {
-      if (props.item.type !== 'custom-html' || !isElectron.value || !customHtmlWebviewRef.value) {
-        canGoBackCustomHtml.value = false
-        canGoForwardCustomHtml.value = false
-        return
-      }
-
-      try {
-        canGoBackCustomHtml.value = customHtmlWebviewRef.value.canGoBack()
-        canGoForwardCustomHtml.value = customHtmlWebviewRef.value.canGoForward()
-      } catch (error) {
-        console.error('[WebsiteCard] 检查自定义HTML导航状态失败:', error)
-        canGoBackCustomHtml.value = false
-        canGoForwardCustomHtml.value = false
-      }
-    }
-
-    // 为自定义HTML webview设置导航事件监听
-    const setupCustomHtmlNavigationEvents = () => {
-      if (props.item.type !== 'custom-html' || !isElectron.value || !customHtmlWebviewRef.value) {
-        return
-      }
-
-      const webview = customHtmlWebviewRef.value
-      
-      // 监听导航事件
-      const handleDidNavigate = () => {
-        setTimeout(checkCustomHtmlNavigationState, 100)
-      }
-
-      // 监听加载完成事件，应用选择器（如果不在全屏模式下）
-      const handleDidFinishLoad = async () => {
-        handleDidNavigate()
-        
-        // 检查是否有选择器且不在全屏模式
-        const hasSelectors = (props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0) ||
-                             (props.item.targetSelector && props.item.targetSelector.trim())
-        
-        if (hasSelectors && !props.isFullscreen) {
-          console.log('[WebsiteCard] 自定义HTML页面加载完成，应用选择器')
-          // 等待一小段时间确保DOM完全加载
-          await new Promise(resolve => setTimeout(resolve, 500))
-          if (customHtmlWebviewRef.value) {
-            await applySelectorForCustomHtml(customHtmlWebviewRef.value, false)
-          }
-        }
-      }
-
-      webview.addEventListener('did-navigate', handleDidNavigate)
-      webview.addEventListener('did-navigate-in-page', handleDidNavigate)
-      webview.addEventListener('did-finish-load', handleDidFinishLoad)
-
-      // 初始检查
-      setTimeout(checkCustomHtmlNavigationState, 500)
-    }
-
-    // 监听自定义HTML webview ref变化
-    watch(customHtmlWebviewRef, (newRef) => {
-      if (newRef && props.item.type === 'custom-html') {
-        setupCustomHtmlNavigationEvents()
-      }
-    }, { immediate: true })
-
-    // 合并导航状态
-    const canGoBack = computed(() => {
-      if (props.item.type === 'custom-html') {
-        return canGoBackCustomHtml.value
-      }
-      return canGoBackBase.value
-    })
-
-    const canGoForward = computed(() => {
-      if (props.item.type === 'custom-html') {
-        return canGoForwardCustomHtml.value
-      }
-      return canGoForwardBase.value
-    })
-
-    // 合并导航处理函数
-    const handleGoBack = () => {
-      if (props.item.type === 'custom-html') {
-        if (isElectron.value && customHtmlWebviewRef.value) {
-          try {
-            if (customHtmlWebviewRef.value.canGoBack()) {
-              customHtmlWebviewRef.value.goBack()
-              setTimeout(checkCustomHtmlNavigationState, 100)
-            }
-          } catch (error) {
-            console.error('[WebsiteCard] 自定义HTML后退失败:', error)
-          }
-        }
-      } else {
-        handleGoBackBase()
-      }
-    }
-
-    const handleGoForward = () => {
-      if (props.item.type === 'custom-html') {
-        if (isElectron.value && customHtmlWebviewRef.value) {
-          try {
-            if (customHtmlWebviewRef.value.canGoForward()) {
-              customHtmlWebviewRef.value.goForward()
-              setTimeout(checkCustomHtmlNavigationState, 100)
-            }
-          } catch (error) {
-            console.error('[WebsiteCard] 自定义HTML前进失败:', error)
-          }
-        }
-      } else {
-        handleGoForwardBase()
-      }
-    }
-
-    // 合并的导航状态检查函数（供 useWebviewSetup 使用）
-    const checkNavigationState = () => {
-      if (props.item.type === 'custom-html') {
-        checkCustomHtmlNavigationState()
-      } else {
-        checkNavigationStateBase()
-      }
-    }
-
-    // ==================== 证书错误处理 ====================
-    const {
-      loadError,
-      hasCertificateError,
-      isCertificateTrusted,
-      handleLoadFail,
-      handleIgnoreCertificateError
-    } = useCertificateError(props, {
-      isElectron,
-      websiteUrl,
-      webviewRef,
-      partitionName,
-      getCurrentUrl,
-      executeJavaScript,
-      mainWebviewReady
-    })
-
-    // ==================== Webview 设置 ====================
-    const {
-      setWebviewRef,
-      setBufferWebviewRef
-    } = useWebviewSetup(props, {
-      isElectron,
-      websiteUrl,
-      webviewRef,
-      setWebviewRefBase,
-      setBufferWebviewRefBase,
-      setupWebviewEvents,
-      applyMuteState,
-      applyAdBlock,
-      applyDarkMode,
-      applySelector,
-      applyPadding,
-      checkNavigationState,
-      checkUrlChange,
-      onLoadFail: handleLoadFail
-    })
+      activeRulesCount,
+      handleMonitoringClick,
+      handleWorkflowClick,
+      refreshRulesCount
+    } = useMonitoringRules(props, emit)
 
     // ==================== 计算属性 ====================
     const computedItemStyle = computed(() => {
@@ -661,19 +566,7 @@ export default {
       
       // 自定义HTML类型 - 刷新时重新加载原始HTML内容
       if (props.item.type === 'custom-html') {
-        if (isElectron.value && customHtmlWebviewRef.value) {
-          console.log('[WebsiteCard] 刷新自定义HTML webview，重新加载原始HTML内容')
-          // 重新获取原始HTML内容并生成data URL
-          const originalHtml = props.item.html || ''
-          const originalDataUrl = getCustomHtmlDataUrl(originalHtml)
-          // 重新加载原始HTML内容
-          customHtmlWebviewRef.value.src = 'about:blank'
-          setTimeout(() => {
-            customHtmlWebviewRef.value.src = originalDataUrl
-            // 刷新后更新导航状态
-            setTimeout(checkCustomHtmlNavigationState, 100)
-          }, 10)
-        }
+        handleRefreshCustomHtml(getCustomHtmlDataUrl)
         return
       }
       
@@ -715,71 +608,6 @@ export default {
       handleManualRefresh()
     }
 
-    const handleOpenDevTools = async () => {
-      if (isElectron.value) {
-        // 等待DOM更新完成
-        await nextTick()
-        
-        console.log('[WebsiteCard] 尝试打开 DevTools')
-        console.log('[WebsiteCard] item.type:', props.item.type)
-        console.log('[WebsiteCard] item.id:', props.item.id)
-        console.log('[WebsiteCard] webviewRef.value:', webviewRef.value)
-        console.log('[WebsiteCard] customHtmlWebviewRef.value:', customHtmlWebviewRef.value)
-        
-        // 根据类型选择正确的 webview ref
-        let targetWebview = null
-        if (props.item.type === 'custom-html') {
-          targetWebview = customHtmlWebviewRef.value
-          console.log('[WebsiteCard] 使用自定义HTML webview ref')
-          
-          // 如果ref为空，尝试通过DOM查询
-          if (!targetWebview) {
-            const webviewId = `webview-custom-${props.item.id}`
-            const webviewElement = document.getElementById(webviewId)
-            if (webviewElement) {
-              targetWebview = webviewElement
-              console.log('[WebsiteCard] 通过DOM查询找到自定义HTML webview:', webviewId)
-            }
-          }
-        } else {
-          targetWebview = webviewRef.value
-          console.log('[WebsiteCard] 使用普通 webview ref')
-          
-          // 如果ref为空，尝试通过DOM查询
-          if (!targetWebview) {
-            const webviewId = `webview-${props.item.id}`
-            const webviewElement = document.getElementById(webviewId)
-            if (webviewElement) {
-              targetWebview = webviewElement
-              console.log('[WebsiteCard] 通过DOM查询找到普通 webview:', webviewId)
-            }
-          }
-        }
-        
-        if (targetWebview) {
-          console.log('[WebsiteCard] 找到 webview 引用，打开 DevTools')
-          try {
-            targetWebview.openDevTools()
-            console.log('[WebsiteCard] DevTools 打开成功')
-          } catch (error) {
-            console.error('[WebsiteCard] 打开 DevTools 失败:', error)
-          }
-        } else {
-          console.warn('[WebsiteCard] 无法打开 DevTools: 未找到 webview 引用')
-          console.warn('[WebsiteCard] 调试信息:', {
-            type: props.item.type,
-            id: props.item.id,
-            isElectron: isElectron.value,
-            webviewRef: webviewRef.value,
-            customHtmlWebviewRef: customHtmlWebviewRef.value,
-            domQuery: props.item.type === 'custom-html' 
-              ? document.getElementById(`webview-custom-${props.item.id}`)
-              : document.getElementById(`webview-${props.item.id}`)
-          })
-        }
-      }
-    }
-
     // ==================== 监听器 ====================
     watch(() => props.item.url, (newUrl, oldUrl) => {
       if (newUrl && newUrl !== oldUrl && oldUrl !== undefined) {
@@ -800,83 +628,10 @@ export default {
     watchMuteState()
     watchFullscreenToggle(isFullscreenRef, props.refreshOnFullscreenToggle, pauseTimer, resumeTimer)
 
-    // ==================== 自定义HTML页面全屏切换选择器处理 ====================
+    // 自定义HTML页面全屏切换选择器处理
     watch(isFullscreenRef, async (newVal, oldVal) => {
-      // 只处理自定义HTML页面
-      if (props.item.type !== 'custom-html') return
-      
-      // 支持新旧两种格式
-      const hasSelectors = (props.item.targetSelectors && Array.isArray(props.item.targetSelectors) && props.item.targetSelectors.length > 0) ||
-                           (props.item.targetSelector && props.item.targetSelector.trim())
-      
-      if (!hasSelectors) return
-      
-      if (newVal) {
-        console.log('[WebsiteCard] 自定义HTML页面进入全屏，恢复完整页面')
-        // 进入全屏：恢复完整页面
-        if (!props.refreshOnFullscreenToggle && oldVal !== undefined) {
-          await restoreOriginalStylesForCustomHtml()
-        }
-      } else {
-        console.log('[WebsiteCard] 自定义HTML页面退出全屏，重新应用选择器')
-        // 退出全屏：重新应用选择器
-        if (!props.refreshOnFullscreenToggle && oldVal !== undefined) {
-          await new Promise(resolve => setTimeout(resolve, 100))
-          if (isElectron.value && customHtmlWebviewRef.value) {
-            await applySelectorForCustomHtml(customHtmlWebviewRef.value, false)
-          }
-        }
-      }
-      
-      // 如果配置了刷新，则刷新 webview
-      if (props.refreshOnFullscreenToggle && oldVal !== undefined) {
-        if (isElectron.value && customHtmlWebviewRef.value) {
-          console.log('[WebsiteCard] 自定义HTML页面全屏切换，刷新 webview')
-          customHtmlWebviewRef.value.reload()
-        }
-      }
+      await handleCustomHtmlFullscreenToggle(newVal, oldVal, props.refreshOnFullscreenToggle)
     })
-
-    // ==================== 监听规则管理 ====================
-    const activeRulesCount = ref(0)
-
-    // 点击监听设置按钮
-    const handleMonitoringClick = () => {
-      emit('open-monitoring', props.item.id, props.item.darkMode)
-    }
-
-    // 工作流按钮点击
-    const handleWorkflowClick = () => {
-      console.log('[WebsiteCard] 工作流按钮被点击')
-      console.log('[WebsiteCard] 网站ID:', props.item.id)
-      console.log('[WebsiteCard] 网站标题:', props.item.title || '网页')
-      console.log('[WebsiteCard] 触发 open-workflow 事件')
-      emit('open-workflow', props.item.id, props.item.title || '网页', props.item.darkMode)
-    }
-
-    // 加载激活的规则数量
-    const loadActiveRulesCount = async () => {
-      if (!window.electron || !window.electron.monitoring || !props.item.id) return
-      
-      try {
-        const rules = await window.electron.monitoring.getRules(props.item.id)
-        activeRulesCount.value = rules.filter(r => r.enabled).length
-      } catch (error) {
-        console.error('加载监听规则数量失败:', error)
-      }
-    }
-
-    // 组件挂载时加载规则数量
-    watch(() => props.item.id, () => {
-      if (props.item.id) {
-        loadActiveRulesCount()
-      }
-    }, { immediate: true })
-
-    // 提供刷新规则计数的方法（供父组件调用）
-    const refreshRulesCount = () => {
-      loadActiveRulesCount()
-    }
 
     return {
       isElectron,
@@ -892,7 +647,7 @@ export default {
       loadError,
       hasCertificateError,
       isCertificateTrusted,
-      getCustomHtmlDataUrl,
+      customHtmlDataUrl,
       setCustomHtmlWebviewRef,
       setWebviewRef,
       setBufferWebviewRef,
@@ -988,38 +743,6 @@ export default {
   box-shadow: 0 4px 12px rgba(255, 92, 0, 0.3);
 }
 
-.website-webview {
-  width: 100%;
-  flex: 1;
-  border: none;
-  pointer-events: auto !important;
-  min-height: 0;
-}
-
-.website-iframe {
-  width: 100%;
-  flex: 1;
-  border: none;
-  pointer-events: auto !important;
-  min-height: 0;
-}
-
-.grid-item.dragging .website-webview,
-.grid-item.resizing .website-webview,
-.grid-item.dragging .website-iframe,
-.grid-item.resizing .website-iframe {
-  pointer-events: none !important;
-}
-
-.website-webview.mobile-view,
-.website-iframe.mobile-view {
-  max-width: 375px;
-  margin: 0 auto;
-  border: 2px solid #ddd;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
 .drag-handle-container {
   position: absolute;
   top: 0.5rem;
@@ -1087,23 +810,6 @@ export default {
   opacity: 0.3;
 }
 
-.buffer-webview {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  visibility: hidden;
-  z-index: -1;
-  opacity: 0;
-}
-
-.buffer-webview.buffer-ready {
-  visibility: visible;
-  z-index: 10;
-  opacity: 1;
-}
-
 .grid-item.certificate-error {
   /* 更轻柔、更有质感的红色光晕 */
   box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4),
@@ -1112,19 +818,12 @@ export default {
   transition: box-shadow 0.3s ease;
 }
 
-/* 自定义 HTML webview */
-.custom-html-webview {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: white;
-  flex: 1;
-  pointer-events: auto !important;
-  min-height: 0;
-}
-
-.grid-item.dragging .custom-html-webview,
-.grid-item.resizing .custom-html-webview {
+.grid-item.dragging :deep(.website-webview),
+.grid-item.resizing :deep(.website-webview),
+.grid-item.dragging :deep(.website-iframe),
+.grid-item.resizing :deep(.website-iframe),
+.grid-item.dragging :deep(.custom-html-webview),
+.grid-item.resizing :deep(.custom-html-webview) {
   pointer-events: none !important;
 }
 </style>
