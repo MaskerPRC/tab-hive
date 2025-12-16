@@ -4,11 +4,11 @@ const STORAGE_KEY = 'llm-api-config'
 
 // 默认配置
 const defaultConfig = {
-  apiUrl: '',
+  apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
   apiKey: '',
-  model: 'gpt-3.5-turbo',
+  model: 'google/gemini-3-pro-preview',
   temperature: 0.7,
-  maxTokens: 2000
+  maxTokens: 0
 }
 
 // 从 localStorage 加载配置

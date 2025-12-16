@@ -53,6 +53,15 @@
                 <span>谷歌</span>
               </button>
               <button 
+                class="quick-add-btn"
+                @click="quickAddExcalidraw"
+                type="button"
+                :title="$t('websiteEdit.quickAddExcalidraw')"
+              >
+                <i class="fa-solid fa-pen-ruler"></i>
+                <span>Excalidraw</span>
+              </button>
+              <button 
                 class="quick-add-btn desktop-capture-btn"
                 @click="showDesktopCaptureSelector = true"
                 type="button"
@@ -415,6 +424,19 @@ export default {
       // 自动提交
       handleConfirm()
     }
+
+    // 快捷添加 Excalidraw
+    const quickAddExcalidraw = () => {
+      localWebsite.value.title = t('websiteEdit.excalidraw')
+      localWebsite.value.url = 'https://excalidraw.com/'
+      // 自动创建新的 session 实例
+      const excalidrawName = t('websiteEdit.excalidraw')
+      const newInstance = addSessionInstance(excalidrawName, 'Excalidraw 专用会话实例')
+      localWebsite.value.sessionInstance = newInstance.id
+      console.log('[WebsiteEditDialog] 为 Excalidraw 创建新 session:', newInstance)
+      // 自动提交
+      handleConfirm()
+    }
     
     // 处理桌面捕获选择
     const handleDesktopCaptureSelect = ({ source, options }) => {
@@ -496,6 +518,7 @@ export default {
       handleOpenProxyManager,
       quickAddBaidu,
       quickAddGoogle,
+      quickAddExcalidraw,
       handleDesktopCaptureSelect,
       handleCustomHtmlConfirm
     }

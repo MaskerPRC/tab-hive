@@ -13,7 +13,7 @@
             id="apiUrl"
             v-model="localConfig.apiUrl"
             type="text"
-            placeholder="https://api.openai.com/v1/chat/completions"
+            placeholder="https://openrouter.ai/api/v1/chat/completions"
             class="form-input"
           />
           <p class="form-hint">LLM API 的完整地址</p>
@@ -28,7 +28,10 @@
             placeholder="sk-..."
             class="form-input"
           />
-          <p class="form-hint">用于认证的 API Key</p>
+          <p class="form-hint">
+            用于认证的 API Key。
+            <a href="https://openrouter.ai/settings/keys" target="_blank" class="form-link">去 OpenRouter 获取</a>
+          </p>
         </div>
 
         <div class="form-group">
@@ -37,7 +40,7 @@
             id="model"
             v-model="localConfig.model"
             type="text"
-            placeholder="gpt-3.5-turbo"
+            placeholder="google/gemini-3-pro-preview"
             class="form-input"
           />
           <p class="form-hint">要使用的模型名称</p>
@@ -63,14 +66,13 @@
             id="maxTokens"
             v-model.number="localConfig.maxTokens"
             type="number"
-            min="100"
+            min="0"
             max="8000"
             step="100"
             class="form-input"
           />
-          <p class="form-hint">生成内容的最大长度</p>
+          <p class="form-hint">生成内容的最大长度（0 表示不限制）</p>
         </div>
-      </div>
 
       <div class="dialog-footer">
         <button class="btn-cancel" @click="handleCancel">取消</button>
@@ -94,11 +96,11 @@ export default {
     config: {
       type: Object,
       default: () => ({
-        apiUrl: '',
+        apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
         apiKey: '',
-        model: 'gpt-3.5-turbo',
+        model: 'google/gemini-3-pro-preview',
         temperature: 0.7,
-        maxTokens: 2000
+        maxTokens: 0
       })
     }
   },
@@ -251,6 +253,18 @@ export default {
   font-size: 0.75rem;
   color: #6b7280;
   margin: 0;
+}
+
+.form-link {
+  color: #f97316;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.form-link:hover {
+  color: #ea580c;
+  text-decoration: underline;
 }
 
 .dialog-footer {

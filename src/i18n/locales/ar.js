@@ -81,8 +81,10 @@ export default {
     quickStart: 'بداية سريعة:',
     quickAddBaidu: 'إضافة Baidu بسرعة',
     quickAddGoogle: 'إضافة Google بسرعة',
+    quickAddExcalidraw: 'إضافة Excalidraw بسرعة',
     baidu: 'Baidu',
     google: 'Google',
+    excalidraw: 'Excalidraw',
     commonSettings: '⚙️ الإعدادات العامة',
     optionalSettings: '🔧 الإعدادات الاختيارية',
     advancedSettings: '📦 الميزات المتقدمة',
