@@ -204,11 +204,14 @@
 </template>
 
 <script>
-import { inject, ref, watch, computed, nextTick } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useSessionManager } from '../composables/useSessionManager.js'
+import { computed } from 'vue'
 import { useWebsiteForm } from '../composables/useWebsiteForm.js'
 import { useOverlayClick } from '../composables/useOverlayClick.js'
+import { useQuickAdd } from '../composables/useQuickAdd.js'
+import { useSpecialWebsiteTypes } from '../composables/useSpecialWebsiteTypes.js'
+import { useAdvancedSection } from '../composables/useAdvancedSection.js'
+import { useProxySessionSync } from '../composables/useProxySessionSync.js'
+import { useSessionOperations } from '../composables/useSessionOperations.js'
 import WebsiteBasicInfo from './WebsiteEditDialog/WebsiteBasicInfo.vue'
 import DeviceTypeSelector from './WebsiteEditDialog/DeviceTypeSelector.vue'
 import TargetSelectorList from './WebsiteEditDialog/TargetSelectorList.vue'
@@ -268,53 +271,11 @@ export default {
   },
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
-    const { t } = useI18n()
-    
     // 检查是否是 Electron 环境
     const isElectron = computed(() => {
       return window.electron?.isElectron || false
     })
     
-    // 桌面捕获选择器显示状态
-    const showDesktopCaptureSelector = ref(false)
-    
-    // 自定义 HTML 对话框显示状态
-    const showCustomHtmlDialog = ref(false)
-    
-    // 进阶功能折叠状态
-    const showAdvanced = ref(false)
-
-    // 检查是否配置了进阶功能
-    const hasAdvancedConfig = (website) => {
-      // 检查是否配置了选择器（不为空数组）
-      const hasSelectors = website.targetSelectors && 
-                          Array.isArray(website.targetSelectors) && 
-                          website.targetSelectors.length > 0
-      
-      // 检查是否配置了自动刷新（不为默认值0）
-      const hasAutoRefresh = website.autoRefreshInterval && 
-                            website.autoRefreshInterval !== 0
-      
-      // 检查是否是自定义 HTML 类型
-      const isCustomHtml = website.type === 'custom-html'
-      
-      return hasSelectors || hasAutoRefresh || isCustomHtml
-    }
-
-    // 当对话框打开时，根据是否配置了进阶功能来决定展开状态
-    watch(() => props.show, (newShow) => {
-      if (newShow) {
-        // 对话框打开时，检查当前网站是否配置了进阶功能
-        showAdvanced.value = hasAdvancedConfig(props.website)
-      }
-    })
-    
-    // Session管理
-    const { sessionInstances, addSessionInstance } = useSessionManager()
-    const showPrompt = inject('showPrompt')
-    const openSessionManager = inject('openSessionManager')
-    const openProxyManager = inject('openProxyManager')
-
     // 表单数据管理
     const { localWebsite, handleConfirm: validateAndSubmit } = useWebsiteForm(props, emit)
 
@@ -323,184 +284,40 @@ export default {
       emit('cancel')
     })
 
-    // 监听代理设置变化
-    watch(() => localWebsite.value.proxyId, (newProxyId, oldProxyId) => {
-      const currentSessionId = localWebsite.value.sessionInstance
-      const isCurrentlyUsingProxySession = currentSessionId && currentSessionId.startsWith('proxy-')
-      
-      if (newProxyId && newProxyId !== oldProxyId) {
-        // 当设置了代理时
-        if (!isCurrentlyUsingProxySession) {
-          // 如果当前不是使用代理专用的 session，则创建一个新的代理专用 session
-          // 注意：这里不包含 proxyId，这样切换代理时可以保持同一个 session
-          const proxySessionId = `proxy-${props.website.id || Date.now()}`
-          
-          // 检查是否已经存在该隐藏实例
-          const existingInstance = sessionInstances.value.find(inst => inst.id === proxySessionId)
-          
-          if (!existingInstance) {
-            // 创建隐藏的 session 实例
-            const hiddenInstance = {
-              id: proxySessionId,
-              name: `代理专用 (${localWebsite.value.title || '未命名'})`,
-              description: '为代理设置自动创建的隐藏实例',
-              hidden: true, // 标记为隐藏
-              createdAt: new Date().toISOString()
-            }
-            sessionInstances.value.push(hiddenInstance)
-          }
-          
-          // 切换到代理专用的 session 实例
-          localWebsite.value.sessionInstance = proxySessionId
-        }
-        // 如果已经在使用代理专用的 session，则保持不变，只更新 proxyId（由 v-model 自动处理）
-      } else if (!newProxyId && oldProxyId) {
-        // 当清除代理时，切换回默认 session 实例
-        if (isCurrentlyUsingProxySession) {
-          localWebsite.value.sessionInstance = 'default'
-        }
-      }
-    })
+    // 快捷添加功能
+    const {
+      quickAddBaidu,
+      quickAddGoogle,
+      quickAddExcalidraw
+    } = useQuickAdd(localWebsite, validateAndSubmit)
+
+    // 特殊网站类型处理（桌面捕获、自定义HTML）
+    const {
+      showDesktopCaptureSelector,
+      showCustomHtmlDialog,
+      handleDesktopCaptureSelect,
+      handleCustomHtmlConfirm
+    } = useSpecialWebsiteTypes(emit)
+
+    // 进阶功能区域状态
+    const { showAdvanced, setupAdvancedWatch } = useAdvancedSection()
+    setupAdvancedWatch(() => props.website, () => props.show)
+
+    // Session实例操作
+    const {
+      sessionInstances,
+      handleCreateNewInstance,
+      handleOpenSessionManager,
+      handleOpenProxyManager
+    } = useSessionOperations(localWebsite)
+
+    // 代理与会话同步
+    const { setupProxySessionWatch } = useProxySessionSync(localWebsite, sessionInstances, props)
+    setupProxySessionWatch()
 
     // 确认提交
     const handleConfirm = () => {
       validateAndSubmit()
-    }
-
-    // 创建新的session实例
-    const handleCreateNewInstance = async () => {
-      // 使用当前视界的名称作为实例的默认命名
-        const defaultName = localWebsite.value.title 
-        ? `${localWebsite.value.title}` 
-        : `${t('sessionInstance.defaultInstanceName')} ${sessionInstances.value.length}`
-      
-      if (!showPrompt) {
-        const name = prompt(t('sessionInstance.createNewInstanceMessage'), defaultName)
-        if (name && name.trim()) {
-          const newInstance = addSessionInstance(name.trim())
-          localWebsite.value.sessionInstance = newInstance.id
-        }
-        return
-      }
-
-      const name = await showPrompt({
-        title: t('sessionInstance.createNewInstance'),
-        message: t('sessionInstance.createNewInstanceMessage'),
-        placeholder: defaultName
-      })
-
-      if (name && name.trim()) {
-        const newInstance = addSessionInstance(name.trim())
-        localWebsite.value.sessionInstance = newInstance.id
-      }
-    }
-
-    // 打开实例管理器
-    const handleOpenSessionManager = () => {
-      if (openSessionManager) {
-        openSessionManager()
-      }
-    }
-
-    // 打开代理管理器
-    const handleOpenProxyManager = () => {
-      if (openProxyManager) {
-        openProxyManager()
-      }
-    }
-
-    // 快捷添加百度
-    const quickAddBaidu = () => {
-      localWebsite.value.title = t('websiteEdit.baidu')
-      localWebsite.value.url = 'https://www.baidu.com'
-      // 自动提交
-      handleConfirm()
-    }
-
-    // 快捷添加谷歌
-    const quickAddGoogle = () => {
-      localWebsite.value.title = t('websiteEdit.google')
-      localWebsite.value.url = 'https://www.google.com'
-      // 自动提交
-      handleConfirm()
-    }
-
-    // 快捷添加 Excalidraw
-    const quickAddExcalidraw = () => {
-      localWebsite.value.title = t('websiteEdit.excalidraw')
-      localWebsite.value.url = 'https://excalidraw.com/'
-      // 自动创建新的 session 实例
-      const excalidrawName = t('websiteEdit.excalidraw')
-      const newInstance = addSessionInstance(excalidrawName, 'Excalidraw 专用会话实例')
-      localWebsite.value.sessionInstance = newInstance.id
-      console.log('[WebsiteEditDialog] 为 Excalidraw 创建新 session:', newInstance)
-      // 自动提交
-      handleConfirm()
-    }
-    
-    // 处理桌面捕获选择
-    const handleDesktopCaptureSelect = ({ source, options }) => {
-      console.log('[WebsiteEditDialog] 选择桌面捕获源:', source, options)
-      
-      // 关闭选择器
-      showDesktopCaptureSelector.value = false
-      
-      // 关闭当前对话框
-      emit('cancel')
-      
-      // 延迟提交数据，让父组件有时间切换对话框类型
-      nextTick(() => {
-        const desktopCaptureData = {
-          type: 'desktop-capture',
-          title: source.name || '桌面捕获',
-          url: '', // 桌面捕获不需要URL
-          desktopCaptureSourceId: source.id,
-        desktopCaptureOptions: {
-          autoRefresh: false, // 已移除自动刷新功能
-          fitScreen: options.fitScreen || false // 默认false
-        },
-          padding: 0,
-          muted: false,
-          targetSelectors: [],
-          targetSelector: ''
-        }
-        
-        // 提交数据，父组件会识别类型并切换到桌面捕获对话框
-        emit('confirm', desktopCaptureData)
-      })
-    }
-
-    // 处理自定义 HTML 确认
-    const handleCustomHtmlConfirm = (data) => {
-      console.log('[WebsiteEditDialog] 自定义 HTML 数据:', data)
-      
-      // 关闭对话框
-      showCustomHtmlDialog.value = false
-      
-      // 关闭当前对话框
-      emit('cancel')
-      
-      // 延迟提交数据
-      nextTick(() => {
-        const customHtmlData = {
-          type: 'custom-html',
-          title: data.title || '自定义网页',
-          url: '', // 自定义 HTML 不需要 URL
-          html: data.html || '',
-          deviceType: 'desktop',
-          padding: 0, // 自定义 HTML 默认不需要内边距
-          muted: false,
-          darkMode: false,
-          requireModifierForActions: false,
-          targetSelectors: [],
-          targetSelector: '',
-          autoRefreshInterval: 0,
-          sessionInstance: 'default'
-        }
-        
-        // 提交数据
-        emit('confirm', customHtmlData)
-      })
     }
 
     return {
