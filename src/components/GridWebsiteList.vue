@@ -39,6 +39,10 @@
           @update-url="handleUpdateUrl"
           @resize-start="handleResizeStart($event, index, $event)"
           @start-select-element="handleStartSelectElement"
+          @edit-data-mapping="handleEditDataMapping"
+          @delete-data-mapping="handleDeleteDataMapping"
+          @edit-action-mapping="handleEditActionMapping"
+          @delete-action-mapping="handleDeleteActionMapping"
         />
   </div>
 </template>
@@ -132,7 +136,11 @@ export default {
     'open-script-panel',
     'open-monitoring',
     'update-url',
-    'resize-start'
+    'resize-start',
+    'edit-data-mapping',
+    'delete-data-mapping',
+    'edit-action-mapping',
+    'delete-action-mapping'
   ],
   setup(props, { emit }) {
     // ========== 判断是否隐藏 ==========
@@ -218,6 +226,22 @@ export default {
       emit('start-automation-element-selection', websiteId)
     }
 
+    const handleEditDataMapping = (websiteId, mapping) => {
+      emit('edit-data-mapping', websiteId, mapping)
+    }
+
+    const handleDeleteDataMapping = (websiteId, mappingId) => {
+      emit('delete-data-mapping', websiteId, mappingId)
+    }
+
+    const handleEditActionMapping = (websiteId, mapping) => {
+      emit('edit-action-mapping', websiteId, mapping)
+    }
+
+    const handleDeleteActionMapping = (websiteId, mappingId) => {
+      emit('delete-action-mapping', websiteId, mappingId)
+    }
+
     // 获取网站的自动化数据（从父组件传递）
     const getAutomationDataForItem = (websiteId) => {
       // 直接返回数据对象（已经是 reactive 的）
@@ -261,7 +285,11 @@ export default {
       handleOpenMonitoring,
       handleUpdateUrl,
       handleResizeStart,
-      handleStartSelectElement
+      handleStartSelectElement,
+      handleEditDataMapping,
+      handleDeleteDataMapping,
+      handleEditActionMapping,
+      handleDeleteActionMapping
     }
   }
 }

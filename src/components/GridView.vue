@@ -156,6 +156,10 @@
           @update-url="handleUpdateUrl"
           @resize-start="startResize"
           @start-automation-element-selection="handleStartAutomationElementSelection"
+          @edit-data-mapping="handleEditDataMapping"
+          @delete-data-mapping="handleDeleteDataMapping"
+          @edit-action-mapping="handleEditActionMapping"
+          @delete-action-mapping="handleDeleteActionMapping"
         />
         
         <!-- 绘制层 -->
@@ -305,6 +309,25 @@ export default {
         return
       }
       
+      // 如果正在编辑映射，直接更新映射的选择器
+      if (editingMapping.value) {
+        const { type, websiteId: editWebsiteId, mappingId } = editingMapping.value
+        if (type === 'data') {
+          automationData.updateDataMapping(editWebsiteId, mappingId, { selector })
+          console.log('[GridView] 已更新数据映射的选择器')
+        } else if (type === 'action') {
+          automationData.updateActionMapping(editWebsiteId, mappingId, { selector })
+          console.log('[GridView] 已更新交互映射的选择器')
+        }
+        // 清除编辑状态
+        editingMapping.value = null
+        // 重置选择器状态
+        automationSelectingElement.value = false
+        automationTargetIframe.value = null
+        automationTargetWebsite.value = null
+        return
+      }
+      
       // 保存选择结果，等待用户选择映射类型
       pendingElementSelection.value = {
         websiteId,
@@ -359,6 +382,8 @@ export default {
       automationSelectingElement.value = false
       automationTargetIframe.value = null
       automationTargetWebsite.value = null
+      // 清除编辑状态
+      editingMapping.value = null
     }
     
     // 监听来自网站卡片的元素选择请求
@@ -435,6 +460,47 @@ export default {
       return automationData.getAutomationData(websiteId)
     }
     
+    // 正在编辑的映射（用于编辑时重新选择元素）
+    const editingMapping = ref(null)
+    
+    // 处理编辑数据映射
+    const handleEditDataMapping = (websiteId, mapping) => {
+      console.log('[GridView] 编辑数据映射:', websiteId, mapping)
+      // 保存正在编辑的映射信息
+      editingMapping.value = {
+        type: 'data',
+        websiteId,
+        mappingId: mapping.id
+      }
+      // 启动元素选择器，让用户重新选择元素
+      handleStartAutomationElementSelection(websiteId)
+    }
+    
+    // 处理删除数据映射
+    const handleDeleteDataMapping = (websiteId, mappingId) => {
+      console.log('[GridView] 删除数据映射:', websiteId, mappingId)
+      automationData.deleteDataMapping(websiteId, mappingId)
+    }
+    
+    // 处理编辑交互映射
+    const handleEditActionMapping = (websiteId, mapping) => {
+      console.log('[GridView] 编辑交互映射:', websiteId, mapping)
+      // 保存正在编辑的映射信息
+      editingMapping.value = {
+        type: 'action',
+        websiteId,
+        mappingId: mapping.id
+      }
+      // 启动元素选择器，让用户重新选择元素
+      handleStartAutomationElementSelection(websiteId)
+    }
+    
+    // 处理删除交互映射
+    const handleDeleteActionMapping = (websiteId, mappingId) => {
+      console.log('[GridView] 删除交互映射:', websiteId, mappingId)
+      automationData.deleteActionMapping(websiteId, mappingId)
+    }
+    
     // 暴露方法给父组件
     return {
       ...setupResult,
@@ -452,7 +518,12 @@ export default {
       showMappingTypeDialog,
       pendingElementSelection,
       handleSelectMappingType,
-      handleCancelMappingType
+      handleCancelMappingType,
+      // 编辑和删除映射
+      handleEditDataMapping,
+      handleDeleteDataMapping,
+      handleEditActionMapping,
+      handleDeleteActionMapping
     }
   }
 }
