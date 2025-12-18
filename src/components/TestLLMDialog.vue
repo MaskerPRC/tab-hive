@@ -52,7 +52,7 @@ export default {
     },
     websiteId: {
       type: String,
-      required: true
+      default: null
     },
     darkMode: {
       type: Boolean,
@@ -91,6 +91,11 @@ export default {
 
       if (!window.electron || !window.electron.monitoring) {
         alert('此功能仅在 Electron 环境中可用')
+        return
+      }
+
+      if (!props.websiteId) {
+        alert('网站ID无效')
         return
       }
 

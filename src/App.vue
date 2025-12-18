@@ -222,7 +222,7 @@ import { useImportExport } from './composables/useImportExport'
 import { useUpdateChecker } from './composables/useUpdateChecker'
 import { useSharedLayouts } from './composables/useSharedLayouts'
 import { useDialogStates } from './composables/useDialogStates'
-import { useMonitoringRules } from './composables/useMonitoringRules'
+import { useMonitoringState } from './composables/useMonitoringState'
 import { useViewportStates } from './composables/useViewportStates'
 import { useGlobalSettingsHandlers } from './composables/useGlobalSettingsHandlers'
 import { useExternalUrlModalListeners } from './composables/useExternalUrlModal'
@@ -284,7 +284,7 @@ export default {
 
     // 使用状态管理 composables
     const dialogStates = useDialogStates()
-    const monitoringRules = useMonitoringRules()
+    const monitoringRules = useMonitoringState()
     const viewportStates = useViewportStates()
     const globalSettingsHandlers = useGlobalSettingsHandlers(layoutManager, websiteManager)
 

@@ -201,7 +201,7 @@ export default {
     },
     websiteId: {
       type: String,
-      required: true
+      default: null
     },
     rule: {
       type: Object,
@@ -240,6 +240,11 @@ export default {
     const testScreenshot = async () => {
       if (!window.electron || !window.electron.monitoring) {
         alert('此功能仅在 Electron 环境中可用')
+        return
+      }
+
+      if (!props.websiteId) {
+        alert('网站ID无效')
         return
       }
 

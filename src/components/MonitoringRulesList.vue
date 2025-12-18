@@ -102,7 +102,7 @@ export default {
     },
     websiteId: {
       type: String,
-      required: true
+      default: null
     },
     darkMode: {
       type: Boolean,
@@ -116,7 +116,7 @@ export default {
 
     // 加载规则列表
     const loadRules = async () => {
-      if (!window.electron || !window.electron.monitoring) return
+      if (!window.electron || !window.electron.monitoring || !props.websiteId) return
       
       loading.value = true
       try {
