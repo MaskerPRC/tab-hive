@@ -73,6 +73,7 @@
           />
           <p class="form-hint">生成内容的最大长度（0 表示不限制）</p>
         </div>
+      </div>
 
       <div class="dialog-footer">
         <button class="btn-cancel" @click="handleCancel">取消</button>
