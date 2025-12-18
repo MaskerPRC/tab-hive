@@ -64,7 +64,7 @@
               class="port port-output"
               :data-port-id="mapping.portId"
               :data-port-type="'data'"
-              @mousedown="$emit('port-mousedown', $event, websiteId, mapping.portId, 'data-output')"
+              @mousedown="handlePortMouseDown($event, websiteId, mapping.portId, 'data-output')"
             ></div>
           </div>
 
@@ -112,7 +112,7 @@
               class="port port-input"
               :data-port-id="mapping.portId"
               :data-port-type="'action'"
-              @mousedown="$emit('port-mousedown', $event, websiteId, mapping.portId, 'action-input')"
+              @mousedown="handlePortMouseDown($event, websiteId, mapping.portId, 'action-input')"
             ></div>
           </div>
 
@@ -227,6 +227,21 @@ export default {
         'select': '📋'
       }
       return icons[type] || '⚡'
+    },
+    handlePortMouseDown(event, websiteId, portId, portType) {
+      // 阻止默认的文字选择行为
+      event.preventDefault()
+      event.stopPropagation()
+      // 禁用文字选择
+      document.body.style.userSelect = 'none'
+      // 监听 mouseup 事件，在鼠标释放时恢复文字选择
+      const handleMouseUp = () => {
+        document.body.style.userSelect = ''
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+      document.addEventListener('mouseup', handleMouseUp)
+      // 触发事件
+      this.$emit('port-mousedown', event, websiteId, portId, portType)
     }
   }
 }
@@ -384,6 +399,10 @@ export default {
   align-items: center;
   justify-content: space-between;
   transition: all 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .mapping-item:hover {
@@ -484,6 +503,10 @@ export default {
   border: 2px solid #fff;
   cursor: crosshair;
   z-index: 10;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .port-output {

@@ -43,6 +43,7 @@
           @delete-data-mapping="handleDeleteDataMapping"
           @edit-action-mapping="handleEditActionMapping"
           @delete-action-mapping="handleDeleteActionMapping"
+          @port-mousedown="handlePortMouseDown"
         />
   </div>
 </template>
@@ -140,7 +141,8 @@ export default {
     'edit-data-mapping',
     'delete-data-mapping',
     'edit-action-mapping',
-    'delete-action-mapping'
+    'delete-action-mapping',
+    'port-mousedown'
   ],
   setup(props, { emit }) {
     // ========== 判断是否隐藏 ==========
@@ -242,6 +244,10 @@ export default {
       emit('delete-action-mapping', websiteId, mappingId)
     }
 
+    const handlePortMouseDown = (event, websiteId, portId, portType) => {
+      emit('port-mousedown', event, websiteId, portId, portType)
+    }
+
     // 获取网站的自动化数据（从父组件传递）
     const getAutomationDataForItem = (websiteId) => {
       // 直接返回数据对象（已经是 reactive 的）
@@ -289,7 +295,8 @@ export default {
       handleEditDataMapping,
       handleDeleteDataMapping,
       handleEditActionMapping,
-      handleDeleteActionMapping
+      handleDeleteActionMapping,
+      handlePortMouseDown
     }
   }
 }

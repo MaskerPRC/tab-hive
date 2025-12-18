@@ -160,7 +160,55 @@
           @delete-data-mapping="handleDeleteDataMapping"
           @edit-action-mapping="handleEditActionMapping"
           @delete-action-mapping="handleDeleteActionMapping"
+          @port-mousedown="handlePortMouseDown"
         />
+        
+        <!-- 连接线层（自动化视图） -->
+        <svg
+          v-if="viewMode === 'automation'"
+          class="connection-layer"
+          :style="connectionLayerStyle"
+          @mousemove="handleConnectionMouseMove"
+          @mouseup="handleConnectionMouseUp"
+          @mouseleave="handleConnectionMouseUp"
+        >
+          <!-- 已保存的连接线 -->
+          <g v-for="(connection, index) in connections" :key="`connection-${index}`">
+            <path
+              :d="getConnectionPath(connection)"
+              :stroke="connection.type === 'data' ? '#4CAF50' : '#2196F3'"
+              :stroke-width="2"
+              :stroke-dasharray="connection.type === 'data' ? '5,5' : '0'"
+              fill="none"
+              marker-end="url(#arrowhead)"
+            />
+          </g>
+          <!-- 临时连接线（正在拖动时） -->
+          <path
+            v-if="isConnecting"
+            :d="tempConnectionPath"
+            :stroke="connectingPortType === 'data-output' ? '#4CAF50' : '#2196F3'"
+            :stroke-width="2"
+            :stroke-dasharray="connectingPortType === 'data-output' ? '5,5' : '0'"
+            fill="none"
+            marker-end="url(#arrowhead)"
+            opacity="0.7"
+            style="pointer-events: none;"
+          />
+          <!-- 箭头标记 -->
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 10 3, 0 6" fill="currentColor" />
+            </marker>
+          </defs>
+        </svg>
         
         <!-- 绘制层 -->
         <GridDrawingLayer
@@ -213,7 +261,7 @@
 // 子组件
 import FullscreenBar from './FullscreenBar.vue'
 import ElementSelector from './ElementSelector.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import CanvasControls from './CanvasControls.vue'
 import GridDialogManager from './GridDialogManager.vue'
 import GridDrawingLayer from './GridDrawingLayer.vue'
@@ -501,6 +549,195 @@ export default {
       automationData.deleteActionMapping(websiteId, mappingId)
     }
     
+    // ==================== 连接线绘制 ====================
+    const isConnecting = ref(false)
+    const connectingPort = ref(null) // { websiteId, portId, portType, x, y }
+    const tempConnectionEnd = ref({ x: 0, y: 0 })
+    const connections = ref([]) // 已保存的连接线
+    
+    // 获取端点的屏幕坐标（从事件对象或元素）
+    const getPortPosition = (websiteId, portId, eventOrElement) => {
+      let port = null
+      
+      // 如果提供了事件对象，直接从事件目标获取
+      if (eventOrElement && eventOrElement.target) {
+        port = eventOrElement.target.closest('.port')
+      }
+      
+      // 如果没找到，尝试通过 portId 查找
+      if (!port) {
+        const allPorts = document.querySelectorAll(`[data-port-id="${portId}"]`)
+        // 找到第一个匹配的端点（简化版本，假设每个 portId 是唯一的）
+        port = allPorts[0]
+      }
+      
+      if (!port) {
+        console.warn('[GridView] 无法找到端点:', { websiteId, portId })
+        return null
+      }
+      
+      // 获取端点的位置
+      const rect = port.getBoundingClientRect()
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (!canvasWrapper) return null
+      
+      const canvasRect = canvasWrapper.getBoundingClientRect()
+      // 从 props 获取 canvasTransform，如果没有则使用默认值
+      const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+      
+      return {
+        x: (rect.left + rect.width / 2 - canvasRect.left) / transform.zoom - transform.x,
+        y: (rect.top + rect.height / 2 - canvasRect.top) / transform.zoom - transform.y
+      }
+    }
+    
+    // 处理端点鼠标按下
+    const handlePortMouseDown = (event, websiteId, portId, portType) => {
+      console.log('[GridView] 开始连接，端点:', { websiteId, portId, portType })
+      
+      // 获取端点位置（传入事件对象）
+      const portPos = getPortPosition(websiteId, portId, event)
+      if (!portPos) {
+        console.error('[GridView] 无法获取端点位置')
+        return
+      }
+      
+      // 开始连接
+      isConnecting.value = true
+      connectingPort.value = {
+        websiteId,
+        portId,
+        portType,
+        x: portPos.x,
+        y: portPos.y
+      }
+      tempConnectionEnd.value = { x: portPos.x, y: portPos.y }
+    }
+    
+    // 处理连接线鼠标移动
+    const handleConnectionMouseMove = (event) => {
+      if (!isConnecting.value || !connectingPort.value) return
+      
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (!canvasWrapper) return
+      
+      const canvasRect = canvasWrapper.getBoundingClientRect()
+      const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+      
+      tempConnectionEnd.value = {
+        x: (event.clientX - canvasRect.left) / transform.zoom - transform.x,
+        y: (event.clientY - canvasRect.top) / transform.zoom - transform.y
+      }
+    }
+    
+    // 处理连接线鼠标释放
+    const handleConnectionMouseUp = (event) => {
+      if (!isConnecting.value || !connectingPort.value) return
+      
+      // 查找鼠标下的端点
+      const elementsAtPoint = document.elementsFromPoint(event.clientX, event.clientY)
+      let port = null
+      
+      for (const el of elementsAtPoint) {
+        if (el.classList.contains('port')) {
+          port = el
+          break
+        }
+      }
+      
+      if (port && port.dataset.portId) {
+        const targetPortId = port.dataset.portId
+        const targetPortType = port.dataset.portType
+        
+        // 查找目标端点所在的网站ID（通过查找包含端点的网站卡片）
+        let targetWebsiteId = null
+        let parent = port.parentElement
+        while (parent) {
+          // 查找包含 WebsiteAutomationPanel 的网站卡片
+          if (parent.querySelector('.automation-panel')) {
+            // 从自动化数据中查找对应的网站ID
+            for (const website of setupResult.allWebsites.value) {
+              const websiteAutomationData = automationData.getAutomationData(website.id)
+              const allMappings = [...(websiteAutomationData.dataMappings || []), ...(websiteAutomationData.actionMappings || [])]
+              if (allMappings.some(m => m.portId === targetPortId)) {
+                targetWebsiteId = website.id
+                break
+              }
+            }
+            if (targetWebsiteId) break
+          }
+          parent = parent.parentElement
+        }
+        
+        // 检查是否可以连接（数据输出 -> 交互输入）
+        if (connectingPort.value.portType === 'data-output' && targetPortType === 'action' && targetWebsiteId) {
+          // 检查是否连接到同一个端点
+          if (targetWebsiteId !== connectingPort.value.websiteId || targetPortId !== connectingPort.value.portId) {
+            // 创建连接
+            connections.value.push({
+              from: {
+                websiteId: connectingPort.value.websiteId,
+                portId: connectingPort.value.portId
+              },
+              to: {
+                websiteId: targetWebsiteId,
+                portId: targetPortId
+              },
+              type: 'data'
+            })
+            console.log('[GridView] 创建连接:', connections.value[connections.value.length - 1])
+          }
+        }
+      }
+      
+      // 重置连接状态
+      isConnecting.value = false
+      connectingPort.value = null
+      tempConnectionEnd.value = { x: 0, y: 0 }
+    }
+    
+    // 计算连接线路径
+    const getConnectionPath = (connection) => {
+      const fromPos = getPortPosition(connection.from.websiteId, connection.from.portId, null)
+      const toPos = getPortPosition(connection.to.websiteId, connection.to.portId, null)
+      
+      if (!fromPos || !toPos) return ''
+      
+      // 使用贝塞尔曲线绘制连接线
+      const dx = toPos.x - fromPos.x
+      const dy = toPos.y - fromPos.y
+      const controlX = fromPos.x + dx * 0.5
+      
+      return `M ${fromPos.x} ${fromPos.y} C ${controlX} ${fromPos.y}, ${controlX} ${toPos.y}, ${toPos.x} ${toPos.y}`
+    }
+    
+    // 临时连接线路径
+    const tempConnectionPath = computed(() => {
+      if (!connectingPort.value) return ''
+      
+      const fromPos = connectingPort.value
+      const toPos = tempConnectionEnd.value
+      
+      const dx = toPos.x - fromPos.x
+      const dy = toPos.y - fromPos.y
+      const controlX = fromPos.x + dx * 0.5
+      
+      return `M ${fromPos.x} ${fromPos.y} C ${controlX} ${fromPos.y}, ${controlX} ${toPos.y}, ${toPos.x} ${toPos.y}`
+    })
+    
+    // 连接线层样式
+    const connectionLayerStyle = computed(() => {
+      return {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: isConnecting.value ? 'auto' : 'none',
+        zIndex: 5
+      }
+    })
+    
     // 暴露方法给父组件
     return {
       ...setupResult,
@@ -523,7 +760,16 @@ export default {
       handleEditDataMapping,
       handleDeleteDataMapping,
       handleEditActionMapping,
-      handleDeleteActionMapping
+      handleDeleteActionMapping,
+      // 连接线
+      handlePortMouseDown,
+      handleConnectionMouseMove,
+      handleConnectionMouseUp,
+      tempConnectionPath,
+      connectionLayerStyle,
+      connections,
+      isConnecting,
+      connectingPortType: computed(() => connectingPort.value?.portType || '')
     }
   }
 }
