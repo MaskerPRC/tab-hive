@@ -36,7 +36,6 @@
       @toggle-mute="handleToggleMute"
       @open-script-panel="handleOpenScriptPanel"
           @open-monitoring="handleOpenMonitoring"
-          @open-workflow="handleOpenWorkflow"
           @update-url="handleUpdateUrl"
           @resize-start="handleResizeStart($event, index, $event)"
           @start-select-element="handleStartSelectElement"
@@ -132,7 +131,6 @@ export default {
     'toggle-mute',
     'open-script-panel',
     'open-monitoring',
-    'open-workflow',
     'update-url',
     'resize-start'
   ],
@@ -261,7 +259,6 @@ export default {
       handleToggleMute,
       handleOpenScriptPanel,
       handleOpenMonitoring,
-      handleOpenWorkflow,
       handleUpdateUrl,
       handleResizeStart,
       handleStartSelectElement

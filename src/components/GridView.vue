@@ -153,7 +153,6 @@
           @toggle-mute="handleToggleMute"
           @open-script-panel="handleOpenScriptPanel"
           @open-monitoring="(websiteId, darkMode) => $emit('open-monitoring', websiteId, darkMode)"
-          @open-workflow="handleOpenWorkflow"
           @update-url="handleUpdateUrl"
           @resize-start="startResize"
           @start-automation-element-selection="handleStartAutomationElementSelection"
@@ -272,7 +271,7 @@ export default {
     'open-script-panel', 
     'import-layout-from-image', 
     'open-monitoring', 
-    'open-workflow',
+,
     'start-automation-element-selection',
     'update-automation-data'
   ],

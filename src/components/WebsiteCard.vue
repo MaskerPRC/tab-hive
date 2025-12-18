@@ -106,7 +106,6 @@
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
         @monitoring="handleMonitoringClick"
-        @workflow="handleWorkflowClick"
       />
       
       <!-- 拖动手柄 -->
@@ -292,7 +291,7 @@ export default {
       default: false
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring', 'open-workflow', 'add-data-mapping', 'edit-data-mapping', 'delete-data-mapping', 'add-action-mapping', 'edit-action-mapping', 'delete-action-mapping', 'port-mousedown', 'start-select-element', 'element-selected'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring', 'add-data-mapping', 'edit-data-mapping', 'delete-data-mapping', 'add-action-mapping', 'edit-action-mapping', 'delete-action-mapping', 'port-mousedown', 'start-select-element', 'element-selected'],
   setup(props, { emit }) {
     // ==================== Webview/Iframe 管理 ====================
     const {
@@ -593,7 +592,6 @@ export default {
     const {
       activeRulesCount,
       handleMonitoringClick,
-      handleWorkflowClick,
       refreshRulesCount
     } = useMonitoringRules(props, emit)
 
@@ -777,7 +775,6 @@ export default {
       // 监听规则相关
       activeRulesCount,
       handleMonitoringClick,
-      handleWorkflowClick,
       refreshRulesCount,
       // 自动化面板相关
       isSelectingElement,

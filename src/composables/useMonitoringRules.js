@@ -31,16 +31,6 @@ export function useMonitoringRules(props, emit) {
   }
 
   /**
-   * 工作流按钮点击
-   * 工作流现在是针对整个布局的，不再针对单个网站
-   */
-  const handleWorkflowClick = () => {
-    console.log('[useMonitoringRules] 工作流按钮被点击')
-    console.log('[useMonitoringRules] 触发 open-workflow 事件（布局级别）')
-    emit('open-workflow')
-  }
-
-  /**
    * 提供刷新规则计数的方法（供父组件调用）
    */
   const refreshRulesCount = () => {
@@ -57,7 +47,6 @@ export function useMonitoringRules(props, emit) {
   return {
     activeRulesCount,
     handleMonitoringClick,
-    handleWorkflowClick,
     refreshRulesCount
   }
 }

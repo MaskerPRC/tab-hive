@@ -21,12 +21,6 @@ export function useDialogStates() {
   const showMonitoringRulesList = ref(false)
   const showMonitoringRuleDialog = ref(false)
   
-  // 工作流编辑器
-  const showWorkflowEditor = ref(false)
-  const currentWorkflowLayoutId = ref(null)
-  const currentWorkflowLayoutName = ref('')
-  const currentWorkflowDarkMode = ref(false)
-  
   // 内容脚本面板
   const showContentScriptPanel = ref(false)
   const contentScriptTargetIframe = ref(null)
@@ -94,29 +88,6 @@ export function useDialogStates() {
     showMonitoringRulesList.value = true
   }
   
-  const openWorkflowEditor = (layoutId, layoutName) => {
-    console.log('[useDialogStates] openWorkflowEditor 被调用')
-    console.log('[useDialogStates] layoutId:', layoutId)
-    console.log('[useDialogStates] layoutName:', layoutName)
-    console.log('[useDialogStates] 设置状态前 showWorkflowEditor:', showWorkflowEditor.value)
-    
-    showWorkflowEditor.value = true
-    currentWorkflowLayoutId.value = layoutId
-    currentWorkflowLayoutName.value = layoutName
-    currentWorkflowDarkMode.value = false
-    
-    console.log('[useDialogStates] 设置状态后 showWorkflowEditor:', showWorkflowEditor.value)
-    console.log('[useDialogStates] currentWorkflowLayoutId:', currentWorkflowLayoutId.value)
-    console.log('[useDialogStates] currentWorkflowLayoutName:', currentWorkflowLayoutName.value)
-  }
-  
-  const closeWorkflowEditor = () => {
-    console.log('[useDialogStates] closeWorkflowEditor 被调用')
-    showWorkflowEditor.value = false
-    currentWorkflowLayoutId.value = null
-    currentWorkflowLayoutName.value = ''
-  }
-  
   const openContentScriptPanel = (iframe) => {
     contentScriptTargetIframe.value = iframe
     showContentScriptPanel.value = true
@@ -162,10 +133,6 @@ export function useDialogStates() {
     showSessionManager,
     showMonitoringRulesList,
     showMonitoringRuleDialog,
-    showWorkflowEditor,
-    currentWorkflowLayoutId,
-    currentWorkflowLayoutName,
-    currentWorkflowDarkMode,
     showContentScriptPanel,
     contentScriptTargetIframe,
     showSharedModal,
@@ -186,8 +153,6 @@ export function useDialogStates() {
     closeMonitoringRulesList,
     openMonitoringRuleDialog,
     closeMonitoringRuleDialog,
-    openWorkflowEditor,
-    closeWorkflowEditor,
     openContentScriptPanel,
     closeContentScriptPanel,
     openSharedModal,

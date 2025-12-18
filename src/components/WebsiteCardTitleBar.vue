@@ -105,7 +105,6 @@
           :active-rules-count="activeRulesCount"
           @close="showMoreMenu = false"
           @copy="$emit('copy')"
-          @workflow="() => { console.log('[TitleBar] 接收到 workflow 事件，向上传递'); $emit('workflow') }"
           @script="$emit('open-script-panel')"
           @devtools="$emit('open-devtools')"
           @edit="$emit('edit')"
@@ -172,7 +171,7 @@ export default {
       default: 0
     }
   },
-  emits: ['go-back', 'go-forward', 'refresh', 'toggle-mute', 'copy', 'workflow', 'open-script-panel', 'edit', 'fullscreen', 'remove', 'open-devtools', 'monitoring'],
+  emits: ['go-back', 'go-forward', 'refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove', 'open-devtools', 'monitoring'],
   setup(props) {
     const showMoreMenu = ref(false)
     const moreMenuStyle = ref({})
