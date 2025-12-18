@@ -88,7 +88,7 @@
       :new-website="dialogState.newWebsite"
       :show-custom-html-dialog="dialogState.showCustomHtmlDialog"
       :show-rearrange-dialog="dialogState.showRearrangeDialog"
-      :context-menu-visible="dialogState.contextMenuVisible"
+      :context-menu-visible="dialogState.contextMenuVisible && viewMode !== 'automation'"
       :context-menu-x="dialogState.contextMenuX"
       :context-menu-y="dialogState.contextMenuY"
       :websites="websites"
@@ -102,18 +102,78 @@
       @context-add-custom-html="handleContextMenuAddCustomHtml"
       @close-context-menu="closeContextMenu"
     />
+    
+    <!-- 自动化视图右键菜单 -->
+    <AutomationContextMenu
+      v-if="viewMode === 'automation'"
+      :visible="automationContextMenuVisible"
+      :x="automationContextMenuX"
+      :y="automationContextMenuY"
+      @add-trigger="handleAddTriggerNode"
+      @add-http="handleAddHttpNode"
+      @add-set="handleAddSetNode"
+      @add-web-action="handleAddWebActionNode"
+      @close="closeAutomationContextMenu"
+    />
 
     <!-- 画布容器 -->
     <div
       class="canvas-wrapper"
       :class="{ 'panning': isPanning || false, 'dragging-item': isDraggingItem || isResizing }"
       @mousedown="handleCanvasMouseDown"
+      @mousemove="handleCanvasMouseMoveForConnection"
+      @mouseup="handleCanvasMouseUpForConnection"
       @wheel="handleCanvasWheel"
       @contextmenu="handleContextMenu"
+      @click="closeAutomationContextMenu"
       @drop.prevent="handleDropOnEmpty"
       @dragover.prevent="handleDragOverOnEmpty"
       @dragenter.prevent="handleDragEnterForFiles"
     >
+      <!-- 连接线层（自动化视图）- 放在 canvas-wrapper 下，使用屏幕坐标 -->
+      <svg
+        v-if="viewMode === 'automation'"
+        class="connection-layer"
+        :style="connectionLayerStyle"
+      >
+        <!-- 已保存的连接线 -->
+        <g v-for="(connection, index) in connections" :key="`connection-${index}`">
+          <path
+            :d="getConnectionPath(connection)"
+            :stroke="connection.type === 'data' ? '#4CAF50' : '#2196F3'"
+            :stroke-width="2"
+            :stroke-dasharray="connection.type === 'data' ? '5,5' : '0'"
+            fill="none"
+            marker-end="url(#arrowhead)"
+          />
+        </g>
+        <!-- 临时连接线（正在拖动时） -->
+        <path
+          v-if="isConnecting"
+          :d="tempConnectionPath"
+          :stroke="connectingPortType === 'data-output' ? '#4CAF50' : '#2196F3'"
+          :stroke-width="2"
+          :stroke-dasharray="connectingPortType === 'data-output' ? '5,5' : '0'"
+          fill="none"
+          marker-end="url(#arrowhead)"
+          opacity="0.7"
+          style="pointer-events: none;"
+        />
+        <!-- 箭头标记 -->
+        <defs>
+          <marker
+            id="arrowhead"
+            markerWidth="10"
+            markerHeight="10"
+            refX="9"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 10 3, 0 6" fill="currentColor" />
+          </marker>
+        </defs>
+      </svg>
+      
       <!-- 画布内容 -->
       <div
         class="grid-container"
@@ -163,52 +223,24 @@
           @port-mousedown="handlePortMouseDown"
         />
         
-        <!-- 连接线层（自动化视图） -->
-        <svg
+        <!-- 工作流节点层（自动化视图） -->
+        <div
           v-if="viewMode === 'automation'"
-          class="connection-layer"
-          :style="connectionLayerStyle"
-          @mousemove="handleConnectionMouseMove"
-          @mouseup="handleConnectionMouseUp"
-          @mouseleave="handleConnectionMouseUp"
+          class="workflow-nodes-layer"
+          :style="workflowNodesLayerStyle"
         >
-          <!-- 已保存的连接线 -->
-          <g v-for="(connection, index) in connections" :key="`connection-${index}`">
-            <path
-              :d="getConnectionPath(connection)"
-              :stroke="connection.type === 'data' ? '#4CAF50' : '#2196F3'"
-              :stroke-width="2"
-              :stroke-dasharray="connection.type === 'data' ? '5,5' : '0'"
-              fill="none"
-              marker-end="url(#arrowhead)"
-            />
-          </g>
-          <!-- 临时连接线（正在拖动时） -->
-          <path
-            v-if="isConnecting"
-            :d="tempConnectionPath"
-            :stroke="connectingPortType === 'data-output' ? '#4CAF50' : '#2196F3'"
-            :stroke-width="2"
-            :stroke-dasharray="connectingPortType === 'data-output' ? '5,5' : '0'"
-            fill="none"
-            marker-end="url(#arrowhead)"
-            opacity="0.7"
-            style="pointer-events: none;"
+          <WorkflowNode
+            v-for="node in workflowNodes"
+            :key="node.id"
+            :node="node"
+            :is-selected="selectedNodeId === node.id"
+            :canvas-transform="canvasTransform"
+            @node-mousedown="handleNodeMouseDown"
+            @node-click="handleNodeClick"
+            @port-mousedown="handleNodePortMouseDown"
+            @execute="handleNodeExecute"
           />
-          <!-- 箭头标记 -->
-          <defs>
-            <marker
-              id="arrowhead"
-              markerWidth="10"
-              markerHeight="10"
-              refX="9"
-              refY="3"
-              orient="auto"
-            >
-              <polygon points="0 0, 10 3, 0 6" fill="currentColor" />
-            </marker>
-          </defs>
-        </svg>
+        </div>
         
         <!-- 绘制层 -->
         <GridDrawingLayer
@@ -261,15 +293,18 @@
 // 子组件
 import FullscreenBar from './FullscreenBar.vue'
 import ElementSelector from './ElementSelector.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import CanvasControls from './CanvasControls.vue'
 import GridDialogManager from './GridDialogManager.vue'
 import GridDrawingLayer from './GridDrawingLayer.vue'
 import GridWebsiteList from './GridWebsiteList.vue'
+import AutomationContextMenu from './AutomationContextMenu.vue'
+import WorkflowNode from './WorkflowNode.vue'
 
 // 主逻辑 Composable
 import { useGridViewSetup } from '../composables/useGridViewSetup'
 import { useAutomationData } from '../composables/useAutomationData'
+import { createTriggerNode, createHttpNode, createSetNode, createWebActionNode } from '../models/workflowModels'
 
 export default {
   name: 'GridView',
@@ -279,7 +314,9 @@ export default {
     CanvasControls,
     GridDialogManager,
     GridDrawingLayer,
-    GridWebsiteList
+    GridWebsiteList,
+    AutomationContextMenu,
+    WorkflowNode
   },
   props: {
     websites: {
@@ -551,7 +588,7 @@ export default {
     
     // ==================== 连接线绘制 ====================
     const isConnecting = ref(false)
-    const connectingPort = ref(null) // { websiteId, portId, portType, x, y }
+    const connectingPort = ref(null) // { websiteId, portId, portType, x, y, isNodePort, nodeId?, direction? }
     const tempConnectionEnd = ref({ x: 0, y: 0 })
     const connections = ref([]) // 已保存的连接线
     
@@ -578,17 +615,55 @@ export default {
       
       // 获取端点的位置
       const rect = port.getBoundingClientRect()
-      const canvasWrapper = document.querySelector('.canvas-wrapper')
-      if (!canvasWrapper) return null
       
-      const canvasRect = canvasWrapper.getBoundingClientRect()
+      // 获取 grid-container 的位置（因为网站卡片和SVG都是相对于 grid-container 定位的）
+      const gridContainer = document.querySelector('.grid-container')
+      if (!gridContainer) return null
+      
+      const gridContainerRect = gridContainer.getBoundingClientRect()
       // 从 props 获取 canvasTransform，如果没有则使用默认值
       const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
       
-      return {
-        x: (rect.left + rect.width / 2 - canvasRect.left) / transform.zoom - transform.x,
-        y: (rect.top + rect.height / 2 - canvasRect.top) / transform.zoom - transform.y
+      // 计算端点在 grid-container 本地坐标系统中的位置
+      // grid-container 有 transform: translate(x, y) scale(zoom)
+      // CSS transform 的顺序是：先 translate 再 scale
+      // 屏幕坐标 = (本地坐标 + translate) * zoom + grid-container屏幕位置
+      // 反过来：本地坐标 = (屏幕坐标 - grid-container屏幕位置) / zoom - translate
+      const portCenterX = rect.left + rect.width / 2
+      const portCenterY = rect.top + rect.height / 2
+      
+      // ========== 新方案：SVG 放在 canvas-wrapper 下，使用屏幕坐标 ==========
+      // SVG 不再继承 grid-container 的 transform，直接使用屏幕坐标
+      // 获取 canvas-wrapper 的位置作为 SVG 的坐标系统原点
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (!canvasWrapper) return null
+      
+      const canvasWrapperRect = canvasWrapper.getBoundingClientRect()
+      
+      // SVG 内的坐标就是相对于 canvas-wrapper 的屏幕坐标
+      const svgX = portCenterX - canvasWrapperRect.left
+      const svgY = portCenterY - canvasWrapperRect.top
+      
+      // 调试日志（仅在开发环境）
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[GridView] 端点位置计算:', {
+          portId,
+          portScreen: { x: portCenterX, y: portCenterY },
+          canvasWrapperScreen: {
+            left: canvasWrapperRect.left,
+            top: canvasWrapperRect.top,
+            width: canvasWrapperRect.width,
+            height: canvasWrapperRect.height
+          },
+          svgCoordinates: {
+            x: svgX,
+            y: svgY,
+            formula: `(${portCenterX} - ${canvasWrapperRect.left}) = ${svgX}`
+          }
+        })
       }
+      
+      return { x: svgX, y: svgY }
     }
     
     // 处理端点鼠标按下
@@ -609,24 +684,60 @@ export default {
         portId,
         portType,
         x: portPos.x,
-        y: portPos.y
+        y: portPos.y,
+        isNodePort: false
       }
       tempConnectionEnd.value = { x: portPos.x, y: portPos.y }
+      console.log('[GridView] 连接状态已设置:', {
+        isConnecting: isConnecting.value,
+        connectingPort: {
+          websiteId: connectingPort.value.websiteId,
+          portId: connectingPort.value.portId,
+          portType: connectingPort.value.portType,
+          position: { x: connectingPort.value.x, y: connectingPort.value.y }
+        }
+      })
     }
     
     // 处理连接线鼠标移动
     const handleConnectionMouseMove = (event) => {
-      if (!isConnecting.value || !connectingPort.value) return
+      if (!isConnecting.value || !connectingPort.value) {
+        return
+      }
       
       const canvasWrapper = document.querySelector('.canvas-wrapper')
       if (!canvasWrapper) return
       
-      const canvasRect = canvasWrapper.getBoundingClientRect()
-      const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+      const canvasWrapperRect = canvasWrapper.getBoundingClientRect()
       
+      // 更新临时连接线的终点（鼠标位置）
       tempConnectionEnd.value = {
-        x: (event.clientX - canvasRect.left) / transform.zoom - transform.x,
-        y: (event.clientY - canvasRect.top) / transform.zoom - transform.y
+        x: event.clientX - canvasWrapperRect.left,
+        y: event.clientY - canvasWrapperRect.top
+      }
+      
+      // 重新计算起点位置（因为缩放时端点位置会变化）
+      if (connectingPort.value.isNodePort) {
+        // 节点端点
+        const node = workflowNodes.value.find(n => n.id === connectingPort.value.nodeId)
+        if (node) {
+          const allPorts = [...(node.inputPorts || []), ...(node.outputPorts || [])]
+          const port = allPorts.find(p => p.id === connectingPort.value.portId)
+          if (port) {
+            const portPos = getNodePortPosition(node, port, connectingPort.value.direction)
+            if (portPos) {
+              connectingPort.value.x = portPos.x
+              connectingPort.value.y = portPos.y
+            }
+          }
+        }
+      } else {
+        // 网站端点
+        const portPos = getPortPosition(connectingPort.value.websiteId, connectingPort.value.portId, null)
+        if (portPos) {
+          connectingPort.value.x = portPos.x
+          connectingPort.value.y = portPos.y
+        }
       }
     }
     
@@ -634,58 +745,157 @@ export default {
     const handleConnectionMouseUp = (event) => {
       if (!isConnecting.value || !connectingPort.value) return
       
+      console.log('[GridView] 连接线鼠标释放:', {
+        mouseScreen: { x: event.clientX, y: event.clientY },
+        tempEnd: { x: tempConnectionEnd.value.x, y: tempConnectionEnd.value.y },
+        connectingPort: {
+          position: { x: connectingPort.value.x, y: connectingPort.value.y },
+          portId: connectingPort.value.portId
+        }
+      })
+      
       // 查找鼠标下的端点
       const elementsAtPoint = document.elementsFromPoint(event.clientX, event.clientY)
       let port = null
+      let targetNode = null
+      let targetPort = null
+      let targetWebsiteId = null
+      let targetPortId = null
       
       for (const el of elementsAtPoint) {
-        if (el.classList.contains('port')) {
+        if (el.classList.contains('port') || el.classList.contains('node-port')) {
           port = el
           break
         }
       }
       
       if (port && port.dataset.portId) {
-        const targetPortId = port.dataset.portId
+        targetPortId = port.dataset.portId
         const targetPortType = port.dataset.portType
         
-        // 查找目标端点所在的网站ID（通过查找包含端点的网站卡片）
-        let targetWebsiteId = null
-        let parent = port.parentElement
-        while (parent) {
-          // 查找包含 WebsiteAutomationPanel 的网站卡片
-          if (parent.querySelector('.automation-panel')) {
-            // 从自动化数据中查找对应的网站ID
-            for (const website of setupResult.allWebsites.value) {
-              const websiteAutomationData = automationData.getAutomationData(website.id)
-              const allMappings = [...(websiteAutomationData.dataMappings || []), ...(websiteAutomationData.actionMappings || [])]
-              if (allMappings.some(m => m.portId === targetPortId)) {
-                targetWebsiteId = website.id
-                break
-              }
-            }
-            if (targetWebsiteId) break
+        // 检查是否是节点端口
+        const nodeElement = port.closest('[data-node-id]')
+        if (nodeElement) {
+          // 节点端口连接
+          const nodeId = nodeElement.dataset.nodeId
+          targetNode = workflowNodes.value.find(n => n.id === nodeId)
+          if (targetNode) {
+            const allPorts = [...(targetNode.inputPorts || []), ...(targetNode.outputPorts || [])]
+            targetPort = allPorts.find(p => p.id === targetPortId)
           }
-          parent = parent.parentElement
+        } else {
+          // 网站端点连接
+          // 查找目标端点所在的网站ID
+          let parent = port.parentElement
+          while (parent) {
+            if (parent.querySelector('.automation-panel')) {
+              for (const website of setupResult.allWebsites.value) {
+                const websiteAutomationData = automationData.getAutomationData(website.id)
+                const allMappings = [...(websiteAutomationData.dataMappings || []), ...(websiteAutomationData.actionMappings || [])]
+                if (allMappings.some(m => m.portId === targetPortId)) {
+                  targetWebsiteId = website.id
+                  break
+                }
+              }
+              if (targetWebsiteId) break
+            }
+            parent = parent.parentElement
+          }
         }
         
-        // 检查是否可以连接（数据输出 -> 交互输入）
-        if (connectingPort.value.portType === 'data-output' && targetPortType === 'action' && targetWebsiteId) {
-          // 检查是否连接到同一个端点
-          if (targetWebsiteId !== connectingPort.value.websiteId || targetPortId !== connectingPort.value.portId) {
-            // 创建连接
-            connections.value.push({
-              from: {
-                websiteId: connectingPort.value.websiteId,
-                portId: connectingPort.value.portId
-              },
-              to: {
-                websiteId: targetWebsiteId,
-                portId: targetPortId
-              },
-              type: 'data'
-            })
-            console.log('[GridView] 创建连接:', connections.value[connections.value.length - 1])
+        // 处理连接逻辑
+        if (connectingPort.value.isNodePort) {
+          // 从节点端口连接
+          if (targetNode && targetPort) {
+            // 连接到节点
+            const fromNode = workflowNodes.value.find(n => n.id === connectingPort.value.nodeId)
+            if (fromNode && connectingPort.value.direction === 'output' && targetPort.portType !== 'action') {
+              // 执行流连接：输出 -> 输入
+              connections.value.push({
+                from: {
+                  nodeId: connectingPort.value.nodeId,
+                  portId: connectingPort.value.portId
+                },
+                to: {
+                  nodeId: targetNode.id,
+                  portId: targetPortId
+                },
+                type: 'execution'
+              })
+              console.log('[GridView] 创建节点执行连接')
+            } else if (targetPort.portType === 'action' && targetNode.type === 'web-action') {
+              // 交互映射连接：只能连接到网页操作节点
+              if (targetNode.config) {
+                targetNode.config.actionPort = {
+                  websiteId: connectingPort.value.websiteId,
+                  portId: connectingPort.value.portId
+                }
+                console.log('[GridView] 连接交互映射到网页操作节点')
+              }
+            }
+          } else if (targetWebsiteId) {
+            // 连接到网站端点（数据映射）
+            const fromNode = workflowNodes.value.find(n => n.id === connectingPort.value.nodeId)
+            if (fromNode && connectingPort.value.portType === 'data') {
+              // 数据映射连接：节点 -> 网站端点
+              connections.value.push({
+                from: {
+                  nodeId: connectingPort.value.nodeId,
+                  portId: connectingPort.value.portId
+                },
+                to: {
+                  websiteId: targetWebsiteId,
+                  portId: targetPortId
+                },
+                type: 'data'
+              })
+              console.log('[GridView] 创建数据映射连接')
+            }
+          }
+        } else {
+          // 从网站端点连接
+          if (targetNode && targetPort) {
+            // 连接到节点
+            if (connectingPort.value.portType === 'data-output') {
+              // 数据映射连接：网站端点 -> 节点
+              if (targetPort.portType === 'data' || !targetPort.portType) {
+                // 可以在节点配置中引用这个数据
+                if (!targetNode.config) targetNode.config = {}
+                if (!targetNode.config.dataReferences) targetNode.config.dataReferences = {}
+                // 添加数据引用
+                const refKey = `data_${Date.now()}`
+                targetNode.config.dataReferences[refKey] = {
+                  websiteId: connectingPort.value.websiteId,
+                  portId: connectingPort.value.portId
+                }
+                console.log('[GridView] 添加数据引用到节点')
+              }
+            } else if (connectingPort.value.portType === 'action' && targetPort.portType === 'action' && targetNode.type === 'web-action') {
+              // 交互映射连接：只能连接到网页操作节点
+              if (targetNode.config) {
+                targetNode.config.actionPort = {
+                  websiteId: connectingPort.value.websiteId,
+                  portId: connectingPort.value.portId
+                }
+                console.log('[GridView] 连接交互映射到网页操作节点')
+              }
+            }
+          } else if (targetWebsiteId && connectingPort.value.portType === 'data-output') {
+            // 网站端点 -> 网站端点（数据映射）
+            if (targetWebsiteId !== connectingPort.value.websiteId || targetPortId !== connectingPort.value.portId) {
+              connections.value.push({
+                from: {
+                  websiteId: connectingPort.value.websiteId,
+                  portId: connectingPort.value.portId
+                },
+                to: {
+                  websiteId: targetWebsiteId,
+                  portId: targetPortId
+                },
+                type: 'data'
+              })
+              console.log('[GridView] 创建网站间数据连接')
+            }
           }
         }
       }
@@ -698,17 +908,74 @@ export default {
     
     // 计算连接线路径
     const getConnectionPath = (connection) => {
-      const fromPos = getPortPosition(connection.from.websiteId, connection.from.portId, null)
-      const toPos = getPortPosition(connection.to.websiteId, connection.to.portId, null)
+      let fromPos = null
+      let toPos = null
       
-      if (!fromPos || !toPos) return ''
+      // 获取起始位置
+      if (connection.from.nodeId) {
+        // 从节点端口
+        const fromNode = workflowNodes.value.find(n => n.id === connection.from.nodeId)
+        if (fromNode) {
+          const allPorts = [...(fromNode.inputPorts || []), ...(fromNode.outputPorts || [])]
+          const fromPort = allPorts.find(p => p.id === connection.from.portId)
+          if (fromPort) {
+            fromPos = getNodePortPosition(fromNode, fromPort, fromNode.outputPorts?.some(p => p.id === fromPort.id) ? 'output' : 'input')
+          }
+        }
+      } else if (connection.from.websiteId) {
+        // 从网站端点
+        fromPos = getPortPosition(connection.from.websiteId, connection.from.portId, null)
+      }
+      
+      // 获取目标位置
+      if (connection.to.nodeId) {
+        // 到节点端口
+        const toNode = workflowNodes.value.find(n => n.id === connection.to.nodeId)
+        if (toNode) {
+          const allPorts = [...(toNode.inputPorts || []), ...(toNode.outputPorts || [])]
+          const toPort = allPorts.find(p => p.id === connection.to.portId)
+          if (toPort) {
+            toPos = getNodePortPosition(toNode, toPort, toNode.inputPorts?.some(p => p.id === toPort.id) ? 'input' : 'output')
+          }
+        }
+      } else if (connection.to.websiteId) {
+        // 到网站端点
+        toPos = getPortPosition(connection.to.websiteId, connection.to.portId, null)
+      }
+      
+      if (!fromPos || !toPos) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[GridView] 无法计算连接线路径，缺少位置:', {
+            connection,
+            fromPos,
+            toPos
+          })
+        }
+        return ''
+      }
       
       // 使用贝塞尔曲线绘制连接线
       const dx = toPos.x - fromPos.x
       const dy = toPos.y - fromPos.y
       const controlX = fromPos.x + dx * 0.5
       
-      return `M ${fromPos.x} ${fromPos.y} C ${controlX} ${fromPos.y}, ${controlX} ${toPos.y}, ${toPos.x} ${toPos.y}`
+      const path = `M ${fromPos.x} ${fromPos.y} C ${controlX} ${fromPos.y}, ${controlX} ${toPos.y}, ${toPos.x} ${toPos.y}`
+      
+      // 调试日志（仅在开发环境，限制频率）
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+        console.log('[GridView] 连接线路径计算:', {
+          connection: {
+            from: connection.from,
+            to: connection.to,
+            type: connection.type
+          },
+          fromPos,
+          toPos,
+          path
+        })
+      }
+      
+      return path
     }
     
     // 临时连接线路径
@@ -722,10 +989,23 @@ export default {
       const dy = toPos.y - fromPos.y
       const controlX = fromPos.x + dx * 0.5
       
-      return `M ${fromPos.x} ${fromPos.y} C ${controlX} ${fromPos.y}, ${controlX} ${toPos.y}, ${toPos.x} ${toPos.y}`
+      const path = `M ${fromPos.x} ${fromPos.y} C ${controlX} ${fromPos.y}, ${controlX} ${toPos.y}, ${toPos.x} ${toPos.y}`
+      
+      // 调试日志（仅在开发环境，限制频率）
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
+        console.log('[GridView] 临时连接线路径:', {
+          from: { x: fromPos.x, y: fromPos.y },
+          to: { x: toPos.x, y: toPos.y },
+          path,
+          svgElement: document.querySelector('.connection-layer') ? 'found' : 'not found'
+        })
+      }
+      
+      return path
     })
     
     // 连接线层样式
+    // SVG 放在 canvas-wrapper 下，使用屏幕坐标系统
     const connectionLayerStyle = computed(() => {
       return {
         position: 'absolute',
@@ -733,10 +1013,524 @@ export default {
         left: 0,
         width: '100%',
         height: '100%',
-        pointerEvents: isConnecting.value ? 'auto' : 'none',
+        pointerEvents: 'none',
         zIndex: 5
       }
     })
+    
+    // 在画布容器上监听鼠标事件（用于连接线拖拽）
+    const handleCanvasMouseMoveForConnection = (event) => {
+      if (isConnecting.value && connectingPort.value) {
+        handleConnectionMouseMove(event)
+      }
+    }
+    
+    const handleCanvasMouseUpForConnection = (event) => {
+      if (isConnecting.value && connectingPort.value) {
+        console.log('[GridView] 连接线鼠标释放，查找目标端点')
+        handleConnectionMouseUp(event)
+      }
+    }
+    
+    // ==================== 工作流节点管理 ====================
+    const workflowNodes = ref([]) // 工作流节点列表
+    const automationContextMenuVisible = ref(false)
+    const automationContextMenuX = ref(0)
+    const automationContextMenuY = ref(0)
+    const contextMenuClickPosition = ref({ x: 0, y: 0 }) // 右键点击位置，用于放置新节点
+    
+    // 处理自动化视图的右键菜单
+    const handleAutomationContextMenu = (event) => {
+      if (setupResult.viewMode.value !== 'automation') return
+      
+      // 检查是否点击在网站卡片上
+      if (event.target.closest('.grid-item') || 
+          event.target.closest('webview') || 
+          event.target.closest('iframe')) {
+        return
+      }
+      
+      event.preventDefault()
+      contextMenuClickPosition.value = {
+        x: event.clientX,
+        y: event.clientY
+      }
+      
+      // 转换为画布坐标
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (canvasWrapper) {
+        const canvasRect = canvasWrapper.getBoundingClientRect()
+        const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+        automationContextMenuX.value = event.clientX
+        automationContextMenuY.value = event.clientY
+        automationContextMenuVisible.value = true
+      }
+    }
+    
+    // 关闭自动化视图右键菜单
+    const closeAutomationContextMenu = () => {
+      automationContextMenuVisible.value = false
+    }
+    
+    // 获取画布坐标（从屏幕坐标转换）
+    const getCanvasPosition = (screenX, screenY) => {
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (!canvasWrapper) return { x: 0, y: 0 }
+      
+      const canvasRect = canvasWrapper.getBoundingClientRect()
+      const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+      
+      return {
+        x: (screenX - canvasRect.left) / transform.zoom - transform.x,
+        y: (screenY - canvasRect.top) / transform.zoom - transform.y
+      }
+    }
+    
+    // 添加触发器节点
+    const handleAddTriggerNode = () => {
+      const canvasPos = getCanvasPosition(contextMenuClickPosition.value.x, contextMenuClickPosition.value.y)
+      const node = createTriggerNode(canvasPos)
+      workflowNodes.value.push(node)
+      console.log('[GridView] 添加触发器节点:', node)
+    }
+    
+    // 添加 HTTP 节点
+    const handleAddHttpNode = () => {
+      const canvasPos = getCanvasPosition(contextMenuClickPosition.value.x, contextMenuClickPosition.value.y)
+      const node = createHttpNode(canvasPos)
+      workflowNodes.value.push(node)
+      console.log('[GridView] 添加 HTTP 节点:', node)
+    }
+    
+    // 添加 Set 数据节点
+    const handleAddSetNode = () => {
+      const canvasPos = getCanvasPosition(contextMenuClickPosition.value.x, contextMenuClickPosition.value.y)
+      const node = createSetNode(canvasPos)
+      workflowNodes.value.push(node)
+      console.log('[GridView] 添加 Set 数据节点:', node)
+    }
+    
+    // 添加网页操作节点
+    const handleAddWebActionNode = () => {
+      const canvasPos = getCanvasPosition(contextMenuClickPosition.value.x, contextMenuClickPosition.value.y)
+      const node = createWebActionNode(canvasPos)
+      workflowNodes.value.push(node)
+      console.log('[GridView] 添加网页操作节点:', node)
+    }
+    
+    // 修改原有的 handleContextMenu，在自动化视图下使用新的菜单
+    const originalHandleContextMenu = setupResult.handleContextMenu
+    const handleContextMenu = (event) => {
+      if (setupResult.viewMode.value === 'automation') {
+        handleAutomationContextMenu(event)
+      } else {
+        originalHandleContextMenu(event)
+      }
+    }
+    
+    // ==================== 节点交互 ====================
+    const selectedNodeId = ref(null)
+    const draggingNode = ref(null)
+    const dragStartPos = ref({ x: 0, y: 0 })
+    
+    // 节点鼠标按下（开始拖拽）
+    const handleNodeMouseDown = (event, node) => {
+      selectedNodeId.value = node.id
+      draggingNode.value = node
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (canvasWrapper) {
+        const canvasRect = canvasWrapper.getBoundingClientRect()
+        const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+        dragStartPos.value = {
+          x: (event.clientX - canvasRect.left) / transform.zoom - transform.x - node.position.x,
+          y: (event.clientY - canvasRect.top) / transform.zoom - transform.y - node.position.y
+        }
+      }
+      
+      const handleMouseMove = (e) => {
+        if (draggingNode.value) {
+          const canvasWrapper = document.querySelector('.canvas-wrapper')
+          if (canvasWrapper) {
+            const canvasRect = canvasWrapper.getBoundingClientRect()
+            const transform = props.canvasTransform || { x: 0, y: 0, zoom: 1 }
+            draggingNode.value.position = {
+              x: (e.clientX - canvasRect.left) / transform.zoom - transform.x - dragStartPos.value.x,
+              y: (e.clientY - canvasRect.top) / transform.zoom - transform.y - dragStartPos.value.y
+            }
+          }
+        }
+      }
+      
+      const handleMouseUp = () => {
+        draggingNode.value = null
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+      
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+    
+    // 节点点击
+    const handleNodeClick = (event, node) => {
+      selectedNodeId.value = node.id
+    }
+    
+    // 节点端点鼠标按下（开始连接）
+    const handleNodePortMouseDown = (event, node, port, direction) => {
+      const portPos = getNodePortPosition(node, port, direction)
+      if (!portPos) return
+      
+      isConnecting.value = true
+      connectingPort.value = {
+        nodeId: node.id,
+        portId: port.id,
+        portType: port.portType || 'execution',
+        direction: direction,
+        x: portPos.x,
+        y: portPos.y,
+        isNodePort: true
+      }
+      tempConnectionEnd.value = { x: portPos.x, y: portPos.y }
+    }
+    
+    // 获取节点端点的位置
+    const getNodePortPosition = (node, port, direction) => {
+      // 查找节点元素
+      const nodeElement = document.querySelector(`[data-node-id="${node.id}"]`)
+      if (!nodeElement) {
+        // 如果找不到，尝试通过端口ID查找
+        const portElement = document.querySelector(`[data-port-id="${port.id}"]`)
+        if (!portElement) return null
+        
+        const rect = portElement.getBoundingClientRect()
+        
+        // SVG 使用屏幕坐标（相对于 canvas-wrapper）
+        const canvasWrapper = document.querySelector('.canvas-wrapper')
+        if (!canvasWrapper) return null
+        
+        const canvasWrapperRect = canvasWrapper.getBoundingClientRect()
+        const portCenterX = rect.left + rect.width / 2
+        const portCenterY = rect.top + rect.height / 2
+        
+        return {
+          x: portCenterX - canvasWrapperRect.left,
+          y: portCenterY - canvasWrapperRect.top
+        }
+      }
+      
+      // 查找端口元素
+      const portElement = nodeElement.querySelector(`[data-port-id="${port.id}"]`)
+      if (!portElement) return null
+      
+      const rect = portElement.getBoundingClientRect()
+      
+      // SVG 使用屏幕坐标（相对于 canvas-wrapper）
+      const canvasWrapper = document.querySelector('.canvas-wrapper')
+      if (!canvasWrapper) return null
+      
+      const canvasWrapperRect = canvasWrapper.getBoundingClientRect()
+      const portCenterX = rect.left + rect.width / 2
+      const portCenterY = rect.top + rect.height / 2
+      
+      return {
+        x: portCenterX - canvasWrapperRect.left,
+        y: portCenterY - canvasWrapperRect.top
+      }
+    }
+    
+    // 工作流节点层样式
+    const workflowNodesLayerStyle = computed(() => {
+      return {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        // 当选择器激活时，禁用指针事件以允许鼠标事件穿透到 iframe/webview
+        pointerEvents: automationSelectingElement.value ? 'none' : 'auto',
+        zIndex: 6
+      }
+    })
+    
+    // 监听缩放变化，如果正在连接，重新计算起点坐标
+    watch(() => props.canvasTransform?.zoom, (newZoom, oldZoom) => {
+      if (isConnecting.value && connectingPort.value && newZoom !== oldZoom && oldZoom !== undefined) {
+        // 重新计算起点坐标
+        if (connectingPort.value.isNodePort) {
+          // 节点端点
+          const node = workflowNodes.value.find(n => n.id === connectingPort.value.nodeId)
+          if (node) {
+            const allPorts = [...(node.inputPorts || []), ...(node.outputPorts || [])]
+            const port = allPorts.find(p => p.id === connectingPort.value.portId)
+            if (port) {
+              const portPos = getNodePortPosition(node, port, connectingPort.value.direction)
+              if (portPos) {
+                connectingPort.value.x = portPos.x
+                connectingPort.value.y = portPos.y
+                tempConnectionEnd.value = { x: portPos.x, y: portPos.y }
+              }
+            }
+          }
+        } else {
+          // 网站端点
+          const portPos = getPortPosition(connectingPort.value.websiteId, connectingPort.value.portId, null)
+          if (portPos) {
+            connectingPort.value.x = portPos.x
+            connectingPort.value.y = portPos.y
+            tempConnectionEnd.value = { x: portPos.x, y: portPos.y }
+          }
+        }
+      }
+    })
+    
+    // ==================== 执行引擎 ====================
+    const executingNodeId = ref(null)
+    const executionContext = ref({}) // 执行上下文，存储数据
+    
+    // 获取数据映射的值
+    const getDataMappingValue = async (websiteId, portId) => {
+      try {
+        const websiteAutomationData = automationData.getAutomationData(websiteId)
+        const mapping = [...(websiteAutomationData.dataMappings || []), ...(websiteAutomationData.actionMappings || [])]
+          .find(m => m.portId === portId)
+        
+        if (!mapping || !mapping.selector) {
+          console.warn('[执行引擎] 未找到映射或选择器:', { websiteId, portId })
+          return ''
+        }
+        
+        // 查找对应的网站
+        const website = setupResult.allWebsites.value.find(w => String(w.id) === String(websiteId))
+        if (!website) {
+          console.warn('[执行引擎] 未找到网站:', websiteId)
+          return ''
+        }
+        
+        // 在 Electron 环境下，需要通过 webview 执行脚本
+        const isElectron = window.electron?.isElectron
+        if (isElectron) {
+          const webviewId = website.type === 'custom-html' 
+            ? `webview-custom-${website.id}` 
+            : `webview-${website.id}`
+          const webview = document.querySelector(`#${webviewId}`)
+          
+          if (webview && webview.executeJavaScript) {
+            const script = `
+              (function() {
+                try {
+                  const element = document.querySelector('${mapping.selector.replace(/'/g, "\\'")}');
+                  if (!element) return '';
+                  return element.textContent?.trim() || '';
+                } catch(e) {
+                  return '';
+                }
+              })()
+            `
+            const result = await webview.executeJavaScript(script)
+            return result || ''
+          }
+        } else {
+          // 浏览器环境，通过 iframe
+          const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
+          if (iframe && iframe.contentWindow) {
+            try {
+              const element = iframe.contentDocument?.querySelector(mapping.selector)
+              return element?.textContent?.trim() || ''
+            } catch (e) {
+              console.error('[执行引擎] 无法访问 iframe 内容:', e)
+              return ''
+            }
+          }
+        }
+        
+        return ''
+      } catch (error) {
+        console.error('[执行引擎] 获取数据映射值失败:', error)
+        return ''
+      }
+    }
+    
+    // 执行节点
+    const executeNode = async (node) => {
+      if (executingNodeId.value) {
+        console.warn('[执行引擎] 已有节点正在执行')
+        return
+      }
+      
+      executingNodeId.value = node.id
+      console.log('[执行引擎] 开始执行节点:', node.type, node.id)
+      
+      try {
+        if (node.type === 'trigger') {
+          // 触发器节点：找到连接的输出节点并执行
+          const outputPort = node.outputPorts?.[0]
+          if (outputPort) {
+            const nextConnections = connections.value.filter(c => 
+              c.from.nodeId === node.id && c.from.portId === outputPort.id
+            )
+            
+            for (const connection of nextConnections) {
+              const nextNode = workflowNodes.value.find(n => n.id === connection.to.nodeId)
+              if (nextNode) {
+                await executeNode(nextNode)
+              }
+            }
+          }
+        } else if (node.type === 'http') {
+          // HTTP 节点：执行 HTTP 请求
+          await executeHttpNode(node)
+        } else if (node.type === 'set') {
+          // Set 节点：设置数据
+          await executeSetNode(node)
+        } else if (node.type === 'web-action') {
+          // 网页操作节点：执行网页操作
+          await executeWebActionNode(node)
+        }
+        
+        // 继续执行连接的节点
+        const outputPorts = node.outputPorts || []
+        for (const outputPort of outputPorts) {
+          const nextConnections = connections.value.filter(c => 
+            c.from.nodeId === node.id && c.from.portId === outputPort.id
+          )
+          
+          for (const connection of nextConnections) {
+            const nextNode = workflowNodes.value.find(n => n.id === connection.to.nodeId)
+            if (nextNode) {
+              await executeNode(nextNode)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[执行引擎] 执行节点失败:', error)
+      } finally {
+        executingNodeId.value = null
+      }
+    }
+    
+    // 执行 HTTP 节点
+    const executeHttpNode = async (node) => {
+      console.log('[执行引擎] 执行 HTTP 节点')
+      const config = node.config || {}
+      
+      // 处理数据引用
+      let url = config.url || ''
+      let body = config.body || ''
+      
+      if (config.dataReferences) {
+        for (const [key, ref] of Object.entries(config.dataReferences)) {
+          const value = await getDataMappingValue(ref.websiteId, ref.portId)
+          // 替换 URL 和 body 中的占位符
+          url = url.replace(`{{${key}}}`, value)
+          body = body.replace(`{{${key}}}`, value)
+        }
+      }
+      
+      try {
+        const response = await fetch(url, {
+          method: config.method || 'GET',
+          headers: config.headers || {},
+          body: config.method !== 'GET' ? body : undefined
+        })
+        
+        const result = await response.text()
+        console.log('[执行引擎] HTTP 请求完成:', result)
+        executionContext.value[`http_${node.id}`] = result
+      } catch (error) {
+        console.error('[执行引擎] HTTP 请求失败:', error)
+      }
+    }
+    
+    // 执行 Set 节点
+    const executeSetNode = async (node) => {
+      console.log('[执行引擎] 执行 Set 节点')
+      const config = node.config || {}
+      
+      if (config.dataReferences) {
+        for (const [key, ref] of Object.entries(config.dataReferences)) {
+          const value = await getDataMappingValue(ref.websiteId, ref.portId)
+          executionContext.value[key] = value
+          console.log('[执行引擎] 设置变量:', key, '=', value)
+        }
+      }
+    }
+    
+    // 执行网页操作节点
+    const executeWebActionNode = async (node) => {
+      console.log('[执行引擎] 执行网页操作节点')
+      const config = node.config || {}
+      
+      if (!config.actionPort) {
+        console.warn('[执行引擎] 网页操作节点未配置交互映射')
+        return
+      }
+      
+      const { websiteId, portId } = config.actionPort
+      
+      // 查找对应的映射
+      const websiteAutomationData = automationData.getAutomationData(websiteId)
+      const actionMapping = (websiteAutomationData.actionMappings || []).find(m => m.portId === portId)
+      
+      if (!actionMapping || !actionMapping.selector) {
+        console.warn('[执行引擎] 未找到交互映射')
+        return
+      }
+      
+      // 查找对应的网站
+      const website = setupResult.allWebsites.value.find(w => String(w.id) === String(websiteId))
+      if (!website) {
+        console.warn('[执行引擎] 未找到网站')
+        return
+      }
+      
+      // 执行操作
+      const isElectron = window.electron?.isElectron
+      if (isElectron) {
+        const webviewId = website.type === 'custom-html' 
+          ? `webview-custom-${website.id}` 
+          : `webview-${website.id}`
+        const webview = document.querySelector(`#${webviewId}`)
+        
+        if (webview && webview.executeJavaScript) {
+          const script = `
+            (function() {
+              try {
+                const element = document.querySelector('${actionMapping.selector.replace(/'/g, "\\'")}');
+                if (!element) return { success: false, error: '元素未找到' };
+                element.click();
+                return { success: true };
+              } catch(e) {
+                return { success: false, error: e.message };
+              }
+            })()
+          `
+          const result = await webview.executeJavaScript(script)
+          console.log('[执行引擎] 网页操作完成:', result)
+        }
+      } else {
+        // 浏览器环境
+        const iframe = document.querySelector(`iframe[data-website-id="${website.id}"]`)
+        if (iframe && iframe.contentWindow) {
+          try {
+            const element = iframe.contentDocument?.querySelector(actionMapping.selector)
+            if (element) {
+              element.click()
+              console.log('[执行引擎] 网页操作完成')
+            }
+          } catch (e) {
+            console.error('[执行引擎] 无法执行网页操作:', e)
+          }
+        }
+      }
+    }
+    
+    // 处理节点执行
+    const handleNodeExecute = (node) => {
+      if (node.type === 'trigger') {
+        executeNode(node)
+      }
+    }
     
     // 暴露方法给父组件
     return {
@@ -765,11 +1559,34 @@ export default {
       handlePortMouseDown,
       handleConnectionMouseMove,
       handleConnectionMouseUp,
+      handleCanvasMouseMoveForConnection,
+      handleCanvasMouseUpForConnection,
       tempConnectionPath,
       connectionLayerStyle,
       connections,
       isConnecting,
-      connectingPortType: computed(() => connectingPort.value?.portType || '')
+      connectingPortType: computed(() => connectingPort.value?.portType || ''),
+      // 工作流节点
+      workflowNodes,
+      automationContextMenuVisible,
+      automationContextMenuX,
+      automationContextMenuY,
+      handleAddTriggerNode,
+      handleAddHttpNode,
+      handleAddSetNode,
+      handleAddWebActionNode,
+      closeAutomationContextMenu,
+      handleContextMenu,
+      // 节点交互
+      selectedNodeId,
+      handleNodeMouseDown,
+      handleNodeClick,
+      handleNodePortMouseDown,
+      handleNodeExecute,
+      workflowNodesLayerStyle,
+      // 执行引擎
+      executingNodeId,
+      executionContext
     }
   }
 }

@@ -63,7 +63,11 @@ export const ACTION_MAPPING_TYPES = {
 export const NODE_TYPES = {
   WEBPAGE: 'webpage',
   FLOW: 'flow',
-  WEB_CONTROL: 'web-control'
+  WEB_CONTROL: 'web-control',
+  TRIGGER: 'trigger',           // 执行触发器（手动触发器）
+  HTTP: 'http',                 // HTTP 节点
+  SET: 'set',                   // Set 数据节点
+  WEB_ACTION: 'web-action'       // 网页操作节点
 }
 
 /**
@@ -180,6 +184,129 @@ export function createWebControlNode(name = '网页控制') {
         name: '输出1'
       }
     ]
+  }
+}
+
+/**
+ * 创建执行触发器节点（手动触发器）
+ */
+export function createTriggerNode(position = { x: 100, y: 100 }) {
+  return {
+    id: `trigger-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: NODE_TYPES.TRIGGER,
+    name: '执行触发器',
+    position,
+    outputPorts: [
+      { 
+        id: `trigger-out-${Date.now()}`, 
+        name: '触发',
+        portType: 'execution'
+      }
+    ],
+    canExecute: true // 可以点击执行
+  }
+}
+
+/**
+ * 创建 HTTP 节点
+ */
+export function createHttpNode(position = { x: 300, y: 100 }) {
+  return {
+    id: `http-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: NODE_TYPES.HTTP,
+    name: 'HTTP 请求',
+    position,
+    inputPorts: [
+      { 
+        id: `http-in-${Date.now()}`, 
+        name: '输入',
+        portType: 'execution'
+      }
+    ],
+    outputPorts: [
+      { 
+        id: `http-out-${Date.now()}`, 
+        name: '输出',
+        portType: 'execution'
+      }
+    ],
+    config: {
+      method: 'GET',
+      url: '',
+      headers: {},
+      body: '',
+      // 数据引用：可以引用数据映射端点的数据
+      dataReferences: {} // { field: { websiteId, portId } }
+    }
+  }
+}
+
+/**
+ * 创建 Set 数据节点
+ */
+export function createSetNode(position = { x: 300, y: 200 }) {
+  return {
+    id: `set-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: NODE_TYPES.SET,
+    name: 'Set 数据',
+    position,
+    inputPorts: [
+      { 
+        id: `set-in-${Date.now()}`, 
+        name: '输入',
+        portType: 'execution'
+      }
+    ],
+    outputPorts: [
+      { 
+        id: `set-out-${Date.now()}`, 
+        name: '输出',
+        portType: 'execution'
+      }
+    ],
+    config: {
+      // 数据引用：可以引用数据映射端点的数据
+      dataReferences: {} // { variableName: { websiteId, portId } }
+    }
+  }
+}
+
+/**
+ * 创建网页操作节点
+ */
+export function createWebActionNode(position = { x: 300, y: 300 }) {
+  return {
+    id: `web-action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: NODE_TYPES.WEB_ACTION,
+    name: '网页操作',
+    position,
+    inputPorts: [
+      { 
+        id: `web-action-in-${Date.now()}`, 
+        name: '输入',
+        portType: 'execution'
+      },
+      // 可以连接交互映射端点
+      { 
+        id: `web-action-action-in-${Date.now()}`, 
+        name: '交互输入',
+        portType: 'action',
+        canConnectFromActionPort: true // 标记可以连接交互映射端点
+      }
+    ],
+    outputPorts: [
+      { 
+        id: `web-action-out-${Date.now()}`, 
+        name: '输出',
+        portType: 'execution'
+      }
+    ],
+    config: {
+      // 连接的交互映射端点
+      actionPort: null, // { websiteId, portId }
+      // 数据引用：可以引用数据映射端点的数据
+      dataReferences: {} // { field: { websiteId, portId } }
+    }
   }
 }
 
