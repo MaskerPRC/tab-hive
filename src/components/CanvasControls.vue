@@ -59,6 +59,28 @@
         </svg>
       </button>
       
+      <!-- 视图模式切换按钮 -->
+      <button
+        class="fab-btn"
+        :class="{ 'active': isAutomationMode, 'automation-mode': isAutomationMode }"
+        @click="$emit('toggle-view-mode')"
+        :title="isAutomationMode ? '切换到布局视图' : '切换到自动化视图'"
+      >
+        <svg v-if="!isAutomationMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <circle cx="7" cy="7" r="1" fill="currentColor"/>
+          <circle cx="18" cy="7" r="1" fill="currentColor"/>
+        </svg>
+        <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+      </button>
+      
       <!-- 绘制功能按钮 -->
       <button
         class="fab-btn"
@@ -208,9 +230,13 @@ export default {
     drawingWidth: {
       type: Number,
       default: 3
+    },
+    isAutomationMode: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'rearrange', 'toggle-drawing', 'set-tool', 'update-color', 'update-width', 'clear-drawings', 'add-website'],
+  emits: ['zoom-in', 'zoom-out', 'reset', 'auto-arrange', 'rearrange', 'toggle-drawing', 'set-tool', 'update-color', 'update-width', 'clear-drawings', 'add-website', 'toggle-view-mode'],
   setup(props, { emit }) {
     const showSettings = ref(false)
     
@@ -285,6 +311,16 @@ export default {
 .fab-btn.active {
   background: #fff7ed;
   color: #f97316;
+}
+
+.fab-btn.automation-mode {
+  background: #e8f5e9;
+  color: #4CAF50;
+}
+
+.fab-btn.automation-mode:hover {
+  background: #c8e6c9;
+  color: #2e7d32;
 }
 
 /* 主要按钮（添加窗口） */

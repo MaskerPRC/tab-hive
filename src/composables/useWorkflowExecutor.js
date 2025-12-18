@@ -280,12 +280,29 @@ export function useWorkflowExecutor() {
 
   /**
    * 查找webview（支持自定义HTML和普通页面）
+   * 在布局中查找指定网站ID的webview
    */
   const findWebview = (websiteId) => {
-    // 先尝试自定义HTML格式，再尝试普通格式
-    const customWebview = document.querySelector(`#webview-custom-${websiteId}`)
-    if (customWebview) return customWebview
-    return document.querySelector(`#webview-${websiteId}`)
+    console.log('[WorkflowExecutor] 查找 webview, websiteId:', websiteId)
+    
+    // 尝试多种可能的选择器格式
+    const selectors = [
+      `#webview-custom-${websiteId}`,  // 自定义HTML格式
+      `#webview-${websiteId}`,          // 普通格式
+      `webview[id="${websiteId}"]`,     // 通过属性查找
+      `webview[data-website-id="${websiteId}"]`  // 通过data属性查找
+    ]
+    
+    for (const selector of selectors) {
+      const webview = document.querySelector(selector)
+      if (webview) {
+        console.log('[WorkflowExecutor] 找到 webview:', selector)
+        return webview
+      }
+    }
+    
+    console.warn('[WorkflowExecutor] 未找到 webview, websiteId:', websiteId)
+    return null
   }
 
   /**

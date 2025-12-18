@@ -41,8 +41,9 @@
     <WorkflowEditor
       v-if="showWorkflowEditor"
       :show="showWorkflowEditor"
-      :website-id="currentWorkflowWebsiteId"
-      :website-name="currentWorkflowWebsiteName"
+      :layout-id="currentWorkflowLayoutId"
+      :layout-name="currentWorkflowLayoutName"
+      :websites="websites"
       :dark-mode="currentWorkflowDarkMode"
       @close="closeWorkflowEditor"
       @save="handleSaveWorkflow"
@@ -138,7 +139,7 @@
         @open-script-panel="(iframe) => openContentScriptPanel(iframe)"
         @import-layout-from-image="(layoutData) => handleImportLayoutFromImage(layoutData)"
         @open-monitoring="(websiteId, darkMode) => handleOpenMonitoring(websiteId, darkMode)"
-        @open-workflow="(websiteId, websiteName, darkMode) => handleOpenWorkflow(websiteId, websiteName, darkMode)"
+        @open-workflow="() => handleOpenWorkflow(layout.id, layout.name)"
       />
     </template>
 
@@ -474,13 +475,12 @@ export default {
       handleOpenLlmConfig: monitoringHandlers.handleOpenLlmConfig,
       
       // 工作流方法
-      handleOpenWorkflow: (websiteId, websiteName, darkMode) => {
+      handleOpenWorkflow: (layoutId, layoutName) => {
         console.log('[App.vue] handleOpenWorkflow 被调用')
-        console.log('[App.vue] websiteId:', websiteId)
-        console.log('[App.vue] websiteName:', websiteName)
-        console.log('[App.vue] darkMode:', darkMode)
+        console.log('[App.vue] layoutId:', layoutId)
+        console.log('[App.vue] layoutName:', layoutName)
         console.log('[App.vue] 调用 dialogStates.openWorkflowEditor')
-        dialogStates.openWorkflowEditor(websiteId, websiteName, darkMode)
+        dialogStates.openWorkflowEditor(layoutId, layoutName)
         console.log('[App.vue] showWorkflowEditor 状态:', dialogStates.showWorkflowEditor.value)
       },
       closeWorkflowEditor: dialogStates.closeWorkflowEditor,

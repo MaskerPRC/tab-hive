@@ -21,6 +21,9 @@
       :ad-block-enabled="globalSettings?.adBlockEnabled"
       :custom-code-enabled="globalSettings?.customCodeEnabled"
       :show-certificate-error-shadow="globalSettings?.showCertificateErrorShadow"
+      :is-automation-mode="isAutomationMode"
+      :automation-data="getAutomationDataForItem(item.id)"
+      :is-selecting-element="isSelectingElementForWebsite(item.id)"
       @drag-start="handleDragStart($event, index)"
       @drag-over="handleDragOver"
       @drag-leave="handleDragLeave"
@@ -32,11 +35,12 @@
       @remove="handleRemove"
       @toggle-mute="handleToggleMute"
       @open-script-panel="handleOpenScriptPanel"
-      @open-monitoring="handleOpenMonitoring"
-      @open-workflow="handleOpenWorkflow"
-      @update-url="handleUpdateUrl"
-      @resize-start="handleResizeStart($event, index, $event)"
-    />
+          @open-monitoring="handleOpenMonitoring"
+          @open-workflow="handleOpenWorkflow"
+          @update-url="handleUpdateUrl"
+          @resize-start="handleResizeStart($event, index, $event)"
+          @start-select-element="handleStartSelectElement"
+        />
   </div>
 </template>
 
@@ -100,9 +104,22 @@ export default {
     getItemStyle: {
       type: Function,
       required: true
+    },
+    isAutomationMode: {
+      type: Boolean,
+      default: false
+    },
+    automationSelectingWebsiteId: {
+      type: [String, Number],
+      default: null
+    },
+    getAutomationData: {
+      type: Function,
+      default: null
     }
   },
   emits: [
+    'start-automation-element-selection',
     'drag-start',
     'drag-over',
     'drag-leave',
@@ -185,12 +202,10 @@ export default {
       emit('open-monitoring', websiteId, darkMode)
     }
     
-    const handleOpenWorkflow = (websiteId, websiteName, darkMode) => {
+    const handleOpenWorkflow = () => {
       console.log('[GridWebsiteList] 接收到 open-workflow 事件')
-      console.log('[GridWebsiteList] websiteId:', websiteId)
-      console.log('[GridWebsiteList] websiteName:', websiteName)
-      console.log('[GridWebsiteList] 向上传递到 GridView')
-      emit('open-workflow', websiteId, websiteName, darkMode)
+      console.log('[GridWebsiteList] 向上传递到 GridView（布局级别）')
+      emit('open-workflow')
     }
     
     const handleUpdateUrl = (index, url) => {
@@ -201,9 +216,39 @@ export default {
       emit('resize-start', event, index, handle)
     }
 
+    const handleStartSelectElement = (websiteId) => {
+      emit('start-automation-element-selection', websiteId)
+    }
+
+    // 获取网站的自动化数据（从父组件传递）
+    const getAutomationDataForItem = (websiteId) => {
+      // 直接返回数据对象（已经是 reactive 的）
+      if (props.getAutomationData) {
+        const data = props.getAutomationData(websiteId)
+        console.log('[GridWebsiteList] 获取自动化数据，websiteId:', websiteId, 'data:', data)
+        console.log('[GridWebsiteList] 数据映射数量:', data?.dataMappings?.length || 0)
+        return data || {
+          dataMappings: [],
+          actionMappings: []
+        }
+      }
+      // 默认返回空数据
+      return {
+        dataMappings: [],
+        actionMappings: []
+      }
+    }
+
+    // 检查某个网站是否正在选择元素
+    const isSelectingElementForWebsite = (websiteId) => {
+      return props.automationSelectingWebsiteId === websiteId
+    }
+
     return {
       isHidden,
       itemStyle,
+      getAutomationDataForItem,
+      isSelectingElementForWebsite,
       handleDragStart,
       handleDragOver,
       handleDragLeave,
@@ -218,7 +263,8 @@ export default {
       handleOpenMonitoring,
       handleOpenWorkflow,
       handleUpdateUrl,
-      handleResizeStart
+      handleResizeStart,
+      handleStartSelectElement
     }
   }
 }

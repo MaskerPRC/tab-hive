@@ -166,14 +166,12 @@ export function useGridEventHandlers(props, context) {
 
   /**
    * 处理打开工作流
+   * 工作流现在是针对整个布局的，不再针对单个网站
    */
-  const handleOpenWorkflow = (websiteId, websiteName, darkMode) => {
+  const handleOpenWorkflow = () => {
     console.log('[GridView] 接收到 open-workflow 事件')
-    console.log('[GridView] websiteId:', websiteId)
-    console.log('[GridView] websiteName:', websiteName)
-    console.log('[GridView] darkMode:', darkMode)
-    console.log('[GridView] 向上传递事件到 App.vue')
-    emit('open-workflow', websiteId, websiteName, darkMode)
+    console.log('[GridView] 向上传递事件到 App.vue（布局级别）')
+    emit('open-workflow')
   }
 
   /**

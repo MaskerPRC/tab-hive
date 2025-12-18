@@ -23,8 +23,8 @@ export function useDialogStates() {
   
   // 工作流编辑器
   const showWorkflowEditor = ref(false)
-  const currentWorkflowWebsiteId = ref(null)
-  const currentWorkflowWebsiteName = ref('')
+  const currentWorkflowLayoutId = ref(null)
+  const currentWorkflowLayoutName = ref('')
   const currentWorkflowDarkMode = ref(false)
   
   // 内容脚本面板
@@ -94,28 +94,27 @@ export function useDialogStates() {
     showMonitoringRulesList.value = true
   }
   
-  const openWorkflowEditor = (websiteId, websiteName, darkMode) => {
+  const openWorkflowEditor = (layoutId, layoutName) => {
     console.log('[useDialogStates] openWorkflowEditor 被调用')
-    console.log('[useDialogStates] websiteId:', websiteId)
-    console.log('[useDialogStates] websiteName:', websiteName)
-    console.log('[useDialogStates] darkMode:', darkMode)
+    console.log('[useDialogStates] layoutId:', layoutId)
+    console.log('[useDialogStates] layoutName:', layoutName)
     console.log('[useDialogStates] 设置状态前 showWorkflowEditor:', showWorkflowEditor.value)
     
     showWorkflowEditor.value = true
-    currentWorkflowWebsiteId.value = websiteId
-    currentWorkflowWebsiteName.value = websiteName
-    currentWorkflowDarkMode.value = darkMode || false
+    currentWorkflowLayoutId.value = layoutId
+    currentWorkflowLayoutName.value = layoutName
+    currentWorkflowDarkMode.value = false
     
     console.log('[useDialogStates] 设置状态后 showWorkflowEditor:', showWorkflowEditor.value)
-    console.log('[useDialogStates] currentWorkflowWebsiteId:', currentWorkflowWebsiteId.value)
-    console.log('[useDialogStates] currentWorkflowWebsiteName:', currentWorkflowWebsiteName.value)
+    console.log('[useDialogStates] currentWorkflowLayoutId:', currentWorkflowLayoutId.value)
+    console.log('[useDialogStates] currentWorkflowLayoutName:', currentWorkflowLayoutName.value)
   }
   
   const closeWorkflowEditor = () => {
     console.log('[useDialogStates] closeWorkflowEditor 被调用')
     showWorkflowEditor.value = false
-    currentWorkflowWebsiteId.value = null
-    currentWorkflowWebsiteName.value = ''
+    currentWorkflowLayoutId.value = null
+    currentWorkflowLayoutName.value = ''
   }
   
   const openContentScriptPanel = (iframe) => {
@@ -164,8 +163,8 @@ export function useDialogStates() {
     showMonitoringRulesList,
     showMonitoringRuleDialog,
     showWorkflowEditor,
-    currentWorkflowWebsiteId,
-    currentWorkflowWebsiteName,
+    currentWorkflowLayoutId,
+    currentWorkflowLayoutName,
     currentWorkflowDarkMode,
     showContentScriptPanel,
     contentScriptTargetIframe,

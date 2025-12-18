@@ -198,11 +198,12 @@ export function createConnection(type, from, to) {
 /**
  * 创建工作流
  */
-export function createWorkflow(name = '新工作流') {
+export function createWorkflow(name = '新工作流', layoutId = null) {
   return {
     id: `workflow-${Date.now()}`,
     name,
     description: '',
+    layoutId,  // 关联的布局ID
     nodes: [],
     connections: [],
     createdAt: new Date().toISOString(),

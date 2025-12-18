@@ -1,6 +1,23 @@
 <template>
   <div class="tools-panel">
     <div class="tool-section">
+      <h4>布局中的网页</h4>
+      <div v-if="websites.length === 0" class="empty-hint">
+        当前布局暂无网页
+      </div>
+      <button 
+        v-for="website in websites" 
+        :key="website.id" 
+        @click="$emit('add-webpage-node', website)"
+        class="tool-btn website-btn"
+        :title="`添加网页节点: ${website.name || website.url}`"
+      >
+        <span class="tool-icon">🌐</span>
+        <span class="website-name">{{ website.name || getShortUrl(website.url) }}</span>
+      </button>
+    </div>
+
+    <div class="tool-section">
       <h4>添加节点</h4>
       <button @click="$emit('add-flow-node')" class="tool-btn">
         <span class="tool-icon">🔄</span>
@@ -25,7 +42,23 @@
 <script>
 export default {
   name: 'ToolsPanel',
-  emits: ['add-flow-node', 'add-web-control-node', 'start-element-selection']
+  props: {
+    websites: {
+      type: Array,
+      default: () => []
+    }
+  },
+  emits: ['add-webpage-node', 'add-flow-node', 'add-web-control-node', 'start-element-selection'],
+  methods: {
+    getShortUrl(url) {
+      try {
+        const urlObj = new URL(url)
+        return urlObj.hostname
+      } catch {
+        return url.substring(0, 20) + '...'
+      }
+    }
+  }
 }
 </script>
 
@@ -95,6 +128,29 @@ export default {
 
 .tool-icon {
   font-size: 20px;
+}
+
+.website-btn {
+  font-size: 13px;
+}
+
+.website-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: left;
+}
+
+.empty-hint {
+  color: #999;
+  font-size: 12px;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.dark-mode .empty-hint {
+  color: #666;
 }
 </style>
 

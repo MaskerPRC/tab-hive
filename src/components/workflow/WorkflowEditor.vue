@@ -60,6 +60,8 @@
       <div class="editor-body" v-show="!isSelectingElement">
         <!-- 左侧工具面板 -->
         <ToolsPanel
+          :websites="websites"
+          @add-webpage-node="handleAddWebpageNode"
           @add-flow-node="addFlowNode"
           @add-web-control-node="addWebControlNode"
           @start-element-selection="startElementSelection"
@@ -184,13 +186,17 @@ export default {
       type: String,
       default: null
     },
-    websiteId: {
+    layoutId: {
       type: [String, Number],
       required: true
     },
-    websiteName: {
+    layoutName: {
       type: String,
-      default: '网站'
+      default: '布局'
+    },
+    websites: {
+      type: Array,
+      default: () => []
     },
     darkMode: {
       type: Boolean,
@@ -271,8 +277,9 @@ export default {
     onMounted(() => {
       console.log('[WorkflowEditor] 组件已挂载')
       console.log('[WorkflowEditor] props.show:', props.show)
-      console.log('[WorkflowEditor] props.websiteId:', props.websiteId)
-      console.log('[WorkflowEditor] props.websiteName:', props.websiteName)
+      console.log('[WorkflowEditor] props.layoutId:', props.layoutId)
+      console.log('[WorkflowEditor] props.layoutName:', props.layoutName)
+      console.log('[WorkflowEditor] props.websites:', props.websites)
       console.log('[WorkflowEditor] props.workflowId:', props.workflowId)
 
       if (props.workflowId) {
@@ -280,7 +287,7 @@ export default {
         workflowManager.loadWorkflow(props.workflowId)
       } else if (!workflow.value) {
         console.log('[WorkflowEditor] 创建新工作流')
-        workflowManager.createNewWorkflow(props.websiteId, props.websiteName)
+        workflowManager.createNewWorkflow(props.layoutId, props.layoutName, props.websites)
       }
 
       console.log('[WorkflowEditor] 工作流对象:', workflow.value)
@@ -301,6 +308,12 @@ export default {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     })
+
+    // 添加网页节点
+    const handleAddWebpageNode = (website) => {
+      console.log('[WorkflowEditor] 添加网页节点:', website)
+      workflowManager.addWebpageNode(website.id, website.name || website.url)
+    }
 
     // 添加节点
     const addFlowNode = () => {

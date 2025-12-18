@@ -24,24 +24,20 @@ export function useWorkflowManager() {
   /**
    * 创建新工作流
    */
-  const createNewWorkflow = (websiteId, websiteName) => {
+  const createNewWorkflow = (layoutId, layoutName, websites = []) => {
     console.log('[useWorkflowManager] createNewWorkflow 被调用')
-    console.log('[useWorkflowManager] websiteId:', websiteId)
-    console.log('[useWorkflowManager] websiteName:', websiteName)
+    console.log('[useWorkflowManager] layoutId:', layoutId)
+    console.log('[useWorkflowManager] layoutName:', layoutName)
+    console.log('[useWorkflowManager] websites:', websites)
     
-    const workflow = createWorkflow(`${websiteName}的工作流`)
+    const workflow = createWorkflow(`${layoutName}的工作流`, layoutId)
     console.log('[useWorkflowManager] 工作流已创建:', workflow)
     
-    // 自动创建一个网页节点
-    const webpageNode = createWebPageNode(websiteId, websiteName)
-    console.log('[useWorkflowManager] 网页节点已创建:', webpageNode)
-    console.log('[useWorkflowManager] 网页节点的 websiteId:', webpageNode.websiteId)
-    
-    workflow.nodes.push(webpageNode)
-    console.log('[useWorkflowManager] 网页节点已添加到工作流')
+    // 不再自动创建网页节点，让用户从工具面板中手动添加
+    // 这样用户可以选择布局中的哪些网页需要参与工作流
     
     currentWorkflow.value = workflow
-    currentWebsiteId.value = websiteId
+    currentWebsiteId.value = null  // 不再关联单个网站
     workflows.value.push(workflow)
     
     // 保存到localStorage
@@ -49,6 +45,49 @@ export function useWorkflowManager() {
     
     console.log('[useWorkflowManager] 工作流创建完成')
     return workflow
+  }
+
+  /**
+   * 添加网页节点到当前工作流
+   */
+  const addWebpageNode = (websiteId, websiteName) => {
+    if (!currentWorkflow.value) {
+      console.error('[useWorkflowManager] 没有当前工作流')
+      return
+    }
+
+    console.log('[useWorkflowManager] 添加网页节点')
+    console.log('[useWorkflowManager] websiteId:', websiteId)
+    console.log('[useWorkflowManager] websiteName:', websiteName)
+    
+    // 检查是否已经存在该网页的节点
+    const existingNode = currentWorkflow.value.nodes.find(
+      node => node.type === NODE_TYPES.WEBPAGE && node.websiteId === websiteId
+    )
+    
+    if (existingNode) {
+      console.log('[useWorkflowManager] 该网页节点已存在，不重复添加')
+      return existingNode
+    }
+    
+    const webpageNode = createWebPageNode(websiteId, websiteName)
+    console.log('[useWorkflowManager] 网页节点已创建:', webpageNode)
+    
+    // 在一个合适的位置创建节点（相对于已有节点偏移）
+    const existingWebpageNodes = currentWorkflow.value.nodes.filter(
+      n => n.type === NODE_TYPES.WEBPAGE
+    )
+    webpageNode.position = {
+      x: 100,
+      y: 100 + existingWebpageNodes.length * 150
+    }
+    
+    currentWorkflow.value.nodes.push(webpageNode)
+    currentWorkflow.value.updatedAt = new Date().toISOString()
+    saveWorkflows()
+    
+    console.log('[useWorkflowManager] 网页节点已添加到工作流')
+    return webpageNode
   }
 
   /**
@@ -323,6 +362,7 @@ export function useWorkflowManager() {
     currentWorkflow,
     currentWebsiteId,
     createNewWorkflow,
+    addWebpageNode,
     addNode,
     removeNode,
     updateNode,

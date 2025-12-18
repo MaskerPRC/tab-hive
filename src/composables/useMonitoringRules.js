@@ -32,13 +32,12 @@ export function useMonitoringRules(props, emit) {
 
   /**
    * 工作流按钮点击
+   * 工作流现在是针对整个布局的，不再针对单个网站
    */
   const handleWorkflowClick = () => {
     console.log('[useMonitoringRules] 工作流按钮被点击')
-    console.log('[useMonitoringRules] 网站ID:', props.item.id)
-    console.log('[useMonitoringRules] 网站标题:', props.item.title || '网页')
-    console.log('[useMonitoringRules] 触发 open-workflow 事件')
-    emit('open-workflow', props.item.id, props.item.title || '网页', props.item.darkMode)
+    console.log('[useMonitoringRules] 触发 open-workflow 事件（布局级别）')
+    emit('open-workflow')
   }
 
   /**
