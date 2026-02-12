@@ -110,12 +110,12 @@
         :websites="layout.id === currentLayoutId ? websites : layout.websites"
         :rows="2"
         :cols="2"
-        :fullscreenIndex="layout.id === currentLayoutId ? fullscreenIndex : null"
+        :fullscreenIndex="layout.id === currentLayoutId ? getFullscreenIndex(layout.id) : null"
         :globalSettings="layoutManager.globalSettings.value"
         :drawings="layout.id === currentLayoutId ? (layout.drawings || []) : (layout.drawings || [])"
         :canvasTransform="layout.canvasTransform || null"
-        @fullscreen="layout.id === currentLayoutId ? handleFullscreen($event) : null"
-        @exitFullscreen="exitFullscreen"
+        @fullscreen="layout.id === currentLayoutId ? handleFullscreen(layout.id, $event) : null"
+        @exitFullscreen="exitFullscreen(layout.id)"
         @add-website="(data) => layout.id === currentLayoutId ? handleAddWebsite(data) : null"
         @copy-website="(index) => layout.id === currentLayoutId ? handleCopyWebsite(index) : null"
         @remove-website="(index) => layout.id === currentLayoutId ? handleRemoveWebsite(index) : null"
@@ -377,7 +377,7 @@ export default {
 
     return {
       // 视口状态
-      fullscreenIndex: viewportStates.fullscreenIndex,
+      getFullscreenIndex: viewportStates.getFullscreenIndex,
       showPanel: viewportStates.showPanel,
       
       // 网站和布局
