@@ -17,35 +17,23 @@ export function useViewportStates() {
   // 侧边栏显示状态
   const showPanel = ref(getSavedPanelState())
   
-  // 保存全屏前的侧边栏状态，用于退出全屏时恢复
-  const panelStateBeforeFullscreen = ref(null)
-  
   // 监听侧边栏状态变化，保存到 localStorage
   watch(showPanel, (newValue) => {
     localStorage.setItem('sidebarPanelState', String(newValue))
   })
-  
+
   /**
-   * 进入全屏
+   * 进入全屏（仅在右侧区域内全屏，不影响侧边栏）
    */
   const handleFullscreen = (index) => {
-    // 保存当前侧边栏状态
-    panelStateBeforeFullscreen.value = showPanel.value
-    // 进入全屏时强制隐藏侧边栏
-    showPanel.value = false
     fullscreenIndex.value = index
   }
-  
+
   /**
    * 退出全屏
    */
   const exitFullscreen = () => {
     fullscreenIndex.value = null
-    // 退出全屏时恢复之前的侧边栏状态
-    if (panelStateBeforeFullscreen.value !== null) {
-      showPanel.value = panelStateBeforeFullscreen.value
-      panelStateBeforeFullscreen.value = null
-    }
   }
   
   /**

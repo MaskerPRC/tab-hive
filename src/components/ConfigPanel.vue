@@ -6,6 +6,17 @@
         <img src="/128x128.png" alt="全视界 Logo" class="logo-img" />
       </div>
       <h1 class="app-title">全视界</h1>
+      <button
+        class="sidebar-collapse-btn"
+        @click="$emit('close-sidebar')"
+        title="收起侧边栏"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+          <polyline points="15 8 12 12 15 16"/>
+        </svg>
+      </button>
     </div>
 
     <!-- 可滚动内容区 -->
@@ -127,7 +138,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout', 'close-sidebar'],
   setup(props, { emit }) {
     const { t } = useI18n()
 
@@ -272,6 +283,29 @@ export default {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
+  flex: 1;
+}
+
+.sidebar-collapse-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.sidebar-collapse-btn:hover {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
 }
 
 /* 操作按钮区域 */

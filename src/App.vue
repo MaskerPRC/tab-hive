@@ -52,18 +52,17 @@
       @retry-download="handleRetryDownload"
     />
 
-    <!-- 侧边栏切换按钮和当前布局名称 -->
-    <div v-if="fullscreenIndex === null" class="sidebar-header" :class="{ 'panel-visible': showPanel }">
+    <!-- 侧边栏展开按钮（仅在侧边栏隐藏时显示） -->
+    <div class="sidebar-header" :class="{ 'panel-visible': showPanel }">
       <button
         class="sidebar-toggle-btn"
-        @click="showPanel = !showPanel"
-        :title="showPanel ? '隐藏侧边栏' : '显示侧边栏'"
+        @click="showPanel = true"
+        title="展开侧边栏"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="7"/>
-          <rect x="14" y="3" width="7" height="7"/>
-          <rect x="14" y="14" width="7" height="7"/>
-          <rect x="3" y="14" width="7" height="7"/>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+          <polyline points="13 8 16 12 13 16"/>
         </svg>
       </button>
       <div class="current-layout-title">
@@ -72,7 +71,6 @@
     </div>
 
     <ConfigPanel
-      v-if="fullscreenIndex === null"
       :class="{ 'panel-visible': showPanel }"
       :layouts="layouts"
       :currentLayoutId="currentLayoutId"
@@ -540,11 +538,13 @@ export default {
   align-items: center;
   gap: 12px;
   z-index: 30;
-  transition: all 0.3s ease-out;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .sidebar-header.panel-visible {
-  left: 300px; /* 左栏宽度 288px + 12px 间距 */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-20px);
 }
 
 .sidebar-toggle-btn {
@@ -585,16 +585,6 @@ export default {
   font-weight: 700;
   color: #1e293b;
   white-space: nowrap;
-  transition: all 0.3s ease-out;
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
-}
-
-.sidebar-header.panel-visible .current-layout-title {
-  opacity: 0;
-  transform: translateX(-10px);
-  pointer-events: none;
 }
 
 .app-container :deep(.config-panel) {
@@ -614,14 +604,16 @@ export default {
   opacity: 1;
 }
 
-/* 当侧边栏显示时，主内容区域向右移动 */
+/* 当侧边栏显示时，主内容区域向右移动并缩小宽度 */
 .app-container :deep(.grid-view.panel-visible) {
   margin-left: 288px;
-  transition: margin-left 0.3s ease-in-out;
+  width: calc(100% - 288px);
+  transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
 .app-container :deep(.grid-view:not(.panel-visible)) {
   margin-left: 0;
-  transition: margin-left 0.3s ease-in-out;
+  width: 100%;
+  transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 </style>

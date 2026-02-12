@@ -841,11 +841,11 @@ export default {
 }
 
 .grid-item.fullscreen {
-  position: fixed !important;
+  position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
+  width: 100% !important;
+  height: 100% !important;
   z-index: 9999 !important;
   border-radius: 0;
   box-shadow: none;

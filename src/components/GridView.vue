@@ -1623,8 +1623,24 @@ export default {
 }
 
 .fullscreen-mode {
+  position: relative;
   padding: 0;
   overflow: hidden;
+}
+
+/* 全屏模式下限制 grid-container 尺寸，使全屏卡片正确填充可见区域 */
+.fullscreen-mode .canvas-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.fullscreen-mode .grid-container {
+  min-width: 100% !important;
+  min-height: 100% !important;
+  width: 100%;
+  height: 100%;
+  transform: none !important;
+  transition: none !important;
 }
 
 .drag-overlay {
