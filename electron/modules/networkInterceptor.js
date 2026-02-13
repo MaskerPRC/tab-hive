@@ -16,6 +16,10 @@ class NetworkInterceptor {
     this.pageHookUrls = new Map() // websiteId -> hookUrl
     // 已挂载的 webContents
     this.attachedWebContents = new Map() // websiteId -> webContents
+    // webContentsId -> websiteId 路由表（支持多 webview 共享 session）
+    this.wcIdToWebsiteId = new Map()
+    // 已设置监听器的 session（避免重复注册覆盖）
+    this.attachedSessions = new Set()
     console.log('[NetworkInterceptor] 网络拦截器已初始化')
   }
 
@@ -60,53 +64,63 @@ class NetworkInterceptor {
     }
 
     this.attachedWebContents.set(id, webContents)
+    this.wcIdToWebsiteId.set(webContents.id, id)
 
     // 初始化缓冲区
     if (!this.trafficBuffer.has(id)) {
       this.trafficBuffer.set(id, [])
     }
 
-    // 使用 webRequest API 拦截已完成的请求
+    // 为 session 设置监听器（每个 session 仅一次，避免覆盖）
     const ses = webContents.session
-    const filter = { urls: ['<all_urls>'] }
+    const sessionKey = ses.storagePath || 'default-session'
 
-    // onCompleted: 请求完成时记录
-    ses.webRequest.onCompleted(filter, (details) => {
-      // 根据 webContentsId 过滤，只记录属于此 webview 的请求
-      if (details.webContentsId !== webContents.id) return
+    if (!this.attachedSessions.has(sessionKey)) {
+      this.attachedSessions.add(sessionKey)
+      const filter = { urls: ['<all_urls>'] }
 
-      this.recordTraffic(id, {
-        method: details.method,
-        url: details.url,
-        statusCode: details.statusCode,
-        resourceType: details.resourceType,
-        requestHeaders: details.requestHeaders || {},
-        responseHeaders: details.responseHeaders || {},
-        fromCache: details.fromCache || false,
-        statusLine: details.statusLine || ''
+      // onCompleted: 请求完成时记录
+      ses.webRequest.onCompleted(filter, (details) => {
+        const wsId = this.wcIdToWebsiteId.get(details.webContentsId)
+        if (!wsId) return
+
+        this.recordTraffic(wsId, {
+          method: details.method,
+          url: details.url,
+          statusCode: details.statusCode,
+          resourceType: details.resourceType,
+          requestHeaders: details.requestHeaders || {},
+          responseHeaders: details.responseHeaders || {},
+          fromCache: details.fromCache || false,
+          statusLine: details.statusLine || ''
+        })
       })
-    })
 
-    // onErrorOccurred: 请求出错时也记录
-    ses.webRequest.onErrorOccurred(filter, (details) => {
-      if (details.webContentsId !== webContents.id) return
+      // onErrorOccurred: 请求出错时也记录
+      ses.webRequest.onErrorOccurred(filter, (details) => {
+        const wsId = this.wcIdToWebsiteId.get(details.webContentsId)
+        if (!wsId) return
 
-      this.recordTraffic(id, {
-        method: details.method,
-        url: details.url,
-        statusCode: -1,
-        resourceType: details.resourceType,
-        error: details.error,
-        fromCache: false
+        this.recordTraffic(wsId, {
+          method: details.method,
+          url: details.url,
+          statusCode: -1,
+          resourceType: details.resourceType,
+          error: details.error,
+          fromCache: false
+        })
       })
-    })
+
+      console.log(`[NetworkInterceptor] ✓ session 监听器已设置: ${sessionKey}`)
+    }
 
     // webContents 销毁时自动清理
     webContents.on('destroyed', () => {
+      this.wcIdToWebsiteId.delete(webContents.id)
       this.detachFromWebContents(id)
     })
 
-    console.log(`[NetworkInterceptor] ✓ 已挂载到 websiteId=${id}`)
+    console.log(`[NetworkInterceptor] ✓ 已挂载到 websiteId=${id}, wcId=${webContents.id}`)
   }
 
   /**
@@ -173,7 +187,7 @@ class NetworkInterceptor {
 
       request.setHeader('Content-Type', 'application/json')
 
-      request.on('error', (err) => {
+      request.on('error', () => {
         // 静默处理转发失败，避免日志刷屏
       })
 
@@ -205,6 +219,8 @@ class NetworkInterceptor {
   cleanup() {
     this.trafficBuffer.clear()
     this.attachedWebContents.clear()
+    this.wcIdToWebsiteId.clear()
+    this.attachedSessions.clear()
     console.log('[NetworkInterceptor] ✓ 资源已清理')
   }
 }

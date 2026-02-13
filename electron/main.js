@@ -119,18 +119,32 @@ app.whenReady().then(async () => {
 
     // 为 webview 类型的 webContents 挂载网络拦截器
     if (webContents.getType() === 'webview') {
-      webContents.on('did-finish-load', () => {
+      let interceptorAttached = false
+
+      // 使用 did-start-navigation 捕获初始 URL（redirect 前），可靠提取 __webview_id__
+      const tryAttach = (url) => {
+        if (interceptorAttached) return
         try {
-          const url = webContents.getURL()
           const match = url.match(/__webview_id__=([^&]+)/)
           if (match) {
+            interceptorAttached = true
             const websiteId = match[1]
             const { getNetworkInterceptor } = require('./modules/networkInterceptor')
             getNetworkInterceptor().attachToWebContents(webContents, websiteId)
+            console.log(`[NetworkInterceptor] ✓ 已挂载 webview, websiteId=${websiteId}`)
           }
         } catch (error) {
-          // 静默处理
+          console.error('[NetworkInterceptor] 挂载失败:', error.message)
         }
+      }
+
+      webContents.on('did-start-navigation', (details) => {
+        tryAttach(details.url)
+      })
+
+      // 兜底：did-finish-load 时再尝试一次
+      webContents.on('did-finish-load', () => {
+        tryAttach(webContents.getURL())
       })
     }
   })

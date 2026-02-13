@@ -505,7 +505,10 @@ export default {
       handleAddWebsite: websiteHandlers.handleAddWebsite,
       handleCopyWebsite: websiteHandlers.handleCopyWebsite,
       handleRemoveWebsite: websiteHandlers.handleRemoveWebsite,
-      handleUpdateWebsite: websiteHandlers.handleUpdateWebsite,
+      handleUpdateWebsite: (params) => {
+        websiteHandlers.handleUpdateWebsite(params)
+        syncApiConfigToMain()
+      },
       
       // 布局操作方法
       handleSwitchLayout: layoutHandlers.handleSwitchLayout,
