@@ -2,8 +2,7 @@
   <div
     class="grid-view"
     :class="{
-      'fullscreen-mode': fullscreenIndex !== null,
-      'automation-mode': viewMode === 'automation'
+      'fullscreen-mode': fullscreenIndex !== null
     }"
     @dragenter.prevent="handleDragEnter"
     @dragleave="handleViewDragLeave"
@@ -32,24 +31,6 @@
       @cancel="cancelElementSelection"
     />
 
-    <!-- 元素选择器覆盖层（自动化视图模式） -->
-    <ElementSelector
-      v-if="viewMode === 'automation' && automationSelectingElement"
-      :is-active="automationSelectingElement"
-      :target-iframe="automationTargetIframe"
-      :current-website="automationTargetWebsite"
-      @select="handleAutomationElementSelected"
-      @cancel="handleAutomationElementSelectionCancel"
-    />
-
-    <!-- 映射类型选择对话框 -->
-    <MappingTypeDialog
-      :show="showMappingTypeDialog"
-      :pending-element-selection="pendingElementSelection"
-      @select="handleSelectMappingType"
-      @cancel="handleCancelMappingType"
-    />
-
     <!-- 拖动/调整大小时的全局遮罩层，防止iframe捕获鼠标事件 -->
     <div
       v-if="isDraggingItem || isResizing"
@@ -63,7 +44,7 @@
       :new-website="dialogState.newWebsite"
       :show-custom-html-dialog="dialogState.showCustomHtmlDialog"
       :show-rearrange-dialog="dialogState.showRearrangeDialog"
-      :context-menu-visible="dialogState.contextMenuVisible && viewMode !== 'automation'"
+      :context-menu-visible="dialogState.contextMenuVisible"
       :context-menu-x="dialogState.contextMenuX"
       :context-menu-y="dialogState.contextMenuY"
       :websites="websites"
@@ -78,77 +59,17 @@
       @close-context-menu="closeContextMenu"
     />
 
-    <!-- 自动化视图右键菜单 -->
-    <AutomationContextMenu
-      v-if="viewMode === 'automation'"
-      :visible="automationContextMenuVisible"
-      :x="automationContextMenuX"
-      :y="automationContextMenuY"
-      @add-trigger="handleAddTriggerNode"
-      @add-http="handleAddHttpNode"
-      @add-set="handleAddSetNode"
-      @add-web-action="handleAddWebActionNode"
-      @close="closeAutomationContextMenu"
-    />
-
     <!-- 画布容器 -->
     <div
       class="canvas-wrapper"
       :class="{ 'panning': isPanning || false, 'dragging-item': isDraggingItem || isResizing }"
       @mousedown="handleCanvasMouseDown"
-      @mousemove="handleCanvasMouseMoveForConnection"
-      @mouseup="handleCanvasMouseUpForConnection"
       @wheel="handleCanvasWheel"
       @contextmenu="handleContextMenu"
-      @click="closeAutomationContextMenu"
       @drop.prevent="handleDropOnEmpty"
       @dragover.prevent="handleDragOverOnEmpty"
       @dragenter.prevent="handleDragEnterForFiles"
     >
-      <!-- 连接线层（自动化视图）- 放在 canvas-wrapper 下，使用屏幕坐标 -->
-      <svg
-        v-if="viewMode === 'automation'"
-        class="connection-layer"
-        :style="connectionLayerStyle"
-      >
-        <!-- 已保存的连接线 -->
-        <g v-for="(connection, index) in connections" :key="`connection-${index}`">
-          <path
-            :d="getConnectionPath(connection)"
-            :stroke="connection.type === 'data' ? '#4CAF50' : '#2196F3'"
-            :stroke-width="2"
-            :stroke-dasharray="connection.type === 'data' ? '5,5' : '0'"
-            fill="none"
-            marker-end="url(#arrowhead)"
-          />
-        </g>
-        <!-- 临时连接线（正在拖动时） -->
-        <path
-          v-if="isConnecting"
-          :d="tempConnectionPath"
-          :stroke="connectingPortType === 'data-output' ? '#4CAF50' : '#2196F3'"
-          :stroke-width="2"
-          :stroke-dasharray="connectingPortType === 'data-output' ? '5,5' : '0'"
-          fill="none"
-          marker-end="url(#arrowhead)"
-          opacity="0.7"
-          style="pointer-events: none;"
-        />
-        <!-- 箭头标记 -->
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="10"
-            markerHeight="10"
-            refX="9"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 10 3, 0 6" fill="currentColor" />
-          </marker>
-        </defs>
-      </svg>
-
       <!-- 画布内容 -->
       <div
         class="grid-container"
@@ -173,9 +94,6 @@
           :resize-is-colliding="resizeIsColliding"
           :global-settings="globalSettings"
           :get-item-style="getItemStyle"
-          :is-automation-mode="viewMode === 'automation'"
-          :automation-selecting-website-id="automationTargetWebsite?.id || null"
-          :get-automation-data="getAutomationDataForWebsite"
           @drag-start="startDrag"
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
@@ -190,32 +108,7 @@
           @open-monitoring="(websiteId, darkMode) => $emit('open-monitoring', websiteId, darkMode)"
           @update-url="handleUpdateUrl"
           @resize-start="startResize"
-          @start-automation-element-selection="handleStartAutomationElementSelection"
-          @edit-data-mapping="handleEditDataMapping"
-          @delete-data-mapping="handleDeleteDataMapping"
-          @edit-action-mapping="handleEditActionMapping"
-          @delete-action-mapping="handleDeleteActionMapping"
-          @port-mousedown="handlePortMouseDown"
         />
-
-        <!-- 工作流节点层（自动化视图） -->
-        <div
-          v-if="viewMode === 'automation'"
-          class="workflow-nodes-layer"
-          :style="workflowNodesLayerStyle"
-        >
-          <WorkflowNode
-            v-for="node in workflowNodes"
-            :key="node.id"
-            :node="node"
-            :is-selected="selectedNodeId === node.id"
-            :canvas-transform="canvasTransform"
-            @node-mousedown="handleNodeMouseDown"
-            @node-click="handleNodeClick"
-            @port-mousedown="handleNodePortMouseDown"
-            @execute="handleNodeExecute"
-          />
-        </div>
 
         <!-- 绘制层 -->
         <GridDrawingLayer
@@ -247,7 +140,6 @@
       :drawing-tool="drawingTool"
       :drawing-color="drawingColor"
       :drawing-width="drawingWidth"
-      :is-automation-mode="viewMode === 'automation'"
       @zoom-in="zoomIn"
       @zoom-out="zoomOut"
       @reset="resetTransform"
@@ -259,7 +151,6 @@
       @update-width="setDrawingWidth"
       @clear-drawings="clearAllDrawings"
       @add-website="startAddWebsite(-1)"
-      @toggle-view-mode="toggleViewMode"
     />
   </div>
 </template>
@@ -268,36 +159,23 @@
 // 子组件
 import FullscreenBar from './FullscreenBar.vue'
 import ElementSelector from './ElementSelector.vue'
-import MappingTypeDialog from './MappingTypeDialog.vue'
 import CanvasControls from './CanvasControls.vue'
 import GridDialogManager from './GridDialogManager.vue'
 import GridDrawingLayer from './GridDrawingLayer.vue'
 import GridWebsiteList from './GridWebsiteList.vue'
-import AutomationContextMenu from './AutomationContextMenu.vue'
-import WorkflowNode from './WorkflowNode.vue'
-
-import { ref } from 'vue'
 
 // Composables
 import { useGridViewSetup } from '../composables/useGridViewSetup'
-import { useAutomationData } from '../composables/useAutomationData'
-import { useAutomationElementSelection } from '../composables/useAutomationElementSelection'
-import { useWorkflowConnections } from '../composables/useWorkflowConnections'
-import { useWorkflowNodeManagement } from '../composables/useWorkflowNodeManagement'
-import { useWorkflowExecution } from '../composables/useWorkflowExecution'
 
 export default {
   name: 'GridView',
   components: {
     FullscreenBar,
     ElementSelector,
-    MappingTypeDialog,
     CanvasControls,
     GridDialogManager,
     GridDrawingLayer,
-    GridWebsiteList,
-    AutomationContextMenu,
-    WorkflowNode
+    GridWebsiteList
   },
   props: {
     websites: {
@@ -340,65 +218,11 @@ export default {
     'update-canvas-transform',
     'open-script-panel',
     'import-layout-from-image',
-    'open-monitoring',
-,
-    'start-automation-element-selection',
-    'update-automation-data'
+    'open-monitoring'
   ],
   setup(props, { emit }) {
-    // 使用主逻辑 composable，它内部组织了所有其他 composables
     const setupResult = useGridViewSetup(props, { emit })
-
-    // 自动化数据管理
-    const automationData = useAutomationData()
-
-    // 自动化元素选择（映射对话框、映射CRUD）
-    const automationElementSelection = useAutomationElementSelection(automationData, setupResult)
-
-    // 工作流节点列表（共享 ref，供连接和节点管理共同使用）
-    const workflowNodes = ref([])
-
-    // 工作流连接线
-    const workflowConnections = useWorkflowConnections({
-      workflowNodes,
-      props,
-      automationData,
-      allWebsites: setupResult.allWebsites,
-      automationSelectingElement: automationElementSelection.automationSelectingElement
-    })
-
-    // 工作流节点管理
-    const workflowNodeMgmt = useWorkflowNodeManagement({
-      workflowNodes,
-      props,
-      viewMode: setupResult.viewMode,
-      originalHandleContextMenu: setupResult.handleContextMenu,
-      startConnection: workflowConnections.startConnection,
-      getNodePortPosition: workflowConnections.getNodePortPosition
-    })
-
-    // 工作流执行引擎
-    const workflowExec = useWorkflowExecution({
-      workflowNodes,
-      connections: workflowConnections.connections,
-      automationData,
-      allWebsites: setupResult.allWebsites
-    })
-
-    // 暴露方法给模板
-    return {
-      ...setupResult,
-      // 自动化视图元素选择器
-      ...automationElementSelection,
-      automationData,
-      // 连接线
-      ...workflowConnections,
-      // 工作流节点
-      workflowNodes,
-      ...workflowNodeMgmt,
-      // 执行引擎
-      ...workflowExec
-    }
+    return { ...setupResult }
   }
 }
 </script>

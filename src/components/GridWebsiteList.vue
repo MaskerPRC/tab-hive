@@ -21,9 +21,6 @@
       :ad-block-enabled="globalSettings?.adBlockEnabled"
       :custom-code-enabled="globalSettings?.customCodeEnabled"
       :show-certificate-error-shadow="globalSettings?.showCertificateErrorShadow"
-      :is-automation-mode="isAutomationMode"
-      :automation-data="getAutomationDataForItem(item.id)"
-      :is-selecting-element="isSelectingElementForWebsite(item.id)"
       @drag-start="handleDragStart($event, index)"
       @drag-over="handleDragOver"
       @drag-leave="handleDragLeave"
@@ -38,12 +35,6 @@
           @open-monitoring="handleOpenMonitoring"
           @update-url="handleUpdateUrl"
           @resize-start="handleResizeStart($event, index, $event)"
-          @start-select-element="handleStartSelectElement"
-          @edit-data-mapping="handleEditDataMapping"
-          @delete-data-mapping="handleDeleteDataMapping"
-          @edit-action-mapping="handleEditActionMapping"
-          @delete-action-mapping="handleDeleteActionMapping"
-          @port-mousedown="handlePortMouseDown"
         />
   </div>
 </template>
@@ -108,22 +99,9 @@ export default {
     getItemStyle: {
       type: Function,
       required: true
-    },
-    isAutomationMode: {
-      type: Boolean,
-      default: false
-    },
-    automationSelectingWebsiteId: {
-      type: [String, Number],
-      default: null
-    },
-    getAutomationData: {
-      type: Function,
-      default: null
     }
   },
   emits: [
-    'start-automation-element-selection',
     'drag-start',
     'drag-over',
     'drag-leave',
@@ -137,12 +115,7 @@ export default {
     'open-script-panel',
     'open-monitoring',
     'update-url',
-    'resize-start',
-    'edit-data-mapping',
-    'delete-data-mapping',
-    'edit-action-mapping',
-    'delete-action-mapping',
-    'port-mousedown'
+    'resize-start'
   ],
   setup(props, { emit }) {
     // ========== 判断是否隐藏 ==========
@@ -209,13 +182,7 @@ export default {
     const handleOpenMonitoring = (websiteId, darkMode) => {
       emit('open-monitoring', websiteId, darkMode)
     }
-    
-    const handleOpenWorkflow = () => {
-      console.log('[GridWebsiteList] 接收到 open-workflow 事件')
-      console.log('[GridWebsiteList] 向上传递到 GridView（布局级别）')
-      emit('open-workflow')
-    }
-    
+
     const handleUpdateUrl = (index, url) => {
       emit('update-url', index, url)
     }
@@ -224,59 +191,9 @@ export default {
       emit('resize-start', event, index, handle)
     }
 
-    const handleStartSelectElement = (websiteId) => {
-      emit('start-automation-element-selection', websiteId)
-    }
-
-    const handleEditDataMapping = (websiteId, mapping) => {
-      emit('edit-data-mapping', websiteId, mapping)
-    }
-
-    const handleDeleteDataMapping = (websiteId, mappingId) => {
-      emit('delete-data-mapping', websiteId, mappingId)
-    }
-
-    const handleEditActionMapping = (websiteId, mapping) => {
-      emit('edit-action-mapping', websiteId, mapping)
-    }
-
-    const handleDeleteActionMapping = (websiteId, mappingId) => {
-      emit('delete-action-mapping', websiteId, mappingId)
-    }
-
-    const handlePortMouseDown = (event, websiteId, portId, portType) => {
-      emit('port-mousedown', event, websiteId, portId, portType)
-    }
-
-    // 获取网站的自动化数据（从父组件传递）
-    const getAutomationDataForItem = (websiteId) => {
-      // 直接返回数据对象（已经是 reactive 的）
-      if (props.getAutomationData) {
-        const data = props.getAutomationData(websiteId)
-        console.log('[GridWebsiteList] 获取自动化数据，websiteId:', websiteId, 'data:', data)
-        console.log('[GridWebsiteList] 数据映射数量:', data?.dataMappings?.length || 0)
-        return data || {
-          dataMappings: [],
-          actionMappings: []
-        }
-      }
-      // 默认返回空数据
-      return {
-        dataMappings: [],
-        actionMappings: []
-      }
-    }
-
-    // 检查某个网站是否正在选择元素
-    const isSelectingElementForWebsite = (websiteId) => {
-      return props.automationSelectingWebsiteId === websiteId
-    }
-
     return {
       isHidden,
       itemStyle,
-      getAutomationDataForItem,
-      isSelectingElementForWebsite,
       handleDragStart,
       handleDragOver,
       handleDragLeave,
@@ -290,13 +207,7 @@ export default {
       handleOpenScriptPanel,
       handleOpenMonitoring,
       handleUpdateUrl,
-      handleResizeStart,
-      handleStartSelectElement,
-      handleEditDataMapping,
-      handleDeleteDataMapping,
-      handleEditActionMapping,
-      handleDeleteActionMapping,
-      handlePortMouseDown
+      handleResizeStart
     }
   }
 }

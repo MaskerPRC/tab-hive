@@ -81,6 +81,7 @@
       @manage-proxy="$emit('manage-proxy')"
       @clear-config="clearConfig"
       @open-settings="$emit('open-settings')"
+      @open-api-settings="$emit('open-api-settings')"
     />
   </div>
 </template>
@@ -137,7 +138,7 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout', 'close-sidebar'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'open-api-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout', 'close-sidebar'],
   setup(props, { emit }) {
     const { t } = useI18n()
 

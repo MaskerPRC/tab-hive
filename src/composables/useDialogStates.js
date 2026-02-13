@@ -29,6 +29,9 @@ export function useDialogStates() {
   const showExternalUrlModal = ref(false)
   const externalUrl = ref('')
   
+  // API 设置面板
+  const showApiSettings = ref(false)
+
   // 导入对话框
   const showImportDialog = ref(false)
   
@@ -106,10 +109,18 @@ export function useDialogStates() {
     externalUrl.value = ''
   }
   
+  const openApiSettings = () => {
+    showApiSettings.value = true
+  }
+
+  const closeApiSettings = () => {
+    showApiSettings.value = false
+  }
+
   const openImportDialog = () => {
     showImportDialog.value = true
   }
-  
+
   const closeImportDialog = () => {
     showImportDialog.value = false
   }
@@ -126,6 +137,7 @@ export function useDialogStates() {
     showSharedModal,
     showExternalUrlModal,
     externalUrl,
+    showApiSettings,
     showImportDialog,
     
     // 方法
@@ -145,6 +157,8 @@ export function useDialogStates() {
     closeSharedModal,
     openExternalUrlModal,
     closeExternalUrlModal,
+    openApiSettings,
+    closeApiSettings,
     openImportDialog,
     closeImportDialog
   }

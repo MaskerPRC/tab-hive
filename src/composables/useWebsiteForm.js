@@ -26,7 +26,9 @@ export function useWebsiteForm(props, emit) {
       fitScreen: false
     },
     // 自定义 HTML 相关
-    html: ''
+    html: '',
+    // 网络 Hook URL（单页面配置）
+    networkHookUrl: ''
   })
 
   /**
@@ -71,14 +73,15 @@ export function useWebsiteForm(props, emit) {
       paddingValue = 10
     }
     
-    localWebsite.value = { 
+    localWebsite.value = {
       ...newVal,
       targetSelectors,
       sessionInstance: newVal.sessionInstance || 'default',
       padding: paddingValue,
       muted: newVal.muted || false,
       darkMode: newVal.darkMode || false,
-      requireModifierForActions: newVal.requireModifierForActions || false
+      requireModifierForActions: newVal.requireModifierForActions || false,
+      networkHookUrl: newVal.networkHookUrl || ''
     }
     
     console.log('[WebsiteEditDialog] 加载网站数据:', {

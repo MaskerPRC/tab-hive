@@ -92,7 +92,7 @@ app.whenReady().then(async () => {
   // 全局监听所有 webContents 创建（包括 webview）
   app.on('web-contents-created', (event, webContents) => {
     console.log('[Webview Guard] webContents 已创建, type:', webContents.getType())
-    
+
     // 为所有 webContents 设置新窗口打开拦截器
     webContents.setWindowOpenHandler(({ url, frameName, disposition }) => {
       console.log('[Webview Guard] ========== 拦截新窗口 ==========')
@@ -100,7 +100,7 @@ app.whenReady().then(async () => {
       console.log('[Webview Guard] frameName:', frameName)
       console.log('[Webview Guard] disposition:', disposition)
       console.log('[Webview Guard] webContents type:', webContents.getType())
-      
+
       // 如果是 webview，尝试在当前 webview 中导航
       if (webContents.getType() === 'webview') {
         console.log('[Webview Guard] 是 webview，在当前 webview 中导航')
@@ -111,11 +111,28 @@ app.whenReady().then(async () => {
           console.error('[Webview Guard] ✗ 导航失败:', error)
         }
       }
-      
+
       // 阻止打开新窗口
       console.log('[Webview Guard] 阻止打开新窗口')
       return { action: 'deny' }
     })
+
+    // 为 webview 类型的 webContents 挂载网络拦截器
+    if (webContents.getType() === 'webview') {
+      webContents.on('did-finish-load', () => {
+        try {
+          const url = webContents.getURL()
+          const match = url.match(/__webview_id__=([^&]+)/)
+          if (match) {
+            const websiteId = match[1]
+            const { getNetworkInterceptor } = require('./modules/networkInterceptor')
+            getNetworkInterceptor().attachToWebContents(webContents, websiteId)
+          }
+        } catch (error) {
+          // 静默处理
+        }
+      })
+    }
   })
   console.log('[Webview Guard] ✓ 全局 webContents 监听已设置')
 
@@ -162,12 +179,20 @@ app.on('window-all-closed', () => {
 // 应用退出时清理资源
 app.on('before-quit', async () => {
   console.log('[Electron Main] 清理资源...')
-  
+
   // 清理监听规则定时器
   const { getMonitoringManager } = require('./modules/monitoringManager')
   const monitoringManager = getMonitoringManager()
   monitoringManager.cleanup()
-  
+
+  // 清理 API 服务器
+  const { getApiServer } = require('./modules/apiServer')
+  getApiServer().stop()
+
+  // 清理网络拦截器
+  const { getNetworkInterceptor } = require('./modules/networkInterceptor')
+  getNetworkInterceptor().cleanup()
+
   // 清理代理资源
   if (proxyManager) {
     // 停止所有视界的代理

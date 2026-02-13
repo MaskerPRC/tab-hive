@@ -23,6 +23,11 @@
         @click="$emit('manage-proxy')"
       />
       <IconButton
+        icon="radio"
+        label="API"
+        @click="$emit('open-api-settings')"
+      />
+      <IconButton
         icon="help-circle"
         :label="$t('configPanel.help')"
         @click="openHelp"
@@ -46,7 +51,7 @@ export default {
     IconButton
   },
   props: {},
-  emits: ['show-shared-modal', 'manage-proxy', 'clear-config', 'open-settings'],
+  emits: ['show-shared-modal', 'manage-proxy', 'clear-config', 'open-settings', 'open-api-settings'],
   setup() {
     const openHelp = () => {
       if (window.top) {
@@ -105,7 +110,7 @@ export default {
 
 .action-buttons {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.5rem;
 }
 </style>

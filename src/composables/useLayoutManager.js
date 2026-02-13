@@ -259,7 +259,15 @@ export function useLayoutManager() {
     globalMuted: false, // 默认不全局静音
     adBlockEnabled: false, // 默认不启用去广告
     customCodeEnabled: true, // 默认启用自定义代码功能
-    showCertificateErrorShadow: true // 默认显示证书错误红色阴影
+    showCertificateErrorShadow: true, // 默认显示证书错误红色阴影
+    // API 服务器配置
+    apiServerEnabled: true,
+    apiServerHost: '127.0.0.1',
+    apiServerPort: 13900,
+    apiServerKey: '', // 首次运行时自动生成
+    // 全局网络 Hook
+    networkHookEnabled: false,
+    networkHookUrl: ''
   }
   const globalSettings = ref(savedConfig?.globalSettings 
     ? { ...defaultGlobalSettings, ...savedConfig.globalSettings }
@@ -278,6 +286,24 @@ export function useLayoutManager() {
     if (savedConfig.globalSettings.showCertificateErrorShadow === undefined) {
       globalSettings.value.showCertificateErrorShadow = true
       console.log('[useLayoutManager] 检测到旧配置，初始化 showCertificateErrorShadow 为 true')
+    }
+    if (savedConfig.globalSettings.apiServerEnabled === undefined) {
+      globalSettings.value.apiServerEnabled = true
+    }
+    if (savedConfig.globalSettings.apiServerHost === undefined) {
+      globalSettings.value.apiServerHost = '127.0.0.1'
+    }
+    if (savedConfig.globalSettings.apiServerPort === undefined) {
+      globalSettings.value.apiServerPort = 13900
+    }
+    if (savedConfig.globalSettings.apiServerKey === undefined) {
+      globalSettings.value.apiServerKey = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)
+    }
+    if (savedConfig.globalSettings.networkHookEnabled === undefined) {
+      globalSettings.value.networkHookEnabled = false
+    }
+    if (savedConfig.globalSettings.networkHookUrl === undefined) {
+      globalSettings.value.networkHookUrl = ''
     }
   }
 

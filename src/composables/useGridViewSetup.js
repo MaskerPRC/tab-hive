@@ -20,7 +20,6 @@ import { useFullscreenNavigation } from './useFullscreenNavigation'
 import { useFileDrop } from './useFileDrop'
 import { useCanvasEventHandlers } from './useCanvasEventHandlers'
 import { useGridDialogs } from './useGridDialogs'
-import { useWorkflowView } from './useWorkflowView'
 import { useGridEventHandlers } from './useGridEventHandlers'
 import { useLayoutOperations } from './useLayoutOperations'
 
@@ -61,22 +60,6 @@ export function useGridViewSetup(props, { emit }) {
     openContextMenu,
     closeContextMenu
   } = useGridDialogs()
-  
-  // 工作流视图管理
-  const {
-    viewMode,
-    showPorts,
-    showConnections,
-    toggleViewMode,
-    enterAutomationMode,
-    exitAutomationMode,
-    workflowNodes,
-    workflowConnections,
-    addWorkflowNode,
-    removeWorkflowNode,
-    addConnection,
-    removeConnection
-  } = useWorkflowView()
   
   // 对话框状态对象
   const dialogState = computed(() => ({
@@ -461,12 +444,6 @@ export function useGridViewSetup(props, { emit }) {
     imageUpload,
     // 对话框状态
     dialogState,
-    // 工作流视图状态
-    viewMode,
-    showPorts,
-    showConnections,
-    workflowNodes,
-    workflowConnections,
     // 基础方法
     getItemStyle,
     handleGridMouseMove,
@@ -503,14 +480,6 @@ export function useGridViewSetup(props, { emit }) {
     setDrawingColor,
     setDrawingWidth,
     updateDrawingItem,
-    // 工作流方法
-    toggleViewMode,
-    enterAutomationMode,
-    exitAutomationMode,
-    addWorkflowNode,
-    removeWorkflowNode,
-    addConnection,
-    removeConnection,
     // 事件处理器
     ...eventHandlers,
     // 文字和图片输入的特殊处理

@@ -54,33 +54,6 @@
         :set-iframe-ref="setIframeRef"
       />
       
-      <!-- 自动化配置覆盖层（在自动化视图中显示） -->
-      <WebsiteAutomationPanel
-        v-if="isAutomationMode"
-        :website-id="item.id"
-        :website-name="item.title || item.url"
-        :data-mappings="automationData?.dataMappings || []"
-        :action-mappings="automationData?.actionMappings || []"
-        :dark-mode="item.darkMode"
-        :is-selecting-element="isSelectingElement"
-        @add-data-mapping="handleAddDataMapping"
-        @edit-data-mapping="handleEditDataMapping"
-        @delete-data-mapping="handleDeleteDataMapping"
-        @add-action-mapping="handleAddActionMapping"
-        @edit-action-mapping="handleEditActionMapping"
-        @delete-action-mapping="handleDeleteActionMapping"
-        @port-mousedown="handlePortMouseDown"
-        @start-select-element="handleStartSelectElement"
-      />
-      
-      <!-- 调试信息（开发时可见） -->
-      <div v-if="isAutomationMode && false" style="position: absolute; top: 10px; right: 10px; background: red; color: white; padding: 5px; z-index: 1000; font-size: 12px;">
-        自动化模式: {{ isAutomationMode }}<br>
-        数据映射: {{ automationData?.dataMappings?.length || 0 }}<br>
-        交互映射: {{ automationData?.actionMappings?.length || 0 }}
-      </div>
-      
-      
       <!-- 窗口标题栏 -->
       <WebsiteCardTitleBar
         v-if="showTitle"
@@ -159,7 +132,7 @@
 </template>
 
 <script>
-import { computed, toRef, watch, ref } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import DragHandle from './DragHandle.vue'
 import ResizeHandles from './ResizeHandles.vue'
 import DropZone from './DropZone.vue'
@@ -170,7 +143,6 @@ import WebsiteCardTitleBar from './WebsiteCardTitleBar.vue'
 import CertificateErrorOverlay from './CertificateErrorOverlay.vue'
 import WebsiteCardContentNormal from './WebsiteCardContentNormal.vue'
 import WebsiteCardContentCustomHtml from './WebsiteCardContentCustomHtml.vue'
-import WebsiteAutomationPanel from './WebsiteAutomationPanel.vue'
 import { useAutoRefresh } from '../composables/useAutoRefresh.js'
 import { useIframeSelector } from '../composables/useIframeSelector.js'
 import { useWebview } from '../composables/useWebview.js'
@@ -198,8 +170,7 @@ export default {
     WebsiteCardTitleBar,
     CertificateErrorOverlay,
     WebsiteCardContentNormal,
-    WebsiteCardContentCustomHtml,
-    WebsiteAutomationPanel
+    WebsiteCardContentCustomHtml
   },
   props: {
     item: {
@@ -273,25 +244,9 @@ export default {
     showCertificateErrorShadow: {
       type: Boolean,
       default: true
-    },
-    // 自动化视图相关
-    isAutomationMode: {
-      type: Boolean,
-      default: false
-    },
-    automationData: {
-      type: Object,
-      default: () => ({
-        dataMappings: [],
-        actionMappings: []
-      })
-    },
-    isSelectingElement: {
-      type: Boolean,
-      default: false
     }
   },
-  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring', 'add-data-mapping', 'edit-data-mapping', 'delete-data-mapping', 'add-action-mapping', 'edit-action-mapping', 'delete-action-mapping', 'port-mousedown', 'start-select-element', 'element-selected'],
+  emits: ['drag-start', 'drag-over', 'drag-leave', 'drop', 'refresh', 'copy', 'edit', 'fullscreen', 'remove', 'resize-start', 'toggle-mute', 'update-url', 'open-script-panel', 'go-back', 'go-forward', 'certificate-error', 'open-monitoring'],
   setup(props, { emit }) {
     // ==================== Webview/Iframe 管理 ====================
     const {
@@ -647,69 +602,6 @@ export default {
       handleManualRefresh()
     }
 
-    // ==================== 自动化面板事件处理 ====================
-    const isSelectingElement = ref(false)
-
-    const handleAddDataMapping = (websiteId) => {
-      emit('add-data-mapping', websiteId)
-    }
-
-    const handleEditDataMapping = (websiteId, mapping) => {
-      emit('edit-data-mapping', websiteId, mapping)
-    }
-
-    const handleDeleteDataMapping = (websiteId, mappingId) => {
-      emit('delete-data-mapping', websiteId, mappingId)
-    }
-
-    const handleAddActionMapping = (websiteId) => {
-      emit('add-action-mapping', websiteId)
-    }
-
-    const handleEditActionMapping = (websiteId, mapping) => {
-      emit('edit-action-mapping', websiteId, mapping)
-    }
-
-    const handleDeleteActionMapping = (websiteId, mappingId) => {
-      emit('delete-action-mapping', websiteId, mappingId)
-    }
-
-    const handlePortMouseDown = (event, websiteId, portId, portType) => {
-      emit('port-mousedown', event, websiteId, portId, portType)
-    }
-
-    const handleStartSelectElement = () => {
-      console.log('[WebsiteCard] 开始选择元素，向上传递到 GridView')
-      isSelectingElement.value = true
-      emit('start-select-element', props.item.id)
-    }
-
-    // 监听来自 GridView 的元素选择状态更新
-    watch(() => props.isAutomationMode, (newVal) => {
-      if (!newVal) {
-        // 退出自动化视图时，重置选择状态
-        isSelectingElement.value = false
-      }
-    })
-
-    // 监听元素选择状态（从 GridView 传递下来）
-    watch(() => props.isSelectingElement, (newVal) => {
-      isSelectingElement.value = newVal
-    })
-
-    // 监听 automationData 变化，确保响应式更新
-    watch(() => props.automationData, (newData) => {
-      console.log('[WebsiteCard] automationData 已更新:', newData)
-      console.log('[WebsiteCard] 数据映射数量:', newData?.dataMappings?.length || 0)
-      console.log('[WebsiteCard] 交互映射数量:', newData?.actionMappings?.length || 0)
-    }, { deep: true, immediate: true })
-
-    // 监听 isAutomationMode 变化
-    watch(() => props.isAutomationMode, (newVal) => {
-      console.log('[WebsiteCard] isAutomationMode 变化:', newVal, '网站:', props.item.id)
-      console.log('[WebsiteCard] 当前 automationData:', props.automationData)
-    }, { immediate: true })
-
     // ==================== 监听器 ====================
     watch(() => props.item.url, (newUrl, oldUrl) => {
       if (newUrl && newUrl !== oldUrl && oldUrl !== undefined) {
@@ -766,17 +658,7 @@ export default {
       // 监听规则相关
       activeRulesCount,
       handleMonitoringClick,
-      refreshRulesCount,
-      // 自动化面板相关
-      isSelectingElement,
-      handleAddDataMapping,
-      handleEditDataMapping,
-      handleDeleteDataMapping,
-      handleAddActionMapping,
-      handleEditActionMapping,
-      handleDeleteActionMapping,
-      handlePortMouseDown,
-      handleStartSelectElement
+      refreshRulesCount
     }
   }
 }

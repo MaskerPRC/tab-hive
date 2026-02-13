@@ -323,6 +323,29 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // API 服务器管理
+  apiServer: {
+    /**
+     * 更新 API 服务器和网络 Hook 配置
+     * @param {Object} config - 配置对象
+     */
+    updateConfig: (config) => {
+      return ipcRenderer.invoke('api:update-config', config)
+    },
+    /**
+     * 重启 API 服务器
+     */
+    restart: () => {
+      return ipcRenderer.invoke('api:restart-server')
+    },
+    /**
+     * 获取 API 服务器状态
+     */
+    getStatus: () => {
+      return ipcRenderer.invoke('api:get-status')
+    }
+  },
+
   // 事件监听
   on: (channel, callback) => {
     const validChannels = [

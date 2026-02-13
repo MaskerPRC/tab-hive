@@ -115,10 +115,48 @@ function getWebviewById(webviewId) {
   return registeredWebviews.get(webviewId)
 }
 
+/**
+ * 在 webview 中执行 JavaScript 并返回结果
+ * 使用 webContents.executeJavaScript 获取同步返回值
+ * @param {string} websiteId - 网站 ID
+ * @param {string} code - JavaScript 代码
+ * @returns {Promise<{success: boolean, result?: any, error?: string}>}
+ */
+async function executeJsWithResult(websiteId, code) {
+  const { BrowserWindow, webContents: electronWebContents } = require('electron')
+
+  const windows = BrowserWindow.getAllWindows()
+  for (const window of windows) {
+    if (window.isDestroyed()) continue
+    try {
+      const webviewInfo = await window.webContents.executeJavaScript(`
+        (function() {
+          var webview = document.querySelector('[data-webview-id="${websiteId}"]');
+          if (webview && webview.getWebContentsId) {
+            return { found: true, webContentsId: webview.getWebContentsId() };
+          }
+          return { found: false };
+        })()
+      `)
+      if (webviewInfo && webviewInfo.found) {
+        const wc = electronWebContents.fromId(webviewInfo.webContentsId)
+        if (wc && !wc.isDestroyed()) {
+          const result = await wc.executeJavaScript(code)
+          return { success: true, result }
+        }
+      }
+    } catch (error) {
+      continue
+    }
+  }
+  return { success: false, error: 'Webview not found' }
+}
+
 module.exports = {
   registerWebview,
   unregisterWebview,
   executeInWebview,
+  executeJsWithResult,
   getRegisteredWebviewIds,
   getWebviewById
 }

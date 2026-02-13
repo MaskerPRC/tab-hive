@@ -425,6 +425,69 @@ function registerIpcHandlers(createWindowFn, proxyManager, ensureCertificateHand
     return { success: true }
   })
 
+  // ========== API 服务器管理 ==========
+
+  const { getApiServer } = require('./apiServer')
+  const apiServer = getApiServer()
+
+  const { getNetworkInterceptor } = require('./networkInterceptor')
+  const networkInterceptor = getNetworkInterceptor()
+
+  /**
+   * 更新 API 服务器和网络拦截器配置
+   */
+  ipcMain.handle('api:update-config', async (event, config) => {
+    console.log('[API 服务器] 更新配置:', {
+      apiServerEnabled: config.apiServerEnabled,
+      host: config.apiServerHost,
+      port: config.apiServerPort,
+      hasKey: !!config.apiServerKey,
+      networkHookEnabled: config.networkHookEnabled,
+      networkHookUrl: config.networkHookUrl
+    })
+
+    // 更新网络拦截器配置
+    networkInterceptor.configure({
+      globalHookEnabled: config.networkHookEnabled,
+      globalHookUrl: config.networkHookUrl,
+      pageHookUrls: config.pageHookUrls || {}
+    })
+
+    // API 服务器关联网络拦截器
+    apiServer.setNetworkInterceptor(networkInterceptor)
+
+    // 启动或停止 API 服务器
+    if (config.apiServerEnabled && config.apiServerKey) {
+      apiServer.start({
+        host: config.apiServerHost,
+        port: config.apiServerPort,
+        apiKey: config.apiServerKey
+      })
+    } else {
+      apiServer.stop()
+    }
+
+    return { success: true }
+  })
+
+  /**
+   * 重启 API 服务器
+   */
+  ipcMain.handle('api:restart-server', async () => {
+    console.log('[API 服务器] 重启')
+    if (apiServer.config.apiKey) {
+      apiServer.start(apiServer.config)
+    }
+    return { success: true }
+  })
+
+  /**
+   * 获取 API 服务器状态
+   */
+  ipcMain.handle('api:get-status', async () => {
+    return { success: true, status: apiServer.getStatus() }
+  })
+
   console.log('[IPC] ✓ 所有 IPC 处理器已注册')
 }
 

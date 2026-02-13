@@ -120,6 +120,19 @@
                 :dialog-visible="show"
                 @manage-proxies="handleOpenProxyManager"
               />
+              <div class="hook-url-field">
+                <label class="hook-url-label">
+                  <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                  网络 Hook URL
+                </label>
+                <input
+                  type="text"
+                  v-model="localWebsite.networkHookUrl"
+                  placeholder="留空则使用全局 Hook 配置"
+                  class="hook-url-input"
+                />
+                <p class="hook-url-hint">为此页面单独设置网络流量转发地址，覆盖全局配置</p>
+              </div>
             </div>
 
             <!-- 右侧：样式配置 -->
@@ -617,6 +630,50 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+/* Hook URL 字段 */
+.hook-url-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hook-url-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.hook-url-label i {
+  color: #f97316;
+  font-size: 0.75rem;
+}
+
+.hook-url-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  color: #1f2937;
+  background: white;
+  transition: all 0.2s;
+}
+
+.hook-url-input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.hook-url-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
 }
 
 /* 进阶功能 Details */

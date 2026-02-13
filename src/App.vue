@@ -1,5 +1,13 @@
 <template>
   <div class="app-container">
+    <!-- API 服务设置 -->
+    <ApiSettingsPanel
+      :show="showApiSettings"
+      :globalSettings="layoutManager.globalSettings.value"
+      @close="showApiSettings = false"
+      @update-settings="handleUpdateApiSettings"
+    />
+
     <!-- 代理节点管理 -->
     <ProxyManager :show="showProxyManager" @close="closeProxyManager" />
 
@@ -94,6 +102,7 @@
       @show-update="handleShowUpdate"
       @clear-config="handleClearConfig"
       @close-sidebar="showPanel = false"
+      @open-api-settings="handleOpenApiSettings"
       @show-shared-modal="handleShowSharedModal"
       @share-layout="handleShareLayout"
       @export-layout="handleExportLayout"
@@ -194,6 +203,7 @@ import MonitoringRuleDialog from './components/MonitoringRuleDialog.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import SharedLayoutModal from './components/SharedLayoutModal.vue'
 import ExternalUrlModal from './components/ExternalUrlModal.vue'
+import ApiSettingsPanel from './components/ApiSettingsPanel.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
 import { useLlmConfig } from './composables/useLlmConfig'
@@ -229,7 +239,8 @@ export default {
     MonitoringRuleDialog,
     ContentScriptPanel,
     SharedLayoutModal,
-    ExternalUrlModal
+    ExternalUrlModal,
+    ApiSettingsPanel
   },
   setup() {
     const { t } = useI18n()
@@ -284,6 +295,41 @@ export default {
       layoutShareExport.handleImportLayoutFromImage(layoutData, layoutHandlers.handleCreateLayout)
     }
 
+    // API 设置面板处理
+    const handleOpenApiSettings = () => {
+      dialogStates.openApiSettings()
+    }
+
+    const handleUpdateApiSettings = (settings) => {
+      layoutManager.updateGlobalSettings(settings)
+      syncApiConfigToMain()
+    }
+
+    // 应用启动时同步 API 配置到主进程
+    const syncApiConfigToMain = () => {
+      if (window.electron?.apiServer) {
+        const gs = layoutManager.globalSettings.value
+        // 收集所有页面的独立 hookUrl
+        const pageHookUrls = {}
+        layoutManager.layouts.value.forEach(layout => {
+          ;(layout.websites || []).forEach(w => {
+            if (w.networkHookUrl) {
+              pageHookUrls[String(w.id)] = w.networkHookUrl
+            }
+          })
+        })
+        window.electron.apiServer.updateConfig({
+          apiServerEnabled: gs.apiServerEnabled,
+          apiServerHost: gs.apiServerHost,
+          apiServerPort: gs.apiServerPort,
+          apiServerKey: gs.apiServerKey,
+          networkHookEnabled: gs.networkHookEnabled,
+          networkHookUrl: gs.networkHookUrl,
+          pageHookUrls
+        })
+      }
+    }
+
     // 处理导入模式选择
     const handleImportModeSelect = (mode) => {
       console.log('[App.vue] ========== handleImportModeSelect 被调用 ==========')
@@ -334,6 +380,8 @@ export default {
       console.log('[App] 准备保存到布局:', layoutManager.currentLayoutId.value)
       layoutManager.saveCurrentLayout(websiteManager.websites.value)
       console.log('[App] 保存完成')
+      // 同步 per-page hookUrl 配置到主进程
+      syncApiConfigToMain()
     })
 
     // 设置外部链接模态框监听器
@@ -352,6 +400,9 @@ export default {
     
     // 执行初始化
     appInitialization.initialize()
+
+    // 启动时同步 API 配置到主进程
+    syncApiConfigToMain()
 
     return {
       // 视口状态
@@ -387,6 +438,7 @@ export default {
       showSharedModal: dialogStates.showSharedModal,
       showExternalUrlModal: dialogStates.showExternalUrlModal,
       externalUrl: dialogStates.externalUrl,
+      showApiSettings: dialogStates.showApiSettings,
       
       // 导入导出
       importExport,
@@ -420,6 +472,10 @@ export default {
       closeContentScriptPanel: dialogStates.closeContentScriptPanel,
       closeExternalUrlModal: dialogStates.closeExternalUrlModal,
       handleImportModeSelect,
+
+      // API 设置方法
+      handleOpenApiSettings,
+      handleUpdateApiSettings,
       
       // 监听规则方法
       handleOpenMonitoring: monitoringHandlers.handleOpenMonitoring,
