@@ -62,7 +62,7 @@ export default {
     const loadProxyList = async () => {
       loading.value = true
       try {
-        const result = await window.electron.proxy.getList(1, 100)
+        const result = await window.electron.proxy.getList(1, 10000)
         if (result.success) {
           proxyList.value = (result.data.list || []).filter(p => p.is_enabled)
         }
