@@ -181,12 +181,17 @@ export function useCanvasTransform(initialTransform = null) {
     if (!canvasTransform.value) {
       return {
         transform: 'translate(0px, 0px) scale(1)',
-        transformOrigin: '0 0'
+        transformOrigin: '0 0',
+        '--canvas-zoom': 1,
+        '--counter-zoom': 1
       }
     }
+    const zoom = canvasTransform.value.zoom
     return {
-      transform: `translate(${canvasTransform.value.x}px, ${canvasTransform.value.y}px) scale(${canvasTransform.value.zoom})`,
-      transformOrigin: '0 0'
+      transform: `translate(${canvasTransform.value.x}px, ${canvasTransform.value.y}px) scale(${zoom})`,
+      transformOrigin: '0 0',
+      '--canvas-zoom': zoom,
+      '--counter-zoom': 1 / zoom
     }
   }
 

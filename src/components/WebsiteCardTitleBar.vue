@@ -314,6 +314,7 @@ export default {
   gap: 0.75rem;
   position: relative;
   z-index: 100;
+  zoom: var(--counter-zoom, 1);
 }
 
 .title-bar-left {

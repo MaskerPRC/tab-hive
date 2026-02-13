@@ -865,6 +865,7 @@ export default {
   left: 0.5rem;
   z-index: 150;
   pointer-events: none;
+  zoom: var(--counter-zoom, 1);
 }
 
 .drag-handle-container :deep(.drag-handle) {

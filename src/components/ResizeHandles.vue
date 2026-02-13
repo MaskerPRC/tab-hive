@@ -39,6 +39,7 @@ export default {
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: all;
+  zoom: var(--counter-zoom, 1);
 }
 
 .resize-handle:hover {
