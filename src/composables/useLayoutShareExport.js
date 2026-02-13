@@ -7,10 +7,8 @@ export function useLayoutShareExport(dialog, t, layoutManager) {
   // 分享布局到服务器
   const shareLayoutToServer = async (layout) => {
     try {
-      // 确定 API 地址
-      const API_BASE_URL = dialog.isElectron?.value
-        ? 'https://tabs.apexstone.ai/api'
-        : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+      // API 地址（桌面端专用）
+      const API_BASE_URL = 'https://tabs.apexstone.ai/api'
 
       const response = await fetch(`${API_BASE_URL}/layouts/share`, {
         method: 'POST',

@@ -19,7 +19,6 @@
         </div>
       </div>
       <button
-        v-if="isElectron"
         @click="$emit('manage-proxies')"
         class="manage-btn"
         type="button"
@@ -39,7 +38,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 
 export default {
   name: 'ProxySelector',
@@ -59,14 +58,8 @@ export default {
     const loading = ref(false)
     const proxyList = ref([])
 
-    const isElectron = computed(() => {
-      return typeof window !== 'undefined' && window.electron?.proxy !== undefined
-    })
-
     // 加载代理列表
     const loadProxyList = async () => {
-      if (!isElectron.value) return
-      
       loading.value = true
       try {
         const result = await window.electron.proxy.getList(1, 100)
@@ -81,14 +74,12 @@ export default {
     }
 
     onMounted(() => {
-      if (isElectron.value) {
-        loadProxyList()
-      }
+      loadProxyList()
     })
 
     // 监听对话框显示状态，打开时重新加载代理列表
     watch(() => props.dialogVisible, (newVal) => {
-      if (newVal && isElectron.value) {
+      if (newVal) {
         loadProxyList()
       }
     })
@@ -96,7 +87,6 @@ export default {
     return {
       loading,
       proxyList,
-      isElectron,
       loadProxyList
     }
   }

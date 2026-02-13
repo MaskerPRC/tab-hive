@@ -240,30 +240,7 @@ export default {
   },
 
   // Modal de descarga
-  downloadModal: {
-    title: 'Plugin Requerido para Uso Normal',
-    message: 'Esta aplicación necesita ejecutarse en un entorno específico para cargar páginas web iframe.<br/>Por favor elija uno de los siguientes métodos de instalación:',
-    corsPlugin: {
-      title: '🔌 Plugin de Desbloqueo CORS (Recomendado)',
-      description: 'Eliminar restricciones iframe del sitio web, compatible con Chrome, Edge y otros navegadores',
-      download: '📥 Descargar Plugin de Desbloqueo CORS',
-      installHint: 'Después de descargar, por favor extraiga y cargue la carpeta extraída en su navegador'
-    },
-    selectorPlugin: {
-      title: '🎯 Plugin Selector (Opcional)',
-      description: 'Soporta posicionamiento de selector CSS y visualización en pantalla completa de elementos específicos de página web',
-      download: '📥 Descargar Plugin Selector',
-      installHint: 'Úselo con el plugin CORS para enfocarse en áreas específicas como reproductores de video, contenido de artículos, etc.\nComplete el campo "Selector Objetivo" al editar un sitio web (por ej., #player)'
-    },
-    desktopApp: {
-      title: '💻 Aplicación de Escritorio',
-      description: 'Independiente, completamente funcional, no requiere instalación de plugin',
-      download: '📥 Descargar Aplicación de Escritorio'
-    },
-    tutorial: '📖 Ver Tutorial de Instalación Detallado',
-    dismiss: 'Entendido (Continuar navegando)',
-    or: 'o'
-  },
+
 
   // Notificación de actualización
   updateNotification: {

@@ -127,13 +127,11 @@ export function useImportExport() {
   /**
    * 处理导入模式选择
    * @param {string} mode - 导入模式 ('realtime' 或 'copy')
-   * @param {boolean} isElectron - 是否在 Electron 环境
    * @param {Function} onLayoutImport - 导入成功回调
    */
-  const handleImportMode = async (mode, isElectron = false, onLayoutImport = null) => {
+  const handleImportMode = async (mode, _unused, onLayoutImport = null) => {
     console.log('[useImportExport] ========== handleImportMode 被调用 ==========')
     console.log('[useImportExport] 导入模式:', mode)
-    console.log('[useImportExport] 是否 Electron 环境:', isElectron)
     console.log('[useImportExport] 回调函数是否存在:', !!onLayoutImport)
     console.log('[useImportExport] selectedLayoutForImport.value:', selectedLayoutForImport.value)
     
@@ -150,9 +148,7 @@ export function useImportExport() {
     console.log('[useImportExport] 已关闭导入对话框')
 
     try {
-      const API_BASE_URL = isElectron
-        ? 'https://tabs.apexstone.ai/api'
-        : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+      const API_BASE_URL = 'https://tabs.apexstone.ai/api'
 
       console.log('[useImportExport] API_BASE_URL:', API_BASE_URL)
       console.log('[useImportExport] 正在请求布局详情:', `${API_BASE_URL}/layouts/${layout.id}`)

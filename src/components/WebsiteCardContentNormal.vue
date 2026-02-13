@@ -3,7 +3,6 @@
   <template v-if="item.url">
     <!-- 主 webview -->
     <webview
-      v-if="isElectron"
       :key="`webview-${item.id}-${item.sessionInstance || 'default'}`"
       :ref="setWebviewRef"
       :id="`webview-${item.id}`"
@@ -18,7 +17,7 @@
 
     <!-- 后台缓冲 webview(双缓冲机制) -->
     <webview
-      v-if="isElectron && isBufferLoading"
+      v-if="isBufferLoading"
       :key="`webview-buffer-${item.id}-${item.sessionInstance || 'default'}`"
       :ref="setBufferWebviewRef"
       :id="`webview-buffer-${item.id}`"
@@ -31,21 +30,6 @@
       webpreferences="javascript=yes,allowRunningInsecureContent=yes,contextIsolation=no,sandbox=no"
       allowpopups
     ></webview>
-
-    <!-- 非 Electron 环境使用 iframe -->
-    <iframe
-      v-if="!isElectron"
-      :ref="setIframeRef"
-      :id="`iframe-${item.id}`"
-      :data-website-id="item.id"
-      :src="websiteUrl"
-      frameborder="0"
-      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
-      class="website-iframe"
-      :class="{ 'mobile-view': item.deviceType === 'mobile' }"
-      :title="item.title"
-      :allow="'autoplay; fullscreen; picture-in-picture'"
-    ></iframe>
   </template>
 </template>
 

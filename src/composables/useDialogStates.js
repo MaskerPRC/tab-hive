@@ -5,9 +5,6 @@ import { ref } from 'vue'
  * 解决 App.vue 中大量分散的状态管理问题
  */
 export function useDialogStates() {
-  // 下载模态框
-  const showDownloadModal = ref(false)
-  
   // 代理管理
   const showProxyManager = ref(false)
   
@@ -38,14 +35,6 @@ export function useDialogStates() {
   /**
    * 打开/关闭方法
    */
-  const openDownloadModal = () => {
-    showDownloadModal.value = true
-  }
-  
-  const closeDownloadModal = () => {
-    showDownloadModal.value = false
-  }
-  
   const openProxyManager = () => {
     showProxyManager.value = true
   }
@@ -127,7 +116,6 @@ export function useDialogStates() {
   
   return {
     // 状态
-    showDownloadModal,
     showProxyManager,
     showLlmConfig,
     showSessionManager,
@@ -141,8 +129,6 @@ export function useDialogStates() {
     showImportDialog,
     
     // 方法
-    openDownloadModal,
-    closeDownloadModal,
     openProxyManager,
     closeProxyManager,
     openLlmConfig,

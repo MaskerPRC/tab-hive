@@ -4,11 +4,9 @@ import { ref } from 'vue'
  * 共享布局管理 Composable
  * 提供共享布局的加载、搜索等功能
  */
-export function useSharedLayouts(isElectron = false) {
-  // 自动检测API地址
-  const API_BASE_URL = isElectron
-    ? 'https://tabs.apexstone.ai/api'
-    : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+export function useSharedLayouts() {
+  // API地址（Electron 桌面端专用）
+  const API_BASE_URL = 'https://tabs.apexstone.ai/api'
 
   // 共享布局列表
   const sharedLayouts = ref([])

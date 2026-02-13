@@ -268,32 +268,6 @@ export default {
     importFailed: 'Import failed'
   },
 
-  // Download modal
-  downloadModal: {
-    title: 'Plugin Required for Normal Use',
-    message: 'This application needs to run in a specific environment to load iframe webpages.<br/>Please choose one of the following installation methods:',
-    corsPlugin: {
-      title: '🔌 CORS Unlock Plugin (Recommended)',
-      description: 'Remove website iframe restrictions, compatible with Chrome, Edge, and other browsers',
-      download: '📥 Download CORS Unlock Plugin',
-      installHint: 'After downloading, please extract and load the extracted folder in your browser'
-    },
-    selectorPlugin: {
-      title: '🎯 Selector Plugin (Optional)',
-      description: 'Support CSS selector positioning and fullscreen display of specific webpage elements',
-      download: '📥 Download Selector Plugin',
-      installHint: 'Use with CORS plugin to focus on specific areas like video players, article content, etc.\nFill in the "Target Selector" field when editing a website (e.g., #player)'
-    },
-    desktopApp: {
-      title: '💻 Desktop Application',
-      description: 'Standalone, fully functional, no plugin installation required',
-      download: '📥 Download Desktop App'
-    },
-    tutorial: '📖 View Detailed Installation Tutorial',
-    dismiss: 'Got it (Continue browsing)',
-    or: 'or'
-  },
-
   // Update notification
   updateNotification: {
     title: 'New Version Available',

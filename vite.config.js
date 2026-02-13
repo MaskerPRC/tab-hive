@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import archiver from 'archiver'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -13,47 +12,6 @@ const packageJson = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')
 )
 
-// 打包chrome-extension目录为zip的插件
-function zipChromeExtension() {
-  return {
-    name: 'zip-chrome-extension',
-    closeBundle: async () => {
-      const sourceDir = path.resolve('chrome-extension')
-      const outputFile = path.resolve('dist/quanshijie-selector-extension.zip')
-
-      console.log('📦 正在打包选择器插件...')
-
-      // 创建输出流
-      const output = fs.createWriteStream(outputFile)
-      const archive = archiver('zip', {
-        zlib: { level: 9 } // 最大压缩
-      })
-
-      return new Promise((resolve, reject) => {
-        output.on('close', () => {
-          console.log(`✅ 选择器插件打包完成: ${archive.pointer()} bytes`)
-          resolve()
-        })
-
-        archive.on('error', (err) => {
-          console.error('❌ 打包失败:', err)
-          reject(err)
-        })
-
-        archive.pipe(output)
-
-        // 添加chrome-extension目录下的所有文件，但排除README.md和.gitignore
-        archive.glob('**/*', {
-          cwd: sourceDir,
-          ignore: ['README.md', '.gitignore', 'INSTALL.md']
-        })
-
-        archive.finalize()
-      })
-    }
-  }
-}
-
 export default defineConfig({
   plugins: [
     vue({
@@ -63,8 +21,7 @@ export default defineConfig({
           isCustomElement: (tag) => tag === 'webview'
         }
       }
-    }),
-    zipChromeExtension()
+    })
   ],
   base: './', // 使用相对路径，适配Electron
   server: {
@@ -80,4 +37,3 @@ export default defineConfig({
     '__APP_VERSION__': JSON.stringify("v" + packageJson.version)
   }
 })
-

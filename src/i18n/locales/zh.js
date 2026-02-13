@@ -300,32 +300,6 @@ export default {
     importFailed: '导入失败'
   },
 
-  // 下载弹窗
-  downloadModal: {
-    title: '需要安装插件才能正常使用',
-    message: '本应用需要在特定环境中运行才能加载 iframe 网页。<br/>请选择下列方式之一安装后使用：',
-    corsPlugin: {
-      title: '🔌 CORS 解除插件（推荐）',
-      description: '解除网站 iframe 限制，适用于 Chrome、Edge 等浏览器',
-      download: '📥 下载 CORS 解除插件',
-      installHint: '下载后请解压，然后在浏览器中加载解压后的文件夹'
-    },
-    selectorPlugin: {
-      title: '🎯 选择器插件（可选）',
-      description: '支持使用 CSS 选择器定位并全屏显示网页特定元素',
-      download: '📥 下载选择器插件',
-      installHint: '配合 CORS 插件使用，可聚焦于视频播放器、文章内容等特定区域\n在编辑网站时填写"目标选择器"字段（如 #player）'
-    },
-    desktopApp: {
-      title: '💻 桌面应用程序',
-      description: '独立运行，功能完整，无需安装插件',
-      download: '📥 下载桌面应用'
-    },
-    tutorial: '📖 查看详细安装教程',
-    dismiss: '我知道了（暂时继续浏览）',
-    or: '或'
-  },
-
   // 更新通知
   updateNotification: {
     title: '发现新版本',

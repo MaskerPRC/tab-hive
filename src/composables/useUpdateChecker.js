@@ -32,9 +32,6 @@ export function useUpdateChecker() {
     savePath: null
   })
 
-  // 检查是否在 Electron 环境中
-  const isElectron = typeof window !== 'undefined' && window.electron !== undefined
-
   const GITHUB_REPO = 'MaskerPRC/tab-hive'
   const CHECK_INTERVAL = 24 * 60 * 60 * 1000 // 24小时
   const IGNORED_VERSION_KEY = 'quanshijie-ignored-update-version'
@@ -209,7 +206,7 @@ export function useUpdateChecker() {
       return null
     }
 
-    const platform = isElectron ? window.electron.platform : 'win32'
+    const platform = window.electron.platform
     const assets = updateInfo.value.assets
 
     // 根据平台选择合适的安装包
@@ -235,14 +232,6 @@ export function useUpdateChecker() {
    */
   const startDownload = async () => {
     console.log('[更新检测] 用户点击立即更新（不记录忽略状态）')
-
-    if (!isElectron) {
-      // 非 Electron 环境，打开网页
-      if (updateInfo.value) {
-        window.open(updateInfo.value.htmlUrl, '_blank')
-      }
-      return
-    }
 
     const asset = getPlatformAsset()
     if (!asset) {
@@ -289,8 +278,6 @@ export function useUpdateChecker() {
    * 取消下载
    */
   const cancelDownload = async () => {
-    if (!isElectron) return
-
     console.log('[更新检测] 取消下载')
 
     try {
@@ -314,8 +301,6 @@ export function useUpdateChecker() {
    * 打开安装文件并退出应用
    */
   const openInstaller = async (filePath) => {
-    if (!isElectron) return
-
     console.log('[更新检测] 打开安装文件:', filePath)
 
     try {
@@ -432,8 +417,6 @@ export function useUpdateChecker() {
 
   // 设置 Electron 事件监听器
   const setupElectronListeners = () => {
-    if (!isElectron) return
-
     // 监听下载进度
     window.electron.on('update-download-progress', (data) => {
       downloadStatus.value.isDownloading = true
@@ -461,7 +444,6 @@ export function useUpdateChecker() {
 
   // 清理 Electron 事件监听器
   const cleanupElectronListeners = () => {
-    if (!isElectron) return
     window.electron.off('update-download-progress')
     window.electron.off('update-download-complete')
     window.electron.off('update-download-error')

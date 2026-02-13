@@ -240,30 +240,7 @@ export default {
   },
 
   // Download-Modal
-  downloadModal: {
-    title: 'Plugin für normale Nutzung erforderlich',
-    message: 'Diese Anwendung muss in einer bestimmten Umgebung ausgeführt werden, um iframe-Webseiten zu laden.<br/>Bitte wählen Sie eine der folgenden Installationsmethoden:',
-    corsPlugin: {
-      title: '🔌 CORS-Entsperr-Plugin (Empfohlen)',
-      description: 'Website-iframe-Einschränkungen entfernen, kompatibel mit Chrome, Edge und anderen Browsern',
-      download: '📥 CORS-Entsperr-Plugin herunterladen',
-      installHint: 'Nach dem Herunterladen bitte extrahieren und den extrahierten Ordner in Ihrem Browser laden'
-    },
-    selectorPlugin: {
-      title: '🎯 Selektor-Plugin (Optional)',
-      description: 'Unterstützt CSS-Selektor-Positionierung und Vollbildanzeige bestimmter Webseitenelemente',
-      download: '📥 Selektor-Plugin herunterladen',
-      installHint: 'Mit CORS-Plugin verwenden, um sich auf bestimmte Bereiche wie Videoplayer, Artikelinhalt usw. zu konzentrieren\nFüllen Sie das Feld "Ziel-Selektor" beim Bearbeiten einer Website aus (z.B. #player)'
-    },
-    desktopApp: {
-      title: '💻 Desktop-Anwendung',
-      description: 'Standalone, voll funktionsfähig, keine Plugin-Installation erforderlich',
-      download: '📥 Desktop-App herunterladen'
-    },
-    tutorial: '📖 Detailliertes Installations-Tutorial anzeigen',
-    dismiss: 'Verstanden (Weiter surfen)',
-    or: 'oder'
-  },
+
 
   // Update-Benachrichtigung
   updateNotification: {

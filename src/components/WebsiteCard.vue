@@ -476,14 +476,10 @@ export default {
       if (!props.item.url) return ''
       
       let url = props.item.url
-      
-      if (isElectron.value) {
-        const separator = url.includes('?') ? '&' : '?'
-        url = `${url}${separator}__webview_id__=${props.item.id}`
-      } else {
-        url = getIframeWebsiteUrl()
-      }
-      
+
+      const separator = url.includes('?') ? '&' : '?'
+      url = `${url}${separator}__webview_id__=${props.item.id}`
+
       return url
     })
 
@@ -638,8 +634,7 @@ export default {
     }
 
     const handleOpenScriptPanel = () => {
-      const targetIframe = isElectron.value ? webviewRef.value : iframeRef.value
-      emit('open-script-panel', targetIframe)
+      emit('open-script-panel', webviewRef.value)
     }
 
     const handleUseCurrentUrl = () => {
@@ -720,14 +715,10 @@ export default {
       if (newUrl && newUrl !== oldUrl && oldUrl !== undefined) {
         console.log('[WebsiteCard] URL 已更新，刷新 webview:', { oldUrl, newUrl })
         
-        if (isElectron.value && webviewRef.value) {
+        if (webviewRef.value) {
           const newWebsiteUrl = websiteUrl.value
           console.log('[WebsiteCard] 设置新的 webview src:', newWebsiteUrl)
           webviewRef.value.src = newWebsiteUrl
-        } else if (!isElectron.value && iframeRef.value) {
-          const newWebsiteUrl = websiteUrl.value
-          console.log('[WebsiteCard] 设置新的 iframe src:', newWebsiteUrl)
-          iframeRef.value.src = newWebsiteUrl
         }
       }
     })

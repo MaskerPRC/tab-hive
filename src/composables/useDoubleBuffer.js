@@ -26,8 +26,6 @@ export function useDoubleBuffer(props, { isElectron, mainWebviewReady }) {
     })
     
     if (!isElectron.value) {
-      // 非 Electron 环境，简单刷新
-      if (onRefresh) onRefresh()
       return
     }
 

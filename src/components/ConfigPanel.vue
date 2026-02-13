@@ -71,13 +71,12 @@
         </div>
       </div>
 
-      <!-- 窗口管理区域（仅 Electron 环境） -->
-      <WindowManagement v-if="isElectron" />
+      <!-- 窗口管理区域 -->
+      <WindowManagement />
     </div>
 
     <!-- 底部操作区（固定） -->
     <ConfigPanelBottomActions
-      :is-electron="isElectron"
       @show-shared-modal="$emit('show-shared-modal')"
       @manage-proxy="$emit('manage-proxy')"
       @clear-config="clearConfig"
@@ -87,7 +86,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SwitchItem from './SwitchItem.vue'
 import LayoutList from './LayoutList.vue'
@@ -138,20 +137,13 @@ export default {
       default: false
     }
   },
-  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'show-download-modal', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout', 'close-sidebar'],
+  emits: ['switch-layout', 'create-layout', 'delete-layout', 'toggle-keep-alive', 'rename-layout', 'reorder-layout', 'toggle-titles', 'toggle-global-mute', 'toggle-ad-block', 'toggle-custom-code', 'toggle-certificate-error-shadow', 'manage-sessions', 'manage-proxy', 'open-settings', 'show-update', 'show-shared-modal', 'share-layout', 'export-layout', 'close-sidebar'],
   setup(props, { emit }) {
     const { t } = useI18n()
 
     // 从父组件注入对话框方法
     const showPrompt = inject('showPrompt')
     const showConfirm = inject('showConfirm')
-
-    // 检测是否在 Electron 环境中
-    const isElectron = computed(() => {
-      return typeof window !== 'undefined' &&
-        (window.electron !== undefined ||
-         (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
-    })
 
     const selectLayout = (layoutId) => {
       emit('switch-layout', layoutId)
@@ -196,7 +188,6 @@ export default {
     }
 
     return {
-      isElectron,
       selectLayout,
       handleCreateLayout,
       clearConfig,

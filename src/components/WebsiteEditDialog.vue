@@ -66,7 +66,7 @@
                 @click="showDesktopCaptureSelector = true"
                 type="button"
                 title="添加桌面捕获"
-                :disabled="!isElectron"
+                :disabled="false"
               >
                 <i class="fa-solid fa-desktop"></i>
                 <span>桌面</span>
@@ -116,7 +116,6 @@
                 @manage-instances="handleOpenSessionManager"
               />
               <ProxySelector
-                v-if="isElectron"
                 v-model="localWebsite.proxyId"
                 :dialog-visible="show"
                 @manage-proxies="handleOpenProxyManager"

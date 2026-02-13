@@ -1,8 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 下载插件/客户端提醒弹窗 -->
-    <DownloadModal :visible="showDownloadModal" @close="closeDownloadModal" />
-
     <!-- 代理节点管理 -->
     <ProxyManager :show="showProxyManager" @close="closeProxyManager" />
 
@@ -86,7 +83,6 @@
       @rename-layout="handleRenameLayout"
       @toggle-keep-alive="handleToggleKeepAlive"
       @reorder-layout="handleReorderLayout"
-      @show-download-modal="handleShowDownloadModal"
       @toggle-titles="handleToggleTitles"
       @toggle-global-mute="handleToggleGlobalMute"
       @toggle-ad-block="handleToggleAdBlock"
@@ -183,12 +179,11 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, provide, computed } from 'vue'
+import { watch, provide, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/ConfigPanel.vue'
 import GridView from './components/GridView.vue'
 import Dialog from './components/Dialog.vue'
-import DownloadModal from './components/DownloadModal.vue'
 import ImportModeDialog from './components/ImportModeDialog.vue'
 import SessionInstanceManager from './components/SessionInstanceManager.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
@@ -217,7 +212,6 @@ import { useUpdateHandlers } from './composables/useUpdateHandlers'
 import { useLayoutShareExport } from './composables/useLayoutShareExport'
 import { useMonitoringHandlers } from './composables/useMonitoringHandlers'
 import { useSharedLayoutHandlers } from './composables/useSharedLayoutHandlers'
-import { useDownloadModalHandlers } from './composables/useDownloadModalHandlers'
 import { useAppInitialization } from './composables/useAppInitialization'
 
 export default {
@@ -226,7 +220,6 @@ export default {
     ConfigPanel,
     GridView,
     Dialog,
-    DownloadModal,
     ImportModeDialog,
     SessionInstanceManager,
     UpdateNotification,
@@ -247,21 +240,14 @@ export default {
     const importExport = useImportExport()
     const updateChecker = useUpdateChecker()
     
-    // 检测是否在 Electron 环境中
-    const isElectron = computed(() => {
-      return typeof window !== 'undefined' &&
-        (window.electron !== undefined ||
-         (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
-    })
-
     // 获取当前布局名称
     const currentLayoutName = computed(() => {
       const layout = layoutManager.layouts.value.find(l => l.id === layoutManager.currentLayoutId.value)
       return layout ? layout.name : '未命名布局'
     })
-    
+
     // 共享布局管理
-    const sharedLayouts = useSharedLayouts(isElectron.value)
+    const sharedLayouts = useSharedLayouts()
 
     // 初始化网站管理器
     const websiteManager = useWebsiteManager(layoutManager.currentLayout.value.websites)
@@ -271,12 +257,6 @@ export default {
     const monitoringRules = useMonitoringState()
     const viewportStates = useViewportStates()
     const globalSettingsHandlers = useGlobalSettingsHandlers(layoutManager, websiteManager)
-
-    // 下载弹窗处理器
-    const downloadModalHandlers = useDownloadModalHandlers(dialogStates, viewportStates)
-    
-    // 控制下载弹窗显示（初始状态）
-    dialogStates.showDownloadModal.value = !dialog.isElectron.value && !downloadModalHandlers.hasSeenDownloadModal()
 
     // LLM API 配置
     const { config: llmConfig } = useLlmConfig()
@@ -308,12 +288,11 @@ export default {
     const handleImportModeSelect = (mode) => {
       console.log('[App.vue] ========== handleImportModeSelect 被调用 ==========')
       console.log('[App.vue] 选择的导入模式:', mode)
-      console.log('[App.vue] 是否 Electron 环境:', dialog.isElectron.value)
       console.log('[App.vue] 调用 importExport.handleImportMode')
-      
+
       importExport.handleImportMode(
         mode,
-        dialog.isElectron.value,
+        true,
         (layoutData) => {
           console.log('[App.vue] ========== 导入回调被调用 ==========')
           console.log('[App.vue] 回调接收到的布局数据:', layoutData)
@@ -335,12 +314,11 @@ export default {
     provide('showConfirm', dialog.showConfirm)
     provide('showAlert', dialog.showAlert)
     provide('checkTemplateUpdate', (layoutId) =>
-      layoutManager.checkTemplateUpdate(layoutId, dialog.isElectron.value)
+      layoutManager.checkTemplateUpdate(layoutId)
     )
     provide('syncTemplateUpdate', (layoutId) =>
       layoutManager.syncTemplateUpdate(
         layoutId,
-        dialog.isElectron.value,
         (websites) => websiteManager.setWebsites(websites)
       )
     )
@@ -396,7 +374,6 @@ export default {
       downloadStatus: updateChecker.downloadStatus,
       
       // 对话框状态（来自 dialogStates）
-      showDownloadModal: dialogStates.showDownloadModal,
       showSessionManager: dialogStates.showSessionManager,
       showProxyManager: dialogStates.showProxyManager,
       showLlmConfig: dialogStates.showLlmConfig,
@@ -433,8 +410,6 @@ export default {
       llmConfig,
       
       // 对话框操作方法
-      closeDownloadModal: downloadModalHandlers.closeDownloadModal,
-      handleShowDownloadModal: dialogStates.openDownloadModal,
       handleManageSessions: dialogStates.openSessionManager,
       closeSessionManager: dialogStates.closeSessionManager,
       handleManageProxy: dialogStates.openProxyManager,

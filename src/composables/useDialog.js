@@ -5,13 +5,6 @@ import { ref } from 'vue'
  * 提供统一的对话框管理功能（prompt 和 confirm）
  */
 export function useDialog() {
-  // 检测是否在 Electron 环境中
-  const isElectron = ref(
-    typeof window !== 'undefined' &&
-    (window.electron !== undefined ||
-     (navigator.userAgent && navigator.userAgent.toLowerCase().includes('electron')))
-  )
-
   // 对话框状态
   const dialogVisible = ref(false)
   const dialogType = ref('confirm')
@@ -142,7 +135,6 @@ export function useDialog() {
 
   return {
     // 状态
-    isElectron,
     dialogVisible,
     dialogType,
     dialogTitle,

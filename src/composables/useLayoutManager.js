@@ -424,19 +424,16 @@ export function useLayoutManager() {
   /**
    * 检查模板更新
    * @param {number} layoutId - 布局 ID
-   * @param {boolean} isElectron - 是否在 Electron 环境
    * @returns {Promise<Object>} 更新信息
    */
-  const checkTemplateUpdate = async (layoutId, isElectron = false) => {
+  const checkTemplateUpdate = async (layoutId) => {
     const layout = layouts.value.find(l => l.id === layoutId)
     if (!layout || !layout.linkedTemplateId || layout.importMode !== 'realtime' || layout.isModified) {
       return { hasUpdate: false }
     }
 
     try {
-      const API_BASE_URL = isElectron
-        ? 'https://tabs.apexstone.ai/api'
-        : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+      const API_BASE_URL = 'https://tabs.apexstone.ai/api'
 
       const response = await fetch(
         `${API_BASE_URL}/layouts/${layout.linkedTemplateId}/check-update?currentVersion=${layout.templateVersion || 1}`
@@ -451,20 +448,17 @@ export function useLayoutManager() {
   /**
    * 同步模板更新
    * @param {number} layoutId - 布局 ID
-   * @param {boolean} isElectron - 是否在 Electron 环境
    * @param {Function} onWebsitesUpdate - 网站列表更新回调
    * @returns {Promise<boolean>} 是否同步成功
    */
-  const syncTemplateUpdate = async (layoutId, isElectron = false, onWebsitesUpdate = null) => {
+  const syncTemplateUpdate = async (layoutId, onWebsitesUpdate = null) => {
     const layout = layouts.value.find(l => l.id === layoutId)
     if (!layout || !layout.linkedTemplateId) {
       return false
     }
 
     try {
-      const API_BASE_URL = isElectron
-        ? 'https://tabs.apexstone.ai/api'
-        : (import.meta.env.PROD ? '/api' : 'http://localhost:3101/api')
+      const API_BASE_URL = 'https://tabs.apexstone.ai/api'
 
       const response = await fetch(`${API_BASE_URL}/layouts/${layout.linkedTemplateId}/latest`)
       const templateData = await response.json()

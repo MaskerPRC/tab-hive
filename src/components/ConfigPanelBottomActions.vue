@@ -18,7 +18,6 @@
         @click="$emit('open-settings')"
       />
       <IconButton
-        v-if="isElectron"
         icon="monitor"
         :label="$t('configPanel.proxy') || '代理'"
         @click="$emit('manage-proxy')"
@@ -46,12 +45,7 @@ export default {
   components: {
     IconButton
   },
-  props: {
-    isElectron: {
-      type: Boolean,
-      default: false
-    }
-  },
+  props: {},
   emits: ['show-shared-modal', 'manage-proxy', 'clear-config', 'open-settings'],
   setup() {
     const openHelp = () => {
