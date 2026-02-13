@@ -280,6 +280,10 @@ class ApiServer {
 
         results.push({ step: i, success: true, result })
         previousResult = result
+
+        if (step.timeout) {
+          await new Promise(resolve => setTimeout(resolve, parseInt(step.timeout) || 1000))
+        }
       } catch (error) {
         results.push({ step: i, success: false, error: error.message })
         break // 某步失败则停止
