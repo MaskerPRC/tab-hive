@@ -287,25 +287,27 @@ export default {
 }
 
 .sidebar-collapse-btn {
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: none;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  color: #94a3b8;
+  color: #64748b;
   flex-shrink: 0;
   transition: all 0.2s ease;
   margin-left: auto;
 }
 
 .sidebar-collapse-btn:hover {
-  background: #f1f5f9;
-  color: #64748b;
-  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #f97316;
+  border-color: #f97316;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
 }
 
 /* 操作按钮区域 */
