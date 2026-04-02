@@ -1,4 +1,4 @@
-const { app, session } = require('electron')
+const { app, session, ipcMain, BrowserWindow } = require('electron')
 const path = require('path')
 const { setupDatabase } = require('./database')
 const { ProxyManager } = require('./proxy-manager')
@@ -101,8 +101,38 @@ app.whenReady().then(async () => {
       console.log('[Webview Guard] disposition:', disposition)
       console.log('[Webview Guard] webContents type:', webContents.getType())
 
-      // 如果是 webview，尝试在当前 webview 中导航
+      // 如果是 webview，检查是否需要允许弹窗（如OAuth登录）
       if (webContents.getType() === 'webview') {
+        // 检查是否是OAuth相关的弹窗URL，这些弹窗需要 window.opener 来 postMessage 回传结果
+        try {
+          const urlObj = new URL(url)
+          const isOAuthPopup =
+            urlObj.hostname === 'accounts.google.com' ||
+            urlObj.hostname === 'appleid.apple.com' ||
+            urlObj.hostname === 'login.microsoftonline.com' ||
+            (urlObj.hostname === 'github.com' && url.includes('/login/oauth')) ||
+            (urlObj.hostname === 'api.twitter.com' && url.includes('/oauth'))
+
+          if (isOAuthPopup) {
+            console.log('[Webview Guard] 允许OAuth弹窗打开:', url)
+            return {
+              action: 'allow',
+              overrideBrowserWindowOptions: {
+                width: 500,
+                height: 700,
+                autoHideMenuBar: true,
+                webPreferences: {
+                  nodeIntegration: false,
+                  contextIsolation: true,
+                  sandbox: true
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Webview Guard] URL解析失败:', e.message)
+        }
+
         console.log('[Webview Guard] 是 webview，在当前 webview 中导航')
         try {
           webContents.loadURL(url)
@@ -116,6 +146,49 @@ app.whenReady().then(async () => {
       console.log('[Webview Guard] 阻止打开新窗口')
       return { action: 'deny' }
     })
+
+    // 为 webview 类型的 webContents 处理 Basic Auth 弹窗
+    if (webContents.getType() === 'webview') {
+      webContents.on('login', (event, details, authInfo, callback) => {
+        event.preventDefault()
+        console.log('[Basic Auth] 收到认证请求:', authInfo.host, authInfo.realm)
+
+        const requestId = `basic-auth-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+        // 向所有窗口发送认证请求
+        const allWindows = BrowserWindow.getAllWindows()
+        for (const win of allWindows) {
+          win.webContents.send('basic-auth-required', {
+            requestId,
+            url: details.url,
+            host: authInfo.host,
+            port: authInfo.port,
+            realm: authInfo.realm,
+            isProxy: authInfo.isProxy
+          })
+        }
+
+        // 监听渲染进程的响应
+        const handler = (_event, response) => {
+          if (response.requestId === requestId) {
+            ipcMain.removeListener('basic-auth-response', handler)
+            if (response.submitted) {
+              console.log('[Basic Auth] 用户提交了凭据:', authInfo.host)
+              callback(response.username, response.password)
+            } else {
+              console.log('[Basic Auth] 用户取消了认证:', authInfo.host)
+              callback()
+            }
+          }
+        }
+        ipcMain.on('basic-auth-response', handler)
+
+        // 超时自动取消（60秒）
+        setTimeout(() => {
+          ipcMain.removeListener('basic-auth-response', handler)
+        }, 60000)
+      })
+    }
 
     // 为 webview 类型的 webContents 挂载网络拦截器
     if (webContents.getType() === 'webview') {

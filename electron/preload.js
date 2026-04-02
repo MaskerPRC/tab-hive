@@ -346,6 +346,13 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // Basic Auth API
+  basicAuth: {
+    respond: (response) => {
+      ipcRenderer.send('basic-auth-response', response)
+    }
+  },
+
   // 事件监听
   on: (channel, callback) => {
     const validChannels = [
@@ -354,7 +361,8 @@ contextBridge.exposeInMainWorld('electron', {
       'update-download-complete',
       'update-download-error',
       'desktop-capture-source-selected',
-      'certificate-error-detected'
+      'certificate-error-detected',
+      'basic-auth-required'
     ]
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args))
@@ -367,7 +375,8 @@ contextBridge.exposeInMainWorld('electron', {
       'refresh-webview-from-main',
       'update-download-progress',
       'update-download-complete',
-      'update-download-error'
+      'update-download-error',
+      'basic-auth-required'
     ]
     if (validChannels.includes(channel)) {
       ipcRenderer.removeListener(channel, callback)

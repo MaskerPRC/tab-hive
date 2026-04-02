@@ -184,6 +184,16 @@
       :url="externalUrl"
       @close="closeExternalUrlModal"
     />
+
+    <!-- Basic Auth 认证弹窗 -->
+    <BasicAuthDialog
+      :visible="basicAuth.showBasicAuth.value"
+      :request-id="basicAuth.basicAuthRequestId.value"
+      :host="basicAuth.basicAuthHost.value"
+      :realm="basicAuth.basicAuthRealm.value"
+      @submit="basicAuth.handleSubmit"
+      @cancel="basicAuth.handleCancel"
+    />
   </div>
 </template>
 
@@ -203,6 +213,7 @@ import MonitoringRuleDialog from './components/MonitoringRuleDialog.vue'
 import ContentScriptPanel from './components/ContentScriptPanel.vue'
 import SharedLayoutModal from './components/SharedLayoutModal.vue'
 import ExternalUrlModal from './components/ExternalUrlModal.vue'
+import BasicAuthDialog from './components/BasicAuthDialog.vue'
 import ApiSettingsPanel from './components/ApiSettingsPanel.vue'
 import { useDialog } from './composables/useDialog'
 import { useLayoutManager } from './composables/useLayoutManager'
@@ -216,6 +227,7 @@ import { useMonitoringState } from './composables/useMonitoringState'
 import { useViewportStates } from './composables/useViewportStates'
 import { useGlobalSettingsHandlers } from './composables/useGlobalSettingsHandlers'
 import { useExternalUrlModalListeners } from './composables/useExternalUrlModal'
+import { useBasicAuth } from './composables/useBasicAuth'
 import { useLayoutHandlers } from './composables/useLayoutHandlers'
 import { useWebsiteHandlers } from './composables/useWebsiteHandlers'
 import { useUpdateHandlers } from './composables/useUpdateHandlers'
@@ -240,6 +252,7 @@ export default {
     ContentScriptPanel,
     SharedLayoutModal,
     ExternalUrlModal,
+    BasicAuthDialog,
     ApiSettingsPanel
   },
   setup() {
@@ -383,6 +396,9 @@ export default {
       // 同步 per-page hookUrl 配置到主进程
       syncApiConfigToMain()
     })
+
+    // Basic Auth 认证弹窗
+    const basicAuth = useBasicAuth()
 
     // 设置外部链接模态框监听器
     useExternalUrlModalListeners(dialogStates)
@@ -537,7 +553,10 @@ export default {
       sharedLayouts,
       handleShareLayout: layoutShareExport.handleShareLayout,
       handleExportLayout: layoutShareExport.handleExportLayout,
-      handleImportLayoutFromImage
+      handleImportLayoutFromImage,
+
+      // Basic Auth
+      basicAuth
     }
   }
 }
