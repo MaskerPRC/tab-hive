@@ -406,6 +406,24 @@ function registerIpcHandlers(createWindowFn, proxyManager, ensureCertificateHand
     }
   })
 
+  // ========== Cookie 管理 ==========
+
+  const cookieManager = require('./cookieManager')
+
+  ipcMain.handle('cookie:import', async (event, partition, cookies) => {
+    console.log(`[Cookie] 导入 cookies - partition: ${partition}`)
+    return await cookieManager.importCookies(partition, cookies)
+  })
+
+  ipcMain.handle('cookie:get', async (event, partition, filter) => {
+    return await cookieManager.getCookies(partition, filter)
+  })
+
+  ipcMain.handle('cookie:clear', async (event, partition, url) => {
+    console.log(`[Cookie] 清除 cookies - partition: ${partition}`)
+    return await cookieManager.clearCookies(partition, url)
+  })
+
   // ========== 证书处理 ==========
 
   /**

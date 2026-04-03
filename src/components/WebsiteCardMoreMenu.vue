@@ -35,6 +35,14 @@
         </svg>
         <span>{{ $t('floatingActions.devtools') || '开发者工具' }}</span>
       </button>
+      <button v-if="isElectron && !isDesktopCapture && !isCustomHtml" class="more-menu-item" @click.stop="handleImportCookies">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+          <path d="M8 12h8"/>
+          <path d="M12 8v8"/>
+        </svg>
+        <span>{{ $t('floatingActions.importCookies') || '导入Cookie' }}</span>
+      </button>
       <button class="more-menu-item" @click.stop="handleEdit">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -89,7 +97,7 @@ export default {
       default: 0
     }
   },
-  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close', 'monitoring'],
+  emits: ['copy', 'script', 'devtools', 'edit', 'remove', 'close', 'monitoring', 'import-cookies'],
   setup(props, { emit }) {
     const hasActiveRules = computed(() => props.activeRulesCount > 0)
     
@@ -123,6 +131,11 @@ export default {
       emit('monitoring')
     }
 
+    const handleImportCookies = () => {
+      emit('close')
+      emit('import-cookies')
+    }
+
     return {
       hasActiveRules,
       handleCopy,
@@ -130,7 +143,8 @@ export default {
       handleDevTools,
       handleEdit,
       handleRemove,
-      handleMonitoring
+      handleMonitoring,
+      handleImportCookies
     }
   }
 }

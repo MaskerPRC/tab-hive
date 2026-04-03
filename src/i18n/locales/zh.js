@@ -403,7 +403,8 @@ export default {
     devtools: '开发者工具',
     edit: '编辑链接',
     fullscreen: '全屏查看',
-    remove: '删除网站'
+    remove: '删除网站',
+    importCookies: '导入Cookie'
   },
 
   // 选择器工具栏

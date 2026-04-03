@@ -371,7 +371,8 @@ export default {
     devtools: 'Developer Tools',
     edit: 'Edit Link',
     fullscreen: 'Fullscreen View',
-    remove: 'Remove Website'
+    remove: 'Remove Website',
+    importCookies: 'Import Cookies'
   },
 
   // Selector toolbar

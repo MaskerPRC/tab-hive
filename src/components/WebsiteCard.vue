@@ -79,6 +79,7 @@
         @fullscreen="$emit('fullscreen', index)"
         @remove="$emit('remove', index)"
         @monitoring="handleMonitoringClick"
+        @import-cookies="handleImportCookies"
       />
       
       <!-- 拖动手柄 -->
@@ -157,6 +158,7 @@ import { useCertificateError } from '../composables/useCertificateError.js'
 import { useCustomHtmlWebview } from '../composables/useCustomHtmlWebview.js'
 import { useWebviewDevTools } from '../composables/useWebviewDevTools.js'
 import { useMonitoringRules } from '../composables/useMonitoringRules.js'
+import { useCookieImporter } from '../composables/useCookieImporter.js'
 
 export default {
   name: 'WebsiteCard',
@@ -592,6 +594,27 @@ export default {
       emit('open-script-panel', webviewRef.value)
     }
 
+    // ==================== Cookie 导入 ====================
+    const { importCookiesFromFile } = useCookieImporter()
+
+    const handleImportCookies = async () => {
+      try {
+        const result = await importCookiesFromFile(partitionName.value)
+        if (!result) return // 用户取消
+        if (result.imported > 0) {
+          alert(`成功导入 ${result.imported} 条 Cookie${result.failed > 0 ? `，${result.failed} 条失败` : ''}`)
+          // 刷新 webview 以应用新 cookie
+          handleManualRefresh()
+        } else if (result.total === 0) {
+          alert('文件中没有找到 Cookie 数据')
+        } else {
+          alert(`导入失败：${result.errors.map(e => e.name + ': ' + e.error).join('\n')}`)
+        }
+      } catch (err) {
+        alert('导入 Cookie 失败: ' + err.message)
+      }
+    }
+
     const handleUseCurrentUrl = () => {
       handleUseCurrentUrlBase(emit, props.index)
     }
@@ -658,7 +681,9 @@ export default {
       // 监听规则相关
       activeRulesCount,
       handleMonitoringClick,
-      refreshRulesCount
+      refreshRulesCount,
+      // Cookie 导入
+      handleImportCookies
     }
   }
 }

@@ -353,6 +353,19 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
 
+  // Cookie 管理 API
+  cookie: {
+    import: (partition, cookies) => {
+      return ipcRenderer.invoke('cookie:import', partition, cookies)
+    },
+    get: (partition, filter) => {
+      return ipcRenderer.invoke('cookie:get', partition, filter)
+    },
+    clear: (partition, url) => {
+      return ipcRenderer.invoke('cookie:clear', partition, url)
+    }
+  },
+
   // 事件监听
   on: (channel, callback) => {
     const validChannels = [

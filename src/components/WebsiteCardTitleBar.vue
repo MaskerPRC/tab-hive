@@ -110,6 +110,7 @@
           @edit="$emit('edit')"
           @remove="$emit('remove')"
           @monitoring="$emit('monitoring')"
+          @import-cookies="$emit('import-cookies')"
         />
       </div>
     </div>
@@ -171,7 +172,7 @@ export default {
       default: 0
     }
   },
-  emits: ['go-back', 'go-forward', 'refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove', 'open-devtools', 'monitoring'],
+  emits: ['go-back', 'go-forward', 'refresh', 'toggle-mute', 'copy', 'open-script-panel', 'edit', 'fullscreen', 'remove', 'open-devtools', 'monitoring', 'import-cookies'],
   setup(props) {
     const showMoreMenu = ref(false)
     const moreMenuStyle = ref({})
