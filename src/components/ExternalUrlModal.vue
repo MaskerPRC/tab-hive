@@ -3,8 +3,8 @@
     <div v-if="visible" class="external-url-modal-overlay" @click.self="handleClose">
       <div class="external-url-modal-container" @click.stop>
         <div class="external-url-modal-header">
-          <div class="modal-title">外部链接</div>
-          <button class="modal-close-btn" @click="handleClose" title="关闭">
+          <div class="modal-title">{{ $t('externalUrl.title') }}</div>
+          <button class="modal-close-btn" @click="handleClose" :title="$t('common.close')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>

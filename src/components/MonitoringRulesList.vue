@@ -2,7 +2,7 @@
   <div v-if="show" class="rules-list-overlay" @click.self="handleClose">
     <div class="rules-list-dialog" :class="{ 'dark-mode': darkMode }">
       <div class="dialog-header">
-        <h3>页面监听规则</h3>
+        <h3>{{ $t('monitoring.rulesTitle') }}</h3>
         <button class="close-btn" @click="handleClose">×</button>
       </div>
 
@@ -10,10 +10,10 @@
         <!-- 空状态 -->
         <div v-if="rules.length === 0" class="empty-state">
           <div class="empty-icon">👁️</div>
-          <div class="empty-title">还没有监听规则</div>
-          <div class="empty-desc">创建规则来自动监听页面变化</div>
+          <div class="empty-title">{{ $t('monitoring.noRules') }}</div>
+          <div class="empty-desc">{{ $t('monitoring.noRulesDesc') }}</div>
           <button class="btn btn-primary" @click="handleCreate">
-            创建第一个规则
+            {{ $t('monitoring.createFirst') }}
           </button>
         </div>
 
@@ -41,14 +41,14 @@
                 </label>
                 <button
                   class="icon-btn"
-                  title="编辑"
+                  :title="$t('common.edit')"
                   @click="handleEdit(rule)"
                 >
                   ✏️
                 </button>
                 <button
                   class="icon-btn"
-                  title="删除"
+                  :title="$t('common.delete')"
                   @click="handleDelete(rule)"
                 >
                   🗑️
@@ -58,21 +58,21 @@
 
             <div class="rule-body">
               <div class="rule-condition">
-                <strong>条件：</strong>
+                <strong>{{ $t('monitoring.conditionLabel') }}</strong>
                 {{ getConditionDescription(rule) }}
               </div>
               <div class="rule-meta">
                 <span class="meta-item">
-                  ⏱️ {{ rule.check_interval }}秒检测一次
+                  ⏱️ {{ $t('monitoring.checkEvery', { interval: rule.check_interval }) }}
                 </span>
                 <span class="meta-item">
-                  🔔 桌面通知
+                  🔔 {{ $t('monitoring.desktopNotification') }}
                 </span>
                 <span v-if="rule.last_trigger_time" class="meta-item">
-                  🎯 上次触发: {{ formatTime(rule.last_trigger_time) }}
+                  🎯 {{ $t('monitoring.lastTrigger', { time: formatTime(rule.last_trigger_time) }) }}
                 </span>
                 <span v-if="rule.trigger_count > 0" class="meta-item">
-                  📊 触发 {{ rule.trigger_count }} 次
+                  📊 {{ $t('monitoring.triggerCount', { count: rule.trigger_count }) }}
                 </span>
               </div>
             </div>
@@ -81,9 +81,9 @@
       </div>
 
       <div class="dialog-footer">
-        <button class="btn btn-cancel" @click="handleClose">关闭</button>
+        <button class="btn btn-cancel" @click="handleClose">{{ $t('common.close') }}</button>
         <button class="btn btn-primary" @click="handleCreate">
-          + 新建规则
+          {{ $t('monitoring.createRule') }}
         </button>
       </div>
     </div>

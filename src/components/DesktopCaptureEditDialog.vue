@@ -1,18 +1,18 @@
 <template>
   <div v-if="show" class="edit-desktop-capture-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="edit-desktop-capture-dialog" @mousedown.stop>
-      <h3>{{ editingIndex === -1 ? '添加桌面捕获' : '编辑桌面捕获' }}</h3>
+      <h3>{{ editingIndex === -1 ? $t('desktopCapture.addCapture') : $t('desktopCapture.editCapture') }}</h3>
       
       <!-- 核心信息区：标题 -->
       <div class="section-core">
-        <div class="section-title">基本信息</div>
+        <div class="section-title">{{ $t('desktopCapture.basicInfo') }}</div>
         <div class="form-group">
-          <label for="desktop-capture-title">名称</label>
+          <label for="desktop-capture-title">{{ $t('desktopCapture.captureTitle') }}</label>
           <input
             id="desktop-capture-title"
             v-model="localConfig.title"
             type="text"
-            placeholder="请输入桌面捕获名称"
+            :placeholder="$t('desktopCapture.titlePlaceholder')"
             class="form-input"
             @keyup.enter="handleConfirm"
           />
@@ -21,49 +21,49 @@
       
       <!-- 桌面源选择区 -->
       <div class="section-source">
-        <div class="section-title">桌面源</div>
+        <div class="section-title">{{ $t('desktopCapture.sourceTitle') }}</div>
         <div v-if="selectedSource" class="selected-source">
           <div class="source-preview">
             <img :src="selectedSource.thumbnail" :alt="selectedSource.name" />
             <div class="source-info">
               <div class="source-name">{{ selectedSource.name }}</div>
               <div class="source-type">
-                {{ selectedSource.id.startsWith('screen:') ? '🖥️ 整个屏幕' : '🪟 应用窗口' }}
+                {{ selectedSource.id.startsWith('screen:') ? $t('desktopCapture.fullScreen') : $t('desktopCapture.appWindow') }}
               </div>
             </div>
           </div>
           <button @click="showSourceSelector = true" class="btn-change-source">
-            更改源
+            {{ $t('desktopCapture.changeSource') }}
           </button>
         </div>
         <div v-else class="no-source">
-          <p>请选择要捕获的桌面源</p>
+          <p>{{ $t('desktopCapture.selectSource') }}</p>
           <button @click="showSourceSelector = true" class="btn-select-source">
-            选择桌面源
+            {{ $t('desktopCapture.selectSourceBtn') }}
           </button>
         </div>
       </div>
       
       <!-- 捕获选项区 -->
       <div class="section-options">
-        <div class="section-title">捕获选项</div>
+        <div class="section-title">{{ $t('desktopCapture.captureOptions') }}</div>
         <div class="options-control">
           <label class="option-button" :class="{ active: localConfig.desktopCaptureOptions.fitScreen }">
             <input
               type="checkbox"
               v-model="localConfig.desktopCaptureOptions.fitScreen"
             />
-            <span>适应屏幕大小</span>
+            <span>{{ $t('desktopCapture.fitScreen') }}</span>
           </label>
         </div>
       </div>
       
       <!-- 显示设置区 -->
       <div class="section-display">
-        <div class="section-title">显示设置</div>
+        <div class="section-title">{{ $t('desktopCapture.displaySettings') }}</div>
         <div class="form-row">
           <div class="form-group padding-control">
-            <label for="desktop-capture-padding">内边距</label>
+            <label for="desktop-capture-padding">{{ $t('desktopCapture.padding') }}</label>
             <input
               id="desktop-capture-padding"
               v-model.number="localConfig.padding"
@@ -75,14 +75,14 @@
             />
           </div>
           <div class="form-group muted-control">
-            <label for="desktop-capture-muted">静音</label>
+            <label for="desktop-capture-muted">{{ $t('desktopCapture.mute') }}</label>
             <label class="option-button" :class="{ active: localConfig.muted }">
               <input
                 type="checkbox"
                 id="desktop-capture-muted"
                 v-model="localConfig.muted"
               />
-              <span>静音</span>
+              <span>{{ $t('desktopCapture.mute') }}</span>
             </label>
           </div>
         </div>
@@ -90,8 +90,8 @@
       
       <!-- 操作按钮 -->
       <div class="form-actions">
-        <button class="btn-confirm" @click="handleConfirm" :disabled="!canConfirm">确认</button>
-        <button class="btn-cancel" @click="$emit('cancel')">取消</button>
+        <button class="btn-confirm" @click="handleConfirm" :disabled="!canConfirm">{{ $t('common.confirm') }}</button>
+        <button class="btn-cancel" @click="$emit('cancel')">{{ $t('common.cancel') }}</button>
       </div>
     </div>
     

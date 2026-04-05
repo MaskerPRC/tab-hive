@@ -251,6 +251,10 @@ export default {
     deleteLayout: 'Delete',
     websiteCount: ' websites',
     exportLayout: 'Export Layout',
+    preview: 'Preview',
+    sharedLayoutsDesc: 'Browse and import shared Tab Hive layout configurations',
+    sortHot: 'Most Downloaded',
+    sortLatest: 'Latest',
     shareWithScreenshotConfirm: 'Do you want to capture a screenshot of the current page and embed layout data?\n\nThe screenshot will be used as the sharing image, and the layout JSON data will be saved in the image metadata.',
     exportWithScreenshotConfirm: 'Do you want to capture a screenshot of the current page and embed layout data?\n\nThe screenshot will be used as the export image, and the layout JSON data will be saved in the image metadata.',
     capturingScreenshot: 'Capturing screenshot...',
@@ -446,6 +450,315 @@ export default {
     hours: 'hours',
     minute: 'm',
     seconds: 's'
+  },
+
+  // Basic Auth dialog
+  basicAuth: {
+    title: 'Authentication Required',
+    username: 'Username',
+    password: 'Password',
+    login: 'Login'
+  },
+
+  // External URL modal
+  externalUrl: {
+    title: 'External Link'
+  },
+
+  // Content script panel
+  contentScript: {
+    title: 'Content Script Executor',
+    tabs: {
+      highlight: 'Highlight',
+      extract: 'Extract',
+      actions: 'Actions',
+      custom: 'Custom'
+    },
+    highlight: {
+      title: 'Element Highlight',
+      selectors: 'Selectors (one per line)',
+      color: 'Highlight Color',
+      duration: 'Duration (ms)',
+      permanentHint: '0 = permanent highlight',
+      enablePulse: 'Enable pulse animation',
+      apply: 'Apply Highlight',
+      clear: 'Clear Highlights',
+      executing: 'Executing...',
+      success: 'Highlighted {count} elements',
+      failed: 'Highlight failed: {error}',
+      cleared: 'All highlights cleared',
+      clearFailed: 'Clear failed: {error}'
+    },
+    extract: {
+      title: 'Data Extraction',
+      selectors: 'Selectors (one per line)',
+      extractText: 'Extract text',
+      extractHtml: 'Extract HTML',
+      attributes: 'Attributes (comma-separated)',
+      styles: 'Style attributes (comma-separated)',
+      extractBtn: 'Extract Data',
+      exportJson: 'Export JSON',
+      executing: 'Extracting...',
+      results: 'Extraction Results',
+      items: '{count} items',
+      success: 'Extracted {count} items',
+      failed: 'Extraction failed: {error}'
+    },
+    actions: {
+      title: 'Batch Operations',
+      selectors: 'Selectors (one per line)',
+      actionType: 'Action Type',
+      click: 'Click',
+      focus: 'Focus',
+      scrollIntoView: 'Scroll to View',
+      hide: 'Hide',
+      show: 'Show',
+      remove: 'Remove',
+      execute: 'Execute Action',
+      executing: 'Executing...',
+      results: 'Action Results',
+      success: 'Success: {count}',
+      failed: 'Failed: {count}',
+      viewFailedDetails: 'View failure details',
+      completeSuccess: 'Action complete\nSuccess: {success}\nFailed: {failed}',
+      completeFailed: 'Action failed: {error}'
+    },
+    custom: {
+      title: 'Custom Script',
+      codeLabel: 'JavaScript Code',
+      execute: 'Execute Script',
+      executing: 'Executing...',
+      results: 'Execution Results'
+    },
+    history: {
+      title: 'Execution History',
+      clear: 'Clear History',
+      noResult: 'No result',
+      executionFailed: 'Execution failed',
+      noReturnValue: 'No return value',
+      emptyResult: 'Empty result'
+    }
+  },
+
+  // Canvas controls
+  canvasControls: {
+    addWebsite: 'Add Window',
+    fitToScreen: 'Fit to Screen',
+    autoArrange: 'Fit to Screen',
+    rearrange: 'Rearrange',
+    clearDrawings: 'Clear Drawings',
+    drawingMode: 'Drawing Mode',
+    drawingSettings: 'Drawing Settings',
+    resetZoom: 'Reset Zoom (100%)',
+    zoomIn: 'Zoom In',
+    zoomOut: 'Zoom Out'
+  },
+
+  // Rearrange dialog
+  rearrangeDialog: {
+    title: 'Rearrange Windows',
+    columns: 'Columns',
+    itemWidth: 'Window Width (px)',
+    itemHeight: 'Window Height (px)',
+    scale: 'Window Scale',
+    scaleHint: '1.0 is original size, 2.0 is double size',
+    preview: 'Preview',
+    finalSize: 'Final Window Size',
+    layout: 'Layout',
+    reset: 'Reset Default'
+  },
+
+  // API settings panel
+  apiSettings: {
+    title: 'API Service Settings',
+    server: 'API Server',
+    enable: 'Enable',
+    bindAddress: 'Bind Address',
+    port: 'Port',
+    showHide: 'Show/Hide',
+    copy: 'Copy',
+    regenerate: 'Regenerate',
+    running: 'Running',
+    stopped: 'Stopped',
+    networkHook: 'Global Network Hook (Bypass Forward)',
+    hookUrlHint: 'Page network requests will be forwarded as POST JSON to this address. You can set an independent Hook URL for individual pages in website edit.',
+    usageGuide: 'Usage Guide',
+    externalApi: 'External Access API:',
+    apiListWorkspaces: 'List workspaces and pages',
+    apiExecute: 'Multi-step JS execution',
+    apiTraffic: 'Get network traffic',
+    apiKeyHeader: 'Request header must include'
+  },
+
+  // Proxy management
+  proxy: {
+    title: 'Proxy Node Management',
+    addProxy: 'Add Proxy',
+    importSubscription: 'Import Subscription',
+    selected: '{count} selected',
+    enable: 'Enable',
+    batchDelete: 'Delete',
+    editProxy: 'Edit Proxy',
+    name: 'Name',
+    namePlaceholder: 'Proxy name',
+    type: 'Type',
+    host: 'Host',
+    hostPlaceholder: 'Server address',
+    portPlaceholder: 'Port number',
+    usernameOptional: 'Username (optional)',
+    usernamePlaceholder: 'Username',
+    passwordOptional: 'Password (optional)',
+    passwordPlaceholder: 'Password',
+    password: 'Password',
+    ssPassword: 'Shadowsocks password',
+    cipher: 'Encryption Method',
+    pluginOptional: 'Plugin (optional)',
+    pluginOpts: 'Plugin Options (JSON format)',
+    enableUdp: 'Enable UDP',
+    enableTfo: 'Enable TCP Fast Open',
+    uuid: 'UUID',
+    saving: 'Saving...'
+  },
+
+  // LLM config
+  llmConfig: {
+    title: 'LLM API Configuration',
+    subtitle: 'Configure LLM API to generate custom web pages',
+    apiUrl: 'API URL',
+    apiUrlHint: 'Full URL of the LLM API',
+    apiKey: 'API Key',
+    apiKeyHint: 'API Key for authentication.',
+    apiKeyLink: 'Get from OpenRouter',
+    model: 'Model Name',
+    modelHint: 'Name of the model to use',
+    temperature: 'Temperature',
+    temperatureHint: 'Controls output randomness (0-2)',
+    maxTokens: 'Max Tokens',
+    maxTokensHint: 'Maximum length of generated content (0 for unlimited)'
+  },
+
+  // Custom HTML dialog
+  customHtml: {
+    title: 'Create Custom Web Page',
+    subtitle: 'Describe your needs, AI will generate web page code for you',
+    requirement: 'Requirement Description',
+    requirementPlaceholder: 'e.g., Create a todo list that supports adding, deleting, and marking as complete...',
+    requirementHint: 'Describe the web page features and styles you want in detail',
+    generating: 'Generating HTML code, please wait...',
+    generatingBtn: 'Generating...',
+    generateBtn: 'Generate Page',
+    defaultTitle: 'Custom Web Page',
+    configError: 'Please configure LLM API in settings first',
+    generateFailed: 'Generation failed'
+  },
+
+  // Monitoring rules
+  monitoring: {
+    rulesTitle: 'Page Monitoring Rules',
+    noRules: 'No monitoring rules yet',
+    noRulesDesc: 'Create rules to automatically monitor page changes',
+    createFirst: 'Create First Rule',
+    createRule: '+ New Rule',
+    editRule: 'Edit Monitoring Rule',
+    newRule: 'New Monitoring Rule',
+    ruleName: 'Rule Name',
+    ruleNamePlaceholder: 'e.g., Detect price changes',
+    condition: 'Monitoring Condition',
+    visionMonitor: 'Vision Monitor (LLM)',
+    visionMonitorDesc: 'Use AI to analyze page screenshots',
+    textMonitor: 'Text Monitor',
+    textMonitorDesc: 'Monitor page text changes (coming soon)',
+    conditionDesc: 'Condition Description (describe trigger condition in natural language)',
+    conditionPlaceholder: "e.g., Trigger when the page shows 'out of stock' or 'sold out'",
+    conditionHint: 'AI will analyze page screenshots based on this description to determine if the condition is met',
+    checkInterval: 'Check Interval',
+    seconds: 'seconds',
+    intervalHint: 'Avoid setting too short to prevent high API costs from frequent calls',
+    actions: 'Actions',
+    desktopNotification: 'Desktop Notification',
+    required: 'Required',
+    sendEmail: 'Send Email',
+    webhook: 'Webhook Notification',
+    comingSoon: 'Coming Soon',
+    notificationMessage: 'Notification Message',
+    notificationPlaceholder: 'e.g., Product status has changed!',
+    apiConfigTitle: 'LLM API Configuration Required',
+    apiConfigDesc: 'This feature requires LLM API (e.g., OpenAI GPT-4 Vision) to analyze screenshots. Please configure your API key in settings.',
+    goConfig: 'Go to Settings →',
+    testScreenshot: '🖼️ Test Screenshot',
+    testVision: '🤖 Test Vision Analysis',
+    conditionLabel: 'Condition:',
+    checkEvery: 'Check every {interval}s',
+    lastTrigger: 'Last triggered: {time}',
+    triggerCount: 'Triggered {count} times'
+  },
+
+  // Canvas view
+  canvasView: {
+    addWebsite: 'Add Website',
+    addWebsiteNode: 'Add website node',
+    drawingMode: 'Drawing mode',
+    exitDrawing: 'Exit Drawing',
+    startDrawing: 'Drawing',
+    color: 'Color:',
+    strokeWidth: 'Width:',
+    clearDrawing: 'Clear Drawing',
+    fitToView: 'Fit to View',
+    newWebsite: 'New Website'
+  },
+
+  // Desktop capture
+  desktopCapture: {
+    connecting: 'Connecting to desktop source...',
+    readonlyMode: '📺 Read-only mode (interaction not supported)',
+    noSource: 'No desktop source specified',
+    electronOnly: 'Desktop capture is only available in Electron environment',
+    addCapture: 'Add Desktop Capture',
+    editCapture: 'Edit Desktop Capture',
+    basicInfo: 'Basic Info',
+    captureTitle: 'Name',
+    titlePlaceholder: 'Enter desktop capture name',
+    sourceTitle: 'Desktop Source',
+    fullScreen: '🖥️ Full Screen',
+    appWindow: '🪟 App Window',
+    changeSource: 'Change Source',
+    selectSource: 'Please select a desktop source to capture',
+    selectSourceBtn: 'Select Desktop Source',
+    captureOptions: 'Capture Options',
+    fitScreen: 'Fit to screen size',
+    displaySettings: 'Display Settings',
+    padding: 'Padding',
+    mute: 'Mute'
+  },
+
+  // Canvas controls panel
+  canvasControlsPanel: {
+    brushTool: 'Brush Tool',
+    textTool: 'Text Tool',
+    imageTool: 'Image Tool',
+    drawColor: 'Drawing Color',
+    strokeWidth: 'Stroke Width'
+  },
+
+  // Canvas context menu
+  canvasContextMenu: {
+    addWebsite: 'Add Website',
+    aiCustomPage: 'AI Generate Custom Page'
+  },
+
+  // Config panel extra
+  configPanelExtra: {
+    logoAlt: 'Tab Hive Logo',
+    collapseSidebar: 'Collapse Sidebar',
+    currentViewSettings: 'Current View Settings'
+  },
+
+  // Website edit dialog extra
+  websiteEditExtra: {
+    subtitle: 'Configure display options, proxy, and advanced features',
+    basicInfo: 'Basic Info',
+    addDesktopCapture: 'Add Desktop Capture',
+    aiCustomPage: 'AI Generate Custom Page'
   },
 
   // Other

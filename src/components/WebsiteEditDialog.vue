@@ -5,7 +5,7 @@
       <div class="dialog-header">
         <div>
           <h1>{{ editingIndex === -1 ? $t('websiteEdit.addWebsite') : $t('websiteEdit.editWebsite') }}</h1>
-          <p class="header-subtitle">配置站点的显示选项、代理及高级功能</p>
+          <p class="header-subtitle">{{ $t('websiteEditExtra.subtitle') }}</p>
         </div>
         <div v-if="website.id" class="header-badge">
           <span class="badge-text">ID: {{ website.id }}</span>
@@ -17,7 +17,7 @@
         <!-- 1. 基础信息 Section -->
         <section class="content-section">
           <h2 class="section-heading">
-            <i class="fa-solid fa-globe"></i> 基础信息
+            <i class="fa-solid fa-globe"></i> {{ $t('websiteEditExtra.basicInfo') }}
           </h2>
           <div class="basic-info-col">
             <WebsiteBasicInfo
@@ -65,7 +65,7 @@
                 class="quick-add-btn desktop-capture-btn"
                 @click="showDesktopCaptureSelector = true"
                 type="button"
-                title="添加桌面捕获"
+                :title="$t('desktopCapture.addCapture')"
                 :disabled="false"
               >
                 <i class="fa-solid fa-desktop"></i>
@@ -75,7 +75,7 @@
                 class="quick-add-btn custom-html-btn"
                 @click="showCustomHtmlDialog = true"
                 type="button"
-                title="AI 生成自定义网页"
+                :title="$t('canvasContextMenu.aiCustomPage')"
               >
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                 <span>自定义</span>

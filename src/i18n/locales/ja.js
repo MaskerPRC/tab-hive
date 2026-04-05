@@ -1,5 +1,4 @@
 export default {
-  // 共通
   common: {
     confirm: '確認',
     cancel: 'キャンセル',
@@ -60,21 +59,15 @@ export default {
     unknown: '不明',
     untitled: '無題'
   },
-
-  // アプリ名とタイトル
   app: {
     name: '全视界',
     title: '全视界'
   },
-
-  // ダイアログ
   dialog: {
     title: 'ヒント',
     confirm: '確認',
     cancel: 'キャンセル'
   },
-
-  // ウェブサイト編集ダイアログ
   websiteEdit: {
     addWebsite: 'ウェブサイトを追加',
     editWebsite: 'ウェブサイトを編集',
@@ -95,34 +88,29 @@ export default {
     confirm: '確認',
     cancel: 'キャンセル'
   },
-
-  // ウェブサイト基本情報
   websiteBasicInfo: {
     name: 'ウェブサイト名:',
     url: 'ウェブサイトURL:',
     namePlaceholder: '例: Google',
     urlPlaceholder: '例: bbc.com または https://bbc.com'
   },
-
-  // デバイスタイプセレクター
   deviceType: {
     title: 'デバイスタイプ:',
     desktop: '🖥️ デスクトップ',
     mobile: '📱 モバイル',
     mobileHint: '💡 モバイル版は自動的にドメインをモバイル版に変換し（例: www.xxx.com → m.xxx.com）、ビューポート幅を375pxに制限します'
   },
-
-  // オーディオビジュアル設定
   audioVisual: {
     audioSettings: 'オーディオ設定:',
     muted: '🔇 このウェブサイトをミュート',
     mutedHint: '💡 有効にすると、このウェブサイトは音を再生しません',
     visualSettings: 'ビジュアル設定:',
     darkMode: '🌙 ダークテーマ',
-    darkModeHint: '💡 ウェブサイトにダークテーマを強制適用します。夜間の閲覧に適しています'
+    darkModeHint: '💡 ウェブサイトにダークテーマを強制適用します。夜間の閲覧に適しています',
+    actionButtonSettings: '操作ボタン設定：',
+    requireModifierForActions: '⌨️ 修飾キーでボタンを表示',
+    requireModifierForActionsHint: '💡 有効にすると、Ctrl または Alt キーを押しながら操作ボタンを表示します。ウェブページの操作を妨げません'
   },
-
-  // セッションインスタンスセレクター
   sessionInstance: {
     title: 'Cookie共有インスタンス:',
     default: 'デフォルト',
@@ -136,15 +124,11 @@ export default {
     defaultInstanceName: '共有インスタンス',
     hint: '💡 同じインスタンスのハニカムはCookieとストレージを共有し、インスタンス間は完全に分離されています\n• デフォルト共有インスタンス: すべてのウェブサイトが共有\n• 新しいインスタンス: マルチアカウントログインなどのシナリオに使用できます'
   },
-
-  // パディング設定
   padding: {
     title: 'パディング設定（オプション）:',
     unit: 'px',
     hint: '💡 ウェブページコンテンツとカードエッジ間の距離を調整（単位: ピクセル）\n• デフォルトは0（パディングなし）\n• 推奨範囲: 0-50px'
   },
-
-  // ターゲットセレクターリスト
   targetSelector: {
     title: 'ターゲットセレクター（オプション）:',
     placeholder: '例: #main-content または .video-player',
@@ -152,8 +136,6 @@ export default {
     removeSelector: 'このセレクターを削除',
     hint: '💡 複数のCSSセレクターを追加できます。グリッドモードでは、一致する要素のみが表示され、他のコンテンツは非表示になります\n• 複数のセレクターはすべての一致する要素を保持します\n• フルスクリーンでは完全なページを表示します\n• 空のままにすると常にページ全体を表示します'
   },
-
-  // 自動更新設定
   autoRefresh: {
     title: '自動更新間隔（オプション）:',
     custom: 'カスタム:',
@@ -163,8 +145,6 @@ export default {
     days: '日',
     hint: '💡 iframe自動更新の時間間隔を設定\n• プリセットをクリックしてクイック選択するか、時間と単位をカスタマイズ\n• 0に設定すると自動更新が無効になります\n• 推奨最小値: 30秒（パフォーマンスに影響を与える頻繁な更新を避けるため）\n• 使用例: リアルタイム監視、データダッシュボード、定期的な更新が必要なその他のページ'
   },
-
-  // 設定パネル
   configPanel: {
     language: '言語',
     languageHint: 'インターフェース言語を選択',
@@ -196,10 +176,18 @@ export default {
       deleteLayout: 'レイアウト "{name}" を削除してもよろしいですか？',
       clearConfig: 'すべての設定をクリアしてもよろしいですか？これによりすべてのウェブサイトとレイアウト設定が削除されます。'
     },
-    unnamed: '無名'
+    unnamed: '無名',
+    adBlockEnabled: '広告ブロック',
+    adBlockEnabledHint: '有効にすると、すべてのウェブページの広告を自動的にブロックします',
+    customCodeEnabled: 'カスタムコード',
+    customCodeEnabledHint: '有効にすると、フローティングアクションにスクリプト実行ボタンが表示されます',
+    proxy: 'プロキシ',
+    proxyHint: 'プロキシ設定を管理',
+    settings: '設定',
+    settingsHint: 'LLM API などの設定を構成',
+    showCertificateErrorShadow: '証明書エラー赤色シャドウ',
+    showCertificateErrorShadowHint: '有効にすると、証明書エラーのあるウェブサイトに赤いシャドウを表示します'
   },
-
-  // レイアウト操作
   layout: {
     create: '新しいレイアウトを作成',
     createMessage: '新しいレイアウト名を入力してください',
@@ -236,13 +224,28 @@ export default {
     shareLayout: 'レイアウトを共有',
     renameLayout: '名前を変更',
     deleteLayout: '削除',
-    websiteCount: ' ウェブサイト'
+    websiteCount: ' ウェブサイト',
+    capturingScreenshot: 'スクリーンショットを撮影中...',
+    exportFailed: 'エクスポートに失敗しました',
+    exportLayout: 'レイアウトをエクスポート',
+    exportSuccess: 'エクスポート成功！',
+    exportWithScreenshotConfirm: '現在のページのスクリーンショットを撮影し、レイアウトデータを埋め込みますか？\n\nスクリーンショットがエクスポート画像として使用され、レイアウトの JSON データが画像のメタデータに保存されます。',
+    importFailed: 'インポートに失敗しました',
+    importLayoutFromImageConfirm: '画像にレイアウトデータが検出されました（"{name}"）。\n\nこのレイアウトをインポートしますか？',
+    importSuccess: 'インポート成功！',
+    importedLayout: 'インポート済みレイアウト',
+    invalidLayoutData: '無効なレイアウトデータ',
+    preview: 'プレビュー',
+    screenshotCopied: 'スクリーンショットをクリップボードにコピーしました！',
+    screenshotDownloaded: 'スクリーンショットをダウンロードしました！',
+    shareFailed: '共有に失敗しました',
+    shareSuccess: '共有成功！',
+    shareWithScreenshotConfirm: '現在のページのスクリーンショットを撮影し、レイアウトデータを埋め込みますか？\n\nスクリーンショットが共有画像として使用され、レイアウトの JSON データが画像のメタデータに保存されます。',
+    sharedLayoutsDesc: '共有された Tab Hive レイアウト設定を閲覧・インポート',
+    sortHot: '人気ダウンロード',
+    sortLatest: '最新公開',
+    unnamedLayout: '無名のレイアウト'
   },
-
-  // ダウンロードモーダル
-
-
-  // 更新通知
   updateNotification: {
     title: '新しいバージョンが利用可能',
     currentVersion: '現在のバージョン:',
@@ -260,8 +263,6 @@ export default {
     later: '後で思い出す',
     close: '閉じる'
   },
-
-  // ウェブサイトカード
   websiteCard: {
     fullscreen: 'フルスクリーン',
     edit: '編集',
@@ -270,8 +271,6 @@ export default {
     refresh: '更新',
     toggleMute: 'ミュートを切り替え'
   },
-
-  // 要素セレクター
   elementSelector: {
     title: '要素セレクター',
     start: '選択を開始',
@@ -280,75 +279,6 @@ export default {
     confirm: '選択を確認',
     cancel: 'キャンセル'
   },
-
-  // セレクターツールバー
-  selectorToolbar: {
-    startSelect: '選択を開始',
-    stopSelect: '選択を停止',
-    confirm: '確認',
-    cancel: 'キャンセル'
-  },
-
-  // インポートモードダイアログ
-  importMode: {
-    title: 'インポートモードを選択',
-    description: 'このレイアウトをどのようにインポートしますか？',
-    realtimeSync: {
-      title: 'リアルタイム同期インポート',
-      description: '元のテンプレートと同期を維持し、作成者がテンプレートを更新したときに手動で更新を同期',
-      note: '⚠️ レイアウトを変更した場合、同期更新時に変更が上書きされます'
-    },
-    copy: {
-      title: 'コピーインポート',
-      description: '自由に変更できる独立したコピーを作成',
-      note: '💡 元のテンプレートの更新の影響を受けません'
-    },
-    cancel: 'キャンセル'
-  },
-
-  // セッションインスタンスマネージャー
-  sessionInstanceManager: {
-    title: 'Cookie共有インスタンス管理',
-    whatIs: 'Cookie共有インスタンスとは何ですか？',
-    description: '同じインスタンスのハニカムはCookie、LocalStorage、その他のストレージを共有します。インスタンス間は完全に分離されています。',
-    useCases: '使用例:',
-    useCasesDesc: 'マルチアカウントログイン、テスト環境の分離など。',
-    rename: '名前を変更',
-    delete: '削除',
-    deleteDisabled: 'このインスタンスを使用しているハニカムがあるため、削除できません',
-    deleteConfirm: 'インスタンス "{name}" を削除してもよろしいですか？',
-    create: '新しいインスタンス',
-    close: '閉じる',
-    usageCount: ' ハニカム'
-  },
-
-  // 自動更新プリセット
-  autoRefreshPresets: {
-    noRefresh: '更新なし',
-    thirtySeconds: '30秒',
-    oneMinute: '1分',
-    fiveMinutes: '5分',
-    thirtyMinutes: '30分',
-    oneHour: '1時間',
-    oneDay: '1日'
-  },
-
-  // フローティングアクション
-  floatingActions: {
-    refresh: 'ページを更新',
-    goBack: '戻る',
-    goForward: '進む',
-    mute: 'ミュート',
-    unmute: 'ミュート解除',
-    copy: 'ハニカムをコピー',
-    script: 'スクリプトエグゼキュータ',
-    devtools: '開発者ツール',
-    edit: 'リンクを編集',
-    fullscreen: 'フルスクリーンビュー',
-    remove: 'ウェブサイトを削除'
-  },
-
-  // セレクターツールバー
   selectorToolbar: {
     title: '要素セレクター',
     dragHandle: 'ドラッグしてパネルを移動',
@@ -386,23 +316,79 @@ export default {
     multiSelectModeHint: '複数選択モード: 要素をクリックしてリストに追加 | ESCキーを押してキャンセル',
     multiSelectModeSelected: '複数選択モード: {count} 個の要素が選択されました | 「リストに追加」をクリックして続行 | 「選択を確認」ですべてを保存',
     singleSelectModeHint: '要素をクリックして選択 | ESCキーを押してキャンセル',
-    confirmSelectionHint: '選択を調整し続けることができます | 「選択を確認」をクリックして保存 | ESCキーを押してキャンセル'
+    confirmSelectionHint: '選択を調整し続けることができます | 「選択を確認」をクリックして保存 | ESCキーを押してキャンセル',
+    classList: 'Class リスト',
+    copySelector: 'セレクターをコピー',
+    currentPath: '現在のパス',
+    depth: '深度',
+    dimensions: 'サイズ',
+    elementCapture: '要素キャプチャ',
+    shiftLockHint: 'Shift を押しながら選択範囲をロック',
+    tagName: 'タグ名'
   },
-
-  // フルスクリーンバー
+  importMode: {
+    title: 'インポートモードを選択',
+    description: 'このレイアウトをどのようにインポートしますか？',
+    realtimeSync: {
+      title: 'リアルタイム同期インポート',
+      description: '元のテンプレートと同期を維持し、作成者がテンプレートを更新したときに手動で更新を同期',
+      note: '⚠️ レイアウトを変更した場合、同期更新時に変更が上書きされます'
+    },
+    copy: {
+      title: 'コピーインポート',
+      description: '自由に変更できる独立したコピーを作成',
+      note: '💡 元のテンプレートの更新の影響を受けません'
+    },
+    cancel: 'キャンセル'
+  },
+  sessionInstanceManager: {
+    title: 'Cookie共有インスタンス管理',
+    whatIs: 'Cookie共有インスタンスとは何ですか？',
+    description: '同じインスタンスのハニカムはCookie、LocalStorage、その他のストレージを共有します。インスタンス間は完全に分離されています。',
+    useCases: '使用例:',
+    useCasesDesc: 'マルチアカウントログイン、テスト環境の分離など。',
+    rename: '名前を変更',
+    delete: '削除',
+    deleteDisabled: 'このインスタンスを使用しているハニカムがあるため、削除できません',
+    deleteConfirm: 'インスタンス "{name}" を削除してもよろしいですか？',
+    create: '新しいインスタンス',
+    close: '閉じる',
+    usageCount: ' ハニカム'
+  },
+  autoRefreshPresets: {
+    noRefresh: '更新なし',
+    thirtySeconds: '30秒',
+    oneMinute: '1分',
+    fiveMinutes: '5分',
+    thirtyMinutes: '30分',
+    oneHour: '1時間',
+    oneDay: '1日'
+  },
+  floatingActions: {
+    refresh: 'ページを更新',
+    goBack: '戻る',
+    goForward: '進む',
+    mute: 'ミュート',
+    unmute: 'ミュート解除',
+    copy: 'ハニカムをコピー',
+    script: 'スクリプトエグゼキュータ',
+    devtools: '開発者ツール',
+    edit: 'リンクを編集',
+    fullscreen: 'フルスクリーンビュー',
+    remove: 'ウェブサイトを削除',
+    importCookies: 'Cookie をインポート'
+  },
   fullscreenBar: {
     selectElement: '要素を選択',
     refresh: '更新',
-    exitFullscreen: 'フルスクリーンを終了'
+    exitFullscreen: 'フルスクリーンを終了',
+    goBack: '戻る',
+    goForward: '進む'
   },
-
-  // URL変更ヒント
   urlChangeHint: {
     useCurrentUrl: '現在表示されているウェブページのURLを使用',
     useThisPage: 'このページを使用'
   },
-
-  // 更新タイマー
   refreshTimer: {
     day: '日',
     hour: '時',
@@ -410,8 +396,88 @@ export default {
     minute: '分',
     seconds: '秒'
   },
-
-  // その他
+  basicAuth: {
+    title: '認証が必要です',
+    username: 'ユーザー名',
+    password: 'パスワード',
+    login: 'ログイン'
+  },
+  externalUrl: {
+    title: '外部リンク'
+  },
+  contentScript: {
+    title: 'コンテンツスクリプト実行器',
+    tabs: {
+      highlight: 'ハイライト',
+      extract: '抽出',
+      actions: '操作',
+      custom: 'カスタム'
+    },
+    highlight: {
+      title: '要素ハイライト',
+      selectors: 'セレクター（1行に1つ）',
+      color: 'ハイライト色',
+      duration: '持続時間 (ms)',
+      permanentHint: '0 = 永続ハイライト',
+      enablePulse: 'パルスアニメーションを有効にする',
+      apply: 'ハイライトを適用',
+      clear: 'ハイライトをクリア',
+      executing: '実行中...',
+      success: '{count}個の要素をハイライトしました',
+      failed: 'ハイライト失敗: {error}',
+      cleared: 'すべてのハイライトをクリアしました',
+      clearFailed: 'クリア失敗: {error}'
+    },
+    extract: {
+      title: 'データ抽出',
+      selectors: 'セレクター（1行に1つ）',
+      extractText: 'テキストを抽出',
+      extractHtml: 'HTMLを抽出',
+      attributes: '属性リスト（カンマ区切り）',
+      styles: 'スタイル属性（カンマ区切り）',
+      extractBtn: 'データを抽出',
+      exportJson: 'JSONエクスポート',
+      executing: '抽出中...',
+      results: '抽出結果',
+      items: '{count}件',
+      success: '{count}件のデータを抽出しました',
+      failed: '抽出失敗: {error}'
+    },
+    actions: {
+      title: 'バッチ操作',
+      selectors: 'セレクター（1行に1つ）',
+      actionType: '操作タイプ',
+      click: 'クリック',
+      focus: 'フォーカス',
+      scrollIntoView: 'ビューにスクロール',
+      hide: '非表示',
+      show: '表示',
+      remove: '削除',
+      execute: '操作を実行',
+      executing: '実行中...',
+      results: '操作結果',
+      success: '成功: {count}',
+      failed: '失敗: {count}',
+      viewFailedDetails: '失敗の詳細を表示',
+      completeSuccess: '操作完了\n成功: {success}\n失敗: {failed}',
+      completeFailed: '操作失敗: {error}'
+    },
+    custom: {
+      title: 'カスタムスクリプト',
+      codeLabel: 'JavaScriptコード',
+      execute: 'スクリプトを実行',
+      executing: '実行中...',
+      results: '実行結果'
+    },
+    history: {
+      title: '実行履歴',
+      clear: '履歴をクリア',
+      noResult: '結果なし',
+      executionFailed: '実行失敗',
+      noReturnValue: '戻り値なし',
+      emptyResult: '空の結果'
+    }
+  },
   other: {
     gridView: 'グリッドビュー',
     canvasView: 'キャンバスビュー',
@@ -442,6 +508,206 @@ export default {
     descending: '降順',
     byName: '名前で',
     byDate: '日付で',
-    bySize: 'サイズで'
+    bySize: 'サイズで',
+    certificateError: '証明書エラー',
+    certificateErrorDescription: 'このウェブサイトは無効な SSL 証明書を使用しており、安全に接続できません。',
+    certificateErrorHint: '通常、自己署名証明書の使用または証明書の期限切れが原因です。',
+    ignoreCertificateError: 'エラーを無視',
+    reload: '再読み込み'
+  },
+  apiSettings: {
+    apiExecute: 'マルチステップ JS 実行',
+    apiKeyHeader: 'リクエストヘッダーに必要',
+    apiListWorkspaces: 'ワークスペースとページの一覧',
+    apiTraffic: 'ネットワークトラフィックの取得',
+    bindAddress: 'バインドアドレス',
+    copy: 'コピー',
+    enable: '有効化',
+    externalApi: '外部アクセス API：',
+    hookUrlHint: 'ページのネットワークリクエストは POST JSON としてこのアドレスに転送されます。ウェブサイト編集で個別ページに独立した Hook URL を設定できます。',
+    networkHook: 'グローバルネットワーク Hook（バイパス転送）',
+    port: 'ポート',
+    regenerate: '再生成',
+    running: '実行中',
+    server: 'API サーバー',
+    showHide: '表示/非表示',
+    stopped: '停止済み',
+    title: 'API サービス設定',
+    usageGuide: '使用ガイド'
+  },
+  canvasContextMenu: {
+    addWebsite: 'ウェブサイトを追加',
+    aiCustomPage: 'AI カスタムページ生成'
+  },
+  canvasControls: {
+    addWebsite: 'ウィンドウを追加',
+    autoArrange: '画面にフィット',
+    clearDrawings: '描画をクリア',
+    drawingMode: '描画モード',
+    drawingSettings: '描画設定',
+    fitToScreen: '画面にフィット',
+    rearrange: '再配置',
+    resetZoom: 'ズームをリセット (100%)',
+    zoomIn: '拡大',
+    zoomOut: '縮小'
+  },
+  canvasControlsPanel: {
+    brushTool: 'ブラシツール',
+    drawColor: '描画色',
+    imageTool: '画像ツール',
+    strokeWidth: '線の太さ',
+    textTool: 'テキストツール'
+  },
+  canvasView: {
+    addWebsite: 'ウェブサイトを追加',
+    addWebsiteNode: 'ウェブサイトノードを追加',
+    clearDrawing: '描画をクリア',
+    color: '色：',
+    drawingMode: '手書き描画モード',
+    exitDrawing: '描画を終了',
+    fitToView: 'ビューにフィット',
+    newWebsite: '新しいウェブサイト',
+    startDrawing: '手書き描画',
+    strokeWidth: '太さ：'
+  },
+  configPanelExtra: {
+    collapseSidebar: 'サイドバーを折りたたむ',
+    currentViewSettings: '現在のビュー設定',
+    logoAlt: 'Tab Hive ロゴ'
+  },
+  customHtml: {
+    configError: '先に設定で LLM API を構成してください',
+    defaultTitle: 'カスタムウェブページ',
+    generateBtn: 'ページを生成',
+    generateFailed: '生成に失敗しました',
+    generating: 'HTML コードを生成中、お待ちください...',
+    generatingBtn: '生成中...',
+    requirement: '要件の説明',
+    requirementHint: '欲しいウェブページの機能やスタイルを詳しく説明してください',
+    requirementPlaceholder: '例：追加、削除、完了マーク機能付きの ToDo リストを作成...',
+    subtitle: '要件を説明すると、AI がウェブページコードを生成します',
+    title: 'カスタムウェブページの作成'
+  },
+  desktopCapture: {
+    addCapture: 'デスクトップキャプチャを追加',
+    appWindow: '🪟 アプリウィンドウ',
+    basicInfo: '基本情報',
+    captureOptions: 'キャプチャオプション',
+    captureTitle: '名前',
+    changeSource: 'ソースを変更',
+    connecting: 'デスクトップソースに接続中...',
+    displaySettings: '表示設定',
+    editCapture: 'デスクトップキャプチャを編集',
+    electronOnly: 'デスクトップキャプチャは Electron 環境でのみ利用可能です',
+    fitScreen: '画面サイズに合わせる',
+    fullScreen: '🖥️ フルスクリーン',
+    mute: 'ミュート',
+    noSource: 'デスクトップソースが指定されていません',
+    padding: 'パディング',
+    readonlyMode: '📺 読み取り専用モード（操作不可）',
+    selectSource: 'キャプチャするデスクトップソースを選択してください',
+    selectSourceBtn: 'デスクトップソースを選択',
+    sourceTitle: 'デスクトップソース',
+    titlePlaceholder: 'デスクトップキャプチャの名前を入力'
+  },
+  llmConfig: {
+    apiKey: 'API Key',
+    apiKeyHint: '認証用の API Key。',
+    apiKeyLink: 'OpenRouter から取得',
+    apiUrl: 'API アドレス',
+    apiUrlHint: 'LLM API の完全な URL',
+    maxTokens: '最大トークン数',
+    maxTokensHint: '生成コンテンツの最大長（0 は無制限）',
+    model: 'モデル名',
+    modelHint: '使用するモデル名',
+    subtitle: 'カスタムウェブページを生成するための LLM API を設定',
+    temperature: 'Temperature',
+    temperatureHint: '出力のランダム性を制御 (0-2)',
+    title: 'LLM API 設定'
+  },
+  monitoring: {
+    actions: '実行アクション',
+    apiConfigDesc: 'この機能はスクリーンショット分析に LLM API（例：OpenAI GPT-4 Vision）を使用します。設定で API キーを構成してください。',
+    apiConfigTitle: 'LLM API の設定が必要です',
+    checkEvery: '{interval}秒ごとにチェック',
+    checkInterval: 'チェック間隔',
+    comingSoon: '近日公開',
+    condition: '監視条件',
+    conditionDesc: '条件の説明（自然言語でトリガー条件を記述）',
+    conditionHint: 'AI がこの説明に基づいてページのスクリーンショットを分析し、条件を満たすか判定します',
+    conditionLabel: '条件：',
+    conditionPlaceholder: '例：ページに「在庫切れ」や「sold out」と表示されたらトリガー',
+    createFirst: '最初のルールを作成',
+    createRule: '+ 新規ルール',
+    desktopNotification: 'デスクトップ通知',
+    editRule: '監視ルールを編集',
+    goConfig: '設定へ移動 →',
+    intervalHint: '頻繁な API 呼び出しによる高額な費用を避けるため、間隔を短くしすぎないでください',
+    lastTrigger: '最終トリガー: {time}',
+    newRule: '新規監視ルール',
+    noRules: '監視ルールがありません',
+    noRulesDesc: 'ページの変化を自動監視するルールを作成',
+    notificationMessage: '通知メッセージ',
+    notificationPlaceholder: '例：商品のステータスが変更されました！',
+    required: '必須',
+    ruleName: 'ルール名',
+    ruleNamePlaceholder: '例：価格変動を検知',
+    rulesTitle: 'ページ監視ルール',
+    seconds: '秒',
+    sendEmail: 'メール送信',
+    testScreenshot: '🖼️ スクリーンショットテスト',
+    testVision: '🤖 ビジョン分析テスト',
+    textMonitor: 'テキスト監視',
+    textMonitorDesc: 'ページテキストの変化を監視（近日公開）',
+    triggerCount: '{count} 回トリガー',
+    visionMonitor: 'ビジョン監視 (LLM)',
+    visionMonitorDesc: 'AI でページのスクリーンショットを分析',
+    webhook: 'Webhook 通知'
+  },
+  proxy: {
+    addProxy: 'プロキシを追加',
+    batchDelete: '削除',
+    cipher: '暗号化方式',
+    editProxy: 'プロキシを編集',
+    enable: '有効化',
+    enableTfo: 'TCP Fast Open を有効化',
+    enableUdp: 'UDP を有効化',
+    host: 'ホスト',
+    hostPlaceholder: 'サーバーアドレス',
+    importSubscription: 'サブスクリプションをインポート',
+    name: '名前',
+    namePlaceholder: 'プロキシ名',
+    password: 'パスワード',
+    passwordOptional: 'パスワード（任意）',
+    passwordPlaceholder: 'パスワード',
+    pluginOptional: 'プラグイン（任意）',
+    pluginOpts: 'プラグインオプション（JSON 形式）',
+    portPlaceholder: 'ポート番号',
+    saving: '保存中...',
+    selected: '{count} 件選択済み',
+    ssPassword: 'Shadowsocks パスワード',
+    title: 'プロキシノード管理',
+    type: 'タイプ',
+    usernameOptional: 'ユーザー名（任意）',
+    usernamePlaceholder: 'ユーザー名',
+    uuid: 'UUID'
+  },
+  rearrangeDialog: {
+    columns: '列数',
+    finalSize: '最終ウィンドウサイズ',
+    itemHeight: 'ウィンドウの高さ (px)',
+    itemWidth: 'ウィンドウの幅 (px)',
+    layout: 'レイアウト',
+    preview: 'プレビュー',
+    reset: 'デフォルトに戻す',
+    scale: 'ウィンドウ拡大倍率',
+    scaleHint: '1.0 は元のサイズ、2.0 は2倍のサイズ',
+    title: 'ウィンドウの再配置'
+  },
+  websiteEditExtra: {
+    addDesktopCapture: 'デスクトップキャプチャを追加',
+    aiCustomPage: 'AI カスタムページ生成',
+    basicInfo: '基本情報',
+    subtitle: '表示オプション、プロキシ、高度な機能を設定'
   }
 }

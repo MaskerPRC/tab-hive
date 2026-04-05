@@ -1,5 +1,4 @@
 export default {
-  // Allgemein
   common: {
     confirm: 'Bestätigen',
     cancel: 'Abbrechen',
@@ -60,21 +59,15 @@ export default {
     unknown: 'Unbekannt',
     untitled: 'Ohne Titel'
   },
-
-  // App-Name und Titel
   app: {
     name: '全视界',
     title: '全视界'
   },
-
-  // Dialog
   dialog: {
     title: 'Tipp',
     confirm: 'Bestätigen',
     cancel: 'Abbrechen'
   },
-
-  // Website-Bearbeitungsdialog
   websiteEdit: {
     addWebsite: 'Website hinzufügen',
     editWebsite: 'Website bearbeiten',
@@ -95,34 +88,29 @@ export default {
     confirm: 'Bestätigen',
     cancel: 'Abbrechen'
   },
-
-  // Grundlegende Website-Informationen
   websiteBasicInfo: {
     name: 'Website-Name:',
     url: 'Website-URL:',
     namePlaceholder: 'z.B. Google',
     urlPlaceholder: 'z.B. bbc.com oder https://bbc.com'
   },
-
-  // Gerätetyp-Auswahl
   deviceType: {
     title: 'Gerätetyp:',
     desktop: '🖥️ Desktop',
     mobile: '📱 Mobil',
     mobileHint: '💡 Die mobile Version konvertiert automatisch die Domain in die mobile Version (z.B. www.xxx.com → m.xxx.com) und begrenzt die Viewport-Breite auf 375px'
   },
-
-  // Audio-/Visuelle Einstellungen
   audioVisual: {
     audioSettings: 'Audio-Einstellungen:',
     muted: '🔇 Diese Website stummschalten',
     mutedHint: '💡 Wenn aktiviert, spielt diese Website keinen Ton ab',
     visualSettings: 'Visuelle Einstellungen:',
     darkMode: '🌙 Dunkles Thema',
-    darkModeHint: '💡 Dunkles Thema für die Website erzwingen, geeignet für nächtliches Surfen'
+    darkModeHint: '💡 Dunkles Thema für die Website erzwingen, geeignet für nächtliches Surfen',
+    actionButtonSettings: 'Aktionsschaltflächen-Einstellungen:',
+    requireModifierForActions: '⌨️ Modifikatortaste erforderlich',
+    requireModifierForActionsHint: '💡 Wenn aktiviert, halten Sie Strg oder Alt gedrückt, um Aktionsschaltflächen anzuzeigen und Webseiten-Interaktionen nicht zu stören'
   },
-
-  // Sitzungsinstanz-Auswahl
   sessionInstance: {
     title: 'Cookie-Gemeinsame Instanz:',
     default: 'Standard',
@@ -136,15 +124,11 @@ export default {
     defaultInstanceName: 'Gemeinsame Instanz',
     hint: '💡 Waben in derselben Instanz teilen Cookies und Speicher, Instanzen sind vollständig isoliert\n• Standard-Gemeinsame Instanz: Alle Websites teilen\n• Neue Instanz: Kann für Multi-Konto-Anmeldeszenarien verwendet werden'
   },
-
-  // Padding-Konfiguration
   padding: {
     title: 'Padding-Konfiguration (Optional):',
     unit: 'px',
     hint: '💡 Passen Sie den Abstand zwischen Webseiteninhalt und Kartenrändern an (Einheit: Pixel)\n• Standard ist 0 (kein Padding)\n• Empfohlener Bereich: 0-50px'
   },
-
-  // Ziel-Selektor-Liste
   targetSelector: {
     title: 'Ziel-Selektor (Optional):',
     placeholder: 'z.B. #main-content oder .video-player',
@@ -152,8 +136,6 @@ export default {
     removeSelector: 'Diesen Selektor entfernen',
     hint: '💡 Sie können mehrere CSS-Selektoren hinzufügen. Im Rastermodus werden nur passende Elemente angezeigt, anderer Inhalt ist ausgeblendet\n• Mehrere Selektoren behalten alle passenden Elemente\n• Vollbild zeigt die vollständige Seite\n• Leer lassen, um immer die gesamte Seite anzuzeigen'
   },
-
-  // Auto-Aktualisierungs-Konfiguration
   autoRefresh: {
     title: 'Auto-Aktualisierungsintervall (Optional):',
     custom: 'Benutzerdefiniert:',
@@ -163,8 +145,6 @@ export default {
     days: 'Tage',
     hint: '💡 Legen Sie das Zeitintervall für die automatische Aktualisierung des iframe fest\n• Klicken Sie auf Voreinstellungen für schnelle Auswahl oder passen Sie Zeit und Einheit an\n• Auf 0 setzen, um Auto-Aktualisierung zu deaktivieren\n• Empfohlenes Minimum: 30 Sekunden (um häufige Aktualisierungen zu vermeiden, die die Leistung beeinträchtigen)\n• Anwendungsfälle: Echtzeit-Monitoring, Daten-Dashboards und andere Seiten, die regelmäßige Updates benötigen'
   },
-
-  // Konfigurationspanel
   configPanel: {
     language: 'Sprache',
     languageHint: 'Interface-Sprache auswählen',
@@ -196,10 +176,18 @@ export default {
       deleteLayout: 'Sind Sie sicher, dass Sie das Layout "{name}" löschen möchten?',
       clearConfig: 'Sind Sie sicher, dass Sie alle Konfigurationen löschen möchten? Dies löscht alle Websites und Layout-Einstellungen.'
     },
-    unnamed: 'Unbenannt'
+    unnamed: 'Unbenannt',
+    adBlockEnabled: 'Werbeblocker',
+    adBlockEnabledHint: 'Aktivieren, um Werbung auf allen Websites automatisch zu blockieren',
+    customCodeEnabled: 'Benutzerdefinierter Code',
+    customCodeEnabledHint: 'Aktivieren, um die Skriptausführungs-Schaltfläche in den Schwebeaktionen anzuzeigen',
+    proxy: 'Proxy',
+    proxyHint: 'Proxy-Einstellungen verwalten',
+    settings: 'Einstellungen',
+    settingsHint: 'LLM API und andere Einstellungen konfigurieren',
+    showCertificateErrorShadow: 'Zertifikatfehler roter Schatten',
+    showCertificateErrorShadowHint: 'Aktivieren, um roten Schatten bei Websites mit Zertifikatfehlern anzuzeigen'
   },
-
-  // Layout-Operationen
   layout: {
     create: 'Neues Layout erstellen',
     createMessage: 'Bitte geben Sie den neuen Layout-Namen ein',
@@ -236,13 +224,28 @@ export default {
     shareLayout: 'Layout teilen',
     renameLayout: 'Umbenennen',
     deleteLayout: 'Löschen',
-    websiteCount: ' Websites'
+    websiteCount: ' Websites',
+    capturingScreenshot: 'Screenshot wird erstellt...',
+    exportFailed: 'Export fehlgeschlagen',
+    exportLayout: 'Layout exportieren',
+    exportSuccess: 'Export erfolgreich!',
+    exportWithScreenshotConfirm: 'Möchten Sie einen Screenshot der aktuellen Seite erstellen und die Layout-Daten einbetten?\n\nDer Screenshot wird als Exportbild verwendet, und die Layout-JSON-Daten werden in den Bildmetadaten gespeichert.',
+    importFailed: 'Import fehlgeschlagen',
+    importLayoutFromImageConfirm: 'Layout-Daten im Bild erkannt ("{name}").\n\nMöchten Sie dieses Layout importieren?',
+    importSuccess: 'Import erfolgreich!',
+    importedLayout: 'Importiertes Layout',
+    invalidLayoutData: 'Ungültige Layout-Daten',
+    preview: 'Vorschau',
+    screenshotCopied: 'Screenshot in die Zwischenablage kopiert!',
+    screenshotDownloaded: 'Screenshot heruntergeladen!',
+    shareFailed: 'Teilen fehlgeschlagen',
+    shareSuccess: 'Erfolgreich geteilt!',
+    shareWithScreenshotConfirm: 'Möchten Sie einen Screenshot der aktuellen Seite erstellen und die Layout-Daten einbetten?\n\nDer Screenshot wird als Teilenbild verwendet, und die Layout-JSON-Daten werden in den Bildmetadaten gespeichert.',
+    sharedLayoutsDesc: 'Geteilte Tab Hive Layout-Konfigurationen durchsuchen und importieren',
+    sortHot: 'Beliebteste Downloads',
+    sortLatest: 'Neueste',
+    unnamedLayout: 'Unbenanntes Layout'
   },
-
-  // Download-Modal
-
-
-  // Update-Benachrichtigung
   updateNotification: {
     title: 'Neue Version verfügbar',
     currentVersion: 'Aktuelle Version:',
@@ -260,8 +263,6 @@ export default {
     later: 'Später erinnern',
     close: 'Schließen'
   },
-
-  // Website-Karte
   websiteCard: {
     fullscreen: 'Vollbild',
     edit: 'Bearbeiten',
@@ -270,8 +271,6 @@ export default {
     refresh: 'Aktualisieren',
     toggleMute: 'Stumm schalten'
   },
-
-  // Element-Selektor
   elementSelector: {
     title: 'Element-Selektor',
     start: 'Auswahl starten',
@@ -280,75 +279,6 @@ export default {
     confirm: 'Auswahl bestätigen',
     cancel: 'Abbrechen'
   },
-
-  // Selektor-Symbolleiste
-  selectorToolbar: {
-    startSelect: 'Auswahl starten',
-    stopSelect: 'Auswahl stoppen',
-    confirm: 'Bestätigen',
-    cancel: 'Abbrechen'
-  },
-
-  // Importmodus-Dialog
-  importMode: {
-    title: 'Importmodus auswählen',
-    description: 'Wie möchten Sie dieses Layout importieren?',
-    realtimeSync: {
-      title: 'Echtzeit-Synchronisations-Import',
-      description: 'Mit der Originalvorlage synchron bleiben, Updates manuell synchronisieren, wenn der Autor die Vorlage aktualisiert',
-      note: '⚠️ Wenn Sie das Layout ändern, werden Ihre Änderungen beim Synchronisieren von Updates überschrieben'
-    },
-    copy: {
-      title: 'Kopier-Import',
-      description: 'Eine unabhängige Kopie erstellen, die frei geändert werden kann',
-      note: '💡 Nicht betroffen von Originalvorlagen-Updates'
-    },
-    cancel: 'Abbrechen'
-  },
-
-  // Sitzungsinstanz-Manager
-  sessionInstanceManager: {
-    title: 'Cookie-Gemeinsame Instanz-Verwaltung',
-    whatIs: 'Was ist eine Cookie-Gemeinsame Instanz?',
-    description: 'Waben in derselben Instanz teilen Cookies, LocalStorage und andere Speicher. Instanzen sind vollständig voneinander isoliert.',
-    useCases: 'Anwendungsfälle:',
-    useCasesDesc: 'Multi-Konto-Anmeldung, Testumgebungs-Isolation usw.',
-    rename: 'Umbenennen',
-    delete: 'Löschen',
-    deleteDisabled: 'Es gibt Waben, die diese Instanz verwenden, kann nicht gelöscht werden',
-    deleteConfirm: 'Sind Sie sicher, dass Sie die Instanz "{name}" löschen möchten?',
-    create: 'Neue Instanz',
-    close: 'Schließen',
-    usageCount: ' Waben'
-  },
-
-  // Auto-Aktualisierungs-Voreinstellungen
-  autoRefreshPresets: {
-    noRefresh: 'Keine Aktualisierung',
-    thirtySeconds: '30 Sekunden',
-    oneMinute: '1 Minute',
-    fiveMinutes: '5 Minuten',
-    thirtyMinutes: '30 Minuten',
-    oneHour: '1 Stunde',
-    oneDay: '1 Tag'
-  },
-
-  // Schwebende Aktionen
-  floatingActions: {
-    refresh: 'Seite aktualisieren',
-    goBack: 'Zurück',
-    goForward: 'Vorwärts',
-    mute: 'Stumm schalten',
-    unmute: 'Stumm aufheben',
-    copy: 'Wabe kopieren',
-    script: 'Skript-Ausführer',
-    devtools: 'Entwicklertools',
-    edit: 'Link bearbeiten',
-    fullscreen: 'Vollbild-Ansicht',
-    remove: 'Website entfernen'
-  },
-
-  // Selektor-Symbolleiste
   selectorToolbar: {
     title: 'Element-Selektor',
     dragHandle: 'Zum Verschieben des Panels ziehen',
@@ -386,23 +316,79 @@ export default {
     multiSelectModeHint: 'Mehrfachauswahlmodus: Klicken Sie auf Elemente zum Hinzufügen zur Liste | ESC drücken zum Abbrechen',
     multiSelectModeSelected: 'Mehrfachauswahlmodus: {count} Elemente ausgewählt | Klicken Sie auf "Zur Liste hinzufügen" zum Fortsetzen | "Auswahl bestätigen" zum Speichern aller',
     singleSelectModeHint: 'Klicken Sie auf Elemente zum Auswählen | ESC drücken zum Abbrechen',
-    confirmSelectionHint: 'Sie können die Auswahl weiter anpassen | Klicken Sie auf "Auswahl bestätigen" zum Speichern | ESC drücken zum Abbrechen'
+    confirmSelectionHint: 'Sie können die Auswahl weiter anpassen | Klicken Sie auf "Auswahl bestätigen" zum Speichern | ESC drücken zum Abbrechen',
+    classList: 'Class-Liste',
+    copySelector: 'Selektor kopieren',
+    currentPath: 'Aktueller Pfad',
+    depth: 'Tiefe',
+    dimensions: 'Abmessungen',
+    elementCapture: 'Element-Erfassung',
+    shiftLockHint: 'Shift gedrückt halten, um den Auswahlbereich zu fixieren',
+    tagName: 'Tag-Name'
   },
-
-  // Vollbild-Leiste
+  importMode: {
+    title: 'Importmodus auswählen',
+    description: 'Wie möchten Sie dieses Layout importieren?',
+    realtimeSync: {
+      title: 'Echtzeit-Synchronisations-Import',
+      description: 'Mit der Originalvorlage synchron bleiben, Updates manuell synchronisieren, wenn der Autor die Vorlage aktualisiert',
+      note: '⚠️ Wenn Sie das Layout ändern, werden Ihre Änderungen beim Synchronisieren von Updates überschrieben'
+    },
+    copy: {
+      title: 'Kopier-Import',
+      description: 'Eine unabhängige Kopie erstellen, die frei geändert werden kann',
+      note: '💡 Nicht betroffen von Originalvorlagen-Updates'
+    },
+    cancel: 'Abbrechen'
+  },
+  sessionInstanceManager: {
+    title: 'Cookie-Gemeinsame Instanz-Verwaltung',
+    whatIs: 'Was ist eine Cookie-Gemeinsame Instanz?',
+    description: 'Waben in derselben Instanz teilen Cookies, LocalStorage und andere Speicher. Instanzen sind vollständig voneinander isoliert.',
+    useCases: 'Anwendungsfälle:',
+    useCasesDesc: 'Multi-Konto-Anmeldung, Testumgebungs-Isolation usw.',
+    rename: 'Umbenennen',
+    delete: 'Löschen',
+    deleteDisabled: 'Es gibt Waben, die diese Instanz verwenden, kann nicht gelöscht werden',
+    deleteConfirm: 'Sind Sie sicher, dass Sie die Instanz "{name}" löschen möchten?',
+    create: 'Neue Instanz',
+    close: 'Schließen',
+    usageCount: ' Waben'
+  },
+  autoRefreshPresets: {
+    noRefresh: 'Keine Aktualisierung',
+    thirtySeconds: '30 Sekunden',
+    oneMinute: '1 Minute',
+    fiveMinutes: '5 Minuten',
+    thirtyMinutes: '30 Minuten',
+    oneHour: '1 Stunde',
+    oneDay: '1 Tag'
+  },
+  floatingActions: {
+    refresh: 'Seite aktualisieren',
+    goBack: 'Zurück',
+    goForward: 'Vorwärts',
+    mute: 'Stumm schalten',
+    unmute: 'Stumm aufheben',
+    copy: 'Wabe kopieren',
+    script: 'Skript-Ausführer',
+    devtools: 'Entwicklertools',
+    edit: 'Link bearbeiten',
+    fullscreen: 'Vollbild-Ansicht',
+    remove: 'Website entfernen',
+    importCookies: 'Cookies importieren'
+  },
   fullscreenBar: {
     selectElement: 'Element auswählen',
     refresh: 'Aktualisieren',
-    exitFullscreen: 'Vollbild beenden'
+    exitFullscreen: 'Vollbild beenden',
+    goBack: 'Zurück',
+    goForward: 'Vorwärts'
   },
-
-  // URL-Änderungs-Hinweis
   urlChangeHint: {
     useCurrentUrl: 'URL der derzeit angezeigten Webseite verwenden',
     useThisPage: 'Diese Seite verwenden'
   },
-
-  // Aktualisierungs-Timer
   refreshTimer: {
     day: 'd',
     hour: 'h',
@@ -410,8 +396,88 @@ export default {
     minute: 'm',
     seconds: 's'
   },
-
-  // Sonstiges
+  basicAuth: {
+    title: 'Authentifizierung erforderlich',
+    username: 'Benutzername',
+    password: 'Passwort',
+    login: 'Anmelden'
+  },
+  externalUrl: {
+    title: 'Externer Link'
+  },
+  contentScript: {
+    title: 'Inhaltsskript-Ausführer',
+    tabs: {
+      highlight: 'Hervorheben',
+      extract: 'Extrahieren',
+      actions: 'Aktionen',
+      custom: 'Benutzerdefiniert'
+    },
+    highlight: {
+      title: 'Element hervorheben',
+      selectors: 'Selektoren (einer pro Zeile)',
+      color: 'Hervorhebungsfarbe',
+      duration: 'Dauer (ms)',
+      permanentHint: '0 = dauerhaft hervorheben',
+      enablePulse: 'Pulsanimation aktivieren',
+      apply: 'Hervorhebung anwenden',
+      clear: 'Hervorhebung löschen',
+      executing: 'Wird ausgeführt...',
+      success: '{count} Elemente hervorgehoben',
+      failed: 'Hervorhebung fehlgeschlagen: {error}',
+      cleared: 'Alle Hervorhebungen gelöscht',
+      clearFailed: 'Löschen fehlgeschlagen: {error}'
+    },
+    extract: {
+      title: 'Datenextraktion',
+      selectors: 'Selektoren (einer pro Zeile)',
+      extractText: 'Text extrahieren',
+      extractHtml: 'HTML extrahieren',
+      attributes: 'Attributliste (kommagetrennt)',
+      styles: 'Stilattribute (kommagetrennt)',
+      extractBtn: 'Daten extrahieren',
+      exportJson: 'JSON exportieren',
+      executing: 'Wird extrahiert...',
+      results: 'Extraktionsergebnisse',
+      items: '{count} Einträge',
+      success: '{count} Datensätze extrahiert',
+      failed: 'Extraktion fehlgeschlagen: {error}'
+    },
+    actions: {
+      title: 'Stapeloperationen',
+      selectors: 'Selektoren (einer pro Zeile)',
+      actionType: 'Aktionstyp',
+      click: 'Klicken',
+      focus: 'Fokussieren',
+      scrollIntoView: 'Zur Ansicht scrollen',
+      hide: 'Ausblenden',
+      show: 'Anzeigen',
+      remove: 'Entfernen',
+      execute: 'Aktion ausführen',
+      executing: 'Wird ausgeführt...',
+      results: 'Aktionsergebnisse',
+      success: 'Erfolgreich: {count}',
+      failed: 'Fehlgeschlagen: {count}',
+      viewFailedDetails: 'Fehlerdetails anzeigen',
+      completeSuccess: 'Aktion abgeschlossen\nErfolgreich: {success}\nFehlgeschlagen: {failed}',
+      completeFailed: 'Aktion fehlgeschlagen: {error}'
+    },
+    custom: {
+      title: 'Benutzerdefiniertes Skript',
+      codeLabel: 'JavaScript-Code',
+      execute: 'Skript ausführen',
+      executing: 'Wird ausgeführt...',
+      results: 'Ausführungsergebnisse'
+    },
+    history: {
+      title: 'Ausführungsverlauf',
+      clear: 'Verlauf löschen',
+      noResult: 'Kein Ergebnis',
+      executionFailed: 'Ausführung fehlgeschlagen',
+      noReturnValue: 'Kein Rückgabewert',
+      emptyResult: 'Leeres Ergebnis'
+    }
+  },
   other: {
     gridView: 'Rasteransicht',
     canvasView: 'Leinwandansicht',
@@ -442,6 +508,206 @@ export default {
     descending: 'Absteigend',
     byName: 'Nach Name',
     byDate: 'Nach Datum',
-    bySize: 'Nach Größe'
+    bySize: 'Nach Größe',
+    certificateError: 'Zertifikatfehler',
+    certificateErrorDescription: 'Diese Website verwendet ein ungültiges SSL-Zertifikat und kann nicht sicher verbunden werden.',
+    certificateErrorHint: 'Dies liegt meist an einem selbstsignierten Zertifikat oder einem abgelaufenen Zertifikat.',
+    ignoreCertificateError: 'Fehler ignorieren',
+    reload: 'Neu laden'
+  },
+  apiSettings: {
+    apiExecute: 'Mehrstufige JS-Ausführung',
+    apiKeyHeader: 'Anfrage-Header muss enthalten',
+    apiListWorkspaces: 'Arbeitsbereiche und Seiten auflisten',
+    apiTraffic: 'Netzwerkverkehr abrufen',
+    bindAddress: 'Bind-Adresse',
+    copy: 'Kopieren',
+    enable: 'Aktivieren',
+    externalApi: 'Externer Zugriff API:',
+    hookUrlHint: 'Netzwerkanfragen der Seite werden als POST JSON an diese Adresse weitergeleitet. In der Website-Bearbeitung können Sie eine unabhängige Hook URL für einzelne Seiten festlegen.',
+    networkHook: 'Globaler Netzwerk-Hook (Bypass-Weiterleitung)',
+    port: 'Port',
+    regenerate: 'Neu generieren',
+    running: 'Läuft',
+    server: 'API-Server',
+    showHide: 'Anzeigen/Ausblenden',
+    stopped: 'Gestoppt',
+    title: 'API-Dienst-Einstellungen',
+    usageGuide: 'Anleitung'
+  },
+  canvasContextMenu: {
+    addWebsite: 'Website hinzufügen',
+    aiCustomPage: 'AI-generierte benutzerdefinierte Seite'
+  },
+  canvasControls: {
+    addWebsite: 'Fenster hinzufügen',
+    autoArrange: 'An Bildschirm anpassen',
+    clearDrawings: 'Zeichnungen löschen',
+    drawingMode: 'Zeichenmodus',
+    drawingSettings: 'Zeicheneinstellungen',
+    fitToScreen: 'An Bildschirm anpassen',
+    rearrange: 'Neu anordnen',
+    resetZoom: 'Zoom zurücksetzen (100%)',
+    zoomIn: 'Vergrößern',
+    zoomOut: 'Verkleinern'
+  },
+  canvasControlsPanel: {
+    brushTool: 'Pinselwerkzeug',
+    drawColor: 'Zeichenfarbe',
+    imageTool: 'Bildwerkzeug',
+    strokeWidth: 'Strichbreite',
+    textTool: 'Textwerkzeug'
+  },
+  canvasView: {
+    addWebsite: 'Website hinzufügen',
+    addWebsiteNode: 'Website-Knoten hinzufügen',
+    clearDrawing: 'Zeichnung löschen',
+    color: 'Farbe:',
+    drawingMode: 'Freihandzeichenmodus',
+    exitDrawing: 'Zeichnen beenden',
+    fitToView: 'An Ansicht anpassen',
+    newWebsite: 'Neue Website',
+    startDrawing: 'Freihandzeichnen',
+    strokeWidth: 'Breite:'
+  },
+  configPanelExtra: {
+    collapseSidebar: 'Seitenleiste einklappen',
+    currentViewSettings: 'Aktuelle Ansichtseinstellungen',
+    logoAlt: 'Tab Hive Logo'
+  },
+  customHtml: {
+    configError: 'Bitte konfigurieren Sie zuerst die LLM API in den Einstellungen',
+    defaultTitle: 'Benutzerdefinierte Webseite',
+    generateBtn: 'Seite generieren',
+    generateFailed: 'Generierung fehlgeschlagen',
+    generating: 'HTML-Code wird generiert, bitte warten...',
+    generatingBtn: 'Wird generiert...',
+    requirement: 'Anforderungsbeschreibung',
+    requirementHint: 'Beschreiben Sie die gewünschten Webseiten-Funktionen und -Stile im Detail',
+    requirementPlaceholder: 'z. B.: Erstelle eine Aufgabenliste mit Funktionen zum Hinzufügen, Löschen und Abhaken...',
+    subtitle: 'Beschreiben Sie Ihre Anforderungen, AI generiert den Webseiten-Code für Sie',
+    title: 'Benutzerdefinierte Webseite erstellen'
+  },
+  desktopCapture: {
+    addCapture: 'Desktop-Aufnahme hinzufügen',
+    appWindow: '🪟 App-Fenster',
+    basicInfo: 'Grundinformationen',
+    captureOptions: 'Aufnahmeoptionen',
+    captureTitle: 'Name',
+    changeSource: 'Quelle ändern',
+    connecting: 'Verbindung zur Desktop-Quelle wird hergestellt...',
+    displaySettings: 'Anzeigeeinstellungen',
+    editCapture: 'Desktop-Aufnahme bearbeiten',
+    electronOnly: 'Desktop-Aufnahme ist nur in der Electron-Umgebung verfügbar',
+    fitScreen: 'An Bildschirmgröße anpassen',
+    fullScreen: '🖥️ Gesamter Bildschirm',
+    mute: 'Stummschalten',
+    noSource: 'Keine Desktop-Quelle angegeben',
+    padding: 'Innenabstand',
+    readonlyMode: '📺 Nur-Lese-Modus (keine Interaktion)',
+    selectSource: 'Bitte wählen Sie eine Desktop-Quelle zur Aufnahme',
+    selectSourceBtn: 'Desktop-Quelle auswählen',
+    sourceTitle: 'Desktop-Quelle',
+    titlePlaceholder: 'Name der Desktop-Aufnahme eingeben'
+  },
+  llmConfig: {
+    apiKey: 'API Key',
+    apiKeyHint: 'API Key zur Authentifizierung.',
+    apiKeyLink: 'Von OpenRouter erhalten',
+    apiUrl: 'API-Adresse',
+    apiUrlHint: 'Vollständige URL der LLM API',
+    maxTokens: 'Max. Token-Anzahl',
+    maxTokensHint: 'Maximale Länge des generierten Inhalts (0 für unbegrenzt)',
+    model: 'Modellname',
+    modelHint: 'Name des zu verwendenden Modells',
+    subtitle: 'LLM API konfigurieren, um benutzerdefinierte Webseiten zu generieren',
+    temperature: 'Temperature',
+    temperatureHint: 'Steuert die Zufälligkeit der Ausgabe (0-2)',
+    title: 'LLM API-Konfiguration'
+  },
+  monitoring: {
+    actions: 'Aktionen',
+    apiConfigDesc: 'Diese Funktion erfordert eine LLM API (z. B. OpenAI GPT-4 Vision) zur Screenshot-Analyse. Bitte konfigurieren Sie Ihren API-Schlüssel in den Einstellungen.',
+    apiConfigTitle: 'LLM API-Konfiguration erforderlich',
+    checkEvery: 'Alle {interval}s prüfen',
+    checkInterval: 'Prüfintervall',
+    comingSoon: 'Demnächst',
+    condition: 'Überwachungsbedingung',
+    conditionDesc: 'Bedingungsbeschreibung (Auslösebedingung in natürlicher Sprache)',
+    conditionHint: 'AI analysiert Seiten-Screenshots anhand dieser Beschreibung, um zu bestimmen, ob die Bedingung erfüllt ist',
+    conditionLabel: 'Bedingung:',
+    conditionPlaceholder: 'z. B.: Auslösen, wenn die Seite \'nicht vorrätig\' oder \'ausverkauft\' anzeigt',
+    createFirst: 'Erste Regel erstellen',
+    createRule: '+ Neue Regel',
+    desktopNotification: 'Desktop-Benachrichtigung',
+    editRule: 'Überwachungsregel bearbeiten',
+    goConfig: 'Zu Einstellungen →',
+    intervalHint: 'Nicht zu kurz einstellen, um hohe API-Kosten durch häufige Aufrufe zu vermeiden',
+    lastTrigger: 'Zuletzt ausgelöst: {time}',
+    newRule: 'Neue Überwachungsregel',
+    noRules: 'Noch keine Überwachungsregeln',
+    noRulesDesc: 'Regeln erstellen, um Seitenänderungen automatisch zu überwachen',
+    notificationMessage: 'Benachrichtigungstext',
+    notificationPlaceholder: 'z. B.: Produktstatus hat sich geändert!',
+    required: 'Erforderlich',
+    ruleName: 'Regelname',
+    ruleNamePlaceholder: 'z. B.: Preisänderungen erkennen',
+    rulesTitle: 'Seitenüberwachungsregeln',
+    seconds: 'Sekunden',
+    sendEmail: 'E-Mail senden',
+    testScreenshot: '🖼️ Screenshot testen',
+    testVision: '🤖 Visuellen Analyse testen',
+    textMonitor: 'Textüberwachung',
+    textMonitorDesc: 'Textänderungen auf Seiten überwachen (demnächst)',
+    triggerCount: '{count} Mal ausgelöst',
+    visionMonitor: 'Visueller Monitor (LLM)',
+    visionMonitorDesc: 'AI zur Analyse von Seiten-Screenshots verwenden',
+    webhook: 'Webhook-Benachrichtigung'
+  },
+  proxy: {
+    addProxy: 'Proxy hinzufügen',
+    batchDelete: 'Löschen',
+    cipher: 'Verschlüsselungsmethode',
+    editProxy: 'Proxy bearbeiten',
+    enable: 'Aktivieren',
+    enableTfo: 'TCP Fast Open aktivieren',
+    enableUdp: 'UDP aktivieren',
+    host: 'Host',
+    hostPlaceholder: 'Serveradresse',
+    importSubscription: 'Abonnement importieren',
+    name: 'Name',
+    namePlaceholder: 'Proxy-Name',
+    password: 'Passwort',
+    passwordOptional: 'Passwort (optional)',
+    passwordPlaceholder: 'Passwort',
+    pluginOptional: 'Plugin (optional)',
+    pluginOpts: 'Plugin-Optionen (JSON-Format)',
+    portPlaceholder: 'Portnummer',
+    saving: 'Wird gespeichert...',
+    selected: '{count} ausgewählt',
+    ssPassword: 'Shadowsocks-Passwort',
+    title: 'Proxy-Knoten-Verwaltung',
+    type: 'Typ',
+    usernameOptional: 'Benutzername (optional)',
+    usernamePlaceholder: 'Benutzername',
+    uuid: 'UUID'
+  },
+  rearrangeDialog: {
+    columns: 'Spalten',
+    finalSize: 'Endgültige Fenstergröße',
+    itemHeight: 'Fensterhöhe (px)',
+    itemWidth: 'Fensterbreite (px)',
+    layout: 'Layout',
+    preview: 'Vorschau',
+    reset: 'Standard wiederherstellen',
+    scale: 'Fenstervergrößerung',
+    scaleHint: '1.0 ist Originalgröße, 2.0 ist doppelte Größe',
+    title: 'Fenster neu anordnen'
+  },
+  websiteEditExtra: {
+    addDesktopCapture: 'Desktop-Aufnahme hinzufügen',
+    aiCustomPage: 'AI-generierte benutzerdefinierte Seite',
+    basicInfo: 'Grundinformationen',
+    subtitle: 'Anzeigeoptionen, Proxy und erweiterte Funktionen konfigurieren'
   }
 }

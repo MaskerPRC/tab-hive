@@ -66,21 +66,21 @@
       <button
         @click="addWebsiteNode"
         class="toolbar-btn"
-        title="添加网站节点"
+        :title="$t('canvasView.addWebsiteNode')"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <line x1="12" y1="8" x2="12" y2="16"/>
           <line x1="8" y1="12" x2="16" y2="12"/>
         </svg>
-        <span>添加网站</span>
+        <span>{{ $t('canvasView.addWebsite') }}</span>
       </button>
       
       <button
         @click="toggleDrawingMode"
         class="toolbar-btn"
         :class="{ 'active': isDrawingMode }"
-        title="手写绘制模式"
+        :title="$t('canvasView.drawingMode')"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 19l7-7 3 3-7 7-3-3z"/>
@@ -88,29 +88,29 @@
           <path d="M2 2l7.586 7.586"/>
           <circle cx="11" cy="11" r="2"/>
         </svg>
-        <span>{{ isDrawingMode ? '退出绘制' : '手写绘制' }}</span>
+        <span>{{ isDrawingMode ? $t('canvasView.exitDrawing') : $t('canvasView.startDrawing') }}</span>
       </button>
       
       <div v-if="isDrawingMode" class="drawing-controls">
         <label class="color-picker">
-          <span>颜色:</span>
+          <span>{{ $t('canvasView.color') }}</span>
           <input type="color" v-model="drawingColor" />
         </label>
         
         <label class="width-slider">
-          <span>粗细:</span>
+          <span>{{ $t('canvasView.strokeWidth') }}</span>
           <input type="range" v-model="drawingWidth" min="1" max="20" />
         </label>
         
         <button @click="clearDrawing" class="toolbar-btn btn-clear">
-          清除绘制
+          {{ $t('canvasView.clearDrawing') }}
         </button>
       </div>
       
       <button
         @click="fitView"
         class="toolbar-btn"
-        title="适应视图"
+        :title="$t('canvasView.fitToView')"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="5 9 2 12 5 15"/>
@@ -120,7 +120,7 @@
           <line x1="2" y1="12" x2="22" y2="12"/>
           <line x1="12" y1="2" x2="12" y2="22"/>
         </svg>
-        <span>适应视图</span>
+        <span>{{ $t('canvasView.fitToView') }}</span>
       </button>
     </div>
     
@@ -163,6 +163,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -185,6 +186,7 @@ export default {
   },
   emits: ['add-website', 'update-website'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const elements = ref([])
     const isDrawingMode = ref(false)
     const currentPath = ref([])
@@ -221,7 +223,7 @@ export default {
         type: 'website',
         position: { x: 100, y: 100 },
         data: {
-          title: '新网站',
+          title: t('canvasView.newWebsite'),
           url: 'https://www.example.com'
         }
       }

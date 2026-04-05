@@ -1,5 +1,4 @@
 export default {
-  // Comum
   common: {
     confirm: 'Confirmar',
     cancel: 'Cancelar',
@@ -60,21 +59,15 @@ export default {
     unknown: 'Desconhecido',
     untitled: 'Sem título'
   },
-
-  // Nome e título do aplicativo
   app: {
     name: '全视界',
     title: '全视界'
   },
-
-  // Diálogo
   dialog: {
     title: 'Dica',
     confirm: 'Confirmar',
     cancel: 'Cancelar'
   },
-
-  // Diálogo de edição de site
   websiteEdit: {
     addWebsite: 'Adicionar Site',
     editWebsite: 'Editar Site',
@@ -95,34 +88,29 @@ export default {
     confirm: 'Confirmar',
     cancel: 'Cancelar'
   },
-
-  // Informações básicas do site
   websiteBasicInfo: {
     name: 'Nome do Site:',
     url: 'URL do Site:',
     namePlaceholder: 'ex.: Google',
     urlPlaceholder: 'ex.: bbc.com ou https://bbc.com'
   },
-
-  // Seletor de tipo de dispositivo
   deviceType: {
     title: 'Tipo de Dispositivo:',
     desktop: '🖥️ Desktop',
     mobile: '📱 Mobile',
     mobileHint: '💡 A versão móvel converterá automaticamente o domínio para a versão móvel (ex.: www.xxx.com → m.xxx.com) e limitará a largura da viewport para 375px'
   },
-
-  // Configurações de áudio e visual
   audioVisual: {
     audioSettings: 'Configurações de Áudio:',
     muted: '🔇 Silenciar este site',
     mutedHint: '💡 Quando habilitado, este site não reproduzirá nenhum som',
     visualSettings: 'Configurações Visuais:',
     darkMode: '🌙 Tema Escuro',
-    darkModeHint: '💡 Forçar tema escuro para o site, adequado para navegação noturna'
+    darkModeHint: '💡 Forçar tema escuro para o site, adequado para navegação noturna',
+    actionButtonSettings: 'Configurações dos Botões de Ação:',
+    requireModifierForActions: '⌨️ Exigir Tecla Modificadora',
+    requireModifierForActionsHint: '💡 Quando ativado, segure Ctrl ou Alt para exibir os botões de ação, evitando interferência com as operações da página'
   },
-
-  // Seletor de instância de sessão
   sessionInstance: {
     title: 'Instância Compartilhada de Cookie:',
     default: 'Padrão',
@@ -136,15 +124,11 @@ export default {
     defaultInstanceName: 'Instância Compartilhada',
     hint: '💡 Os favos na mesma instância compartilham cookies e armazenamento, as instâncias são completamente isoladas\n• Instância compartilhada padrão: Todos os sites compartilham\n• Nova instância: Pode ser usada para cenários de login com múltiplas contas'
   },
-
-  // Configuração de padding
   padding: {
     title: 'Configuração de Padding (Opcional):',
     unit: 'px',
     hint: '💡 Ajuste a distância entre o conteúdo da página e as bordas do cartão (unidade: pixels)\n• O padrão é 0 (sem padding)\n• Faixa recomendada: 0-50px'
   },
-
-  // Lista de seletores de destino
   targetSelector: {
     title: 'Seletor de Destino (Opcional):',
     placeholder: 'ex.: #main-content ou .video-player',
@@ -152,8 +136,6 @@ export default {
     removeSelector: 'Remover este seletor',
     hint: '💡 Você pode adicionar múltiplos seletores CSS. No modo Grid, apenas os elementos correspondentes são exibidos, outro conteúdo está oculto\n• Múltiplos seletores manterão todos os elementos correspondentes\n• Tela cheia mostra a página completa\n• Deixe vazio para sempre mostrar a página inteira'
   },
-
-  // Configuração de atualização automática
   autoRefresh: {
     title: 'Intervalo de Atualização Automática (Opcional):',
     custom: 'Personalizado:',
@@ -163,8 +145,6 @@ export default {
     days: 'Dias',
     hint: '💡 Defina o intervalo de tempo de atualização automática do iframe\n• Clique em presets para seleção rápida, ou personalize o tempo e a unidade\n• Defina como 0 para desativar a atualização automática\n• Mínimo recomendado: 30 segundos (para evitar atualizações frequentes que afetem o desempenho)\n• Casos de uso: Monitoramento em tempo real, painéis de dados e outras páginas que precisam de atualizações regulares'
   },
-
-  // Painel de configuração
   configPanel: {
     language: 'Idioma',
     languageHint: 'Selecionar idioma da interface',
@@ -196,10 +176,18 @@ export default {
       deleteLayout: 'Tem certeza de que deseja excluir o layout "{name}"?',
       clearConfig: 'Tem certeza de que deseja limpar todas as configurações? Isso excluirá todos os sites e configurações de layout.'
     },
-    unnamed: 'Sem nome'
+    unnamed: 'Sem nome',
+    adBlockEnabled: 'Bloqueio de Anúncios',
+    adBlockEnabledHint: 'Ative para bloquear anúncios automaticamente em todos os sites',
+    customCodeEnabled: 'Código Personalizado',
+    customCodeEnabledHint: 'Ative para exibir o botão executor de scripts nas ações flutuantes',
+    proxy: 'Proxy',
+    proxyHint: 'Gerenciar configurações de proxy',
+    settings: 'Configurações',
+    settingsHint: 'Configurar LLM API e outras opções',
+    showCertificateErrorShadow: 'Sombra Vermelha de Erro de Certificado',
+    showCertificateErrorShadowHint: 'Ative para mostrar sombra vermelha em sites com erro de certificado'
   },
-
-  // Operações de layout
   layout: {
     create: 'Criar Novo Layout',
     createMessage: 'Por favor, insira o nome do novo layout',
@@ -236,13 +224,28 @@ export default {
     shareLayout: 'Compartilhar Layout',
     renameLayout: 'Renomear',
     deleteLayout: 'Excluir',
-    websiteCount: ' sites'
+    websiteCount: ' sites',
+    capturingScreenshot: 'Capturando screenshot...',
+    exportFailed: 'Falha na exportação',
+    exportLayout: 'Exportar Layout',
+    exportSuccess: 'Exportado com sucesso!',
+    exportWithScreenshotConfirm: 'Deseja capturar uma screenshot da página atual e incorporar os dados do layout?\n\nA screenshot será usada como imagem de exportação, e os dados JSON do layout serão salvos nos metadados da imagem.',
+    importFailed: 'Falha na importação',
+    importLayoutFromImageConfirm: 'Dados de layout detectados na imagem ("{name}").\n\nDeseja importar este layout?',
+    importSuccess: 'Importado com sucesso!',
+    importedLayout: 'Layout Importado',
+    invalidLayoutData: 'Dados de layout inválidos',
+    preview: 'Pré-visualizar',
+    screenshotCopied: 'Screenshot copiada para a área de transferência!',
+    screenshotDownloaded: 'Screenshot baixada!',
+    shareFailed: 'Falha no compartilhamento',
+    shareSuccess: 'Compartilhado com sucesso!',
+    shareWithScreenshotConfirm: 'Deseja capturar uma screenshot da página atual e incorporar os dados do layout?\n\nA screenshot será usada como imagem de compartilhamento, e os dados JSON do layout serão salvos nos metadados da imagem.',
+    sharedLayoutsDesc: 'Navegue e importe configurações de layout compartilhadas do Tab Hive',
+    sortHot: 'Mais Baixados',
+    sortLatest: 'Mais Recentes',
+    unnamedLayout: 'Layout Sem Nome'
   },
-
-  // Modal de download
-
-
-  // Notificação de atualização
   updateNotification: {
     title: 'Nova Versão Disponível',
     currentVersion: 'Versão Atual:',
@@ -260,8 +263,6 @@ export default {
     later: 'Lembrar Mais Tarde',
     close: 'Fechar'
   },
-
-  // Cartão do site
   websiteCard: {
     fullscreen: 'Tela Cheia',
     edit: 'Editar',
@@ -270,8 +271,6 @@ export default {
     refresh: 'Atualizar',
     toggleMute: 'Alternar Silêncio'
   },
-
-  // Seletor de elemento
   elementSelector: {
     title: 'Seletor de Elemento',
     start: 'Iniciar Seleção',
@@ -280,75 +279,6 @@ export default {
     confirm: 'Confirmar Seleção',
     cancel: 'Cancelar'
   },
-
-  // Barra de ferramentas do seletor
-  selectorToolbar: {
-    startSelect: 'Iniciar Seleção',
-    stopSelect: 'Parar Seleção',
-    confirm: 'Confirmar',
-    cancel: 'Cancelar'
-  },
-
-  // Diálogo de modo de importação
-  importMode: {
-    title: 'Selecionar Modo de Importação',
-    description: 'Como você gostaria de importar este layout?',
-    realtimeSync: {
-      title: 'Importação de Sincronização em Tempo Real',
-      description: 'Manter sincronizado com o modelo original, sincronizar atualizações manualmente quando o autor atualizar o modelo',
-      note: '⚠️ Se você modificar o layout, suas alterações serão sobrescritas ao sincronizar atualizações'
-    },
-    copy: {
-      title: 'Importação de Cópia',
-      description: 'Criar uma cópia independente que pode ser modificada livremente',
-      note: '💡 Não é afetado pelas atualizações do modelo original'
-    },
-    cancel: 'Cancelar'
-  },
-
-  // Gerenciador de instâncias de sessão
-  sessionInstanceManager: {
-    title: 'Gerenciamento de Instâncias Compartilhadas de Cookie',
-    whatIs: 'O que é uma Instância Compartilhada de Cookie?',
-    description: 'Os favos na mesma instância compartilham cookies, LocalStorage e outros armazenamentos. As instâncias são completamente isoladas umas das outras.',
-    useCases: 'Casos de Uso:',
-    useCasesDesc: 'Login com múltiplas contas, isolamento de ambiente de teste, etc.',
-    rename: 'Renomear',
-    delete: 'Excluir',
-    deleteDisabled: 'Há favos usando esta instância, não é possível excluir',
-    deleteConfirm: 'Tem certeza de que deseja excluir a instância "{name}"?',
-    create: 'Nova Instância',
-    close: 'Fechar',
-    usageCount: ' favos'
-  },
-
-  // Presets de atualização automática
-  autoRefreshPresets: {
-    noRefresh: 'Sem Atualização',
-    thirtySeconds: '30 Segundos',
-    oneMinute: '1 Minuto',
-    fiveMinutes: '5 Minutos',
-    thirtyMinutes: '30 Minutos',
-    oneHour: '1 Hora',
-    oneDay: '1 Dia'
-  },
-
-  // Ações flutuantes
-  floatingActions: {
-    refresh: 'Atualizar Página',
-    goBack: 'Voltar',
-    goForward: 'Avançar',
-    mute: 'Silenciar',
-    unmute: 'Ativar Som',
-    copy: 'Copiar Favo',
-    script: 'Executor de Script',
-    devtools: 'Ferramentas de Desenvolvimento',
-    edit: 'Editar Link',
-    fullscreen: 'Visualização em Tela Cheia',
-    remove: 'Remover Site'
-  },
-
-  // Barra de ferramentas do seletor
   selectorToolbar: {
     title: 'Seletor de Elemento',
     dragHandle: 'Arrastar para mover painel',
@@ -386,23 +316,79 @@ export default {
     multiSelectModeHint: 'Modo de seleção múltipla: Clique em elementos para adicionar à lista | Pressione ESC para cancelar',
     multiSelectModeSelected: 'Modo de seleção múltipla: {count} elementos selecionados | Clique em "Adicionar à Lista" para continuar | "Confirmar Seleção" para salvar todos',
     singleSelectModeHint: 'Clique em elementos para selecionar | Pressione ESC para cancelar',
-    confirmSelectionHint: 'Você pode continuar ajustando a seleção | Clique em "Confirmar Seleção" para salvar | Pressione ESC para cancelar'
+    confirmSelectionHint: 'Você pode continuar ajustando a seleção | Clique em "Confirmar Seleção" para salvar | Pressione ESC para cancelar',
+    classList: 'Lista de Classes',
+    copySelector: 'Copiar Seletor',
+    currentPath: 'Caminho Atual',
+    depth: 'Profundidade',
+    dimensions: 'Dimensões',
+    elementCapture: 'Captura de Elemento',
+    shiftLockHint: 'Segure Shift para travar a área de seleção',
+    tagName: 'Nome da Tag'
   },
-
-  // Barra de tela cheia
+  importMode: {
+    title: 'Selecionar Modo de Importação',
+    description: 'Como você gostaria de importar este layout?',
+    realtimeSync: {
+      title: 'Importação de Sincronização em Tempo Real',
+      description: 'Manter sincronizado com o modelo original, sincronizar atualizações manualmente quando o autor atualizar o modelo',
+      note: '⚠️ Se você modificar o layout, suas alterações serão sobrescritas ao sincronizar atualizações'
+    },
+    copy: {
+      title: 'Importação de Cópia',
+      description: 'Criar uma cópia independente que pode ser modificada livremente',
+      note: '💡 Não é afetado pelas atualizações do modelo original'
+    },
+    cancel: 'Cancelar'
+  },
+  sessionInstanceManager: {
+    title: 'Gerenciamento de Instâncias Compartilhadas de Cookie',
+    whatIs: 'O que é uma Instância Compartilhada de Cookie?',
+    description: 'Os favos na mesma instância compartilham cookies, LocalStorage e outros armazenamentos. As instâncias são completamente isoladas umas das outras.',
+    useCases: 'Casos de Uso:',
+    useCasesDesc: 'Login com múltiplas contas, isolamento de ambiente de teste, etc.',
+    rename: 'Renomear',
+    delete: 'Excluir',
+    deleteDisabled: 'Há favos usando esta instância, não é possível excluir',
+    deleteConfirm: 'Tem certeza de que deseja excluir a instância "{name}"?',
+    create: 'Nova Instância',
+    close: 'Fechar',
+    usageCount: ' favos'
+  },
+  autoRefreshPresets: {
+    noRefresh: 'Sem Atualização',
+    thirtySeconds: '30 Segundos',
+    oneMinute: '1 Minuto',
+    fiveMinutes: '5 Minutos',
+    thirtyMinutes: '30 Minutos',
+    oneHour: '1 Hora',
+    oneDay: '1 Dia'
+  },
+  floatingActions: {
+    refresh: 'Atualizar Página',
+    goBack: 'Voltar',
+    goForward: 'Avançar',
+    mute: 'Silenciar',
+    unmute: 'Ativar Som',
+    copy: 'Copiar Favo',
+    script: 'Executor de Script',
+    devtools: 'Ferramentas de Desenvolvimento',
+    edit: 'Editar Link',
+    fullscreen: 'Visualização em Tela Cheia',
+    remove: 'Remover Site',
+    importCookies: 'Importar Cookies'
+  },
   fullscreenBar: {
     selectElement: 'Selecionar Elemento',
     refresh: 'Atualizar',
-    exitFullscreen: 'Sair da Tela Cheia'
+    exitFullscreen: 'Sair da Tela Cheia',
+    goBack: 'Voltar',
+    goForward: 'Avançar'
   },
-
-  // Dica de mudança de URL
   urlChangeHint: {
     useCurrentUrl: 'Usar URL da página atualmente exibida',
     useThisPage: 'Usar esta página'
   },
-
-  // Temporizador de atualização
   refreshTimer: {
     day: 'd',
     hour: 'h',
@@ -410,8 +396,88 @@ export default {
     minute: 'm',
     seconds: 's'
   },
-
-  // Outros
+  basicAuth: {
+    title: 'Autenticação necessária',
+    username: 'Nome de usuário',
+    password: 'Senha',
+    login: 'Entrar'
+  },
+  externalUrl: {
+    title: 'Link externo'
+  },
+  contentScript: {
+    title: 'Executor de scripts de conteúdo',
+    tabs: {
+      highlight: 'Destaque',
+      extract: 'Extrair',
+      actions: 'Ações',
+      custom: 'Personalizado'
+    },
+    highlight: {
+      title: 'Destaque de elementos',
+      selectors: 'Seletores (um por linha)',
+      color: 'Cor do destaque',
+      duration: 'Duração (ms)',
+      permanentHint: '0 = destaque permanente',
+      enablePulse: 'Ativar animação de pulso',
+      apply: 'Aplicar destaque',
+      clear: 'Limpar destaques',
+      executing: 'Executando...',
+      success: '{count} elementos destacados',
+      failed: 'Falha no destaque: {error}',
+      cleared: 'Todos os destaques limpos',
+      clearFailed: 'Falha ao limpar: {error}'
+    },
+    extract: {
+      title: 'Extração de dados',
+      selectors: 'Seletores (um por linha)',
+      extractText: 'Extrair texto',
+      extractHtml: 'Extrair HTML',
+      attributes: 'Lista de atributos (separados por vírgula)',
+      styles: 'Atributos de estilo (separados por vírgula)',
+      extractBtn: 'Extrair dados',
+      exportJson: 'Exportar JSON',
+      executing: 'Extraindo...',
+      results: 'Resultados da extração',
+      items: '{count} itens',
+      success: '{count} dados extraídos',
+      failed: 'Falha na extração: {error}'
+    },
+    actions: {
+      title: 'Operações em lote',
+      selectors: 'Seletores (um por linha)',
+      actionType: 'Tipo de ação',
+      click: 'Clicar',
+      focus: 'Focar',
+      scrollIntoView: 'Rolar para a vista',
+      hide: 'Ocultar',
+      show: 'Mostrar',
+      remove: 'Remover',
+      execute: 'Executar ação',
+      executing: 'Executando...',
+      results: 'Resultados da ação',
+      success: 'Sucesso: {count}',
+      failed: 'Falha: {count}',
+      viewFailedDetails: 'Ver detalhes das falhas',
+      completeSuccess: 'Ação concluída\nSucesso: {success}\nFalha: {failed}',
+      completeFailed: 'Ação falhou: {error}'
+    },
+    custom: {
+      title: 'Script personalizado',
+      codeLabel: 'Código JavaScript',
+      execute: 'Executar script',
+      executing: 'Executando...',
+      results: 'Resultados da execução'
+    },
+    history: {
+      title: 'Histórico de execução',
+      clear: 'Limpar histórico',
+      noResult: 'Sem resultado',
+      executionFailed: 'Execução falhou',
+      noReturnValue: 'Sem valor de retorno',
+      emptyResult: 'Resultado vazio'
+    }
+  },
   other: {
     gridView: 'Visualização em Grade',
     canvasView: 'Visualização em Canvas',
@@ -442,6 +508,206 @@ export default {
     descending: 'Decrescente',
     byName: 'Por Nome',
     byDate: 'Por Data',
-    bySize: 'Por Tamanho'
+    bySize: 'Por Tamanho',
+    certificateError: 'Erro de Certificado',
+    certificateErrorDescription: 'Este site usa um certificado SSL inválido e não pode ser conectado com segurança.',
+    certificateErrorHint: 'Isso geralmente ocorre porque um certificado autoassinado é usado ou o certificado expirou.',
+    ignoreCertificateError: 'Ignorar Erro',
+    reload: 'Recarregar'
+  },
+  apiSettings: {
+    apiExecute: 'Execução JS em múltiplas etapas',
+    apiKeyHeader: 'O cabeçalho da requisição deve incluir',
+    apiListWorkspaces: 'Listar espaços de trabalho e páginas',
+    apiTraffic: 'Obter tráfego de rede',
+    bindAddress: 'Endereço de Bind',
+    copy: 'Copiar',
+    enable: 'Ativar',
+    externalApi: 'API de Acesso Externo:',
+    hookUrlHint: 'As requisições de rede da página serão encaminhadas como POST JSON para este endereço. Você pode definir uma Hook URL independente para páginas individuais na edição do site.',
+    networkHook: 'Hook de Rede Global (Encaminhamento Bypass)',
+    port: 'Porta',
+    regenerate: 'Regenerar',
+    running: 'Em execução',
+    server: 'Servidor API',
+    showHide: 'Mostrar/Ocultar',
+    stopped: 'Parado',
+    title: 'Configurações do Serviço API',
+    usageGuide: 'Guia de Uso'
+  },
+  canvasContextMenu: {
+    addWebsite: 'Adicionar Site',
+    aiCustomPage: 'AI Gerar Página Personalizada'
+  },
+  canvasControls: {
+    addWebsite: 'Adicionar Janela',
+    autoArrange: 'Ajustar à Tela',
+    clearDrawings: 'Limpar Desenhos',
+    drawingMode: 'Modo de Desenho',
+    drawingSettings: 'Configurações de Desenho',
+    fitToScreen: 'Ajustar à Tela',
+    rearrange: 'Reorganizar',
+    resetZoom: 'Redefinir Zoom (100%)',
+    zoomIn: 'Ampliar',
+    zoomOut: 'Reduzir'
+  },
+  canvasControlsPanel: {
+    brushTool: 'Ferramenta Pincel',
+    drawColor: 'Cor do Desenho',
+    imageTool: 'Ferramenta de Imagem',
+    strokeWidth: 'Espessura do Traço',
+    textTool: 'Ferramenta de Texto'
+  },
+  canvasView: {
+    addWebsite: 'Adicionar Site',
+    addWebsiteNode: 'Adicionar nó de site',
+    clearDrawing: 'Limpar Desenho',
+    color: 'Cor:',
+    drawingMode: 'Modo de desenho à mão',
+    exitDrawing: 'Sair do Desenho',
+    fitToView: 'Ajustar à Visualização',
+    newWebsite: 'Novo Site',
+    startDrawing: 'Desenhar',
+    strokeWidth: 'Espessura:'
+  },
+  configPanelExtra: {
+    collapseSidebar: 'Recolher Barra Lateral',
+    currentViewSettings: 'Configurações da Visualização Atual',
+    logoAlt: 'Logo do Tab Hive'
+  },
+  customHtml: {
+    configError: 'Configure o LLM API nas configurações primeiro',
+    defaultTitle: 'Página Web Personalizada',
+    generateBtn: 'Gerar Página',
+    generateFailed: 'Falha na geração',
+    generating: 'Gerando código HTML, aguarde...',
+    generatingBtn: 'Gerando...',
+    requirement: 'Descrição dos Requisitos',
+    requirementHint: 'Descreva em detalhes os recursos e estilos da página web que você deseja',
+    requirementPlaceholder: 'Ex.: Criar uma lista de tarefas com suporte a adicionar, excluir e marcar como concluído...',
+    subtitle: 'Descreva suas necessidades, a AI gerará o código da página web para você',
+    title: 'Criar Página Web Personalizada'
+  },
+  desktopCapture: {
+    addCapture: 'Adicionar Captura de Tela',
+    appWindow: '🪟 Janela do Aplicativo',
+    basicInfo: 'Informações Básicas',
+    captureOptions: 'Opções de Captura',
+    captureTitle: 'Nome',
+    changeSource: 'Alterar Fonte',
+    connecting: 'Conectando à fonte de desktop...',
+    displaySettings: 'Configurações de Exibição',
+    editCapture: 'Editar Captura de Desktop',
+    electronOnly: 'A captura de desktop está disponível apenas no ambiente Electron',
+    fitScreen: 'Ajustar ao tamanho da tela',
+    fullScreen: '🖥️ Tela Inteira',
+    mute: 'Mudo',
+    noSource: 'Nenhuma fonte de desktop especificada',
+    padding: 'Preenchimento',
+    readonlyMode: '📺 Modo somente leitura (interação não suportada)',
+    selectSource: 'Selecione uma fonte de desktop para capturar',
+    selectSourceBtn: 'Selecionar Fonte de Desktop',
+    sourceTitle: 'Fonte de Desktop',
+    titlePlaceholder: 'Digite o nome da captura de desktop'
+  },
+  llmConfig: {
+    apiKey: 'API Key',
+    apiKeyHint: 'API Key para autenticação.',
+    apiKeyLink: 'Obter do OpenRouter',
+    apiUrl: 'URL da API',
+    apiUrlHint: 'URL completa da LLM API',
+    maxTokens: 'Máximo de Tokens',
+    maxTokensHint: 'Comprimento máximo do conteúdo gerado (0 para ilimitado)',
+    model: 'Nome do Modelo',
+    modelHint: 'Nome do modelo a ser utilizado',
+    subtitle: 'Configure a LLM API para gerar páginas web personalizadas',
+    temperature: 'Temperature',
+    temperatureHint: 'Controla a aleatoriedade da saída (0-2)',
+    title: 'Configuração da LLM API'
+  },
+  monitoring: {
+    actions: 'Ações',
+    apiConfigDesc: 'Este recurso requer LLM API (ex.: OpenAI GPT-4 Vision) para analisar screenshots. Configure sua chave de API nas configurações.',
+    apiConfigTitle: 'Configuração de LLM API Necessária',
+    checkEvery: 'Verificar a cada {interval}s',
+    checkInterval: 'Intervalo de Verificação',
+    comingSoon: 'Em breve',
+    condition: 'Condição de Monitoramento',
+    conditionDesc: 'Descrição da condição (descreva a condição de ativação em linguagem natural)',
+    conditionHint: 'A AI analisará screenshots da página com base nesta descrição para determinar se a condição foi atendida',
+    conditionLabel: 'Condição:',
+    conditionPlaceholder: 'Ex.: Ativar quando a página mostrar \'esgotado\' ou \'sold out\'',
+    createFirst: 'Criar Primeira Regra',
+    createRule: '+ Nova Regra',
+    desktopNotification: 'Notificação de Desktop',
+    editRule: 'Editar Regra de Monitoramento',
+    goConfig: 'Ir para Configurações →',
+    intervalHint: 'Evite definir intervalos muito curtos para prevenir altos custos com chamadas frequentes à API',
+    lastTrigger: 'Último acionamento: {time}',
+    newRule: 'Nova Regra de Monitoramento',
+    noRules: 'Nenhuma regra de monitoramento ainda',
+    noRulesDesc: 'Crie regras para monitorar automaticamente mudanças na página',
+    notificationMessage: 'Mensagem de Notificação',
+    notificationPlaceholder: 'Ex.: O status do produto mudou!',
+    required: 'Obrigatório',
+    ruleName: 'Nome da Regra',
+    ruleNamePlaceholder: 'Ex.: Detectar mudanças de preço',
+    rulesTitle: 'Regras de Monitoramento de Página',
+    seconds: 'segundos',
+    sendEmail: 'Enviar E-mail',
+    testScreenshot: '🖼️ Testar Screenshot',
+    testVision: '🤖 Testar Análise Visual',
+    textMonitor: 'Monitor de Texto',
+    textMonitorDesc: 'Monitorar mudanças de texto na página (em breve)',
+    triggerCount: 'Acionado {count} vezes',
+    visionMonitor: 'Monitor Visual (LLM)',
+    visionMonitorDesc: 'Usar AI para analisar screenshots da página',
+    webhook: 'Notificação Webhook'
+  },
+  proxy: {
+    addProxy: 'Adicionar Proxy',
+    batchDelete: 'Excluir',
+    cipher: 'Método de Criptografia',
+    editProxy: 'Editar Proxy',
+    enable: 'Ativar',
+    enableTfo: 'Ativar TCP Fast Open',
+    enableUdp: 'Ativar UDP',
+    host: 'Host',
+    hostPlaceholder: 'Endereço do servidor',
+    importSubscription: 'Importar Assinatura',
+    name: 'Nome',
+    namePlaceholder: 'Nome do proxy',
+    password: 'Senha',
+    passwordOptional: 'Senha (opcional)',
+    passwordPlaceholder: 'Senha',
+    pluginOptional: 'Plugin (opcional)',
+    pluginOpts: 'Opções do Plugin (formato JSON)',
+    portPlaceholder: 'Número da porta',
+    saving: 'Salvando...',
+    selected: '{count} selecionado(s)',
+    ssPassword: 'Senha do Shadowsocks',
+    title: 'Gerenciamento de Nós Proxy',
+    type: 'Tipo',
+    usernameOptional: 'Nome de usuário (opcional)',
+    usernamePlaceholder: 'Nome de usuário',
+    uuid: 'UUID'
+  },
+  rearrangeDialog: {
+    columns: 'Colunas',
+    finalSize: 'Tamanho Final da Janela',
+    itemHeight: 'Altura da Janela (px)',
+    itemWidth: 'Largura da Janela (px)',
+    layout: 'Layout',
+    preview: 'Pré-visualizar',
+    reset: 'Redefinir Padrão',
+    scale: 'Escala da Janela',
+    scaleHint: '1.0 é o tamanho original, 2.0 é o dobro',
+    title: 'Reorganizar Janelas'
+  },
+  websiteEditExtra: {
+    addDesktopCapture: 'Adicionar Captura de Desktop',
+    aiCustomPage: 'AI Gerar Página Personalizada',
+    basicInfo: 'Informações Básicas',
+    subtitle: 'Configurar opções de exibição, proxy e recursos avançados'
   }
 }

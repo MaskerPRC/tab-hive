@@ -1,5 +1,4 @@
 export default {
-  // সাধারণ
   common: {
     confirm: 'নিশ্চিত করুন',
     cancel: 'বাতিল',
@@ -60,21 +59,15 @@ export default {
     unknown: 'অজানা',
     untitled: 'শিরোনামহীন'
   },
-
-  // অ্যাপ শিরোনাম এবং নাম
   app: {
     name: '全视界',
     title: '全视界'
   },
-
-  // ডায়ালগ
   dialog: {
     title: 'টিপ',
     confirm: 'নিশ্চিত করুন',
     cancel: 'বাতিল'
   },
-
-  // ওয়েবসাইট সম্পাদনা ডায়ালগ
   websiteEdit: {
     addWebsite: 'ওয়েবসাইট যোগ করুন',
     editWebsite: 'ওয়েবসাইট সম্পাদনা করুন',
@@ -95,34 +88,29 @@ export default {
     confirm: 'নিশ্চিত করুন',
     cancel: 'বাতিল'
   },
-
-  // ওয়েবসাইট প্রাথমিক তথ্য
   websiteBasicInfo: {
     name: 'ওয়েবসাইটের নাম:',
     url: 'ওয়েবসাইট URL:',
     namePlaceholder: 'যেমন: Google',
     urlPlaceholder: 'যেমন: bbc.com বা https://bbc.com'
   },
-
-  // ডিভাইস টাইপ সিলেক্টর
   deviceType: {
     title: 'ডিভাইসের ধরন:',
     desktop: '🖥️ ডেস্কটপ',
     mobile: '📱 মোবাইল',
     mobileHint: '💡 মোবাইল সংস্করণ স্বয়ংক্রিয়ভাবে ডোমেইনকে মোবাইল সংস্করণে রূপান্তর করবে (যেমন: www.xxx.com → m.xxx.com) এবং ভিউপোর্টের প্রস্থ 375px এ সীমাবদ্ধ করবে'
   },
-
-  // অডিও ভিজ্যুয়াল সেটিংস
   audioVisual: {
     audioSettings: 'অডিও সেটিংস:',
     muted: '🔇 এই ওয়েবসাইট মুট করুন',
     mutedHint: '💡 সক্রিয় হলে, এই ওয়েবসাইট কোনো শব্দ চালাবে না',
     visualSettings: 'ভিজ্যুয়াল সেটিংস:',
     darkMode: '🌙 ডার্ক থিম',
-    darkModeHint: '💡 ওয়েবসাইটের জন্য ডার্ক থিম জোর করুন, রাতের ব্রাউজিংয়ের জন্য উপযুক্ত'
+    darkModeHint: '💡 ওয়েবসাইটের জন্য ডার্ক থিম জোর করুন, রাতের ব্রাউজিংয়ের জন্য উপযুক্ত',
+    actionButtonSettings: 'অ্যাকশন বাটন সেটিংস:',
+    requireModifierForActions: '⌨️ মডিফায়ার কী প্রয়োজন',
+    requireModifierForActionsHint: '💡 সক্রিয় করলে, অ্যাকশন বাটন দেখাতে Ctrl বা Alt চেপে ধরুন, ওয়েবপেজ অপারেশনে হস্তক্ষেপ এড়াতে'
   },
-
-  // সেশন ইনস্ট্যান্স সিলেক্টর
   sessionInstance: {
     title: 'Cookie ভাগ করা ইনস্ট্যান্স:',
     default: 'ডিফল্ট',
@@ -136,15 +124,11 @@ export default {
     defaultInstanceName: 'ভাগ করা ইনস্ট্যান্স',
     hint: '💡 একই ইনস্ট্যান্সের হানি কম্বস cookies এবং স্টোরেজ ভাগ করে, ইনস্ট্যান্সগুলি সম্পূর্ণরূপে বিচ্ছিন্ন\n• ডিফল্ট ভাগ করা ইনস্ট্যান্স: সমস্ত ওয়েবসাইট ভাগ করে\n• নতুন ইনস্ট্যান্স: একাধিক অ্যাকাউন্ট লগইন পরিস্থিতিতে ব্যবহার করা যেতে পারে'
   },
-
-  // প্যাডিং কনফিগ
   padding: {
     title: 'প্যাডিং কনফিগ (ঐচ্ছিক):',
     unit: 'px',
     hint: '💡 ওয়েবপৃষ্ঠা সামগ্রী এবং কার্ড প্রান্তের মধ্যে দূরত্ব সামঞ্জস্য করুন (ইউনিট: পিক্সেল)\n• ডিফল্ট হল 0 (কোনো প্যাডিং নেই)\n• সুপারিশকৃত পরিসীমা: 0-50px'
   },
-
-  // টার্গেট সিলেক্টর তালিকা
   targetSelector: {
     title: 'টার্গেট সিলেক্টর (ঐচ্ছিক):',
     placeholder: 'যেমন: #main-content বা .video-player',
@@ -152,8 +136,6 @@ export default {
     removeSelector: 'এই সিলেক্টর সরান',
     hint: '💡 আপনি একাধিক CSS সিলেক্টর যোগ করতে পারেন। গ্রিড মোডে, শুধুমাত্র মিলানো উপাদানগুলি প্রদর্শিত হয়, অন্যান্য সামগ্রী লুকানো থাকে\n• একাধিক সিলেক্টর সমস্ত মিলানো উপাদান রাখবে\n• ফুলস্ক্রিন সম্পূর্ণ পৃষ্ঠা দেখায়\n• খালি রাখলে সর্বদা সম্পূর্ণ পৃষ্ঠা দেখাবে'
   },
-
-  // অটো রিফ্রেশ কনফিগ
   autoRefresh: {
     title: 'অটো রিফ্রেশ ব্যবধান (ঐচ্ছিক):',
     custom: 'কাস্টম:',
@@ -163,8 +145,6 @@ export default {
     days: 'দিন',
     hint: '💡 iframe অটো-রিফ্রেশ সময় ব্যবধান সেট করুন\n• দ্রুত নির্বাচনের জন্য প্রিসেটে ক্লিক করুন, বা সময় এবং ইউনিট কাস্টমাইজ করুন\n• অটো-রিফ্রেশ নিষ্ক্রিয় করতে 0 এ সেট করুন\n• সুপারিশকৃত সর্বনিম্ন: 30 সেকেন্ড (পারফরম্যান্স প্রভাবিত করা ঘন ঘন রিফ্রেশ এড়াতে)\n• ব্যবহারের ক্ষেত্রে: রিয়েল-টাইম মনিটরিং, ডেটা ড্যাশবোর্ড এবং অন্যান্য পৃষ্ঠা যেগুলির নিয়মিত আপডেট প্রয়োজন'
   },
-
-  // কনফিগ প্যানেল
   configPanel: {
     language: 'ভাষা',
     languageHint: 'ইন্টারফেস ভাষা নির্বাচন করুন',
@@ -196,10 +176,18 @@ export default {
       deleteLayout: 'আপনি কি নিশ্চিত যে আপনি লেআউট "{name}" মুছতে চান?',
       clearConfig: 'আপনি কি নিশ্চিত যে আপনি সমস্ত কনফিগ সাফ করতে চান? এটি সমস্ত ওয়েবসাইট এবং লেআউট সেটিংস মুছে ফেলবে।'
     },
-    unnamed: 'নামহীন'
+    unnamed: 'নামহীন',
+    adBlockEnabled: 'অ্যাড ব্লক',
+    adBlockEnabledHint: 'সক্রিয় করলে সব ওয়েবসাইটে স্বয়ংক্রিয়ভাবে বিজ্ঞাপন ব্লক হবে',
+    customCodeEnabled: 'কাস্টম কোড',
+    customCodeEnabledHint: 'ফ্লোটিং অ্যাকশনে স্ক্রিপ্ট এক্সিকিউটর বাটন দেখাতে সক্রিয় করুন',
+    proxy: 'প্রক্সি',
+    proxyHint: 'প্রক্সি সেটিংস পরিচালনা',
+    settings: 'সেটিংস',
+    settingsHint: 'LLM API ও অন্যান্য সেটিংস কনফিগার করুন',
+    showCertificateErrorShadow: 'সার্টিফিকেট ত্রুটি লাল ছায়া',
+    showCertificateErrorShadowHint: 'সার্টিফিকেট ত্রুটিযুক্ত ওয়েবসাইটে লাল ছায়া দেখাতে সক্রিয় করুন'
   },
-
-  // লেআউট অপারেশন
   layout: {
     create: 'নতুন লেআউট তৈরি করুন',
     createMessage: 'অনুগ্রহ করে নতুন লেআউটের নাম লিখুন',
@@ -236,13 +224,28 @@ export default {
     shareLayout: 'লেআউট শেয়ার করুন',
     renameLayout: 'নাম পরিবর্তন',
     deleteLayout: 'মুছুন',
-    websiteCount: ' ওয়েবসাইট'
+    websiteCount: ' ওয়েবসাইট',
+    capturingScreenshot: 'স্ক্রিনশট নেওয়া হচ্ছে...',
+    exportFailed: 'রপ্তানি ব্যর্থ',
+    exportLayout: 'লেআউট রপ্তানি',
+    exportSuccess: 'সফলভাবে রপ্তানি হয়েছে!',
+    exportWithScreenshotConfirm: 'বর্তমান পেজের স্ক্রিনশট নিয়ে লেআউট ডেটা এম্বেড করতে চান?\n\nস্ক্রিনশটটি রপ্তানি ছবি হিসেবে ব্যবহৃত হবে এবং লেআউটের JSON ডেটা ছবির মেটাডেটায় সংরক্ষিত হবে।',
+    importFailed: 'আমদানি ব্যর্থ',
+    importLayoutFromImageConfirm: 'ছবিতে লেআউট ডেটা পাওয়া গেছে ("{name}")।\n\nএই লেআউট আমদানি করতে চান?',
+    importSuccess: 'সফলভাবে আমদানি হয়েছে!',
+    importedLayout: 'আমদানিকৃত লেআউট',
+    invalidLayoutData: 'অবৈধ লেআউট ডেটা',
+    preview: 'প্রিভিউ',
+    screenshotCopied: 'স্ক্রিনশট ক্লিপবোর্ডে কপি হয়েছে!',
+    screenshotDownloaded: 'স্ক্রিনশট ডাউনলোড হয়েছে!',
+    shareFailed: 'শেয়ার ব্যর্থ',
+    shareSuccess: 'সফলভাবে শেয়ার হয়েছে!',
+    shareWithScreenshotConfirm: 'বর্তমান পেজের স্ক্রিনশট নিয়ে লেআউট ডেটা এম্বেড করতে চান?\n\nস্ক্রিনশটটি শেয়ার ছবি হিসেবে ব্যবহৃত হবে এবং লেআউটের JSON ডেটা ছবির মেটাডেটায় সংরক্ষিত হবে।',
+    sharedLayoutsDesc: 'শেয়ার করা Tab Hive লেআউট কনফিগারেশন ব্রাউজ ও আমদানি করুন',
+    sortHot: 'সর্বাধিক ডাউনলোড',
+    sortLatest: 'সর্বশেষ',
+    unnamedLayout: 'নামহীন লেআউট'
   },
-
-  // ডাউনলোড মডাল
-
-
-  // আপডেট বিজ্ঞপ্তি
   updateNotification: {
     title: 'নতুন সংস্করণ উপলব্ধ',
     currentVersion: 'বর্তমান সংস্করণ:',
@@ -260,8 +263,6 @@ export default {
     later: 'পরে মনে করিয়ে দিন',
     close: 'বন্ধ'
   },
-
-  // ওয়েবসাইট কার্ড
   websiteCard: {
     fullscreen: 'ফুলস্ক্রিন',
     edit: 'সম্পাদনা',
@@ -270,8 +271,6 @@ export default {
     refresh: 'রিফ্রেশ',
     toggleMute: 'মুট টগল করুন'
   },
-
-  // উপাদান সিলেক্টর
   elementSelector: {
     title: 'উপাদান সিলেক্টর',
     start: 'নির্বাচন শুরু করুন',
@@ -280,75 +279,6 @@ export default {
     confirm: 'নির্বাচন নিশ্চিত করুন',
     cancel: 'বাতিল'
   },
-
-  // সিলেক্টর টুলবার
-  selectorToolbar: {
-    startSelect: 'নির্বাচন শুরু করুন',
-    stopSelect: 'নির্বাচন বন্ধ করুন',
-    confirm: 'নিশ্চিত করুন',
-    cancel: 'বাতিল'
-  },
-
-  // ইম্পোর্ট মোড ডায়ালগ
-  importMode: {
-    title: 'ইম্পোর্ট মোড নির্বাচন করুন',
-    description: 'আপনি এই লেআউটটি কীভাবে ইম্পোর্ট করতে চান?',
-    realtimeSync: {
-      title: 'রিয়েল-টাইম সিঙ্ক ইম্পোর্ট',
-      description: 'মূল টেমপ্লেটের সাথে সিঙ্কে থাকুন, লেখক টেমপ্লেট আপডেট করার সময় ম্যানুয়ালি আপডেট সিঙ্ক করুন',
-      note: '⚠️ আপনি যদি লেআউট পরিবর্তন করেন, সিঙ্ক আপডেট করার সময় আপনার পরিবর্তনগুলি ওভাররাইট করা হবে'
-    },
-    copy: {
-      title: 'কপি ইম্পোর্ট',
-      description: 'একটি স্বাধীন কপি তৈরি করুন যা অবাধে পরিবর্তন করা যেতে পারে',
-      note: '💡 মূল টেমপ্লেট আপডেট দ্বারা প্রভাবিত হয় না'
-    },
-    cancel: 'বাতিল'
-  },
-
-  // সেশন ইনস্ট্যান্স ম্যানেজার
-  sessionInstanceManager: {
-    title: 'Cookie ভাগ করা ইনস্ট্যান্স ব্যবস্থাপনা',
-    whatIs: 'Cookie ভাগ করা ইনস্ট্যান্স কী?',
-    description: 'একই ইনস্ট্যান্সের হানি কম্বস cookies, LocalStorage এবং অন্যান্য স্টোরেজ ভাগ করে। ইনস্ট্যান্সগুলি একে অপরের থেকে সম্পূর্ণরূপে বিচ্ছিন্ন।',
-    useCases: 'ব্যবহারের ক্ষেত্রে:',
-    useCasesDesc: 'একাধিক অ্যাকাউন্ট লগইন, পরীক্ষার পরিবেশ বিচ্ছিন্নতা, ইত্যাদি।',
-    rename: 'নাম পরিবর্তন',
-    delete: 'মুছুন',
-    deleteDisabled: 'এই ইনস্ট্যান্স ব্যবহার করার হানি কম্বস আছে, মুছতে পারবে না',
-    deleteConfirm: 'আপনি কি নিশ্চিত যে আপনি ইনস্ট্যান্স "{name}" মুছতে চান?',
-    create: 'নতুন ইনস্ট্যান্স',
-    close: 'বন্ধ',
-    usageCount: ' হানি কম্বস'
-  },
-
-  // অটো রিফ্রেশ প্রিসেট
-  autoRefreshPresets: {
-    noRefresh: 'রিফ্রেশ নেই',
-    thirtySeconds: '30 সেকেন্ড',
-    oneMinute: '1 মিনিট',
-    fiveMinutes: '5 মিনিট',
-    thirtyMinutes: '30 মিনিট',
-    oneHour: '1 ঘন্টা',
-    oneDay: '1 দিন'
-  },
-
-  // ফ্লোটিং অ্যাকশন
-  floatingActions: {
-    refresh: 'পৃষ্ঠা রিফ্রেশ করুন',
-    goBack: 'ফিরে যান',
-    goForward: 'এগিয়ে যান',
-    mute: 'মুট',
-    unmute: 'মুট বাতিল করুন',
-    copy: 'হানি কম্ব কপি করুন',
-    script: 'স্ক্রিপ্ট এক্সিকিউটর',
-    devtools: 'ডেভেলপার টুলস',
-    edit: 'লিঙ্ক সম্পাদনা করুন',
-    fullscreen: 'ফুলস্ক্রিন ভিউ',
-    remove: 'ওয়েবসাইট সরান'
-  },
-
-  // সিলেক্টর টুলবার
   selectorToolbar: {
     title: 'উপাদান সিলেক্টর',
     dragHandle: 'প্যানেল সরাতে ড্র্যাগ করুন',
@@ -386,23 +316,79 @@ export default {
     multiSelectModeHint: 'মাল্টি-সিলেক্ট মোড: তালিকায় যোগ করতে উপাদানে ক্লিক করুন | বাতিল করতে ESC টিপুন',
     multiSelectModeSelected: 'মাল্টি-সিলেক্ট মোড: {count} উপাদান নির্বাচিত | চালিয়ে যেতে "তালিকায় যোগ করুন" ক্লিক করুন | সব সংরক্ষণ করতে "নির্বাচন নিশ্চিত করুন"',
     singleSelectModeHint: 'নির্বাচন করতে উপাদানে ক্লিক করুন | বাতিল করতে ESC টিপুন',
-    confirmSelectionHint: 'আপনি নির্বাচন সামঞ্জস্য করা চালিয়ে যেতে পারেন | সংরক্ষণ করতে "নির্বাচন নিশ্চিত করুন" ক্লিক করুন | বাতিল করতে ESC টিপুন'
+    confirmSelectionHint: 'আপনি নির্বাচন সামঞ্জস্য করা চালিয়ে যেতে পারেন | সংরক্ষণ করতে "নির্বাচন নিশ্চিত করুন" ক্লিক করুন | বাতিল করতে ESC টিপুন',
+    classList: 'Class তালিকা',
+    copySelector: 'সিলেক্টর কপি',
+    currentPath: 'বর্তমান পাথ',
+    depth: 'গভীরতা',
+    dimensions: 'মাত্রা',
+    elementCapture: 'এলিমেন্ট ক্যাপচার',
+    shiftLockHint: 'নির্বাচন এলাকা লক করতে Shift চেপে ধরুন',
+    tagName: 'ট্যাগ নাম'
   },
-
-  // ফুলস্ক্রিন বার
+  importMode: {
+    title: 'ইম্পোর্ট মোড নির্বাচন করুন',
+    description: 'আপনি এই লেআউটটি কীভাবে ইম্পোর্ট করতে চান?',
+    realtimeSync: {
+      title: 'রিয়েল-টাইম সিঙ্ক ইম্পোর্ট',
+      description: 'মূল টেমপ্লেটের সাথে সিঙ্কে থাকুন, লেখক টেমপ্লেট আপডেট করার সময় ম্যানুয়ালি আপডেট সিঙ্ক করুন',
+      note: '⚠️ আপনি যদি লেআউট পরিবর্তন করেন, সিঙ্ক আপডেট করার সময় আপনার পরিবর্তনগুলি ওভাররাইট করা হবে'
+    },
+    copy: {
+      title: 'কপি ইম্পোর্ট',
+      description: 'একটি স্বাধীন কপি তৈরি করুন যা অবাধে পরিবর্তন করা যেতে পারে',
+      note: '💡 মূল টেমপ্লেট আপডেট দ্বারা প্রভাবিত হয় না'
+    },
+    cancel: 'বাতিল'
+  },
+  sessionInstanceManager: {
+    title: 'Cookie ভাগ করা ইনস্ট্যান্স ব্যবস্থাপনা',
+    whatIs: 'Cookie ভাগ করা ইনস্ট্যান্স কী?',
+    description: 'একই ইনস্ট্যান্সের হানি কম্বস cookies, LocalStorage এবং অন্যান্য স্টোরেজ ভাগ করে। ইনস্ট্যান্সগুলি একে অপরের থেকে সম্পূর্ণরূপে বিচ্ছিন্ন।',
+    useCases: 'ব্যবহারের ক্ষেত্রে:',
+    useCasesDesc: 'একাধিক অ্যাকাউন্ট লগইন, পরীক্ষার পরিবেশ বিচ্ছিন্নতা, ইত্যাদি।',
+    rename: 'নাম পরিবর্তন',
+    delete: 'মুছুন',
+    deleteDisabled: 'এই ইনস্ট্যান্স ব্যবহার করার হানি কম্বস আছে, মুছতে পারবে না',
+    deleteConfirm: 'আপনি কি নিশ্চিত যে আপনি ইনস্ট্যান্স "{name}" মুছতে চান?',
+    create: 'নতুন ইনস্ট্যান্স',
+    close: 'বন্ধ',
+    usageCount: ' হানি কম্বস'
+  },
+  autoRefreshPresets: {
+    noRefresh: 'রিফ্রেশ নেই',
+    thirtySeconds: '30 সেকেন্ড',
+    oneMinute: '1 মিনিট',
+    fiveMinutes: '5 মিনিট',
+    thirtyMinutes: '30 মিনিট',
+    oneHour: '1 ঘন্টা',
+    oneDay: '1 দিন'
+  },
+  floatingActions: {
+    refresh: 'পৃষ্ঠা রিফ্রেশ করুন',
+    goBack: 'ফিরে যান',
+    goForward: 'এগিয়ে যান',
+    mute: 'মুট',
+    unmute: 'মুট বাতিল করুন',
+    copy: 'হানি কম্ব কপি করুন',
+    script: 'স্ক্রিপ্ট এক্সিকিউটর',
+    devtools: 'ডেভেলপার টুলস',
+    edit: 'লিঙ্ক সম্পাদনা করুন',
+    fullscreen: 'ফুলস্ক্রিন ভিউ',
+    remove: 'ওয়েবসাইট সরান',
+    importCookies: 'Cookie আমদানি'
+  },
   fullscreenBar: {
     selectElement: 'উপাদান নির্বাচন করুন',
     refresh: 'রিফ্রেশ করুন',
-    exitFullscreen: 'ফুলস্ক্রিন থেকে প্রস্থান করুন'
+    exitFullscreen: 'ফুলস্ক্রিন থেকে প্রস্থান করুন',
+    goBack: 'পিছনে',
+    goForward: 'সামনে'
   },
-
-  // URL পরিবর্তন ইঙ্গিত
   urlChangeHint: {
     useCurrentUrl: 'বর্তমানে প্রদর্শিত ওয়েবপৃষ্ঠার URL ব্যবহার করুন',
     useThisPage: 'এই পৃষ্ঠাটি ব্যবহার করুন'
   },
-
-  // রিফ্রেশ টাইমার
   refreshTimer: {
     day: 'দিন',
     hour: 'ঘন্টা',
@@ -410,8 +396,88 @@ export default {
     minute: 'মিনিট',
     seconds: 'সেকেন্ড'
   },
-
-  // অন্যান্য
+  basicAuth: {
+    title: 'প্রমাণীকরণ প্রয়োজন',
+    username: 'ব্যবহারকারীর নাম',
+    password: 'পাসওয়ার্ড',
+    login: 'লগইন'
+  },
+  externalUrl: {
+    title: 'বাহ্যিক লিঙ্ক'
+  },
+  contentScript: {
+    title: 'কন্টেন্ট স্ক্রিপ্ট এক্সিকিউটর',
+    tabs: {
+      highlight: 'হাইলাইট',
+      extract: 'এক্সট্র্যাক্ট',
+      actions: 'অ্যাকশন',
+      custom: 'কাস্টম'
+    },
+    highlight: {
+      title: 'এলিমেন্ট হাইলাইট',
+      selectors: 'সিলেক্টর (প্রতি লাইনে একটি)',
+      color: 'হাইলাইট রঙ',
+      duration: 'সময়কাল (ms)',
+      permanentHint: '0 = স্থায়ী হাইলাইট',
+      enablePulse: 'পালস অ্যানিমেশন সক্রিয় করুন',
+      apply: 'হাইলাইট প্রয়োগ করুন',
+      clear: 'হাইলাইট মুছুন',
+      executing: 'চলছে...',
+      success: '{count}টি এলিমেন্ট হাইলাইট করা হয়েছে',
+      failed: 'হাইলাইট ব্যর্থ: {error}',
+      cleared: 'সব হাইলাইট মুছে ফেলা হয়েছে',
+      clearFailed: 'মুছতে ব্যর্থ: {error}'
+    },
+    extract: {
+      title: 'ডেটা এক্সট্র্যাকশন',
+      selectors: 'সিলেক্টর (প্রতি লাইনে একটি)',
+      extractText: 'টেক্সট এক্সট্র্যাক্ট করুন',
+      extractHtml: 'HTML এক্সট্র্যাক্ট করুন',
+      attributes: 'অ্যাট্রিবিউট তালিকা (কমা দিয়ে আলাদা)',
+      styles: 'স্টাইল অ্যাট্রিবিউট (কমা দিয়ে আলাদা)',
+      extractBtn: 'ডেটা এক্সট্র্যাক্ট করুন',
+      exportJson: 'JSON এক্সপোর্ট করুন',
+      executing: 'এক্সট্র্যাক্ট হচ্ছে...',
+      results: 'এক্সট্র্যাকশন ফলাফল',
+      items: '{count}টি আইটেম',
+      success: '{count}টি ডেটা এক্সট্র্যাক্ট করা হয়েছে',
+      failed: 'এক্সট্র্যাকশন ব্যর্থ: {error}'
+    },
+    actions: {
+      title: 'ব্যাচ অপারেশন',
+      selectors: 'সিলেক্টর (প্রতি লাইনে একটি)',
+      actionType: 'অ্যাকশন টাইপ',
+      click: 'ক্লিক',
+      focus: 'ফোকাস',
+      scrollIntoView: 'ভিউতে স্ক্রোল করুন',
+      hide: 'লুকান',
+      show: 'দেখান',
+      remove: 'সরান',
+      execute: 'অ্যাকশন চালান',
+      executing: 'চলছে...',
+      results: 'অ্যাকশন ফলাফল',
+      success: 'সফল: {count}',
+      failed: 'ব্যর্থ: {count}',
+      viewFailedDetails: 'ব্যর্থতার বিবরণ দেখুন',
+      completeSuccess: 'অপারেশন সম্পন্ন\nসফল: {success}\nব্যর্থ: {failed}',
+      completeFailed: 'অপারেশন ব্যর্থ: {error}'
+    },
+    custom: {
+      title: 'কাস্টম স্ক্রিপ্ট',
+      codeLabel: 'JavaScript কোড',
+      execute: 'স্ক্রিপ্ট চালান',
+      executing: 'চলছে...',
+      results: 'চালানোর ফলাফল'
+    },
+    history: {
+      title: 'চালানোর ইতিহাস',
+      clear: 'ইতিহাস মুছুন',
+      noResult: 'কোনো ফলাফল নেই',
+      executionFailed: 'চালাতে ব্যর্থ',
+      noReturnValue: 'কোনো রিটার্ন ভ্যালু নেই',
+      emptyResult: 'খালি ফলাফল'
+    }
+  },
   other: {
     gridView: 'গ্রিড ভিউ',
     canvasView: 'ক্যানভাস ভিউ',
@@ -442,6 +508,206 @@ export default {
     descending: 'অবরোহী',
     byName: 'নাম অনুযায়ী',
     byDate: 'তারিখ অনুযায়ী',
-    bySize: 'আকার অনুযায়ী'
+    bySize: 'আকার অনুযায়ী',
+    certificateError: 'সার্টিফিকেট ত্রুটি',
+    certificateErrorDescription: 'এই ওয়েবসাইট একটি অবৈধ SSL সার্টিফিকেট ব্যবহার করে এবং নিরাপদে সংযোগ করা যায় না।',
+    certificateErrorHint: 'এটি সাধারণত স্ব-স্বাক্ষরিত সার্টিফিকেট বা মেয়াদোত্তীর্ণ সার্টিফিকেটের কারণে হয়।',
+    ignoreCertificateError: 'ত্রুটি উপেক্ষা',
+    reload: 'পুনরায় লোড'
+  },
+  apiSettings: {
+    apiExecute: 'মাল্টি-স্টেপ JS এক্সিকিউশন',
+    apiKeyHeader: 'রিকোয়েস্ট হেডারে অন্তর্ভুক্ত থাকতে হবে',
+    apiListWorkspaces: 'ওয়ার্কস্পেস ও পেজ তালিকা',
+    apiTraffic: 'নেটওয়ার্ক ট্রাফিক পান',
+    bindAddress: 'বাইন্ড অ্যাড্রেস',
+    copy: 'কপি',
+    enable: 'সক্রিয়',
+    externalApi: 'এক্সটার্নাল অ্যাক্সেস API:',
+    hookUrlHint: 'পেজের নেটওয়ার্ক রিকোয়েস্ট POST JSON হিসেবে এই অ্যাড্রেসে ফরওয়ার্ড হবে। ওয়েবসাইট সম্পাদনায় প্রতিটি পেজের জন্য আলাদা Hook URL সেট করতে পারেন।',
+    networkHook: 'গ্লোবাল নেটওয়ার্ক Hook (বাইপাস ফরওয়ার্ড)',
+    port: 'পোর্ট',
+    regenerate: 'পুনরায় তৈরি',
+    running: 'চলমান',
+    server: 'API সার্ভার',
+    showHide: 'দেখান/লুকান',
+    stopped: 'বন্ধ',
+    title: 'API সার্ভিস সেটিংস',
+    usageGuide: 'ব্যবহার নির্দেশিকা'
+  },
+  canvasContextMenu: {
+    addWebsite: 'ওয়েবসাইট যোগ করুন',
+    aiCustomPage: 'AI কাস্টম পেজ তৈরি'
+  },
+  canvasControls: {
+    addWebsite: 'উইন্ডো যোগ করুন',
+    autoArrange: 'স্ক্রিনে মানানসই',
+    clearDrawings: 'ড্রয়িং মুছুন',
+    drawingMode: 'ড্রয়িং মোড',
+    drawingSettings: 'ড্রয়িং সেটিংস',
+    fitToScreen: 'স্ক্রিনে মানানসই',
+    rearrange: 'পুনর্বিন্যাস',
+    resetZoom: 'জুম রিসেট (100%)',
+    zoomIn: 'জুম ইন',
+    zoomOut: 'জুম আউট'
+  },
+  canvasControlsPanel: {
+    brushTool: 'ব্রাশ টুল',
+    drawColor: 'ড্রয়িং রঙ',
+    imageTool: 'ইমেজ টুল',
+    strokeWidth: 'স্ট্রোক প্রস্থ',
+    textTool: 'টেক্সট টুল'
+  },
+  canvasView: {
+    addWebsite: 'ওয়েবসাইট যোগ করুন',
+    addWebsiteNode: 'ওয়েবসাইট নোড যোগ করুন',
+    clearDrawing: 'ড্রয়িং মুছুন',
+    color: 'রঙ:',
+    drawingMode: 'হাতে আঁকা মোড',
+    exitDrawing: 'ড্রয়িং থেকে বের হন',
+    fitToView: 'ভিউতে মানানসই',
+    newWebsite: 'নতুন ওয়েবসাইট',
+    startDrawing: 'আঁকুন',
+    strokeWidth: 'প্রস্থ:'
+  },
+  configPanelExtra: {
+    collapseSidebar: 'সাইডবার সঙ্কুচিত করুন',
+    currentViewSettings: 'বর্তমান ভিউ সেটিংস',
+    logoAlt: 'Tab Hive লোগো'
+  },
+  customHtml: {
+    configError: 'প্রথমে সেটিংসে LLM API কনফিগার করুন',
+    defaultTitle: 'কাস্টম ওয়েব পেজ',
+    generateBtn: 'পেজ তৈরি করুন',
+    generateFailed: 'তৈরি ব্যর্থ',
+    generating: 'HTML কোড তৈরি হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...',
+    generatingBtn: 'তৈরি হচ্ছে...',
+    requirement: 'প্রয়োজনীয়তার বিবরণ',
+    requirementHint: 'আপনি যে ওয়েব পেজের ফিচার ও স্টাইল চান তা বিস্তারিত বর্ণনা করুন',
+    requirementPlaceholder: 'যেমন: একটি টু-ডু তালিকা তৈরি করুন যেটিতে যোগ, মুছে ফেলা এবং সম্পন্ন চিহ্নিত করা যায়...',
+    subtitle: 'আপনার প্রয়োজন বর্ণনা করুন, AI আপনার জন্য ওয়েব পেজ কোড তৈরি করবে',
+    title: 'কাস্টম ওয়েব পেজ তৈরি করুন'
+  },
+  desktopCapture: {
+    addCapture: 'ডেস্কটপ ক্যাপচার যোগ করুন',
+    appWindow: '🪟 অ্যাপ উইন্ডো',
+    basicInfo: 'মৌলিক তথ্য',
+    captureOptions: 'ক্যাপচার অপশন',
+    captureTitle: 'নাম',
+    changeSource: 'সোর্স পরিবর্তন',
+    connecting: 'ডেস্কটপ সোর্সে সংযোগ করা হচ্ছে...',
+    displaySettings: 'ডিসপ্লে সেটিংস',
+    editCapture: 'ডেস্কটপ ক্যাপচার সম্পাদনা',
+    electronOnly: 'ডেস্কটপ ক্যাপচার শুধুমাত্র Electron পরিবেশে উপলব্ধ',
+    fitScreen: 'স্ক্রিন সাইজে মানানসই',
+    fullScreen: '🖥️ পূর্ণ স্ক্রিন',
+    mute: 'নিঃশব্দ',
+    noSource: 'কোনো ডেস্কটপ সোর্স নির্দিষ্ট করা হয়নি',
+    padding: 'প্যাডিং',
+    readonlyMode: '📺 শুধু পড়ার মোড (ইন্টারঅ্যাকশন সমর্থিত নয়)',
+    selectSource: 'ক্যাপচার করতে একটি ডেস্কটপ সোর্স নির্বাচন করুন',
+    selectSourceBtn: 'ডেস্কটপ সোর্স নির্বাচন',
+    sourceTitle: 'ডেস্কটপ সোর্স',
+    titlePlaceholder: 'ডেস্কটপ ক্যাপচারের নাম লিখুন'
+  },
+  llmConfig: {
+    apiKey: 'API Key',
+    apiKeyHint: 'প্রমাণীকরণের জন্য API Key।',
+    apiKeyLink: 'OpenRouter থেকে পান',
+    apiUrl: 'API URL',
+    apiUrlHint: 'LLM API-এর সম্পূর্ণ URL',
+    maxTokens: 'সর্বোচ্চ টোকেন',
+    maxTokensHint: 'তৈরি কন্টেন্টের সর্বোচ্চ দৈর্ঘ্য (0 মানে সীমাহীন)',
+    model: 'মডেলের নাম',
+    modelHint: 'ব্যবহার করতে মডেলের নাম',
+    subtitle: 'কাস্টম ওয়েব পেজ তৈরি করতে LLM API কনফিগার করুন',
+    temperature: 'Temperature',
+    temperatureHint: 'আউটপুটের র‍্যান্ডমনেস নিয়ন্ত্রণ (0-2)',
+    title: 'LLM API কনফিগারেশন'
+  },
+  monitoring: {
+    actions: 'অ্যাকশন',
+    apiConfigDesc: 'এই ফিচারটিতে স্ক্রিনশট বিশ্লেষণের জন্য LLM API (যেমন OpenAI GPT-4 Vision) প্রয়োজন। সেটিংসে আপনার API কী কনফিগার করুন।',
+    apiConfigTitle: 'LLM API কনফিগারেশন প্রয়োজন',
+    checkEvery: 'প্রতি {interval} সেকেন্ডে পরীক্ষা',
+    checkInterval: 'পরীক্ষার ব্যবধান',
+    comingSoon: 'শীঘ্রই আসছে',
+    condition: 'মনিটরিং শর্ত',
+    conditionDesc: 'শর্তের বিবরণ (প্রাকৃতিক ভাষায় ট্রিগার শর্ত বর্ণনা করুন)',
+    conditionHint: 'AI এই বিবরণের ভিত্তিতে পেজের স্ক্রিনশট বিশ্লেষণ করে শর্ত পূরণ হয়েছে কিনা নির্ধারণ করবে',
+    conditionLabel: 'শর্ত:',
+    conditionPlaceholder: 'যেমন: পেজে \'স্টক নেই\' বা \'sold out\' দেখালে ট্রিগার করুন',
+    createFirst: 'প্রথম নিয়ম তৈরি করুন',
+    createRule: '+ নতুন নিয়ম',
+    desktopNotification: 'ডেস্কটপ বিজ্ঞপ্তি',
+    editRule: 'মনিটরিং নিয়ম সম্পাদনা',
+    goConfig: 'সেটিংসে যান →',
+    intervalHint: 'ঘন ঘন API কলের কারণে উচ্চ খরচ এড়াতে খুব কম ব্যবধান সেট করবেন না',
+    lastTrigger: 'সর্বশেষ ট্রিগার: {time}',
+    newRule: 'নতুন মনিটরিং নিয়ম',
+    noRules: 'এখনো কোনো মনিটরিং নিয়ম নেই',
+    noRulesDesc: 'পেজের পরিবর্তন স্বয়ংক্রিয়ভাবে মনিটর করতে নিয়ম তৈরি করুন',
+    notificationMessage: 'বিজ্ঞপ্তি বার্তা',
+    notificationPlaceholder: 'যেমন: পণ্যের স্থিতি পরিবর্তন হয়েছে!',
+    required: 'আবশ্যক',
+    ruleName: 'নিয়মের নাম',
+    ruleNamePlaceholder: 'যেমন: মূল্য পরিবর্তন শনাক্ত',
+    rulesTitle: 'পেজ মনিটরিং নিয়ম',
+    seconds: 'সেকেন্ড',
+    sendEmail: 'ইমেইল পাঠান',
+    testScreenshot: '🖼️ স্ক্রিনশট পরীক্ষা',
+    testVision: '🤖 ভিশন বিশ্লেষণ পরীক্ষা',
+    textMonitor: 'টেক্সট মনিটর',
+    textMonitorDesc: 'পেজের টেক্সট পরিবর্তন মনিটর (শীঘ্রই আসছে)',
+    triggerCount: '{count} বার ট্রিগার হয়েছে',
+    visionMonitor: 'ভিশন মনিটর (LLM)',
+    visionMonitorDesc: 'পেজের স্ক্রিনশট বিশ্লেষণে AI ব্যবহার',
+    webhook: 'Webhook বিজ্ঞপ্তি'
+  },
+  proxy: {
+    addProxy: 'প্রক্সি যোগ',
+    batchDelete: 'মুছুন',
+    cipher: 'এনক্রিপশন পদ্ধতি',
+    editProxy: 'প্রক্সি সম্পাদনা',
+    enable: 'সক্রিয়',
+    enableTfo: 'TCP Fast Open সক্রিয়',
+    enableUdp: 'UDP সক্রিয়',
+    host: 'হোস্ট',
+    hostPlaceholder: 'সার্ভার ঠিকানা',
+    importSubscription: 'সাবস্ক্রিপশন আমদানি',
+    name: 'নাম',
+    namePlaceholder: 'প্রক্সির নাম',
+    password: 'পাসওয়ার্ড',
+    passwordOptional: 'পাসওয়ার্ড (ঐচ্ছিক)',
+    passwordPlaceholder: 'পাসওয়ার্ড',
+    pluginOptional: 'প্লাগইন (ঐচ্ছিক)',
+    pluginOpts: 'প্লাগইন অপশন (JSON ফর্ম্যাট)',
+    portPlaceholder: 'পোর্ট নম্বর',
+    saving: 'সংরক্ষণ হচ্ছে...',
+    selected: '{count}টি নির্বাচিত',
+    ssPassword: 'Shadowsocks পাসওয়ার্ড',
+    title: 'প্রক্সি নোড ব্যবস্থাপনা',
+    type: 'ধরন',
+    usernameOptional: 'ইউজারনেম (ঐচ্ছিক)',
+    usernamePlaceholder: 'ইউজারনেম',
+    uuid: 'UUID'
+  },
+  rearrangeDialog: {
+    columns: 'কলাম সংখ্যা',
+    finalSize: 'চূড়ান্ত উইন্ডো সাইজ',
+    itemHeight: 'উইন্ডো উচ্চতা (px)',
+    itemWidth: 'উইন্ডো প্রস্থ (px)',
+    layout: 'লেআউট',
+    preview: 'প্রিভিউ',
+    reset: 'ডিফল্ট রিসেট',
+    scale: 'উইন্ডো স্কেল',
+    scaleHint: '1.0 মূল সাইজ, 2.0 দ্বিগুণ সাইজ',
+    title: 'উইন্ডো পুনর্বিন্যাস'
+  },
+  websiteEditExtra: {
+    addDesktopCapture: 'ডেস্কটপ ক্যাপচার যোগ করুন',
+    aiCustomPage: 'AI কাস্টম পেজ তৈরি',
+    basicInfo: 'মৌলিক তথ্য',
+    subtitle: 'ডিসপ্লে অপশন, প্রক্সি ও অ্যাডভান্সড ফিচার কনফিগার করুন'
   }
 }

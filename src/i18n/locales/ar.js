@@ -1,5 +1,4 @@
 export default {
-  // عام
   common: {
     confirm: 'تأكيد',
     cancel: 'إلغاء',
@@ -60,21 +59,15 @@ export default {
     unknown: 'غير معروف',
     untitled: 'بدون عنوان'
   },
-
-  // اسم وعنوان التطبيق
   app: {
     name: '全视界',
     title: '全视界'
   },
-
-  // مربع الحوار
   dialog: {
     title: 'نصيحة',
     confirm: 'تأكيد',
     cancel: 'إلغاء'
   },
-
-  // مربع حوار تحرير الموقع
   websiteEdit: {
     addWebsite: 'إضافة موقع',
     editWebsite: 'تحرير الموقع',
@@ -95,34 +88,29 @@ export default {
     confirm: 'تأكيد',
     cancel: 'إلغاء'
   },
-
-  // معلومات الموقع الأساسية
   websiteBasicInfo: {
     name: 'اسم الموقع:',
     url: 'رابط الموقع:',
     namePlaceholder: 'مثال: Google',
     urlPlaceholder: 'مثال: bbc.com أو https://bbc.com'
   },
-
-  // محدد نوع الجهاز
   deviceType: {
     title: 'نوع الجهاز:',
     desktop: '🖥️ سطح المكتب',
     mobile: '📱 الجوال',
     mobileHint: '💡 ستحول النسخة المحمولة النطاق تلقائيًا إلى النسخة المحمولة (مثال: www.xxx.com → m.xxx.com) وتحد من عرض منفذ العرض إلى 375px'
   },
-
-  // إعدادات الصوت والمرئيات
   audioVisual: {
     audioSettings: 'إعدادات الصوت:',
     muted: '🔇 كتم صوت هذا الموقع',
     mutedHint: '💡 عند التفعيل، لن يشغل هذا الموقع أي صوت',
     visualSettings: 'الإعدادات المرئية:',
     darkMode: '🌙 المظهر الداكن',
-    darkModeHint: '💡 فرض المظهر الداكن للموقع، مناسب للتصفح الليلي'
+    darkModeHint: '💡 فرض المظهر الداكن للموقع، مناسب للتصفح الليلي',
+    actionButtonSettings: 'إعدادات أزرار الإجراءات:',
+    requireModifierForActions: '⌨️ طلب مفتاح تعديل',
+    requireModifierForActionsHint: '💡 عند التفعيل، اضغط مع الاستمرار على Ctrl أو Alt لإظهار أزرار الإجراءات، لتجنب التداخل مع عمليات صفحة الويب'
   },
-
-  // محدد مثيل الجلسة
   sessionInstance: {
     title: 'مثيل مشترك لملفات تعريف الارتباط:',
     default: 'افتراضي',
@@ -136,15 +124,11 @@ export default {
     defaultInstanceName: 'مثيل مشترك',
     hint: '💡 خلايا العسل في نفس المثيل تشارك ملفات تعريف الارتباط والتخزين، المثيلات معزولة تمامًا\n• المثيل المشترك الافتراضي: جميع المواقع تشارك\n• مثيل جديد: يمكن استخدامه لسيناريوهات تسجيل الدخول متعدد الحسابات'
   },
-
-  // تكوين الحشو
   padding: {
     title: 'تكوين الحشو (اختياري):',
     unit: 'px',
     hint: '💡 اضبط المسافة بين محتوى صفحة الويب وحواف البطاقة (الوحدة: بكسل)\n• الافتراضي هو 0 (بدون حشو)\n• النطاق الموصى به: 0-50px'
   },
-
-  // قائمة المحددات المستهدفة
   targetSelector: {
     title: 'المحدد المستهدف (اختياري):',
     placeholder: 'مثال: #main-content أو .video-player',
@@ -152,8 +136,6 @@ export default {
     removeSelector: 'إزالة هذا المحدد',
     hint: '💡 يمكنك إضافة عدة محددات CSS. في وضع الشبكة، يتم عرض العناصر المطابقة فقط، والمحتوى الآخر مخفي\n• المحددات المتعددة ستحتفظ بجميع العناصر المطابقة\n• ملء الشاشة يعرض الصفحة الكاملة\n• اتركه فارغًا لإظهار الصفحة بأكملها دائمًا'
   },
-
-  // تكوين التحديث التلقائي
   autoRefresh: {
     title: 'فترة التحديث التلقائي (اختياري):',
     custom: 'مخصص:',
@@ -163,8 +145,6 @@ export default {
     days: 'أيام',
     hint: '💡 تعيين فترة زمنية للتحديث التلقائي لـ iframe\n• انقر على الإعدادات المسبقة للاختيار السريع، أو قم بتخصيص الوقت والوحدة\n• اضبط على 0 لتعطيل التحديث التلقائي\n• الحد الأدنى الموصى به: 30 ثانية (لتجنب التحديثات المتكررة التي تؤثر على الأداء)\n• حالات الاستخدام: المراقبة في الوقت الفعلي، لوحات البيانات، والصفحات الأخرى التي تحتاج إلى تحديثات منتظمة'
   },
-
-  // لوحة التكوين
   configPanel: {
     language: 'اللغة',
     languageHint: 'اختر لغة الواجهة',
@@ -196,10 +176,18 @@ export default {
       deleteLayout: 'هل أنت متأكد من أنك تريد حذف التخطيط "{name}"؟',
       clearConfig: 'هل أنت متأكد من أنك تريد مسح جميع التكوينات؟ سيؤدي هذا إلى حذف جميع المواقع وإعدادات التخطيط.'
     },
-    unnamed: 'بدون اسم'
+    unnamed: 'بدون اسم',
+    adBlockEnabled: 'حظر الإعلانات',
+    adBlockEnabledHint: 'فعّل لحظر الإعلانات تلقائياً على جميع المواقع',
+    customCodeEnabled: 'كود مخصص',
+    customCodeEnabledHint: 'فعّل لإظهار زر منفذ البرامج النصية في الإجراءات العائمة',
+    proxy: 'الوكيل',
+    proxyHint: 'إدارة إعدادات الوكيل',
+    settings: 'الإعدادات',
+    settingsHint: 'تكوين LLM API وإعدادات أخرى',
+    showCertificateErrorShadow: 'ظل أحمر لخطأ الشهادة',
+    showCertificateErrorShadowHint: 'فعّل لإظهار ظل أحمر على المواقع التي بها أخطاء في الشهادة'
   },
-
-  // عمليات التخطيط
   layout: {
     create: 'إنشاء تخطيط جديد',
     createMessage: 'الرجاء إدخال اسم التخطيط الجديد',
@@ -236,13 +224,28 @@ export default {
     shareLayout: 'مشاركة التخطيط',
     renameLayout: 'إعادة تسمية',
     deleteLayout: 'حذف',
-    websiteCount: ' مواقع'
+    websiteCount: ' مواقع',
+    capturingScreenshot: 'جارٍ التقاط لقطة شاشة...',
+    exportFailed: 'فشل التصدير',
+    exportLayout: 'تصدير التخطيط',
+    exportSuccess: 'تم التصدير بنجاح!',
+    exportWithScreenshotConfirm: 'هل تريد التقاط لقطة شاشة للصفحة الحالية وتضمين بيانات التخطيط؟\n\nسيتم استخدام لقطة الشاشة كصورة التصدير، وسيتم حفظ بيانات JSON للتخطيط في البيانات الوصفية للصورة.',
+    importFailed: 'فشل الاستيراد',
+    importLayoutFromImageConfirm: 'تم اكتشاف بيانات تخطيط في الصورة ("{name}").\n\nهل تريد استيراد هذا التخطيط؟',
+    importSuccess: 'تم الاستيراد بنجاح!',
+    importedLayout: 'التخطيط المستورد',
+    invalidLayoutData: 'بيانات تخطيط غير صالحة',
+    preview: 'معاينة',
+    screenshotCopied: 'تم نسخ لقطة الشاشة إلى الحافظة!',
+    screenshotDownloaded: 'تم تنزيل لقطة الشاشة!',
+    shareFailed: 'فشلت المشاركة',
+    shareSuccess: 'تمت المشاركة بنجاح!',
+    shareWithScreenshotConfirm: 'هل تريد التقاط لقطة شاشة للصفحة الحالية وتضمين بيانات التخطيط؟\n\nسيتم استخدام لقطة الشاشة كصورة المشاركة، وسيتم حفظ بيانات JSON للتخطيط في البيانات الوصفية للصورة.',
+    sharedLayoutsDesc: 'تصفح واستيراد تكوينات تخطيط Tab Hive المشتركة',
+    sortHot: 'الأكثر تنزيلاً',
+    sortLatest: 'الأحدث',
+    unnamedLayout: 'تخطيط بدون اسم'
   },
-
-  // مربع حوار التحميل
-
-
-  // إشعار التحديث
   updateNotification: {
     title: 'إصدار جديد متاح',
     currentVersion: 'الإصدار الحالي:',
@@ -260,8 +263,6 @@ export default {
     later: 'تذكير لاحقًا',
     close: 'إغلاق'
   },
-
-  // بطاقة الموقع
   websiteCard: {
     fullscreen: 'ملء الشاشة',
     edit: 'تحرير',
@@ -270,8 +271,6 @@ export default {
     refresh: 'تحديث',
     toggleMute: 'تبديل الكتم'
   },
-
-  // محدد العناصر
   elementSelector: {
     title: 'محدد العناصر',
     start: 'بدء التحديد',
@@ -280,75 +279,6 @@ export default {
     confirm: 'تأكيد التحديد',
     cancel: 'إلغاء'
   },
-
-  // شريط أدوات المحدد
-  selectorToolbar: {
-    startSelect: 'بدء التحديد',
-    stopSelect: 'إيقاف التحديد',
-    confirm: 'تأكيد',
-    cancel: 'إلغاء'
-  },
-
-  // مربع حوار وضع الاستيراد
-  importMode: {
-    title: 'اختر وضع الاستيراد',
-    description: 'كيف تريد استيراد هذا التخطيط؟',
-    realtimeSync: {
-      title: 'استيراد المزامنة في الوقت الفعلي',
-      description: 'البقاء متزامنًا مع القالب الأصلي، مزامنة التحديثات يدويًا عندما يحدث المؤلف القالب',
-      note: '⚠️ إذا قمت بتعديل التخطيط، فستتم الكتابة فوق تغييراتك عند مزامنة التحديثات'
-    },
-    copy: {
-      title: 'استيراد النسخ',
-      description: 'إنشاء نسخة مستقلة يمكن تعديلها بحرية',
-      note: '💡 غير متأثر بتحديثات القالب الأصلي'
-    },
-    cancel: 'إلغاء'
-  },
-
-  // مدير مثيل الجلسة
-  sessionInstanceManager: {
-    title: 'إدارة المثيل المشترك لملفات تعريف الارتباط',
-    whatIs: 'ما هو المثيل المشترك لملفات تعريف الارتباط؟',
-    description: 'خلايا العسل في نفس المثيل تشارك ملفات تعريف الارتباط، LocalStorage، والتخزين الآخر. المثيلات معزولة تمامًا عن بعضها البعض.',
-    useCases: 'حالات الاستخدام:',
-    useCasesDesc: 'تسجيل دخول متعدد الحسابات، عزل بيئة الاختبار، إلخ.',
-    rename: 'إعادة تسمية',
-    delete: 'حذف',
-    deleteDisabled: 'هناك خلايا عسل تستخدم هذا المثيل، لا يمكن الحذف',
-    deleteConfirm: 'هل أنت متأكد من أنك تريد حذف المثيل "{name}"؟',
-    create: 'مثيل جديد',
-    close: 'إغلاق',
-    usageCount: ' خلايا عسل'
-  },
-
-  // إعدادات التحديث التلقائي المسبقة
-  autoRefreshPresets: {
-    noRefresh: 'بدون تحديث',
-    thirtySeconds: '30 ثانية',
-    oneMinute: '1 دقيقة',
-    fiveMinutes: '5 دقائق',
-    thirtyMinutes: '30 دقيقة',
-    oneHour: '1 ساعة',
-    oneDay: '1 يوم'
-  },
-
-  // الإجراءات العائمة
-  floatingActions: {
-    refresh: 'تحديث الصفحة',
-    goBack: 'رجوع',
-    goForward: 'تقدم',
-    mute: 'كتم الصوت',
-    unmute: 'إلغاء كتم الصوت',
-    copy: 'نسخ خلية العسل',
-    script: 'منفذ البرنامج النصي',
-    devtools: 'أدوات المطور',
-    edit: 'تحرير الرابط',
-    fullscreen: 'عرض ملء الشاشة',
-    remove: 'إزالة الموقع'
-  },
-
-  // شريط أدوات المحدد
   selectorToolbar: {
     title: 'محدد العناصر',
     dragHandle: 'اسحب لتحريك اللوحة',
@@ -386,23 +316,79 @@ export default {
     multiSelectModeHint: 'وضع التحديد المتعدد: انقر على العناصر للإضافة إلى القائمة | اضغط ESC للإلغاء',
     multiSelectModeSelected: 'وضع التحديد المتعدد: تم تحديد {count} عنصر | انقر على "إضافة إلى القائمة" للمتابعة | "تأكيد التحديد" لحفظ الكل',
     singleSelectModeHint: 'انقر على العناصر للتحديد | اضغط ESC للإلغاء',
-    confirmSelectionHint: 'يمكنك الاستمرار في ضبط التحديد | انقر على "تأكيد التحديد" للحفظ | اضغط ESC للإلغاء'
+    confirmSelectionHint: 'يمكنك الاستمرار في ضبط التحديد | انقر على "تأكيد التحديد" للحفظ | اضغط ESC للإلغاء',
+    classList: 'قائمة Class',
+    copySelector: 'نسخ المحدد',
+    currentPath: 'المسار الحالي',
+    depth: 'العمق',
+    dimensions: 'الأبعاد',
+    elementCapture: 'التقاط العنصر',
+    shiftLockHint: 'اضغط مع الاستمرار على Shift لقفل منطقة التحديد',
+    tagName: 'اسم الوسم'
   },
-
-  // شريط ملء الشاشة
+  importMode: {
+    title: 'اختر وضع الاستيراد',
+    description: 'كيف تريد استيراد هذا التخطيط؟',
+    realtimeSync: {
+      title: 'استيراد المزامنة في الوقت الفعلي',
+      description: 'البقاء متزامنًا مع القالب الأصلي، مزامنة التحديثات يدويًا عندما يحدث المؤلف القالب',
+      note: '⚠️ إذا قمت بتعديل التخطيط، فستتم الكتابة فوق تغييراتك عند مزامنة التحديثات'
+    },
+    copy: {
+      title: 'استيراد النسخ',
+      description: 'إنشاء نسخة مستقلة يمكن تعديلها بحرية',
+      note: '💡 غير متأثر بتحديثات القالب الأصلي'
+    },
+    cancel: 'إلغاء'
+  },
+  sessionInstanceManager: {
+    title: 'إدارة المثيل المشترك لملفات تعريف الارتباط',
+    whatIs: 'ما هو المثيل المشترك لملفات تعريف الارتباط؟',
+    description: 'خلايا العسل في نفس المثيل تشارك ملفات تعريف الارتباط، LocalStorage، والتخزين الآخر. المثيلات معزولة تمامًا عن بعضها البعض.',
+    useCases: 'حالات الاستخدام:',
+    useCasesDesc: 'تسجيل دخول متعدد الحسابات، عزل بيئة الاختبار، إلخ.',
+    rename: 'إعادة تسمية',
+    delete: 'حذف',
+    deleteDisabled: 'هناك خلايا عسل تستخدم هذا المثيل، لا يمكن الحذف',
+    deleteConfirm: 'هل أنت متأكد من أنك تريد حذف المثيل "{name}"؟',
+    create: 'مثيل جديد',
+    close: 'إغلاق',
+    usageCount: ' خلايا عسل'
+  },
+  autoRefreshPresets: {
+    noRefresh: 'بدون تحديث',
+    thirtySeconds: '30 ثانية',
+    oneMinute: '1 دقيقة',
+    fiveMinutes: '5 دقائق',
+    thirtyMinutes: '30 دقيقة',
+    oneHour: '1 ساعة',
+    oneDay: '1 يوم'
+  },
+  floatingActions: {
+    refresh: 'تحديث الصفحة',
+    goBack: 'رجوع',
+    goForward: 'تقدم',
+    mute: 'كتم الصوت',
+    unmute: 'إلغاء كتم الصوت',
+    copy: 'نسخ خلية العسل',
+    script: 'منفذ البرنامج النصي',
+    devtools: 'أدوات المطور',
+    edit: 'تحرير الرابط',
+    fullscreen: 'عرض ملء الشاشة',
+    remove: 'إزالة الموقع',
+    importCookies: 'استيراد Cookie'
+  },
   fullscreenBar: {
     selectElement: 'تحديد العنصر',
     refresh: 'تحديث',
-    exitFullscreen: 'الخروج من ملء الشاشة'
+    exitFullscreen: 'الخروج من ملء الشاشة',
+    goBack: 'رجوع',
+    goForward: 'تقدم'
   },
-
-  // تلميح تغيير URL
   urlChangeHint: {
     useCurrentUrl: 'استخدام رابط صفحة الويب المعروضة حاليًا',
     useThisPage: 'استخدام هذه الصفحة'
   },
-
-  // مؤقت التحديث
   refreshTimer: {
     day: 'ي',
     hour: 'س',
@@ -410,8 +396,88 @@ export default {
     minute: 'د',
     seconds: 'ث'
   },
-
-  // أخرى
+  basicAuth: {
+    title: 'المصادقة مطلوبة',
+    username: 'اسم المستخدم',
+    password: 'كلمة المرور',
+    login: 'تسجيل الدخول'
+  },
+  externalUrl: {
+    title: 'رابط خارجي'
+  },
+  contentScript: {
+    title: 'منفذ البرامج النصية للمحتوى',
+    tabs: {
+      highlight: 'تمييز',
+      extract: 'استخراج',
+      actions: 'عمليات',
+      custom: 'مخصص'
+    },
+    highlight: {
+      title: 'تمييز العناصر',
+      selectors: 'المحددات (واحد في كل سطر)',
+      color: 'لون التمييز',
+      duration: 'المدة (مللي ثانية)',
+      permanentHint: '0 = تمييز دائم',
+      enablePulse: 'تمكين الرسوم المتحركة النبضية',
+      apply: 'تطبيق التمييز',
+      clear: 'مسح التمييز',
+      executing: 'جاري التنفيذ...',
+      success: 'تم تمييز {count} عنصر',
+      failed: 'فشل التمييز: {error}',
+      cleared: 'تم مسح جميع التمييزات',
+      clearFailed: 'فشل المسح: {error}'
+    },
+    extract: {
+      title: 'استخراج البيانات',
+      selectors: 'المحددات (واحد في كل سطر)',
+      extractText: 'استخراج النص',
+      extractHtml: 'استخراج HTML',
+      attributes: 'قائمة السمات (مفصولة بفواصل)',
+      styles: 'سمات الأنماط (مفصولة بفواصل)',
+      extractBtn: 'استخراج البيانات',
+      exportJson: 'تصدير JSON',
+      executing: 'جاري الاستخراج...',
+      results: 'نتائج الاستخراج',
+      items: '{count} عنصر',
+      success: 'تم استخراج {count} عنصر',
+      failed: 'فشل الاستخراج: {error}'
+    },
+    actions: {
+      title: 'عمليات مجمعة',
+      selectors: 'المحددات (واحد في كل سطر)',
+      actionType: 'نوع العملية',
+      click: 'نقر',
+      focus: 'تركيز',
+      scrollIntoView: 'التمرير إلى العرض',
+      hide: 'إخفاء',
+      show: 'إظهار',
+      remove: 'إزالة',
+      execute: 'تنفيذ العملية',
+      executing: 'جاري التنفيذ...',
+      results: 'نتائج العملية',
+      success: 'نجاح: {count}',
+      failed: 'فشل: {count}',
+      viewFailedDetails: 'عرض تفاصيل الفشل',
+      completeSuccess: 'اكتملت العملية\nنجاح: {success}\nفشل: {failed}',
+      completeFailed: 'فشلت العملية: {error}'
+    },
+    custom: {
+      title: 'برنامج نصي مخصص',
+      codeLabel: 'كود JavaScript',
+      execute: 'تنفيذ البرنامج النصي',
+      executing: 'جاري التنفيذ...',
+      results: 'نتائج التنفيذ'
+    },
+    history: {
+      title: 'سجل التنفيذ',
+      clear: 'مسح السجل',
+      noResult: 'لا توجد نتائج',
+      executionFailed: 'فشل التنفيذ',
+      noReturnValue: 'لا توجد قيمة مرجعة',
+      emptyResult: 'نتيجة فارغة'
+    }
+  },
   other: {
     gridView: 'عرض الشبكة',
     canvasView: 'عرض اللوحة',
@@ -442,6 +508,206 @@ export default {
     descending: 'تنازلي',
     byName: 'حسب الاسم',
     byDate: 'حسب التاريخ',
-    bySize: 'حسب الحجم'
+    bySize: 'حسب الحجم',
+    certificateError: 'خطأ في الشهادة',
+    certificateErrorDescription: 'يستخدم هذا الموقع شهادة SSL غير صالحة ولا يمكن الاتصال به بشكل آمن.',
+    certificateErrorHint: 'يحدث هذا عادةً بسبب استخدام شهادة موقعة ذاتياً أو شهادة منتهية الصلاحية.',
+    ignoreCertificateError: 'تجاهل الخطأ',
+    reload: 'إعادة التحميل'
+  },
+  apiSettings: {
+    apiExecute: 'تنفيذ JS متعدد الخطوات',
+    apiKeyHeader: 'يجب أن يتضمن رأس الطلب',
+    apiListWorkspaces: 'عرض مساحات العمل والصفحات',
+    apiTraffic: 'الحصول على حركة الشبكة',
+    bindAddress: 'عنوان الربط',
+    copy: 'نسخ',
+    enable: 'تفعيل',
+    externalApi: 'API للوصول الخارجي:',
+    hookUrlHint: 'سيتم إعادة توجيه طلبات الشبكة للصفحة كـ POST JSON إلى هذا العنوان. يمكنك تعيين عنوان Hook URL مستقل لكل صفحة في تحرير الموقع.',
+    networkHook: 'Hook شبكة عام (إعادة توجيه جانبية)',
+    port: 'المنفذ',
+    regenerate: 'إعادة التوليد',
+    running: 'قيد التشغيل',
+    server: 'خادم API',
+    showHide: 'إظهار/إخفاء',
+    stopped: 'متوقف',
+    title: 'إعدادات خدمة API',
+    usageGuide: 'دليل الاستخدام'
+  },
+  canvasContextMenu: {
+    addWebsite: 'إضافة موقع',
+    aiCustomPage: 'AI إنشاء صفحة مخصصة'
+  },
+  canvasControls: {
+    addWebsite: 'إضافة نافذة',
+    autoArrange: 'ملاءمة الشاشة',
+    clearDrawings: 'مسح الرسومات',
+    drawingMode: 'وضع الرسم',
+    drawingSettings: 'إعدادات الرسم',
+    fitToScreen: 'ملاءمة الشاشة',
+    rearrange: 'إعادة الترتيب',
+    resetZoom: 'إعادة تعيين التكبير (100%)',
+    zoomIn: 'تكبير',
+    zoomOut: 'تصغير'
+  },
+  canvasControlsPanel: {
+    brushTool: 'أداة الفرشاة',
+    drawColor: 'لون الرسم',
+    imageTool: 'أداة الصورة',
+    strokeWidth: 'سماكة الخط',
+    textTool: 'أداة النص'
+  },
+  canvasView: {
+    addWebsite: 'إضافة موقع',
+    addWebsiteNode: 'إضافة عقدة موقع',
+    clearDrawing: 'مسح الرسم',
+    color: 'اللون:',
+    drawingMode: 'وضع الرسم اليدوي',
+    exitDrawing: 'الخروج من الرسم',
+    fitToView: 'ملاءمة العرض',
+    newWebsite: 'موقع جديد',
+    startDrawing: 'رسم',
+    strokeWidth: 'السماكة:'
+  },
+  configPanelExtra: {
+    collapseSidebar: 'طي الشريط الجانبي',
+    currentViewSettings: 'إعدادات العرض الحالي',
+    logoAlt: 'شعار Tab Hive'
+  },
+  customHtml: {
+    configError: 'يرجى تكوين LLM API في الإعدادات أولاً',
+    defaultTitle: 'صفحة ويب مخصصة',
+    generateBtn: 'إنشاء صفحة',
+    generateFailed: 'فشل الإنشاء',
+    generating: 'جارٍ إنشاء كود HTML، يرجى الانتظار...',
+    generatingBtn: 'جارٍ الإنشاء...',
+    requirement: 'وصف المتطلبات',
+    requirementHint: 'صف بالتفصيل ميزات وأنماط صفحة الويب التي تريدها',
+    requirementPlaceholder: 'مثال: إنشاء قائمة مهام تدعم الإضافة والحذف ووضع علامة مكتمل...',
+    subtitle: 'صف متطلباتك، وسيقوم AI بإنشاء كود صفحة الويب لك',
+    title: 'إنشاء صفحة ويب مخصصة'
+  },
+  desktopCapture: {
+    addCapture: 'إضافة التقاط سطح المكتب',
+    appWindow: '🪟 نافذة التطبيق',
+    basicInfo: 'معلومات أساسية',
+    captureOptions: 'خيارات الالتقاط',
+    captureTitle: 'الاسم',
+    changeSource: 'تغيير المصدر',
+    connecting: 'جارٍ الاتصال بمصدر سطح المكتب...',
+    displaySettings: 'إعدادات العرض',
+    editCapture: 'تحرير التقاط سطح المكتب',
+    electronOnly: 'التقاط سطح المكتب متاح فقط في بيئة Electron',
+    fitScreen: 'ملاءمة حجم الشاشة',
+    fullScreen: '🖥️ الشاشة الكاملة',
+    mute: 'كتم الصوت',
+    noSource: 'لم يتم تحديد مصدر سطح المكتب',
+    padding: 'الحشو الداخلي',
+    readonlyMode: '📺 وضع القراءة فقط (التفاعل غير مدعوم)',
+    selectSource: 'يرجى اختيار مصدر سطح المكتب للالتقاط',
+    selectSourceBtn: 'اختيار مصدر سطح المكتب',
+    sourceTitle: 'مصدر سطح المكتب',
+    titlePlaceholder: 'أدخل اسم التقاط سطح المكتب'
+  },
+  llmConfig: {
+    apiKey: 'API Key',
+    apiKeyHint: 'مفتاح API للمصادقة.',
+    apiKeyLink: 'الحصول من OpenRouter',
+    apiUrl: 'عنوان API',
+    apiUrlHint: 'العنوان الكامل لـ LLM API',
+    maxTokens: 'الحد الأقصى للرموز',
+    maxTokensHint: 'الحد الأقصى لطول المحتوى المُنشأ (0 يعني بلا حدود)',
+    model: 'اسم النموذج',
+    modelHint: 'اسم النموذج المراد استخدامه',
+    subtitle: 'تكوين LLM API لإنشاء صفحات ويب مخصصة',
+    temperature: 'Temperature',
+    temperatureHint: 'التحكم في عشوائية المخرجات (0-2)',
+    title: 'تكوين LLM API'
+  },
+  monitoring: {
+    actions: 'الإجراءات',
+    apiConfigDesc: 'تتطلب هذه الميزة LLM API (مثل OpenAI GPT-4 Vision) لتحليل لقطات الشاشة. يرجى تكوين مفتاح API في الإعدادات.',
+    apiConfigTitle: 'يلزم تكوين LLM API',
+    checkEvery: 'فحص كل {interval} ثانية',
+    checkInterval: 'فترة الفحص',
+    comingSoon: 'قريباً',
+    condition: 'شرط المراقبة',
+    conditionDesc: 'وصف الشرط (صف شرط التشغيل بلغة طبيعية)',
+    conditionHint: 'سيقوم AI بتحليل لقطات الصفحة بناءً على هذا الوصف لتحديد ما إذا تم استيفاء الشرط',
+    conditionLabel: 'الشرط:',
+    conditionPlaceholder: 'مثال: التشغيل عندما تعرض الصفحة \'نفد المخزون\' أو \'sold out\'',
+    createFirst: 'إنشاء أول قاعدة',
+    createRule: '+ قاعدة جديدة',
+    desktopNotification: 'إشعار سطح المكتب',
+    editRule: 'تحرير قاعدة المراقبة',
+    goConfig: 'الذهاب للإعدادات ←',
+    intervalHint: 'تجنب تعيين فترة قصيرة جداً لمنع تكاليف عالية من استدعاءات API المتكررة',
+    lastTrigger: 'آخر تشغيل: {time}',
+    newRule: 'قاعدة مراقبة جديدة',
+    noRules: 'لا توجد قواعد مراقبة بعد',
+    noRulesDesc: 'أنشئ قواعد لمراقبة تغييرات الصفحة تلقائياً',
+    notificationMessage: 'رسالة الإشعار',
+    notificationPlaceholder: 'مثال: تغيّرت حالة المنتج!',
+    required: 'مطلوب',
+    ruleName: 'اسم القاعدة',
+    ruleNamePlaceholder: 'مثال: كشف تغييرات الأسعار',
+    rulesTitle: 'قواعد مراقبة الصفحة',
+    seconds: 'ثوانٍ',
+    sendEmail: 'إرسال بريد إلكتروني',
+    testScreenshot: '🖼️ اختبار لقطة الشاشة',
+    testVision: '🤖 اختبار التحليل البصري',
+    textMonitor: 'مراقبة النص',
+    textMonitorDesc: 'مراقبة تغييرات نص الصفحة (قريباً)',
+    triggerCount: 'تم التشغيل {count} مرة',
+    visionMonitor: 'المراقبة البصرية (LLM)',
+    visionMonitorDesc: 'استخدام AI لتحليل لقطات الصفحة',
+    webhook: 'إشعار Webhook'
+  },
+  proxy: {
+    addProxy: 'إضافة وكيل',
+    batchDelete: 'حذف',
+    cipher: 'طريقة التشفير',
+    editProxy: 'تحرير الوكيل',
+    enable: 'تفعيل',
+    enableTfo: 'تفعيل TCP Fast Open',
+    enableUdp: 'تفعيل UDP',
+    host: 'المضيف',
+    hostPlaceholder: 'عنوان الخادم',
+    importSubscription: 'استيراد اشتراك',
+    name: 'الاسم',
+    namePlaceholder: 'اسم الوكيل',
+    password: 'كلمة المرور',
+    passwordOptional: 'كلمة المرور (اختياري)',
+    passwordPlaceholder: 'كلمة المرور',
+    pluginOptional: 'الإضافة (اختياري)',
+    pluginOpts: 'خيارات الإضافة (بتنسيق JSON)',
+    portPlaceholder: 'رقم المنفذ',
+    saving: 'جارٍ الحفظ...',
+    selected: 'تم تحديد {count} عنصر',
+    ssPassword: 'كلمة مرور Shadowsocks',
+    title: 'إدارة عقد الوكيل',
+    type: 'النوع',
+    usernameOptional: 'اسم المستخدم (اختياري)',
+    usernamePlaceholder: 'اسم المستخدم',
+    uuid: 'UUID'
+  },
+  rearrangeDialog: {
+    columns: 'عدد الأعمدة',
+    finalSize: 'حجم النافذة النهائي',
+    itemHeight: 'ارتفاع النافذة (px)',
+    itemWidth: 'عرض النافذة (px)',
+    layout: 'التخطيط',
+    preview: 'معاينة',
+    reset: 'إعادة تعيين الافتراضي',
+    scale: 'مقياس النافذة',
+    scaleHint: '1.0 هو الحجم الأصلي، 2.0 هو الضعف',
+    title: 'إعادة ترتيب النوافذ'
+  },
+  websiteEditExtra: {
+    addDesktopCapture: 'إضافة التقاط سطح المكتب',
+    aiCustomPage: 'AI إنشاء صفحة مخصصة',
+    basicInfo: 'معلومات أساسية',
+    subtitle: 'تكوين خيارات العرض والوكيل والميزات المتقدمة'
   }
 }

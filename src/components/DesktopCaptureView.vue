@@ -11,24 +11,25 @@
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <p>正在连接桌面源...</p>
+      <p>{{ $t('desktopCapture.connecting') }}</p>
     </div>
     
     <!-- 错误状态 -->
     <div v-if="error" class="error-overlay">
       <p>❌ {{ error }}</p>
-      <button @click="retry" class="btn-retry">重试</button>
+      <button @click="retry" class="btn-retry">{{ $t('common.retry') }}</button>
     </div>
     
     <!-- 只读提示 -->
     <div v-if="!loading && !error" class="readonly-hint">
-      📺 只读模式（不支持交互）
+      {{ $t('desktopCapture.readonlyMode') }}
     </div>
   </div>
 </template>
 
 <script>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'DesktopCaptureView',
@@ -46,6 +47,7 @@ export default {
   },
   emits: ['error', 'ready'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const videoRef = ref(null)
     const loading = ref(true)
     const error = ref('')
@@ -56,13 +58,13 @@ export default {
     // 开始捕获
     const startCapture = async () => {
       if (!props.sourceId) {
-        error.value = '未指定桌面源'
+        error.value = t('desktopCapture.noSourceSpecified')
         loading.value = false
         return
       }
       
       if (!window.electron?.desktopCapture) {
-        error.value = '桌面捕获功能仅在 Electron 环境中可用'
+        error.value = t('desktopCapture.electronOnly')
         loading.value = false
         emit('error', error.value)
         return

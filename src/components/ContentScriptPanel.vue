@@ -6,9 +6,9 @@
         <div class="panel-header">
           <div class="header-title">
             <span class="header-icon">🎯</span>
-            <h3>内容脚本执行器</h3>
+            <h3>{{ $t('contentScript.title') }}</h3>
           </div>
-          <button @click="$emit('close')" class="close-btn" title="关闭">✕</button>
+          <button @click="$emit('close')" class="close-btn" :title="$t('common.close')">✕</button>
         </div>
 
         <!-- 标签页导航 -->
@@ -30,10 +30,10 @@
           <div v-if="activeTab === 'highlight'" class="tab-content">
             <div class="section-header">
               <span class="section-icon">✨</span>
-              <h4>元素高亮</h4>
+              <h4>{{ $t('contentScript.highlight.title') }}</h4>
             </div>
             <div class="form-group">
-              <label>选择器（每行一个）</label>
+              <label>{{ $t('contentScript.highlight.selectors') }}</label>
               <textarea 
                 v-model="highlightSelectors" 
                 placeholder="例如:&#10;.video-player&#10;#main-content&#10;.item"
@@ -43,16 +43,16 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label>高亮颜色</label>
+                <label>{{ $t('contentScript.highlight.color') }}</label>
                 <div class="color-picker-wrapper">
                   <input type="color" v-model="highlightColor" />
                   <span class="color-value">{{ highlightColor }}</span>
                 </div>
               </div>
               <div class="form-group">
-                <label>持续时间 (ms)</label>
+                <label>{{ $t('contentScript.highlight.duration') }}</label>
                 <input type="number" v-model.number="highlightDuration" min="0" step="1000" />
-                <small>0 = 永久高亮</small>
+                <small>{{ $t('contentScript.highlight.permanentHint') }}</small>
               </div>
             </div>
 
@@ -60,17 +60,17 @@
               <label class="checkbox-label">
                 <input type="checkbox" v-model="highlightPulse" />
                 <span class="checkbox-custom"></span>
-                <span>启用脉冲动画</span>
+                <span>{{ $t('contentScript.highlight.enablePulse') }}</span>
               </label>
             </div>
 
             <div class="btn-group">
               <button @click="applyHighlight" :disabled="!highlightSelectors.trim() || executing" class="btn-primary">
                 <span v-if="executing" class="btn-loading"></span>
-                {{ executing ? '执行中...' : '应用高亮' }}
+                {{ executing ? $t('contentScript.highlight.executing') : $t('contentScript.highlight.apply') }}
               </button>
               <button @click="clearAllHighlights" :disabled="executing" class="btn-secondary">
-                清除高亮
+                {{ $t('contentScript.highlight.clear') }}
               </button>
             </div>
           </div>
@@ -79,10 +79,10 @@
           <div v-if="activeTab === 'extract'" class="tab-content">
             <div class="section-header">
               <span class="section-icon">📊</span>
-              <h4>数据提取</h4>
+              <h4>{{ $t('contentScript.extract.title') }}</h4>
             </div>
             <div class="form-group">
-              <label>选择器（每行一个）</label>
+              <label>{{ $t('contentScript.extract.selectors') }}</label>
               <textarea 
                 v-model="extractSelectors" 
                 placeholder="例如:&#10;.product-title&#10;.price&#10;.rating"
@@ -94,17 +94,17 @@
               <label class="checkbox-label">
                 <input type="checkbox" v-model="extractText" />
                 <span class="checkbox-custom"></span>
-                <span>提取文本</span>
+                <span>{{ $t('contentScript.extract.extractText') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="extractHtml" />
                 <span class="checkbox-custom"></span>
-                <span>提取 HTML</span>
+                <span>{{ $t('contentScript.extract.extractHtml') }}</span>
               </label>
             </div>
 
             <div class="form-group">
-              <label>属性列表（逗号分隔）</label>
+              <label>{{ $t('contentScript.extract.attributes') }}</label>
               <input 
                 v-model="extractAttributes" 
                 placeholder="例如: href, src, data-id"
@@ -112,7 +112,7 @@
             </div>
 
             <div class="form-group">
-              <label>样式属性（逗号分隔）</label>
+              <label>{{ $t('contentScript.extract.styles') }}</label>
               <input 
                 v-model="extractStyles" 
                 placeholder="例如: color, fontSize, display"
@@ -122,17 +122,17 @@
             <div class="btn-group">
               <button @click="extractData" :disabled="!extractSelectors.trim() || executing" class="btn-primary">
                 <span v-if="executing" class="btn-loading"></span>
-                {{ executing ? '提取中...' : '提取数据' }}
+                {{ executing ? $t('contentScript.extract.executing') : $t('contentScript.extract.extractBtn') }}
               </button>
               <button @click="exportData" :disabled="!extractedData.length" class="btn-secondary">
-                导出 JSON
+                {{ $t('contentScript.extract.exportJson') }}
               </button>
             </div>
 
             <div v-if="extractedData.length" class="results">
               <div class="results-header">
-                <h5>提取结果</h5>
-                <span class="results-count">{{ extractedData.length }} 项</span>
+                <h5>{{ $t('contentScript.extract.results') }}</h5>
+                <span class="results-count">{{ $t('contentScript.extract.items', { count: extractedData.length }) }}</span>
               </div>
               <pre>{{ JSON.stringify(extractedData, null, 2) }}</pre>
             </div>
@@ -142,10 +142,10 @@
           <div v-if="activeTab === 'actions'" class="tab-content">
             <div class="section-header">
               <span class="section-icon">⚡</span>
-              <h4>批量操作</h4>
+              <h4>{{ $t('contentScript.actions.title') }}</h4>
             </div>
             <div class="form-group">
-              <label>选择器（每行一个）</label>
+              <label>{{ $t('contentScript.actions.selectors') }}</label>
               <textarea 
                 v-model="actionSelectors" 
                 placeholder="例如:&#10;button.submit&#10;.ad-banner&#10;.popup"
@@ -154,38 +154,38 @@
             </div>
 
             <div class="form-group">
-              <label>操作类型</label>
+              <label>{{ $t('contentScript.actions.actionType') }}</label>
               <select v-model="actionType">
-                <option value="click">👆 点击</option>
-                <option value="focus">🔍 聚焦</option>
-                <option value="scrollIntoView">📜 滚动到视图</option>
-                <option value="hide">🙈 隐藏</option>
-                <option value="show">👀 显示</option>
-                <option value="remove">🗑️ 移除</option>
+                <option value="click">👆 {{ $t('contentScript.actions.click') }}</option>
+                <option value="focus">🔍 {{ $t('contentScript.actions.focus') }}</option>
+                <option value="scrollIntoView">📜 {{ $t('contentScript.actions.scrollIntoView') }}</option>
+                <option value="hide">🙈 {{ $t('contentScript.actions.hide') }}</option>
+                <option value="show">👀 {{ $t('contentScript.actions.show') }}</option>
+                <option value="remove">🗑️ {{ $t('contentScript.actions.remove') }}</option>
               </select>
             </div>
 
             <button @click="performAction" :disabled="!actionSelectors.trim() || executing" class="btn-primary btn-full">
               <span v-if="executing" class="btn-loading"></span>
-              {{ executing ? '执行中...' : '执行操作' }}
+              {{ executing ? $t('contentScript.actions.executing') : $t('contentScript.actions.execute') }}
             </button>
 
             <div v-if="actionResult" class="results">
               <div class="results-header">
-                <h5>操作结果</h5>
+                <h5>{{ $t('contentScript.actions.results') }}</h5>
               </div>
               <div class="result-stats">
                 <div class="stat-item success">
                   <span class="stat-icon">✅</span>
-                  <span>成功: {{ actionResult.success?.length || 0 }}</span>
+                  <span>{{ $t('contentScript.actions.success', { count: actionResult.success?.length || 0 }) }}</span>
                 </div>
                 <div class="stat-item error">
                   <span class="stat-icon">❌</span>
-                  <span>失败: {{ actionResult.failed?.length || 0 }}</span>
+                  <span>{{ $t('contentScript.actions.failed', { count: actionResult.failed?.length || 0 }) }}</span>
                 </div>
               </div>
               <details v-if="actionResult.failed?.length" class="details-collapse">
-                <summary>查看失败详情</summary>
+                <summary>{{ $t('contentScript.actions.viewFailedDetails') }}</summary>
                 <pre>{{ JSON.stringify(actionResult.failed, null, 2) }}</pre>
               </details>
             </div>
@@ -195,10 +195,10 @@
           <div v-if="activeTab === 'custom'" class="tab-content">
             <div class="section-header">
               <span class="section-icon">💻</span>
-              <h4>自定义脚本</h4>
+              <h4>{{ $t('contentScript.custom.title') }}</h4>
             </div>
             <div class="form-group">
-              <label>JavaScript 代码</label>
+              <label>{{ $t('contentScript.custom.codeLabel') }}</label>
               <textarea 
                 v-model="customScript" 
                 placeholder="例如:&#10;document.querySelectorAll('.item').forEach(el => {&#10;  console.log(el.textContent);&#10;});"
@@ -209,12 +209,12 @@
 
             <button @click="executeCustomScript" :disabled="!customScript.trim() || executing" class="btn-primary btn-full">
               <span v-if="executing" class="btn-loading"></span>
-              {{ executing ? '执行中...' : '执行脚本' }}
+              {{ executing ? $t('contentScript.custom.executing') : $t('contentScript.custom.execute') }}
             </button>
 
             <div v-if="customResult !== null" class="results">
               <div class="results-header">
-                <h5>执行结果</h5>
+                <h5>{{ $t('contentScript.custom.results') }}</h5>
               </div>
               <pre>{{ JSON.stringify(customResult, null, 2) }}</pre>
             </div>
@@ -224,7 +224,7 @@
         <!-- 执行历史 -->
         <div class="execution-history" v-if="executionResults.length">
           <div class="history-header">
-            <h4>📝 执行历史</h4>
+            <h4>📝 {{ $t('contentScript.history.title') }}</h4>
             <span class="history-count">{{ executionResults.length }}</span>
           </div>
           <div class="history-list">
@@ -236,7 +236,7 @@
               <span class="history-preview">{{ formatResult(result) }}</span>
             </div>
           </div>
-          <button @click="clearHistory" class="btn-clear">清除历史</button>
+          <button @click="clearHistory" class="btn-clear">{{ $t('contentScript.history.clear') }}</button>
         </div>
       </div>
     </div>
@@ -245,6 +245,7 @@
 
 <script>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useContentScriptExecutor } from '../composables/useContentScriptExecutor'
 
 export default {
@@ -261,6 +262,7 @@ export default {
   },
   emits: ['close'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const executor = useContentScriptExecutor()
     const mouseDownOnOverlay = ref(false)
 
@@ -281,12 +283,12 @@ export default {
     }
     
     // 标签页
-    const tabs = [
-      { id: 'highlight', name: '高亮', icon: '✨' },
-      { id: 'extract', name: '提取', icon: '📊' },
-      { id: 'actions', name: '操作', icon: '⚡' },
-      { id: 'custom', name: '自定义', icon: '💻' }
-    ]
+    const tabs = computed(() => [
+      { id: 'highlight', name: t('contentScript.tabs.highlight'), icon: '✨' },
+      { id: 'extract', name: t('contentScript.tabs.extract'), icon: '📊' },
+      { id: 'actions', name: t('contentScript.tabs.actions'), icon: '⚡' },
+      { id: 'custom', name: t('contentScript.tabs.custom'), icon: '💻' }
+    ])
     const activeTab = ref('highlight')
 
     // 高亮相关
@@ -326,10 +328,10 @@ export default {
           pulse: highlightPulse.value
         })
         console.log('高亮结果:', result)
-        alert(`✅ 已高亮 ${result.result?.highlighted?.length || 0} 个元素`)
+        alert(`✅ ${t('contentScript.highlight.success', { count: result.result?.highlighted?.length || 0 })}`)
       } catch (error) {
         console.error('高亮失败:', error)
-        alert('❌ 高亮失败: ' + error.message)
+        alert(`❌ ${t('contentScript.highlight.failed', { error: error.message })}`)
       }
     }
 
@@ -337,10 +339,10 @@ export default {
     const clearAllHighlights = async () => {
       try {
         await executor.clearHighlights(props.targetIframe)
-        alert('✅ 已清除所有高亮')
+        alert(`✅ ${t('contentScript.highlight.cleared')}`)
       } catch (error) {
         console.error('清除失败:', error)
-        alert('❌ 清除失败: ' + error.message)
+        alert(`❌ ${t('contentScript.highlight.clearFailed', { error: error.message })}`)
       }
     }
 
@@ -359,10 +361,10 @@ export default {
         })
         
         extractedData.value = result.result || []
-        alert(`✅ 已提取 ${extractedData.value.length} 项数据`)
+        alert(`✅ ${t('contentScript.extract.success', { count: extractedData.value.length })}`)
       } catch (error) {
         console.error('提取失败:', error)
-        alert('❌ 提取失败: ' + error.message)
+        alert(`❌ ${t('contentScript.extract.failed', { error: error.message })}`)
       }
     }
 
@@ -388,10 +390,10 @@ export default {
           actionType.value
         )
         actionResult.value = result.result
-        alert(`✅ 操作完成\n成功: ${result.result?.success?.length || 0}\n失败: ${result.result?.failed?.length || 0}`)
+        alert(`✅ ${t('contentScript.actions.completeSuccess', { success: result.result?.success?.length || 0, failed: result.result?.failed?.length || 0 })}`)
       } catch (error) {
         console.error('操作失败:', error)
-        alert('❌ 操作失败: ' + error.message)
+        alert(`❌ ${t('contentScript.actions.completeFailed', { error: error.message })}`)
       }
     }
 
@@ -425,12 +427,12 @@ export default {
     }
 
     const formatResult = (result) => {
-      if (!result) return '无结果'
-      if (!result.success) return result.error || '执行失败'
-      
+      if (!result) return t('contentScript.history.noResult')
+      if (!result.success) return result.error || t('contentScript.history.executionFailed')
+
       // 处理 result.result 可能为 undefined、null 或其他类型的情况
       if (result.result === undefined || result.result === null) {
-        return '无返回值'
+        return t('contentScript.history.noReturnValue')
       }
       
       if (typeof result.result === 'string') {
@@ -439,7 +441,7 @@ export default {
       
       try {
         const jsonStr = JSON.stringify(result.result)
-        if (!jsonStr) return '空结果'
+        if (!jsonStr) return t('contentScript.history.emptyResult')
         return jsonStr.substring(0, 50) + (jsonStr.length > 50 ? '...' : '')
       } catch (error) {
         return String(result.result).substring(0, 50) + '...'

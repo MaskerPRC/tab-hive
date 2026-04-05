@@ -9,11 +9,11 @@
     >
       <div class="context-menu-item" @click="handleAddWebsite">
         <i class="fa-solid fa-plus"></i>
-        <span>添加网站</span>
+        <span>{{ $t('canvasContextMenu.addWebsite') }}</span>
       </div>
       <div class="context-menu-item" @click="handleAddCustomHtml">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
-        <span>AI 生成自定义网页</span>
+        <span>{{ $t('canvasContextMenu.aiCustomPage') }}</span>
       </div>
     </div>
   </Teleport>

@@ -1,5 +1,4 @@
 export default {
-  // सामान्य
   common: {
     confirm: 'पुष्टि करें',
     cancel: 'रद्द करें',
@@ -60,21 +59,15 @@ export default {
     unknown: 'अज्ञात',
     untitled: 'शीर्षकहीन'
   },
-
-  // ऐप शीर्षक और नाम
   app: {
     name: '全视界',
     title: '全视界'
   },
-
-  // संवाद
   dialog: {
     title: 'टिप',
     confirm: 'पुष्टि करें',
     cancel: 'रद्द करें'
   },
-
-  // वेबसाइट संपादन संवाद
   websiteEdit: {
     addWebsite: 'वेबसाइट जोड़ें',
     editWebsite: 'वेबसाइट संपादित करें',
@@ -95,34 +88,29 @@ export default {
     confirm: 'पुष्टि करें',
     cancel: 'रद्द करें'
   },
-
-  // वेबसाइट मूल जानकारी
   websiteBasicInfo: {
     name: 'वेबसाइट का नाम:',
     url: 'वेबसाइट URL:',
     namePlaceholder: 'उदा. Google',
     urlPlaceholder: 'उदा. bbc.com या https://bbc.com'
   },
-
-  // डिवाइस प्रकार चयनकर्ता
   deviceType: {
     title: 'डिवाइस प्रकार:',
     desktop: '🖥️ डेस्कटॉप',
     mobile: '📱 मोबाइल',
     mobileHint: '💡 मोबाइल संस्करण स्वचालित रूप से डोमेन को मोबाइल संस्करण में बदल देगा (उदा. www.xxx.com → m.xxx.com) और व्यूपोर्ट की चौड़ाई को 375px तक सीमित कर देगा'
   },
-
-  // ऑडियो विजुअल सेटिंग्स
   audioVisual: {
     audioSettings: 'ऑडियो सेटिंग्स:',
     muted: '🔇 इस वेबसाइट को म्यूट करें',
     mutedHint: '💡 सक्षम होने पर, यह वेबसाइट कोई ध्वनि नहीं चलाएगी',
     visualSettings: 'विजुअल सेटिंग्स:',
     darkMode: '🌙 डार्क थीम',
-    darkModeHint: '💡 वेबसाइट के लिए डार्क थीम लागू करें, रात में ब्राउज़िंग के लिए उपयुक्त'
+    darkModeHint: '💡 वेबसाइट के लिए डार्क थीम लागू करें, रात में ब्राउज़िंग के लिए उपयुक्त',
+    actionButtonSettings: 'एक्शन बटन सेटिंग्स:',
+    requireModifierForActions: '⌨️ मॉडिफ़ायर कुंजी आवश्यक',
+    requireModifierForActionsHint: '💡 सक्रिय करने पर, एक्शन बटन दिखाने के लिए Ctrl या Alt दबाए रखें, वेबपेज ऑपरेशन में हस्तक्षेप से बचने के लिए'
   },
-
-  // सत्र उदाहरण चयनकर्ता
   sessionInstance: {
     title: 'Cookie साझा उदाहरण:',
     default: 'डिफ़ॉल्ट',
@@ -136,15 +124,11 @@ export default {
     defaultInstanceName: 'साझा उदाहरण',
     hint: '💡 एक ही उदाहरण में हनीकॉम्ब cookies और स्टोरेज साझा करते हैं, उदाहरण पूरी तरह से अलग हैं\n• डिफ़ॉल्ट साझा उदाहरण: सभी वेबसाइटें साझा करती हैं\n• नया उदाहरण: बहु-खाता लॉगिन परिदृश्यों के लिए उपयोग किया जा सकता है'
   },
-
-  // पैडिंग कॉन्फ़िग
   padding: {
     title: 'पैडिंग कॉन्फ़िग (ऐच्छिक):',
     unit: 'px',
     hint: '💡 वेबपेज सामग्री और कार्ड किनारों के बीच की दूरी समायोजित करें (इकाई: पिक्सेल)\n• डिफ़ॉल्ट 0 है (कोई पैडिंग नहीं)\n• अनुशंसित सीमा: 0-50px'
   },
-
-  // लक्ष्य चयनकर्ता सूची
   targetSelector: {
     title: 'लक्ष्य चयनकर्ता (ऐच्छिक):',
     placeholder: 'उदा. #main-content या .video-player',
@@ -152,8 +136,6 @@ export default {
     removeSelector: 'इस चयनकर्ता को हटाएं',
     hint: '💡 आप कई CSS चयनकर्ता जोड़ सकते हैं। ग्रिड मोड में, केवल मिलान करने वाले तत्व प्रदर्शित होते हैं, अन्य सामग्री छिपी रहती है\n• कई चयनकर्ता सभी मिलान करने वाले तत्वों को रखेंगे\n• पूर्ण स्क्रीन पूर्ण पृष्ठ दिखाती है\n• हमेशा पूरे पृष्ठ को दिखाने के लिए खाली छोड़ दें'
   },
-
-  // स्वचालित रीफ्रेश कॉन्फ़िग
   autoRefresh: {
     title: 'स्वचालित रीफ्रेश अंतराल (ऐच्छिक):',
     custom: 'कस्टम:',
@@ -163,8 +145,6 @@ export default {
     days: 'दिन',
     hint: '💡 iframe स्वचालित-रीफ्रेश समय अंतराल सेट करें\n• त्वरित चयन के लिए प्रीसेट पर क्लिक करें, या समय और इकाई को अनुकूलित करें\n• स्वचालित-रीफ्रेश अक्षम करने के लिए 0 पर सेट करें\n• अनुशंसित न्यूनतम: 30 सेकंड (प्रदर्शन को प्रभावित करने वाले बार-बार रीफ्रेश से बचने के लिए)\n• उपयोग के मामले: वास्तविक समय निगरानी, डेटा डैशबोर्ड और अन्य पृष्ठ जिन्हें नियमित अपडेट की आवश्यकता है'
   },
-
-  // कॉन्फ़िग पैनल
   configPanel: {
     language: 'भाषा',
     languageHint: 'इंटरफ़ेस भाषा चुनें',
@@ -196,10 +176,18 @@ export default {
       deleteLayout: 'क्या आप वाकई लेआउट "{name}" हटाना चाहते हैं?',
       clearConfig: 'क्या आप वाकई सभी कॉन्फ़िगरेशन साफ करना चाहते हैं? यह सभी वेबसाइटों और लेआउट सेटिंग्स को हटा देगा।'
     },
-    unnamed: 'अनाम'
+    unnamed: 'अनाम',
+    adBlockEnabled: 'ऐड ब्लॉक',
+    adBlockEnabledHint: 'सभी वेबसाइटों पर स्वचालित रूप से विज्ञापन ब्लॉक करने के लिए सक्रिय करें',
+    customCodeEnabled: 'कस्टम कोड',
+    customCodeEnabledHint: 'फ़्लोटिंग एक्शन में स्क्रिप्ट एक्सिक्यूटर बटन दिखाने के लिए सक्रिय करें',
+    proxy: 'प्रॉक्सी',
+    proxyHint: 'प्रॉक्सी सेटिंग्स प्रबंधित करें',
+    settings: 'सेटिंग्स',
+    settingsHint: 'LLM API और अन्य सेटिंग्स कॉन्फ़िगर करें',
+    showCertificateErrorShadow: 'प्रमाणपत्र त्रुटि लाल छाया',
+    showCertificateErrorShadowHint: 'प्रमाणपत्र त्रुटि वाली वेबसाइटों पर लाल छाया दिखाने के लिए सक्रिय करें'
   },
-
-  // लेआउट संचालन
   layout: {
     create: 'नया लेआउट बनाएं',
     createMessage: 'कृपया नया लेआउट नाम दर्ज करें',
@@ -236,13 +224,28 @@ export default {
     shareLayout: 'लेआउट साझा करें',
     renameLayout: 'नाम बदलें',
     deleteLayout: 'हटाएं',
-    websiteCount: ' वेबसाइटें'
+    websiteCount: ' वेबसाइटें',
+    capturingScreenshot: 'स्क्रीनशॉट लिया जा रहा है...',
+    exportFailed: 'निर्यात विफल',
+    exportLayout: 'लेआउट निर्यात करें',
+    exportSuccess: 'सफलतापूर्वक निर्यात हो गया!',
+    exportWithScreenshotConfirm: 'क्या आप वर्तमान पेज का स्क्रीनशॉट लेकर लेआउट डेटा एम्बेड करना चाहते हैं?\n\nस्क्रीनशॉट निर्यात छवि के रूप में उपयोग होगी, और लेआउट JSON डेटा छवि के मेटाडेटा में सहेजा जाएगा।',
+    importFailed: 'आयात विफल',
+    importLayoutFromImageConfirm: 'छवि में लेआउट डेटा पाया गया ("{name}")।\n\nक्या आप यह लेआउट आयात करना चाहते हैं?',
+    importSuccess: 'सफलतापूर्वक आयात हो गया!',
+    importedLayout: 'आयातित लेआउट',
+    invalidLayoutData: 'अमान्य लेआउट डेटा',
+    preview: 'प्रीव्यू',
+    screenshotCopied: 'स्क्रीनशॉट क्लिपबोर्ड पर कॉपी हो गया!',
+    screenshotDownloaded: 'स्क्रीनशॉट डाउनलोड हो गया!',
+    shareFailed: 'शेयर विफल',
+    shareSuccess: 'सफलतापूर्वक शेयर हो गया!',
+    shareWithScreenshotConfirm: 'क्या आप वर्तमान पेज का स्क्रीनशॉट लेकर लेआउट डेटा एम्बेड करना चाहते हैं?\n\nस्क्रीनशॉट शेयरिंग छवि के रूप में उपयोग होगी, और लेआउट JSON डेटा छवि के मेटाडेटा में सहेजा जाएगा।',
+    sharedLayoutsDesc: 'शेयर किए गए Tab Hive लेआउट कॉन्फ़िगरेशन ब्राउज़ और आयात करें',
+    sortHot: 'सर्वाधिक डाउनलोड',
+    sortLatest: 'नवीनतम',
+    unnamedLayout: 'अनाम लेआउट'
   },
-
-  // डाउनलोड मोडल
-
-
-  // अपडेट सूचना
   updateNotification: {
     title: 'नया संस्करण उपलब्ध',
     currentVersion: 'वर्तमान संस्करण:',
@@ -260,8 +263,6 @@ export default {
     later: 'बाद में याद दिलाएं',
     close: 'बंद करें'
   },
-
-  // वेबसाइट कार्ड
   websiteCard: {
     fullscreen: 'पूर्ण स्क्रीन',
     edit: 'संपादित करें',
@@ -270,8 +271,6 @@ export default {
     refresh: 'रीफ्रेश करें',
     toggleMute: 'म्यूट टॉगल करें'
   },
-
-  // तत्व चयनकर्ता
   elementSelector: {
     title: 'तत्व चयनकर्ता',
     start: 'चयन शुरू करें',
@@ -280,75 +279,6 @@ export default {
     confirm: 'चयन की पुष्टि करें',
     cancel: 'रद्द करें'
   },
-
-  // चयनकर्ता टूलबार
-  selectorToolbar: {
-    startSelect: 'चयन शुरू करें',
-    stopSelect: 'चयन रोकें',
-    confirm: 'पुष्टि करें',
-    cancel: 'रद्द करें'
-  },
-
-  // आयात मोड संवाद
-  importMode: {
-    title: 'आयात मोड चुनें',
-    description: 'आप इस लेआउट को कैसे आयात करना चाहते हैं?',
-    realtimeSync: {
-      title: 'वास्तविक समय सिंक आयात',
-      description: 'मूल टेम्पलेट के साथ सिंक में रहें, लेखक द्वारा टेम्पलेट अपडेट करने पर मैन्युअल रूप से अपडेट सिंक करें',
-      note: '⚠️ यदि आप लेआउट संशोधित करते हैं, तो सिंक अपडेट करते समय आपके परिवर्तन ओवरराइट हो जाएंगे'
-    },
-    copy: {
-      title: 'कॉपी आयात',
-      description: 'एक स्वतंत्र प्रति बनाएं जिसे स्वतंत्र रूप से संशोधित किया जा सकता है',
-      note: '💡 मूल टेम्पलेट अपडेट से प्रभावित नहीं'
-    },
-    cancel: 'रद्द करें'
-  },
-
-  // सत्र उदाहरण प्रबंधक
-  sessionInstanceManager: {
-    title: 'Cookie साझा उदाहरण प्रबंधन',
-    whatIs: 'Cookie साझा उदाहरण क्या है?',
-    description: 'एक ही उदाहरण में हनीकॉम्ब cookies, LocalStorage और अन्य स्टोरेज साझा करते हैं। उदाहरण एक दूसरे से पूरी तरह अलग हैं।',
-    useCases: 'उपयोग के मामले:',
-    useCasesDesc: 'बहु-खाता लॉगिन, परीक्षण वातावरण अलगाव, आदि।',
-    rename: 'नाम बदलें',
-    delete: 'हटाएं',
-    deleteDisabled: 'इस उदाहरण का उपयोग करने वाले हनीकॉम्ब हैं, हटा नहीं सकते',
-    deleteConfirm: 'क्या आप वाकई उदाहरण "{name}" हटाना चाहते हैं?',
-    create: 'नया उदाहरण',
-    close: 'बंद करें',
-    usageCount: ' हनीकॉम्ब'
-  },
-
-  // स्वचालित रीफ्रेश प्रीसेट
-  autoRefreshPresets: {
-    noRefresh: 'कोई रीफ्रेश नहीं',
-    thirtySeconds: '30 सेकंड',
-    oneMinute: '1 मिनट',
-    fiveMinutes: '5 मिनट',
-    thirtyMinutes: '30 मिनट',
-    oneHour: '1 घंटा',
-    oneDay: '1 दिन'
-  },
-
-  // फ्लोटिंग क्रियाएं
-  floatingActions: {
-    refresh: 'पृष्ठ रीफ्रेश करें',
-    goBack: 'पीछे जाएं',
-    goForward: 'आगे बढ़ें',
-    mute: 'म्यूट करें',
-    unmute: 'अनम्यूट करें',
-    copy: 'हनीकॉम्ब कॉपी करें',
-    script: 'स्क्रिप्ट निष्पादक',
-    devtools: 'डेवलपर टूल्स',
-    edit: 'लिंक संपादित करें',
-    fullscreen: 'पूर्ण स्क्रीन दृश्य',
-    remove: 'वेबसाइट हटाएं'
-  },
-
-  // चयनकर्ता टूलबार
   selectorToolbar: {
     title: 'तत्व चयनकर्ता',
     dragHandle: 'पैनल को स्थानांतरित करने के लिए खींचें',
@@ -386,23 +316,79 @@ export default {
     multiSelectModeHint: 'बहु-चयन मोड: सूची में जोड़ने के लिए तत्वों पर क्लिक करें | रद्द करने के लिए ESC दबाएं',
     multiSelectModeSelected: 'बहु-चयन मोड: {count} तत्व चयनित | जारी रखने के लिए "सूची में जोड़ें" पर क्लिक करें | सभी को सहेजने के लिए "चयन की पुष्टि करें"',
     singleSelectModeHint: 'चुनने के लिए तत्वों पर क्लिक करें | रद्द करने के लिए ESC दबाएं',
-    confirmSelectionHint: 'आप चयन समायोजित करना जारी रख सकते हैं | सहेजने के लिए "चयन की पुष्टि करें" पर क्लिक करें | रद्द करने के लिए ESC दबाएं'
+    confirmSelectionHint: 'आप चयन समायोजित करना जारी रख सकते हैं | सहेजने के लिए "चयन की पुष्टि करें" पर क्लिक करें | रद्द करने के लिए ESC दबाएं',
+    classList: 'Class सूची',
+    copySelector: 'सिलेक्टर कॉपी करें',
+    currentPath: 'वर्तमान पथ',
+    depth: 'गहराई',
+    dimensions: 'आयाम',
+    elementCapture: 'एलिमेंट कैप्चर',
+    shiftLockHint: 'चयन क्षेत्र लॉक करने के लिए Shift दबाए रखें',
+    tagName: 'टैग नाम'
   },
-
-  // पूर्ण स्क्रीन बार
+  importMode: {
+    title: 'आयात मोड चुनें',
+    description: 'आप इस लेआउट को कैसे आयात करना चाहते हैं?',
+    realtimeSync: {
+      title: 'वास्तविक समय सिंक आयात',
+      description: 'मूल टेम्पलेट के साथ सिंक में रहें, लेखक द्वारा टेम्पलेट अपडेट करने पर मैन्युअल रूप से अपडेट सिंक करें',
+      note: '⚠️ यदि आप लेआउट संशोधित करते हैं, तो सिंक अपडेट करते समय आपके परिवर्तन ओवरराइट हो जाएंगे'
+    },
+    copy: {
+      title: 'कॉपी आयात',
+      description: 'एक स्वतंत्र प्रति बनाएं जिसे स्वतंत्र रूप से संशोधित किया जा सकता है',
+      note: '💡 मूल टेम्पलेट अपडेट से प्रभावित नहीं'
+    },
+    cancel: 'रद्द करें'
+  },
+  sessionInstanceManager: {
+    title: 'Cookie साझा उदाहरण प्रबंधन',
+    whatIs: 'Cookie साझा उदाहरण क्या है?',
+    description: 'एक ही उदाहरण में हनीकॉम्ब cookies, LocalStorage और अन्य स्टोरेज साझा करते हैं। उदाहरण एक दूसरे से पूरी तरह अलग हैं।',
+    useCases: 'उपयोग के मामले:',
+    useCasesDesc: 'बहु-खाता लॉगिन, परीक्षण वातावरण अलगाव, आदि।',
+    rename: 'नाम बदलें',
+    delete: 'हटाएं',
+    deleteDisabled: 'इस उदाहरण का उपयोग करने वाले हनीकॉम्ब हैं, हटा नहीं सकते',
+    deleteConfirm: 'क्या आप वाकई उदाहरण "{name}" हटाना चाहते हैं?',
+    create: 'नया उदाहरण',
+    close: 'बंद करें',
+    usageCount: ' हनीकॉम्ब'
+  },
+  autoRefreshPresets: {
+    noRefresh: 'कोई रीफ्रेश नहीं',
+    thirtySeconds: '30 सेकंड',
+    oneMinute: '1 मिनट',
+    fiveMinutes: '5 मिनट',
+    thirtyMinutes: '30 मिनट',
+    oneHour: '1 घंटा',
+    oneDay: '1 दिन'
+  },
+  floatingActions: {
+    refresh: 'पृष्ठ रीफ्रेश करें',
+    goBack: 'पीछे जाएं',
+    goForward: 'आगे बढ़ें',
+    mute: 'म्यूट करें',
+    unmute: 'अनम्यूट करें',
+    copy: 'हनीकॉम्ब कॉपी करें',
+    script: 'स्क्रिप्ट निष्पादक',
+    devtools: 'डेवलपर टूल्स',
+    edit: 'लिंक संपादित करें',
+    fullscreen: 'पूर्ण स्क्रीन दृश्य',
+    remove: 'वेबसाइट हटाएं',
+    importCookies: 'Cookie आयात करें'
+  },
   fullscreenBar: {
     selectElement: 'तत्व चुनें',
     refresh: 'रीफ्रेश करें',
-    exitFullscreen: 'पूर्ण स्क्रीन से बाहर निकलें'
+    exitFullscreen: 'पूर्ण स्क्रीन से बाहर निकलें',
+    goBack: 'पीछे',
+    goForward: 'आगे'
   },
-
-  // URL परिवर्तन संकेत
   urlChangeHint: {
     useCurrentUrl: 'वर्तमान में प्रदर्शित वेबपेज URL का उपयोग करें',
     useThisPage: 'इस पृष्ठ का उपयोग करें'
   },
-
-  // रीफ्रेश टाइमर
   refreshTimer: {
     day: 'दिन',
     hour: 'घंटा',
@@ -410,8 +396,88 @@ export default {
     minute: 'मिनट',
     seconds: 'सेकंड'
   },
-
-  // अन्य
+  basicAuth: {
+    title: 'प्रमाणीकरण आवश्यक',
+    username: 'उपयोगकर्ता नाम',
+    password: 'पासवर्ड',
+    login: 'लॉगिन'
+  },
+  externalUrl: {
+    title: 'बाहरी लिंक'
+  },
+  contentScript: {
+    title: 'कंटेंट स्क्रिप्ट एक्सिक्यूटर',
+    tabs: {
+      highlight: 'हाइलाइट',
+      extract: 'एक्सट्रैक्ट',
+      actions: 'एक्शन',
+      custom: 'कस्टम'
+    },
+    highlight: {
+      title: 'एलिमेंट हाइलाइट',
+      selectors: 'सिलेक्टर (प्रति पंक्ति एक)',
+      color: 'हाइलाइट रंग',
+      duration: 'अवधि (ms)',
+      permanentHint: '0 = स्थायी हाइलाइट',
+      enablePulse: 'पल्स एनिमेशन सक्षम करें',
+      apply: 'हाइलाइट लागू करें',
+      clear: 'हाइलाइट हटाएं',
+      executing: 'निष्पादित हो रहा है...',
+      success: '{count} एलिमेंट हाइलाइट किए गए',
+      failed: 'हाइलाइट विफल: {error}',
+      cleared: 'सभी हाइलाइट हटा दिए गए',
+      clearFailed: 'हटाने में विफल: {error}'
+    },
+    extract: {
+      title: 'डेटा निष्कर्षण',
+      selectors: 'सिलेक्टर (प्रति पंक्ति एक)',
+      extractText: 'टेक्स्ट निकालें',
+      extractHtml: 'HTML निकालें',
+      attributes: 'विशेषता सूची (अल्पविराम से अलग)',
+      styles: 'शैली विशेषताएं (अल्पविराम से अलग)',
+      extractBtn: 'डेटा निकालें',
+      exportJson: 'JSON निर्यात करें',
+      executing: 'निकाला जा रहा है...',
+      results: 'निष्कर्षण परिणाम',
+      items: '{count} आइटम',
+      success: '{count} डेटा निकाले गए',
+      failed: 'निष्कर्षण विफल: {error}'
+    },
+    actions: {
+      title: 'बैच ऑपरेशन',
+      selectors: 'सिलेक्टर (प्रति पंक्ति एक)',
+      actionType: 'एक्शन प्रकार',
+      click: 'क्लिक',
+      focus: 'फोकस',
+      scrollIntoView: 'व्यू में स्क्रॉल करें',
+      hide: 'छिपाएं',
+      show: 'दिखाएं',
+      remove: 'हटाएं',
+      execute: 'एक्शन चलाएं',
+      executing: 'निष्पादित हो रहा है...',
+      results: 'एक्शन परिणाम',
+      success: 'सफल: {count}',
+      failed: 'विफल: {count}',
+      viewFailedDetails: 'विफलता विवरण देखें',
+      completeSuccess: 'ऑपरेशन पूर्ण\nसफल: {success}\nविफल: {failed}',
+      completeFailed: 'ऑपरेशन विफल: {error}'
+    },
+    custom: {
+      title: 'कस्टम स्क्रिप्ट',
+      codeLabel: 'JavaScript कोड',
+      execute: 'स्क्रिप्ट चलाएं',
+      executing: 'निष्पादित हो रहा है...',
+      results: 'निष्पादन परिणाम'
+    },
+    history: {
+      title: 'निष्पादन इतिहास',
+      clear: 'इतिहास हटाएं',
+      noResult: 'कोई परिणाम नहीं',
+      executionFailed: 'निष्पादन विफल',
+      noReturnValue: 'कोई रिटर्न मान नहीं',
+      emptyResult: 'खाली परिणाम'
+    }
+  },
   other: {
     gridView: 'ग्रिड दृश्य',
     canvasView: 'कैनवास दृश्य',
@@ -442,6 +508,206 @@ export default {
     descending: 'अवरोही',
     byName: 'नाम से',
     byDate: 'तारीख से',
-    bySize: 'आकार से'
+    bySize: 'आकार से',
+    certificateError: 'प्रमाणपत्र त्रुटि',
+    certificateErrorDescription: 'यह वेबसाइट अमान्य SSL प्रमाणपत्र का उपयोग करती है और सुरक्षित रूप से कनेक्ट नहीं हो सकती।',
+    certificateErrorHint: 'यह आमतौर पर स्व-हस्ताक्षरित प्रमाणपत्र या समय-सीमा समाप्त प्रमाणपत्र के कारण होता है।',
+    ignoreCertificateError: 'त्रुटि अनदेखी करें',
+    reload: 'पुनः लोड'
+  },
+  apiSettings: {
+    apiExecute: 'मल्टी-स्टेप JS एक्सिक्यूशन',
+    apiKeyHeader: 'रिक्वेस्ट हेडर में शामिल होना चाहिए',
+    apiListWorkspaces: 'वर्कस्पेस और पेज सूची',
+    apiTraffic: 'नेटवर्क ट्रैफ़िक प्राप्त करें',
+    bindAddress: 'बाइंड एड्रेस',
+    copy: 'कॉपी',
+    enable: 'सक्रिय करें',
+    externalApi: 'एक्सटर्नल एक्सेस API:',
+    hookUrlHint: 'पेज के नेटवर्क रिक्वेस्ट POST JSON के रूप में इस एड्रेस पर फ़ॉरवर्ड होंगे। वेबसाइट एडिट में अलग-अलग पेज के लिए स्वतंत्र Hook URL सेट कर सकते हैं।',
+    networkHook: 'ग्लोबल नेटवर्क Hook (बाइपास फ़ॉरवर्ड)',
+    port: 'पोर्ट',
+    regenerate: 'पुनः जनरेट करें',
+    running: 'चालू',
+    server: 'API सर्वर',
+    showHide: 'दिखाएँ/छुपाएँ',
+    stopped: 'बंद',
+    title: 'API सर्विस सेटिंग्स',
+    usageGuide: 'उपयोग गाइड'
+  },
+  canvasContextMenu: {
+    addWebsite: 'वेबसाइट जोड़ें',
+    aiCustomPage: 'AI कस्टम पेज बनाएँ'
+  },
+  canvasControls: {
+    addWebsite: 'विंडो जोड़ें',
+    autoArrange: 'स्क्रीन में फ़िट करें',
+    clearDrawings: 'ड्रॉइंग मिटाएँ',
+    drawingMode: 'ड्रॉइंग मोड',
+    drawingSettings: 'ड्रॉइंग सेटिंग्स',
+    fitToScreen: 'स्क्रीन में फ़िट करें',
+    rearrange: 'पुनर्व्यवस्थित करें',
+    resetZoom: 'ज़ूम रीसेट (100%)',
+    zoomIn: 'ज़ूम इन',
+    zoomOut: 'ज़ूम आउट'
+  },
+  canvasControlsPanel: {
+    brushTool: 'ब्रश टूल',
+    drawColor: 'ड्रॉइंग रंग',
+    imageTool: 'इमेज टूल',
+    strokeWidth: 'स्ट्रोक चौड़ाई',
+    textTool: 'टेक्स्ट टूल'
+  },
+  canvasView: {
+    addWebsite: 'वेबसाइट जोड़ें',
+    addWebsiteNode: 'वेबसाइट नोड जोड़ें',
+    clearDrawing: 'ड्रॉइंग मिटाएँ',
+    color: 'रंग:',
+    drawingMode: 'हस्तलिखित ड्रॉइंग मोड',
+    exitDrawing: 'ड्रॉइंग से बाहर निकलें',
+    fitToView: 'व्यू में फ़िट करें',
+    newWebsite: 'नई वेबसाइट',
+    startDrawing: 'ड्रॉइंग',
+    strokeWidth: 'चौड़ाई:'
+  },
+  configPanelExtra: {
+    collapseSidebar: 'साइडबार संक्षिप्त करें',
+    currentViewSettings: 'वर्तमान व्यू सेटिंग्स',
+    logoAlt: 'Tab Hive लोगो'
+  },
+  customHtml: {
+    configError: 'कृपया पहले सेटिंग्स में LLM API कॉन्फ़िगर करें',
+    defaultTitle: 'कस्टम वेब पेज',
+    generateBtn: 'पेज बनाएँ',
+    generateFailed: 'जनरेशन विफल',
+    generating: 'HTML कोड जनरेट हो रहा है, कृपया प्रतीक्षा करें...',
+    generatingBtn: 'जनरेट हो रहा है...',
+    requirement: 'आवश्यकता विवरण',
+    requirementHint: 'आप जो वेब पेज फ़ीचर और स्टाइल चाहते हैं उसका विस्तार से वर्णन करें',
+    requirementPlaceholder: 'उदा.: एक टू-डू लिस्ट बनाएँ जो जोड़ने, हटाने और पूर्ण चिह्नित करने का समर्थन करे...',
+    subtitle: 'अपनी ज़रूरतें बताएँ, AI आपके लिए वेब पेज कोड बनाएगा',
+    title: 'कस्टम वेब पेज बनाएँ'
+  },
+  desktopCapture: {
+    addCapture: 'डेस्कटॉप कैप्चर जोड़ें',
+    appWindow: '🪟 ऐप विंडो',
+    basicInfo: 'मूल जानकारी',
+    captureOptions: 'कैप्चर विकल्प',
+    captureTitle: 'नाम',
+    changeSource: 'सोर्स बदलें',
+    connecting: 'डेस्कटॉप सोर्स से कनेक्ट हो रहा है...',
+    displaySettings: 'डिस्प्ले सेटिंग्स',
+    editCapture: 'डेस्कटॉप कैप्चर संपादित करें',
+    electronOnly: 'डेस्कटॉप कैप्चर केवल Electron वातावरण में उपलब्ध है',
+    fitScreen: 'स्क्रीन साइज़ में फ़िट करें',
+    fullScreen: '🖥️ पूर्ण स्क्रीन',
+    mute: 'म्यूट',
+    noSource: 'कोई डेस्कटॉप सोर्स निर्दिष्ट नहीं',
+    padding: 'पैडिंग',
+    readonlyMode: '📺 केवल पढ़ने का मोड (इंटरैक्शन समर्थित नहीं)',
+    selectSource: 'कैप्चर के लिए डेस्कटॉप सोर्स चुनें',
+    selectSourceBtn: 'डेस्कटॉप सोर्स चुनें',
+    sourceTitle: 'डेस्कटॉप सोर्स',
+    titlePlaceholder: 'डेस्कटॉप कैप्चर का नाम दर्ज करें'
+  },
+  llmConfig: {
+    apiKey: 'API Key',
+    apiKeyHint: 'प्रमाणीकरण के लिए API Key।',
+    apiKeyLink: 'OpenRouter से प्राप्त करें',
+    apiUrl: 'API URL',
+    apiUrlHint: 'LLM API का पूरा URL',
+    maxTokens: 'अधिकतम टोकन',
+    maxTokensHint: 'जनरेट की गई सामग्री की अधिकतम लंबाई (0 का अर्थ असीमित)',
+    model: 'मॉडल का नाम',
+    modelHint: 'उपयोग करने के लिए मॉडल का नाम',
+    subtitle: 'कस्टम वेब पेज बनाने के लिए LLM API कॉन्फ़िगर करें',
+    temperature: 'Temperature',
+    temperatureHint: 'आउटपुट की रैंडमनेस नियंत्रित करें (0-2)',
+    title: 'LLM API कॉन्फ़िगरेशन'
+  },
+  monitoring: {
+    actions: 'एक्शन',
+    apiConfigDesc: 'इस फ़ीचर को स्क्रीनशॉट विश्लेषण के लिए LLM API (जैसे OpenAI GPT-4 Vision) की आवश्यकता है। कृपया सेटिंग्स में अपनी API कुंजी कॉन्फ़िगर करें।',
+    apiConfigTitle: 'LLM API कॉन्फ़िगरेशन आवश्यक',
+    checkEvery: 'हर {interval} सेकंड में जाँच',
+    checkInterval: 'जाँच अंतराल',
+    comingSoon: 'जल्द आ रहा है',
+    condition: 'मॉनिटरिंग शर्त',
+    conditionDesc: 'शर्त विवरण (प्राकृतिक भाषा में ट्रिगर शर्त का वर्णन करें)',
+    conditionHint: 'AI इस विवरण के आधार पर पेज स्क्रीनशॉट का विश्लेषण करके निर्धारित करेगा कि शर्त पूरी हुई है या नहीं',
+    conditionLabel: 'शर्त:',
+    conditionPlaceholder: 'उदा.: जब पेज पर \'स्टॉक में नहीं\' या \'sold out\' दिखे तो ट्रिगर करें',
+    createFirst: 'पहला नियम बनाएँ',
+    createRule: '+ नया नियम',
+    desktopNotification: 'डेस्कटॉप नोटिफ़िकेशन',
+    editRule: 'मॉनिटरिंग नियम संपादित करें',
+    goConfig: 'सेटिंग्स में जाएँ →',
+    intervalHint: 'बार-बार API कॉल से उच्च लागत से बचने के लिए बहुत कम अंतराल सेट न करें',
+    lastTrigger: 'अंतिम ट्रिगर: {time}',
+    newRule: 'नया मॉनिटरिंग नियम',
+    noRules: 'अभी तक कोई मॉनिटरिंग नियम नहीं',
+    noRulesDesc: 'पेज परिवर्तनों को स्वचालित रूप से मॉनिटर करने के लिए नियम बनाएँ',
+    notificationMessage: 'नोटिफ़िकेशन संदेश',
+    notificationPlaceholder: 'उदा.: उत्पाद की स्थिति बदल गई है!',
+    required: 'आवश्यक',
+    ruleName: 'नियम का नाम',
+    ruleNamePlaceholder: 'उदा.: मूल्य परिवर्तन का पता लगाएँ',
+    rulesTitle: 'पेज मॉनिटरिंग नियम',
+    seconds: 'सेकंड',
+    sendEmail: 'ईमेल भेजें',
+    testScreenshot: '🖼️ स्क्रीनशॉट टेस्ट',
+    testVision: '🤖 विज़न विश्लेषण टेस्ट',
+    textMonitor: 'टेक्स्ट मॉनिटर',
+    textMonitorDesc: 'पेज टेक्स्ट परिवर्तन मॉनिटर (जल्द आ रहा है)',
+    triggerCount: '{count} बार ट्रिगर हुआ',
+    visionMonitor: 'विज़न मॉनिटर (LLM)',
+    visionMonitorDesc: 'पेज स्क्रीनशॉट विश्लेषण के लिए AI का उपयोग',
+    webhook: 'Webhook नोटिफ़िकेशन'
+  },
+  proxy: {
+    addProxy: 'प्रॉक्सी जोड़ें',
+    batchDelete: 'हटाएँ',
+    cipher: 'एन्क्रिप्शन विधि',
+    editProxy: 'प्रॉक्सी संपादित करें',
+    enable: 'सक्रिय करें',
+    enableTfo: 'TCP Fast Open सक्रिय करें',
+    enableUdp: 'UDP सक्रिय करें',
+    host: 'होस्ट',
+    hostPlaceholder: 'सर्वर एड्रेस',
+    importSubscription: 'सब्सक्रिप्शन आयात करें',
+    name: 'नाम',
+    namePlaceholder: 'प्रॉक्सी का नाम',
+    password: 'पासवर्ड',
+    passwordOptional: 'पासवर्ड (वैकल्पिक)',
+    passwordPlaceholder: 'पासवर्ड',
+    pluginOptional: 'प्लगइन (वैकल्पिक)',
+    pluginOpts: 'प्लगइन विकल्प (JSON फ़ॉर्मैट)',
+    portPlaceholder: 'पोर्ट नंबर',
+    saving: 'सहेजा जा रहा है...',
+    selected: '{count} चयनित',
+    ssPassword: 'Shadowsocks पासवर्ड',
+    title: 'प्रॉक्सी नोड प्रबंधन',
+    type: 'प्रकार',
+    usernameOptional: 'यूज़रनेम (वैकल्पिक)',
+    usernamePlaceholder: 'यूज़रनेम',
+    uuid: 'UUID'
+  },
+  rearrangeDialog: {
+    columns: 'कॉलम संख्या',
+    finalSize: 'अंतिम विंडो साइज़',
+    itemHeight: 'विंडो ऊँचाई (px)',
+    itemWidth: 'विंडो चौड़ाई (px)',
+    layout: 'लेआउट',
+    preview: 'प्रीव्यू',
+    reset: 'डिफ़ॉल्ट रीसेट',
+    scale: 'विंडो स्केल',
+    scaleHint: '1.0 मूल आकार, 2.0 दोगुना आकार',
+    title: 'विंडो पुनर्व्यवस्थित करें'
+  },
+  websiteEditExtra: {
+    addDesktopCapture: 'डेस्कटॉप कैप्चर जोड़ें',
+    aiCustomPage: 'AI कस्टम पेज बनाएँ',
+    basicInfo: 'मूल जानकारी',
+    subtitle: 'डिस्प्ले विकल्प, प्रॉक्सी और उन्नत सुविधाएँ कॉन्फ़िगर करें'
   }
 }

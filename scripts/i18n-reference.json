@@ -1,0 +1,874 @@
+{
+  "apiSettings.apiExecute": {
+    "zh": "多步骤 JS 执行",
+    "en": "Multi-step JS execution"
+  },
+  "apiSettings.apiKeyHeader": {
+    "zh": "请求头需携带",
+    "en": "Request header must include"
+  },
+  "apiSettings.apiListWorkspaces": {
+    "zh": "列出工作空间和页面",
+    "en": "List workspaces and pages"
+  },
+  "apiSettings.apiTraffic": {
+    "zh": "获取网络流量",
+    "en": "Get network traffic"
+  },
+  "apiSettings.bindAddress": {
+    "zh": "绑定地址",
+    "en": "Bind Address"
+  },
+  "apiSettings.copy": {
+    "zh": "复制",
+    "en": "Copy"
+  },
+  "apiSettings.enable": {
+    "zh": "启用",
+    "en": "Enable"
+  },
+  "apiSettings.externalApi": {
+    "zh": "外部访问 API：",
+    "en": "External Access API:"
+  },
+  "apiSettings.hookUrlHint": {
+    "zh": "页面的网络请求将以 POST JSON 转发到此地址。可在网站编辑中为单个页面设置独立的 Hook URL。",
+    "en": "Page network requests will be forwarded as POST JSON to this address. You can set an independent Hook URL for individual pages in website edit."
+  },
+  "apiSettings.networkHook": {
+    "zh": "全局网络 Hook（旁路转发）",
+    "en": "Global Network Hook (Bypass Forward)"
+  },
+  "apiSettings.port": {
+    "zh": "端口",
+    "en": "Port"
+  },
+  "apiSettings.regenerate": {
+    "zh": "重新生成",
+    "en": "Regenerate"
+  },
+  "apiSettings.running": {
+    "zh": "运行中",
+    "en": "Running"
+  },
+  "apiSettings.server": {
+    "zh": "API 服务器",
+    "en": "API Server"
+  },
+  "apiSettings.showHide": {
+    "zh": "显示/隐藏",
+    "en": "Show/Hide"
+  },
+  "apiSettings.stopped": {
+    "zh": "已停止",
+    "en": "Stopped"
+  },
+  "apiSettings.title": {
+    "zh": "API 服务设置",
+    "en": "API Service Settings"
+  },
+  "apiSettings.usageGuide": {
+    "zh": "使用说明",
+    "en": "Usage Guide"
+  },
+  "audioVisual.actionButtonSettings": {
+    "zh": "操作按钮设置：",
+    "en": "Action Button Settings:"
+  },
+  "audioVisual.requireModifierForActions": {
+    "zh": "⌨️ 需要修饰键显示按钮",
+    "en": "⌨️ Require Modifier Key"
+  },
+  "audioVisual.requireModifierForActionsHint": {
+    "zh": "💡 勾选后，需要按住 Ctrl 或 Alt 键才会显示操作按钮，避免干扰网页操作",
+    "en": "💡 When enabled, hold Ctrl or Alt to show action buttons, avoiding interference with webpage operations"
+  },
+  "canvasContextMenu.addWebsite": {
+    "zh": "添加网站",
+    "en": "Add Website"
+  },
+  "canvasContextMenu.aiCustomPage": {
+    "zh": "AI 生成自定义网页",
+    "en": "AI Generate Custom Page"
+  },
+  "canvasControls.addWebsite": {
+    "zh": "添加窗口",
+    "en": "Add Window"
+  },
+  "canvasControls.autoArrange": {
+    "zh": "适应屏幕",
+    "en": "Fit to Screen"
+  },
+  "canvasControls.clearDrawings": {
+    "zh": "清除绘制",
+    "en": "Clear Drawings"
+  },
+  "canvasControls.drawingMode": {
+    "zh": "绘制模式",
+    "en": "Drawing Mode"
+  },
+  "canvasControls.drawingSettings": {
+    "zh": "绘制设置",
+    "en": "Drawing Settings"
+  },
+  "canvasControls.fitToScreen": {
+    "zh": "适应屏幕",
+    "en": "Fit to Screen"
+  },
+  "canvasControls.rearrange": {
+    "zh": "重新排列",
+    "en": "Rearrange"
+  },
+  "canvasControls.resetZoom": {
+    "zh": "重置缩放 (100%)",
+    "en": "Reset Zoom (100%)"
+  },
+  "canvasControls.zoomIn": {
+    "zh": "放大",
+    "en": "Zoom In"
+  },
+  "canvasControls.zoomOut": {
+    "zh": "缩小",
+    "en": "Zoom Out"
+  },
+  "canvasControlsPanel.brushTool": {
+    "zh": "画笔工具",
+    "en": "Brush Tool"
+  },
+  "canvasControlsPanel.drawColor": {
+    "zh": "绘制颜色",
+    "en": "Drawing Color"
+  },
+  "canvasControlsPanel.imageTool": {
+    "zh": "图片工具",
+    "en": "Image Tool"
+  },
+  "canvasControlsPanel.strokeWidth": {
+    "zh": "绘制粗细",
+    "en": "Stroke Width"
+  },
+  "canvasControlsPanel.textTool": {
+    "zh": "文字工具",
+    "en": "Text Tool"
+  },
+  "canvasView.addWebsite": {
+    "zh": "添加网站",
+    "en": "Add Website"
+  },
+  "canvasView.addWebsiteNode": {
+    "zh": "添加网站节点",
+    "en": "Add website node"
+  },
+  "canvasView.clearDrawing": {
+    "zh": "清除绘制",
+    "en": "Clear Drawing"
+  },
+  "canvasView.color": {
+    "zh": "颜色:",
+    "en": "Color:"
+  },
+  "canvasView.drawingMode": {
+    "zh": "手写绘制模式",
+    "en": "Drawing mode"
+  },
+  "canvasView.exitDrawing": {
+    "zh": "退出绘制",
+    "en": "Exit Drawing"
+  },
+  "canvasView.fitToView": {
+    "zh": "适应视图",
+    "en": "Fit to View"
+  },
+  "canvasView.newWebsite": {
+    "zh": "新网站",
+    "en": "New Website"
+  },
+  "canvasView.startDrawing": {
+    "zh": "手写绘制",
+    "en": "Drawing"
+  },
+  "canvasView.strokeWidth": {
+    "zh": "粗细:",
+    "en": "Width:"
+  },
+  "configPanel.adBlockEnabled": {
+    "zh": "去广告",
+    "en": "Ad Block"
+  },
+  "configPanel.adBlockEnabledHint": {
+    "zh": "启用后，所有网页将自动拦截广告",
+    "en": "Enable to automatically block ads on all websites"
+  },
+  "configPanel.customCodeEnabled": {
+    "zh": "自定义代码",
+    "en": "Custom Code"
+  },
+  "configPanel.customCodeEnabledHint": {
+    "zh": "启用后，可以在浮动按钮中看到脚本执行器按钮",
+    "en": "Enable to show script executor button in floating actions"
+  },
+  "configPanel.proxy": {
+    "zh": "代理",
+    "en": "Proxy"
+  },
+  "configPanel.proxyHint": {
+    "zh": "管理代理设置",
+    "en": "Manage proxy settings"
+  },
+  "configPanel.settings": {
+    "zh": "设置",
+    "en": "Settings"
+  },
+  "configPanel.settingsHint": {
+    "zh": "配置 LLM API 等设置",
+    "en": "Configure LLM API and other settings"
+  },
+  "configPanel.showCertificateErrorShadow": {
+    "zh": "证书错误红色阴影",
+    "en": "Certificate Error Red Shadow"
+  },
+  "configPanel.showCertificateErrorShadowHint": {
+    "zh": "启用后，证书错误的视界会显示红色阴影提示",
+    "en": "Enable to show red shadow on certificate error websites"
+  },
+  "configPanelExtra.collapseSidebar": {
+    "zh": "收起侧边栏",
+    "en": "Collapse Sidebar"
+  },
+  "configPanelExtra.currentViewSettings": {
+    "zh": "当前视图设置",
+    "en": "Current View Settings"
+  },
+  "configPanelExtra.logoAlt": {
+    "zh": "全视界 Logo",
+    "en": "Tab Hive Logo"
+  },
+  "customHtml.configError": {
+    "zh": "请先在设置中配置 LLM API",
+    "en": "Please configure LLM API in settings first"
+  },
+  "customHtml.defaultTitle": {
+    "zh": "自定义网页",
+    "en": "Custom Web Page"
+  },
+  "customHtml.generateBtn": {
+    "zh": "生成网页",
+    "en": "Generate Page"
+  },
+  "customHtml.generateFailed": {
+    "zh": "生成失败",
+    "en": "Generation failed"
+  },
+  "customHtml.generating": {
+    "zh": "正在生成 HTML 代码，请稍候...",
+    "en": "Generating HTML code, please wait..."
+  },
+  "customHtml.generatingBtn": {
+    "zh": "生成中...",
+    "en": "Generating..."
+  },
+  "customHtml.requirement": {
+    "zh": "需求描述",
+    "en": "Requirement Description"
+  },
+  "customHtml.requirementHint": {
+    "zh": "详细描述你想要的网页功能和样式",
+    "en": "Describe the web page features and styles you want in detail"
+  },
+  "customHtml.requirementPlaceholder": {
+    "zh": "例如：创建一个待办事项列表，支持添加、删除和标记完成...",
+    "en": "e.g., Create a todo list that supports adding, deleting, and marking as complete..."
+  },
+  "customHtml.subtitle": {
+    "zh": "描述你的需求，AI 将为你生成网页代码",
+    "en": "Describe your needs, AI will generate web page code for you"
+  },
+  "customHtml.title": {
+    "zh": "创建自定义网页",
+    "en": "Create Custom Web Page"
+  },
+  "desktopCapture.addCapture": {
+    "zh": "添加桌面捕获",
+    "en": "Add Desktop Capture"
+  },
+  "desktopCapture.appWindow": {
+    "zh": "🪟 应用窗口",
+    "en": "🪟 App Window"
+  },
+  "desktopCapture.basicInfo": {
+    "zh": "基本信息",
+    "en": "Basic Info"
+  },
+  "desktopCapture.captureOptions": {
+    "zh": "捕获选项",
+    "en": "Capture Options"
+  },
+  "desktopCapture.captureTitle": {
+    "zh": "名称",
+    "en": "Name"
+  },
+  "desktopCapture.changeSource": {
+    "zh": "更改源",
+    "en": "Change Source"
+  },
+  "desktopCapture.connecting": {
+    "zh": "正在连接桌面源...",
+    "en": "Connecting to desktop source..."
+  },
+  "desktopCapture.displaySettings": {
+    "zh": "显示设置",
+    "en": "Display Settings"
+  },
+  "desktopCapture.editCapture": {
+    "zh": "编辑桌面捕获",
+    "en": "Edit Desktop Capture"
+  },
+  "desktopCapture.electronOnly": {
+    "zh": "桌面捕获功能仅在 Electron 环境中可用",
+    "en": "Desktop capture is only available in Electron environment"
+  },
+  "desktopCapture.fitScreen": {
+    "zh": "适应屏幕大小",
+    "en": "Fit to screen size"
+  },
+  "desktopCapture.fullScreen": {
+    "zh": "🖥️ 整个屏幕",
+    "en": "🖥️ Full Screen"
+  },
+  "desktopCapture.mute": {
+    "zh": "静音",
+    "en": "Mute"
+  },
+  "desktopCapture.noSource": {
+    "zh": "未指定桌面源",
+    "en": "No desktop source specified"
+  },
+  "desktopCapture.padding": {
+    "zh": "内边距",
+    "en": "Padding"
+  },
+  "desktopCapture.readonlyMode": {
+    "zh": "📺 只读模式（不支持交互）",
+    "en": "📺 Read-only mode (interaction not supported)"
+  },
+  "desktopCapture.selectSource": {
+    "zh": "请选择要捕获的桌面源",
+    "en": "Please select a desktop source to capture"
+  },
+  "desktopCapture.selectSourceBtn": {
+    "zh": "选择桌面源",
+    "en": "Select Desktop Source"
+  },
+  "desktopCapture.sourceTitle": {
+    "zh": "桌面源",
+    "en": "Desktop Source"
+  },
+  "desktopCapture.titlePlaceholder": {
+    "zh": "请输入桌面捕获名称",
+    "en": "Enter desktop capture name"
+  },
+  "floatingActions.importCookies": {
+    "zh": "导入Cookie",
+    "en": "Import Cookies"
+  },
+  "fullscreenBar.goBack": {
+    "zh": "后退",
+    "en": "Go Back"
+  },
+  "fullscreenBar.goForward": {
+    "zh": "前进",
+    "en": "Go Forward"
+  },
+  "layout.capturingScreenshot": {
+    "zh": "正在截图...",
+    "en": "Capturing screenshot..."
+  },
+  "layout.exportFailed": {
+    "zh": "导出失败",
+    "en": "Export failed"
+  },
+  "layout.exportLayout": {
+    "zh": "导出布局",
+    "en": "Export Layout"
+  },
+  "layout.exportSuccess": {
+    "zh": "导出成功！",
+    "en": "Export successful!"
+  },
+  "layout.exportWithScreenshotConfirm": {
+    "zh": "是否要截图当前页面并嵌入布局数据？\n\n截图将作为导出图片，布局的JSON数据会保存在图片的元数据中。",
+    "en": "Do you want to capture a screenshot of the current page and embed layout data?\n\nThe screenshot will be used as the export image, and the layout JSON data will be saved in the image metadata."
+  },
+  "layout.importFailed": {
+    "zh": "导入失败",
+    "en": "Import failed"
+  },
+  "layout.importLayoutFromImageConfirm": {
+    "zh": "检测到图片中包含布局数据（\"{name}\"）。\n\n是否要导入此布局？",
+    "en": "Detected layout data in image (\"{name}\").\n\nDo you want to import this layout?"
+  },
+  "layout.importSuccess": {
+    "zh": "导入成功！",
+    "en": "Import successful!"
+  },
+  "layout.importedLayout": {
+    "zh": "导入的布局",
+    "en": "Imported Layout"
+  },
+  "layout.invalidLayoutData": {
+    "zh": "无效的布局数据",
+    "en": "Invalid layout data"
+  },
+  "layout.preview": {
+    "zh": "预览",
+    "en": "Preview"
+  },
+  "layout.screenshotCopied": {
+    "zh": "截图已复制到剪贴板！",
+    "en": "Screenshot copied to clipboard!"
+  },
+  "layout.screenshotDownloaded": {
+    "zh": "截图已下载！",
+    "en": "Screenshot downloaded!"
+  },
+  "layout.shareFailed": {
+    "zh": "分享失败",
+    "en": "Share failed"
+  },
+  "layout.shareSuccess": {
+    "zh": "分享成功！",
+    "en": "Share successful!"
+  },
+  "layout.shareWithScreenshotConfirm": {
+    "zh": "是否要截图当前页面并嵌入布局数据？\n\n截图将作为分享图片，布局的JSON数据会保存在图片的元数据中。",
+    "en": "Do you want to capture a screenshot of the current page and embed layout data?\n\nThe screenshot will be used as the sharing image, and the layout JSON data will be saved in the image metadata."
+  },
+  "layout.sharedLayoutsDesc": {
+    "zh": "浏览并导入网友分享的 全视界 布局配置",
+    "en": "Browse and import shared Tab Hive layout configurations"
+  },
+  "layout.sortHot": {
+    "zh": "最热下载",
+    "en": "Most Downloaded"
+  },
+  "layout.sortLatest": {
+    "zh": "最新发布",
+    "en": "Latest"
+  },
+  "layout.unnamedLayout": {
+    "zh": "未命名布局",
+    "en": "Unnamed Layout"
+  },
+  "llmConfig.apiKey": {
+    "zh": "API Key",
+    "en": "API Key"
+  },
+  "llmConfig.apiKeyHint": {
+    "zh": "用于认证的 API Key。",
+    "en": "API Key for authentication."
+  },
+  "llmConfig.apiKeyLink": {
+    "zh": "去 OpenRouter 获取",
+    "en": "Get from OpenRouter"
+  },
+  "llmConfig.apiUrl": {
+    "zh": "API 地址",
+    "en": "API URL"
+  },
+  "llmConfig.apiUrlHint": {
+    "zh": "LLM API 的完整地址",
+    "en": "Full URL of the LLM API"
+  },
+  "llmConfig.maxTokens": {
+    "zh": "最大 Token 数",
+    "en": "Max Tokens"
+  },
+  "llmConfig.maxTokensHint": {
+    "zh": "生成内容的最大长度（0 表示不限制）",
+    "en": "Maximum length of generated content (0 for unlimited)"
+  },
+  "llmConfig.model": {
+    "zh": "模型名称",
+    "en": "Model Name"
+  },
+  "llmConfig.modelHint": {
+    "zh": "要使用的模型名称",
+    "en": "Name of the model to use"
+  },
+  "llmConfig.subtitle": {
+    "zh": "配置 LLM API 以生成自定义网页",
+    "en": "Configure LLM API to generate custom web pages"
+  },
+  "llmConfig.temperature": {
+    "zh": "Temperature",
+    "en": "Temperature"
+  },
+  "llmConfig.temperatureHint": {
+    "zh": "控制输出的随机性 (0-2)",
+    "en": "Controls output randomness (0-2)"
+  },
+  "llmConfig.title": {
+    "zh": "LLM API 配置",
+    "en": "LLM API Configuration"
+  },
+  "monitoring.actions": {
+    "zh": "执行动作",
+    "en": "Actions"
+  },
+  "monitoring.apiConfigDesc": {
+    "zh": "此功能需要调用 LLM API（如 OpenAI GPT-4 Vision）来分析截图。请在设置中配置您的 API 密钥。",
+    "en": "This feature requires LLM API (e.g., OpenAI GPT-4 Vision) to analyze screenshots. Please configure your API key in settings."
+  },
+  "monitoring.apiConfigTitle": {
+    "zh": "需要配置 LLM API",
+    "en": "LLM API Configuration Required"
+  },
+  "monitoring.checkEvery": {
+    "zh": "{interval}秒检测一次",
+    "en": "Check every {interval}s"
+  },
+  "monitoring.checkInterval": {
+    "zh": "检测间隔",
+    "en": "Check Interval"
+  },
+  "monitoring.comingSoon": {
+    "zh": "即将推出",
+    "en": "Coming Soon"
+  },
+  "monitoring.condition": {
+    "zh": "监听条件",
+    "en": "Monitoring Condition"
+  },
+  "monitoring.conditionDesc": {
+    "zh": "条件描述（用自然语言描述触发条件）",
+    "en": "Condition Description (describe trigger condition in natural language)"
+  },
+  "monitoring.conditionHint": {
+    "zh": "AI将根据此描述分析页面截图，判断是否满足条件",
+    "en": "AI will analyze page screenshots based on this description to determine if the condition is met"
+  },
+  "monitoring.conditionLabel": {
+    "zh": "条件：",
+    "en": "Condition:"
+  },
+  "monitoring.conditionPlaceholder": {
+    "zh": "例如：当页面显示'缺货'或'sold out'字样时触发",
+    "en": "e.g., Trigger when the page shows 'out of stock' or 'sold out'"
+  },
+  "monitoring.createFirst": {
+    "zh": "创建第一个规则",
+    "en": "Create First Rule"
+  },
+  "monitoring.createRule": {
+    "zh": "+ 新建规则",
+    "en": "+ New Rule"
+  },
+  "monitoring.desktopNotification": {
+    "zh": "桌面通知",
+    "en": "Desktop Notification"
+  },
+  "monitoring.editRule": {
+    "zh": "编辑监听规则",
+    "en": "Edit Monitoring Rule"
+  },
+  "monitoring.goConfig": {
+    "zh": "前往配置 →",
+    "en": "Go to Settings →"
+  },
+  "monitoring.intervalHint": {
+    "zh": "建议不要设置过短，避免频繁调用API产生高额费用",
+    "en": "Avoid setting too short to prevent high API costs from frequent calls"
+  },
+  "monitoring.lastTrigger": {
+    "zh": "上次触发: {time}",
+    "en": "Last triggered: {time}"
+  },
+  "monitoring.newRule": {
+    "zh": "新建监听规则",
+    "en": "New Monitoring Rule"
+  },
+  "monitoring.noRules": {
+    "zh": "还没有监听规则",
+    "en": "No monitoring rules yet"
+  },
+  "monitoring.noRulesDesc": {
+    "zh": "创建规则来自动监听页面变化",
+    "en": "Create rules to automatically monitor page changes"
+  },
+  "monitoring.notificationMessage": {
+    "zh": "通知消息",
+    "en": "Notification Message"
+  },
+  "monitoring.notificationPlaceholder": {
+    "zh": "例如：商品状态发生变化！",
+    "en": "e.g., Product status has changed!"
+  },
+  "monitoring.required": {
+    "zh": "必选",
+    "en": "Required"
+  },
+  "monitoring.ruleName": {
+    "zh": "规则名称",
+    "en": "Rule Name"
+  },
+  "monitoring.ruleNamePlaceholder": {
+    "zh": "例如：检测价格变化",
+    "en": "e.g., Detect price changes"
+  },
+  "monitoring.rulesTitle": {
+    "zh": "页面监听规则",
+    "en": "Page Monitoring Rules"
+  },
+  "monitoring.seconds": {
+    "zh": "秒",
+    "en": "seconds"
+  },
+  "monitoring.sendEmail": {
+    "zh": "发送邮件",
+    "en": "Send Email"
+  },
+  "monitoring.testScreenshot": {
+    "zh": "🖼️ 测试截图",
+    "en": "🖼️ Test Screenshot"
+  },
+  "monitoring.testVision": {
+    "zh": "🤖 测试视觉分析",
+    "en": "🤖 Test Vision Analysis"
+  },
+  "monitoring.textMonitor": {
+    "zh": "文本监听",
+    "en": "Text Monitor"
+  },
+  "monitoring.textMonitorDesc": {
+    "zh": "监听页面文本变化（即将推出）",
+    "en": "Monitor page text changes (coming soon)"
+  },
+  "monitoring.triggerCount": {
+    "zh": "触发 {count} 次",
+    "en": "Triggered {count} times"
+  },
+  "monitoring.visionMonitor": {
+    "zh": "视觉监听 (LLM)",
+    "en": "Vision Monitor (LLM)"
+  },
+  "monitoring.visionMonitorDesc": {
+    "zh": "使用AI分析页面截图内容",
+    "en": "Use AI to analyze page screenshots"
+  },
+  "monitoring.webhook": {
+    "zh": "Webhook通知",
+    "en": "Webhook Notification"
+  },
+  "other.certificateError": {
+    "zh": "证书错误",
+    "en": "Certificate Error"
+  },
+  "other.certificateErrorDescription": {
+    "zh": "该网站使用了无效的 SSL 证书，无法安全连接。",
+    "en": "This website uses an invalid SSL certificate and cannot be securely connected."
+  },
+  "other.certificateErrorHint": {
+    "zh": "这通常是因为使用了自签名证书或证书已过期。",
+    "en": "This is usually because a self-signed certificate is used or the certificate has expired."
+  },
+  "other.ignoreCertificateError": {
+    "zh": "忽略错误",
+    "en": "Ignore Error"
+  },
+  "other.reload": {
+    "zh": "重新加载",
+    "en": "Reload"
+  },
+  "proxy.addProxy": {
+    "zh": "添加代理",
+    "en": "Add Proxy"
+  },
+  "proxy.batchDelete": {
+    "zh": "删除",
+    "en": "Delete"
+  },
+  "proxy.cipher": {
+    "zh": "加密方法",
+    "en": "Encryption Method"
+  },
+  "proxy.editProxy": {
+    "zh": "编辑代理",
+    "en": "Edit Proxy"
+  },
+  "proxy.enable": {
+    "zh": "启用",
+    "en": "Enable"
+  },
+  "proxy.enableTfo": {
+    "zh": "启用 TCP Fast Open",
+    "en": "Enable TCP Fast Open"
+  },
+  "proxy.enableUdp": {
+    "zh": "启用 UDP",
+    "en": "Enable UDP"
+  },
+  "proxy.host": {
+    "zh": "主机",
+    "en": "Host"
+  },
+  "proxy.hostPlaceholder": {
+    "zh": "服务器地址",
+    "en": "Server address"
+  },
+  "proxy.importSubscription": {
+    "zh": "导入订阅",
+    "en": "Import Subscription"
+  },
+  "proxy.name": {
+    "zh": "名称",
+    "en": "Name"
+  },
+  "proxy.namePlaceholder": {
+    "zh": "代理名称",
+    "en": "Proxy name"
+  },
+  "proxy.password": {
+    "zh": "密码",
+    "en": "Password"
+  },
+  "proxy.passwordOptional": {
+    "zh": "密码（可选）",
+    "en": "Password (optional)"
+  },
+  "proxy.passwordPlaceholder": {
+    "zh": "密码",
+    "en": "Password"
+  },
+  "proxy.pluginOptional": {
+    "zh": "插件（可选）",
+    "en": "Plugin (optional)"
+  },
+  "proxy.pluginOpts": {
+    "zh": "插件选项（JSON格式）",
+    "en": "Plugin Options (JSON format)"
+  },
+  "proxy.portPlaceholder": {
+    "zh": "端口号",
+    "en": "Port number"
+  },
+  "proxy.saving": {
+    "zh": "保存中...",
+    "en": "Saving..."
+  },
+  "proxy.selected": {
+    "zh": "已选 {count} 项",
+    "en": "{count} selected"
+  },
+  "proxy.ssPassword": {
+    "zh": "Shadowsocks 密码",
+    "en": "Shadowsocks password"
+  },
+  "proxy.title": {
+    "zh": "代理节点管理",
+    "en": "Proxy Node Management"
+  },
+  "proxy.type": {
+    "zh": "类型",
+    "en": "Type"
+  },
+  "proxy.usernameOptional": {
+    "zh": "用户名（可选）",
+    "en": "Username (optional)"
+  },
+  "proxy.usernamePlaceholder": {
+    "zh": "用户名",
+    "en": "Username"
+  },
+  "proxy.uuid": {
+    "zh": "UUID",
+    "en": "UUID"
+  },
+  "rearrangeDialog.columns": {
+    "zh": "列数",
+    "en": "Columns"
+  },
+  "rearrangeDialog.finalSize": {
+    "zh": "最终窗口大小",
+    "en": "Final Window Size"
+  },
+  "rearrangeDialog.itemHeight": {
+    "zh": "窗口高度 (px)",
+    "en": "Window Height (px)"
+  },
+  "rearrangeDialog.itemWidth": {
+    "zh": "窗口宽度 (px)",
+    "en": "Window Width (px)"
+  },
+  "rearrangeDialog.layout": {
+    "zh": "布局",
+    "en": "Layout"
+  },
+  "rearrangeDialog.preview": {
+    "zh": "预览",
+    "en": "Preview"
+  },
+  "rearrangeDialog.reset": {
+    "zh": "恢复默认",
+    "en": "Reset Default"
+  },
+  "rearrangeDialog.scale": {
+    "zh": "窗口放大倍数",
+    "en": "Window Scale"
+  },
+  "rearrangeDialog.scaleHint": {
+    "zh": "1.0 为原始大小，2.0 为放大一倍",
+    "en": "1.0 is original size, 2.0 is double size"
+  },
+  "rearrangeDialog.title": {
+    "zh": "重新排列窗口",
+    "en": "Rearrange Windows"
+  },
+  "selectorToolbar.classList": {
+    "zh": "Class 列表",
+    "en": "Class List"
+  },
+  "selectorToolbar.copySelector": {
+    "zh": "复制选择器",
+    "en": "Copy Selector"
+  },
+  "selectorToolbar.currentPath": {
+    "zh": "当前路径",
+    "en": "Current Path"
+  },
+  "selectorToolbar.depth": {
+    "zh": "深度",
+    "en": "Depth"
+  },
+  "selectorToolbar.dimensions": {
+    "zh": "尺寸",
+    "en": "Dimensions"
+  },
+  "selectorToolbar.elementCapture": {
+    "zh": "元素捕获",
+    "en": "Element Capture"
+  },
+  "selectorToolbar.shiftLockHint": {
+    "zh": "按住 Shift 锁定选中区域",
+    "en": "Hold Shift to lock selection area"
+  },
+  "selectorToolbar.tagName": {
+    "zh": "标签名",
+    "en": "Tag Name"
+  },
+  "websiteEditExtra.addDesktopCapture": {
+    "zh": "添加桌面捕获",
+    "en": "Add Desktop Capture"
+  },
+  "websiteEditExtra.aiCustomPage": {
+    "zh": "AI 生成自定义网页",
+    "en": "AI Generate Custom Page"
+  },
+  "websiteEditExtra.basicInfo": {
+    "zh": "基础信息",
+    "en": "Basic Info"
+  },
+  "websiteEditExtra.subtitle": {
+    "zh": "配置站点的显示选项、代理及高级功能",
+    "en": "Configure display options, proxy, and advanced features"
+  }
+}

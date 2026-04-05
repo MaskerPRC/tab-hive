@@ -3,13 +3,13 @@
     <!-- Logo 和标题（固定在顶部） -->
     <div class="logo-section">
       <div class="logo-icon">
-        <img src="/128x128.png" alt="全视界 Logo" class="logo-img" />
+        <img src="/128x128.png" :alt="$t('configPanelExtra.logoAlt')" class="logo-img" />
       </div>
-      <h1 class="app-title">全视界</h1>
+      <h1 class="app-title">{{ $t('app.name') }}</h1>
       <button
         class="sidebar-collapse-btn"
         @click="$emit('close-sidebar')"
-        title="收起侧边栏"
+        :title="$t('configPanelExtra.collapseSidebar')"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -39,7 +39,7 @@
       <div class="actions-section">
         <!-- 配置开关区 -->
         <div class="settings-section">
-          <span class="section-label">当前视图设置</span>
+          <span class="section-label">{{ $t('configPanelExtra.currentViewSettings') }}</span>
           <div class="settings-container">
             <SwitchItem
               :icon="showTitles ? 'eye' : 'eye-off'"

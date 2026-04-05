@@ -2,7 +2,7 @@
   <div v-if="show" class="api-settings-overlay" @click.self="$emit('close')">
     <div class="api-settings-panel">
       <div class="panel-header">
-        <h3>API 服务设置</h3>
+        <h3>{{ $t('apiSettings.title') }}</h3>
         <button class="close-btn" @click="$emit('close')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -13,10 +13,10 @@
       <div class="panel-body">
         <!-- API 服务器设置 -->
         <div class="settings-group">
-          <div class="group-title">API 服务器</div>
+          <div class="group-title">{{ $t('apiSettings.server') }}</div>
 
           <div class="setting-row">
-            <label>启用</label>
+            <label>{{ $t('apiSettings.enable') }}</label>
             <label class="switch">
               <input type="checkbox" v-model="localConfig.apiServerEnabled" @change="saveConfig" />
               <span class="slider"></span>
@@ -24,12 +24,12 @@
           </div>
 
           <div class="setting-row">
-            <label>绑定地址</label>
+            <label>{{ $t('apiSettings.bindAddress') }}</label>
             <input type="text" v-model="localConfig.apiServerHost" @blur="saveConfig" class="input-field input-sm" />
           </div>
 
           <div class="setting-row">
-            <label>端口</label>
+            <label>{{ $t('apiSettings.port') }}</label>
             <input type="number" v-model.number="localConfig.apiServerPort" @blur="saveConfig" class="input-field input-sm" />
           </div>
 
@@ -42,7 +42,7 @@
                 readonly
                 class="input-field input-key"
               />
-              <button class="icon-btn" @click="showApiKey = !showApiKey" title="显示/隐藏">
+              <button class="icon-btn" @click="showApiKey = !showApiKey" :title="$t('apiSettings.showHide')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <template v-if="showApiKey">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -54,12 +54,12 @@
                   </template>
                 </svg>
               </button>
-              <button class="icon-btn" @click="copyApiKey" title="复制">
+              <button class="icon-btn" @click="copyApiKey" :title="$t('apiSettings.copy')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
               </button>
-              <button class="icon-btn" @click="regenerateApiKey" title="重新生成">
+              <button class="icon-btn" @click="regenerateApiKey" :title="$t('apiSettings.regenerate')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                 </svg>
@@ -70,17 +70,17 @@
           <div class="status-row" v-if="serverStatus">
             <span :class="['status-dot', serverStatus.running ? 'running' : 'stopped']"></span>
             <span class="status-text">
-              {{ serverStatus.running ? `运行中 (${localConfig.apiServerHost}:${localConfig.apiServerPort})` : '已停止' }}
+              {{ serverStatus.running ? `${$t('apiSettings.running')} (${localConfig.apiServerHost}:${localConfig.apiServerPort})` : $t('apiSettings.stopped') }}
             </span>
           </div>
         </div>
 
         <!-- 网络 Hook 设置 -->
         <div class="settings-group">
-          <div class="group-title">全局网络 Hook（旁路转发）</div>
+          <div class="group-title">{{ $t('apiSettings.networkHook') }}</div>
 
           <div class="setting-row">
-            <label>启用</label>
+            <label>{{ $t('apiSettings.enable') }}</label>
             <label class="switch">
               <input type="checkbox" v-model="localConfig.networkHookEnabled" @change="saveConfig" />
               <span class="slider"></span>
@@ -99,19 +99,19 @@
           </div>
 
           <div class="hint-text">
-            页面的网络请求将以 POST JSON 转发到此地址。可在网站编辑中为单个页面设置独立的 Hook URL。
+            {{ $t('apiSettings.hookUrlHint') }}
           </div>
         </div>
 
         <!-- 使用说明 -->
         <div class="settings-group">
-          <div class="group-title">使用说明</div>
+          <div class="group-title">{{ $t('apiSettings.usageGuide') }}</div>
           <div class="hint-text">
-            <p><strong>外部访问 API：</strong></p>
-            <p>GET /api/v1/workspaces — 列出工作空间和页面</p>
-            <p>POST /api/v1/execute — 多步骤 JS 执行</p>
-            <p>GET /api/v1/traffic?websiteId=xxx — 获取网络流量</p>
-            <p style="margin-top: 0.5rem">请求头需携带 <code>X-API-Key</code></p>
+            <p><strong>{{ $t('apiSettings.externalApi') }}</strong></p>
+            <p>GET /api/v1/workspaces — {{ $t('apiSettings.apiListWorkspaces') }}</p>
+            <p>POST /api/v1/execute — {{ $t('apiSettings.apiExecute') }}</p>
+            <p>GET /api/v1/traffic?websiteId=xxx — {{ $t('apiSettings.apiTraffic') }}</p>
+            <p style="margin-top: 0.5rem">{{ $t('apiSettings.apiKeyHeader') }} <code>X-API-Key</code></p>
           </div>
         </div>
       </div>

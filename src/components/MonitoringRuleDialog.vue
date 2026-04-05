@@ -2,39 +2,39 @@
   <div v-if="show" class="monitoring-dialog-overlay" @click.self="handleClose">
     <div class="monitoring-dialog" :class="{ 'dark-mode': darkMode }">
       <div class="dialog-header">
-        <h3>{{ isEdit ? '编辑监听规则' : '新建监听规则' }}</h3>
+        <h3>{{ isEdit ? $t('monitoring.editRule') : $t('monitoring.newRule') }}</h3>
         <button class="close-btn" @click="handleClose">×</button>
       </div>
 
       <div class="dialog-body">
         <!-- 规则名称 -->
         <div class="form-group">
-          <label>规则名称</label>
+          <label>{{ $t('monitoring.ruleName') }}</label>
           <input
             v-model="formData.name"
             type="text"
-            placeholder="例如：检测价格变化"
+            :placeholder="$t('monitoring.ruleNamePlaceholder')"
             class="form-input"
           />
         </div>
 
         <!-- 监听条件 -->
         <div class="form-group">
-          <label>监听条件</label>
+          <label>{{ $t('monitoring.condition') }}</label>
           <div class="condition-type-selector">
             <div class="type-option selected">
               <div class="type-icon">🔍</div>
               <div class="type-info">
-                <div class="type-name">视觉监听 (LLM)</div>
-                <div class="type-desc">使用AI分析页面截图内容</div>
+                <div class="type-name">{{ $t('monitoring.visionMonitor') }}</div>
+                <div class="type-desc">{{ $t('monitoring.visionMonitorDesc') }}</div>
               </div>
             </div>
             <!-- 预留未来的条件类型 -->
             <div class="type-option disabled" title="即将推出">
               <div class="type-icon">📝</div>
               <div class="type-info">
-                <div class="type-name">文本监听</div>
-                <div class="type-desc">监听页面文本变化（即将推出）</div>
+                <div class="type-name">{{ $t('monitoring.textMonitor') }}</div>
+                <div class="type-desc">{{ $t('monitoring.textMonitorDesc') }}</div>
               </div>
             </div>
           </div>
@@ -42,21 +42,21 @@
 
         <!-- 自然语言条件描述 -->
         <div class="form-group">
-          <label>条件描述（用自然语言描述触发条件）</label>
+          <label>{{ $t('monitoring.conditionDesc') }}</label>
           <textarea
             v-model="formData.conditionDescription"
-            placeholder="例如：当页面显示'缺货'或'sold out'字样时触发"
+            :placeholder="$t('monitoring.conditionPlaceholder')"
             class="form-textarea"
             rows="3"
           ></textarea>
           <div class="help-text">
-            AI将根据此描述分析页面截图，判断是否满足条件
+            {{ $t('monitoring.conditionHint') }}
           </div>
         </div>
 
         <!-- 检测间隔 -->
         <div class="form-group">
-          <label>检测间隔</label>
+          <label>{{ $t('monitoring.checkInterval') }}</label>
           <div class="interval-selector">
             <input
               v-model.number="formData.checkInterval"
@@ -65,7 +65,7 @@
               max="86400"
               class="form-input interval-input"
             />
-            <span class="interval-unit">秒</span>
+            <span class="interval-unit">{{ $t('monitoring.seconds') }}</span>
             <div class="interval-presets">
               <button
                 v-for="preset in intervalPresets"
@@ -79,13 +79,13 @@
             </div>
           </div>
           <div class="help-text">
-            建议不要设置过短，避免频繁调用API产生高额费用
+            {{ $t('monitoring.intervalHint') }}
           </div>
         </div>
 
         <!-- 执行动作 -->
         <div class="form-group">
-          <label>执行动作</label>
+          <label>{{ $t('monitoring.actions') }}</label>
           <div class="action-list">
             <div class="action-item">
               <input
@@ -97,8 +97,8 @@
               />
               <label for="action-notification" class="action-label">
                 <span class="action-icon">🔔</span>
-                <span class="action-name">桌面通知</span>
-                <span class="action-badge">必选</span>
+                <span class="action-name">{{ $t('monitoring.desktopNotification') }}</span>
+                <span class="action-badge">{{ $t('monitoring.required') }}</span>
               </label>
             </div>
             <!-- 预留未来的动作类型 -->
@@ -111,8 +111,8 @@
               />
               <label for="action-email" class="action-label">
                 <span class="action-icon">📧</span>
-                <span class="action-name">发送邮件</span>
-                <span class="action-badge coming-soon">即将推出</span>
+                <span class="action-name">{{ $t('monitoring.sendEmail') }}</span>
+                <span class="action-badge coming-soon">{{ $t('monitoring.comingSoon') }}</span>
               </label>
             </div>
             <div class="action-item disabled">
@@ -124,8 +124,8 @@
               />
               <label for="action-webhook" class="action-label">
                 <span class="action-icon">🔗</span>
-                <span class="action-name">Webhook通知</span>
-                <span class="action-badge coming-soon">即将推出</span>
+                <span class="action-name">{{ $t('monitoring.webhook') }}</span>
+                <span class="action-badge coming-soon">{{ $t('monitoring.comingSoon') }}</span>
               </label>
             </div>
           </div>
@@ -133,11 +133,11 @@
 
         <!-- 通知消息 -->
         <div class="form-group">
-          <label>通知消息</label>
+          <label>{{ $t('monitoring.notificationMessage') }}</label>
           <input
             v-model="formData.notificationMessage"
             type="text"
-            placeholder="例如：商品状态发生变化！"
+            :placeholder="$t('monitoring.notificationPlaceholder')"
             class="form-input"
           />
         </div>
@@ -146,20 +146,19 @@
         <div class="api-config-notice">
           <div class="notice-icon">ℹ️</div>
           <div class="notice-content">
-            <div class="notice-title">需要配置 LLM API</div>
+            <div class="notice-title">{{ $t('monitoring.apiConfigTitle') }}</div>
             <div class="notice-text">
-              此功能需要调用 LLM API（如 OpenAI GPT-4 Vision）来分析截图。
-              请在设置中配置您的 API 密钥。
+              {{ $t('monitoring.apiConfigDesc') }}
             </div>
             <div class="notice-actions">
               <button class="notice-btn" @click="openApiSettings">
-                前往配置 →
+                {{ $t('monitoring.goConfig') }}
               </button>
               <button class="notice-btn secondary" @click="testScreenshot">
-                🖼️ 测试截图
+                {{ $t('monitoring.testScreenshot') }}
               </button>
               <button class="notice-btn primary" @click="testLLMVision">
-                🤖 测试视觉分析
+                {{ $t('monitoring.testVision') }}
               </button>
             </div>
           </div>
@@ -167,9 +166,9 @@
       </div>
 
       <div class="dialog-footer">
-        <button class="btn btn-cancel" @click="handleClose">取消</button>
+        <button class="btn btn-cancel" @click="handleClose">{{ $t('common.cancel') }}</button>
         <button class="btn btn-primary" @click="handleSave" :disabled="!isFormValid">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </button>
       </div>
     </div>

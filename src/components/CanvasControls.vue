@@ -80,7 +80,7 @@
         class="fab-btn"
         :class="{ 'active': drawingTool === 'pen' }"
         @click="$emit('set-tool', 'pen')"
-        title="画笔工具"
+        :title="$t('canvasControlsPanel.brushTool')"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 19l7-7 3 3-7 7-3-3z"/>
@@ -93,7 +93,7 @@
         class="fab-btn"
         :class="{ 'active': drawingTool === 'text' }"
         @click="$emit('set-tool', 'text')"
-        title="文字工具"
+        :title="$t('canvasControlsPanel.textTool')"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="4 7 4 4 20 4 20 7"/>
@@ -107,7 +107,7 @@
         class="fab-btn"
         :class="{ 'active': drawingTool === 'image' }"
         @click="$emit('set-tool', 'image')"
-        title="图片工具"
+        :title="$t('canvasControlsPanel.imageTool')"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -157,7 +157,7 @@
     <div v-if="showSettings" class="fab-settings-panel" @click.stop>
       <div class="settings-content">
         <div v-if="isDrawingMode" class="settings-item">
-          <label class="settings-label">绘制颜色</label>
+          <label class="settings-label">{{ $t('canvasControlsPanel.drawColor') }}</label>
           <input 
             type="color" 
             :value="drawingColor" 
@@ -167,7 +167,7 @@
         </div>
         
         <div v-if="isDrawingMode" class="settings-item">
-          <label class="settings-label">绘制粗细</label>
+          <label class="settings-label">{{ $t('canvasControlsPanel.strokeWidth') }}</label>
           <input 
             type="range" 
             :value="drawingWidth" 

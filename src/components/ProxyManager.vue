@@ -2,7 +2,7 @@
   <div v-if="show" class="proxy-manager-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="proxy-manager-dialog" @mousedown.stop>
       <div class="dialog-header">
-        <h3>代理节点管理</h3>
+        <h3>{{ $t('proxy.title') }}</h3>
         <button class="close-btn" @click="$emit('close')">×</button>
       </div>
 
@@ -14,7 +14,7 @@
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            <span class="btn-text">添加代理</span>
+            <span class="btn-text">{{ $t('proxy.addProxy') }}</span>
           </button>
           <button class="btn-primary" @click="showImportSubDialog = true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -22,7 +22,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span class="btn-text">导入订阅</span>
+            <span class="btn-text">{{ $t('proxy.importSubscription') }}</span>
           </button>
           <button class="btn-secondary" @click="loadProxyList" :disabled="loading">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -30,24 +30,24 @@
               <polyline points="1 20 1 14 7 14"/>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
             </svg>
-            <span class="btn-text">刷新</span>
+            <span class="btn-text">{{ $t('common.refresh') }}</span>
           </button>
           
           <!-- 批量操作 -->
           <div class="batch-actions" v-if="selectedProxies.length > 0">
-            <span class="selected-count">已选 {{ selectedProxies.length }} 项</span>
+            <span class="selected-count">{{ $t('proxy.selected', { count: selectedProxies.length }) }}</span>
             <button class="btn-success" @click="batchEnable" :disabled="batchOperating">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              <span class="btn-text">启用</span>
+              <span class="btn-text">{{ $t('proxy.enable') }}</span>
             </button>
             <button class="btn-danger" @click="batchDelete" :disabled="batchOperating">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"/>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               </svg>
-              <span class="btn-text">删除</span>
+              <span class="btn-text">{{ $t('common.delete') }}</span>
             </button>
           </div>
         </div>

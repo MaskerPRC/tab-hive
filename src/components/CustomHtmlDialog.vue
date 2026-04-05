@@ -2,21 +2,21 @@
   <div v-if="show" class="custom-html-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="custom-html-dialog" @mousedown.stop>
       <div class="dialog-header">
-        <h1>创建自定义网页</h1>
-        <p class="header-subtitle">描述你的需求，AI 将为你生成网页代码</p>
+        <h1>{{ $t('customHtml.title') }}</h1>
+        <p class="header-subtitle">{{ $t('customHtml.subtitle') }}</p>
       </div>
 
       <div class="dialog-content">
         <div class="form-group">
-          <label for="requirement">需求描述</label>
+          <label for="requirement">{{ $t('customHtml.requirement') }}</label>
           <textarea
             id="requirement"
             v-model="requirement"
             rows="6"
-            placeholder="例如：创建一个待办事项列表，支持添加、删除和标记完成..."
+            :placeholder="$t('customHtml.requirementPlaceholder')"
             class="form-textarea"
           ></textarea>
-          <p class="form-hint">详细描述你想要的网页功能和样式</p>
+          <p class="form-hint">{{ $t('customHtml.requirementHint') }}</p>
         </div>
 
         <div v-if="error" class="error-message">
@@ -26,18 +26,18 @@
 
         <div v-if="isGenerating" class="generating-message">
           <i class="fa-solid fa-spinner fa-spin"></i>
-          正在生成 HTML 代码，请稍候...
+          {{ $t('customHtml.generating') }}
         </div>
       </div>
 
       <div class="dialog-footer">
-        <button class="btn-cancel" @click="handleCancel">取消</button>
+        <button class="btn-cancel" @click="handleCancel">{{ $t('common.cancel') }}</button>
         <button 
           class="btn-confirm" 
           @click="handleGenerate"
           :disabled="!requirement.trim() || isGenerating"
         >
-          {{ isGenerating ? '生成中...' : '生成网页' }}
+          {{ isGenerating ? $t('customHtml.generatingBtn') : $t('customHtml.generateBtn') }}
         </button>
       </div>
     </div>
@@ -46,6 +46,7 @@
 
 <script>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useOverlayClick } from '../composables/useOverlayClick.js'
 import { useLlmGenerator } from '../composables/useLlmGenerator.js'
 import { useLlmConfig } from '../composables/useLlmConfig.js'
@@ -60,6 +61,7 @@ export default {
   },
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const requirement = ref('')
     const { generateHtml, isGenerating, error } = useLlmGenerator()
     const { isValid } = useLlmConfig()
@@ -88,21 +90,21 @@ export default {
       console.log('[CustomHtmlDialog] API Key:', currentConfig.value.apiKey ? '已设置' : '未设置')
       
       if (!currentConfig.value.apiUrl || !currentConfig.value.apiKey) {
-        error.value = '请先在设置中配置 LLM API'
+        error.value = t('customHtml.configError')
         return
       }
 
       try {
         const html = await generateHtml(requirement.value.trim())
         emit('confirm', {
-          title: '自定义网页',
+          title: t('customHtml.defaultTitle'),
           html: html,
           type: 'custom-html'
         })
       } catch (err) {
         // 错误已经在 useLlmGenerator 中设置
         console.error('[CustomHtmlDialog] 生成失败:', err)
-        error.value = err.message || '生成失败'
+        error.value = err.message || t('customHtml.generateFailed')
       }
     }
 

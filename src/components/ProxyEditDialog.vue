@@ -1,14 +1,14 @@
 <template>
   <div v-if="show" class="edit-overlay" @click="$emit('close')">
     <div class="edit-dialog" @click.stop>
-      <h4>{{ editingProxy ? '编辑代理' : '添加代理' }}</h4>
+      <h4>{{ editingProxy ? $t('proxy.editProxy') : $t('proxy.addProxy') }}</h4>
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label>名称</label>
-          <input v-model="form.name" type="text" required placeholder="代理名称" />
+          <label>{{ $t('proxy.name') }}</label>
+          <input v-model="form.name" type="text" required :placeholder="$t('proxy.namePlaceholder')" />
         </div>
         <div class="form-group">
-          <label>类型</label>
+          <label>{{ $t('proxy.type') }}</label>
           <select v-model="form.type" required>
             <option value="http">HTTP</option>
             <option value="https">HTTPS</option>
@@ -18,64 +18,64 @@
           </select>
         </div>
         <div class="form-group">
-          <label>主机</label>
-          <input v-model="form.host" type="text" required placeholder="服务器地址" />
+          <label>{{ $t('proxy.host') }}</label>
+          <input v-model="form.host" type="text" required :placeholder="$t('proxy.hostPlaceholder')" />
         </div>
         <div class="form-group">
-          <label>端口</label>
-          <input v-model.number="form.port" type="number" required placeholder="端口号" />
+          <label>{{ $t('apiSettings.port') }}</label>
+          <input v-model.number="form.port" type="number" required :placeholder="$t('proxy.portPlaceholder')" />
         </div>
         
         <!-- HTTP/HTTPS/SOCKS5 认证选项 -->
         <div class="form-group" v-if="['http', 'https', 'socks5'].includes(form.type)">
-          <label>用户名（可选）</label>
-          <input v-model="form.username" type="text" placeholder="用户名" />
+          <label>{{ $t('proxy.usernameOptional') }}</label>
+          <input v-model="form.username" type="text" :placeholder="$t('proxy.usernamePlaceholder')" />
         </div>
         <div class="form-group" v-if="['http', 'https', 'socks5'].includes(form.type)">
-          <label>密码（可选）</label>
-          <input v-model="form.password" type="password" placeholder="密码" />
+          <label>{{ $t('proxy.passwordOptional') }}</label>
+          <input v-model="form.password" type="password" :placeholder="$t('proxy.passwordPlaceholder')" />
         </div>
         
         <!-- Shadowsocks 特有选项 -->
         <div class="form-group" v-if="form.type === 'ss'">
-          <label>密码</label>
-          <input v-model="form.password" type="password" required placeholder="Shadowsocks 密码" />
+          <label>{{ $t('proxy.password') }}</label>
+          <input v-model="form.password" type="password" required :placeholder="$t('proxy.ssPassword')" />
         </div>
         <div class="form-group" v-if="form.type === 'ss'">
-          <label>加密方法</label>
+          <label>{{ $t('proxy.cipher') }}</label>
           <input v-model="form.cipher" type="text" placeholder="aes-256-gcm" />
         </div>
         <div class="form-group" v-if="form.type === 'ss'">
-          <label>插件（可选）</label>
+          <label>{{ $t('proxy.pluginOptional') }}</label>
           <input v-model="form.plugin" type="text" placeholder="obfs-local" />
         </div>
         <div class="form-group" v-if="form.type === 'ss' && form.plugin">
-          <label>插件选项（JSON格式）</label>
+          <label>{{ $t('proxy.pluginOpts') }}</label>
           <textarea v-model="form.pluginOpts" rows="2" placeholder='{"mode":"http","host":"example.com"}'></textarea>
         </div>
         <div class="form-group" v-if="form.type === 'ss'">
           <label class="checkbox-label">
             <input type="checkbox" v-model="form.udp" />
-            <span>启用 UDP</span>
+            <span>{{ $t('proxy.enableUdp') }}</span>
           </label>
         </div>
         <div class="form-group" v-if="form.type === 'ss'">
           <label class="checkbox-label">
             <input type="checkbox" v-model="form.tfo" />
-            <span>启用 TCP Fast Open</span>
+            <span>{{ $t('proxy.enableTfo') }}</span>
           </label>
         </div>
         
         <!-- VMess 特有选项 -->
         <div class="form-group" v-if="form.type === 'vmess'">
-          <label>UUID</label>
+          <label>{{ $t('proxy.uuid') }}</label>
           <input v-model="form.uuid" type="text" required placeholder="VMess UUID" />
         </div>
         
         <div class="form-actions">
-          <button type="button" class="btn-secondary" @click="$emit('close')">取消</button>
+          <button type="button" class="btn-secondary" @click="$emit('close')">{{ $t('common.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="saving">
-            {{ saving ? '保存中...' : '保存' }}
+            {{ saving ? $t('proxy.saving') : $t('common.save') }}
           </button>
         </div>
       </form>

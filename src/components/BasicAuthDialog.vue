@@ -8,9 +8,9 @@
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0110 0v4"></path>
             </svg>
-            Authentication Required
+            {{ $t('basicAuth.title') }}
           </div>
-          <button class="modal-close-btn" @click="handleCancel" title="Cancel">
+          <button class="modal-close-btn" @click="handleCancel" :title="$t('common.cancel')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -24,29 +24,29 @@
           </div>
           <form @submit.prevent="handleSubmit">
             <div class="form-group">
-              <label for="basic-auth-username">Username</label>
+              <label for="basic-auth-username">{{ $t('basicAuth.username') }}</label>
               <input
                 id="basic-auth-username"
                 ref="usernameInput"
                 v-model="username"
                 type="text"
                 autocomplete="username"
-                placeholder="Username"
+                :placeholder="$t('basicAuth.username')"
               />
             </div>
             <div class="form-group">
-              <label for="basic-auth-password">Password</label>
+              <label for="basic-auth-password">{{ $t('basicAuth.password') }}</label>
               <input
                 id="basic-auth-password"
                 v-model="password"
                 type="password"
                 autocomplete="current-password"
-                placeholder="Password"
+                :placeholder="$t('basicAuth.password')"
               />
             </div>
             <div class="form-actions">
-              <button type="button" class="btn-cancel" @click="handleCancel">Cancel</button>
-              <button type="submit" class="btn-submit">Login</button>
+              <button type="button" class="btn-cancel" @click="handleCancel">{{ $t('common.cancel') }}</button>
+              <button type="submit" class="btn-submit">{{ $t('basicAuth.login') }}</button>
             </div>
           </form>
         </div>

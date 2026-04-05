@@ -2,13 +2,13 @@
   <div v-if="show" class="llm-config-overlay" @mousedown="handleOverlayMouseDown" @click="handleOverlayClick">
     <div class="llm-config-dialog" @mousedown.stop>
       <div class="dialog-header">
-        <h1>LLM API 配置</h1>
-        <p class="header-subtitle">配置 LLM API 以生成自定义网页</p>
+        <h1>{{ $t('llmConfig.title') }}</h1>
+        <p class="header-subtitle">{{ $t('llmConfig.subtitle') }}</p>
       </div>
 
       <div class="dialog-content">
         <div class="form-group">
-          <label for="apiUrl">API 地址</label>
+          <label for="apiUrl">{{ $t('llmConfig.apiUrl') }}</label>
           <input
             id="apiUrl"
             v-model="localConfig.apiUrl"
@@ -16,11 +16,11 @@
             placeholder="https://openrouter.ai/api/v1/chat/completions"
             class="form-input"
           />
-          <p class="form-hint">LLM API 的完整地址</p>
+          <p class="form-hint">{{ $t('llmConfig.apiUrlHint') }}</p>
         </div>
 
         <div class="form-group">
-          <label for="apiKey">API Key</label>
+          <label for="apiKey">{{ $t('llmConfig.apiKey') }}</label>
           <input
             id="apiKey"
             v-model="localConfig.apiKey"
@@ -29,13 +29,13 @@
             class="form-input"
           />
           <p class="form-hint">
-            用于认证的 API Key。
-            <a href="https://openrouter.ai/settings/keys" target="_blank" class="form-link">去 OpenRouter 获取</a>
+            {{ $t('llmConfig.apiKeyHint') }}
+            <a href="https://openrouter.ai/settings/keys" target="_blank" class="form-link">{{ $t('llmConfig.apiKeyLink') }}</a>
           </p>
         </div>
 
         <div class="form-group">
-          <label for="model">模型名称</label>
+          <label for="model">{{ $t('llmConfig.model') }}</label>
           <input
             id="model"
             v-model="localConfig.model"
@@ -43,7 +43,7 @@
             placeholder="google/gemini-3-pro-preview"
             class="form-input"
           />
-          <p class="form-hint">要使用的模型名称</p>
+          <p class="form-hint">{{ $t('llmConfig.modelHint') }}</p>
         </div>
 
         <div class="form-group">
@@ -57,11 +57,11 @@
             step="0.1"
             class="form-input"
           />
-          <p class="form-hint">控制输出的随机性 (0-2)</p>
+          <p class="form-hint">{{ $t('llmConfig.temperatureHint') }}</p>
         </div>
 
         <div class="form-group">
-          <label for="maxTokens">最大 Token 数</label>
+          <label for="maxTokens">{{ $t('llmConfig.maxTokens') }}</label>
           <input
             id="maxTokens"
             v-model.number="localConfig.maxTokens"
@@ -71,13 +71,13 @@
             step="100"
             class="form-input"
           />
-          <p class="form-hint">生成内容的最大长度（0 表示不限制）</p>
+          <p class="form-hint">{{ $t('llmConfig.maxTokensHint') }}</p>
         </div>
       </div>
 
       <div class="dialog-footer">
-        <button class="btn-cancel" @click="handleCancel">取消</button>
-        <button class="btn-confirm" @click="handleConfirm">保存</button>
+        <button class="btn-cancel" @click="handleCancel">{{ $t('common.cancel') }}</button>
+        <button class="btn-confirm" @click="handleConfirm">{{ $t('common.save') }}</button>
       </div>
     </div>
   </div>
